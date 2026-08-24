@@ -1,8 +1,8 @@
-// Generated from ui-delivery/route-design-map.csv and prototype/traceability.csv. Do not edit.
+// Generated from docs/design/ui-delivery/route-design-map.csv and prototype/traceability.csv. Do not edit.
 export const generatedRouteContract = {
   "schema_version": 1,
   "generated_from": [
-    "ui-delivery/route-design-map.csv",
+    "docs/design/ui-delivery/route-design-map.csv",
     "prototype/traceability.csv"
   ],
   "route_count": 194,
@@ -57,7 +57,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin.png"
     },
     {
       "route_id": "admin-audit",
@@ -115,7 +115,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-audit.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-audit.png"
     },
     {
       "route_id": "admin-auth",
@@ -167,7 +167,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-auth.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-auth.png"
     },
     {
       "route_id": "admin-dictionaries",
@@ -225,7 +225,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-dictionaries.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-dictionaries.png"
     },
     {
       "route_id": "admin-jobs",
@@ -277,7 +277,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-jobs.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-jobs.png"
     },
     {
       "route_id": "admin-master-data",
@@ -335,7 +335,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-master-data.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-master-data.png"
     },
     {
       "route_id": "admin-org",
@@ -393,7 +393,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-org.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-org.png"
     },
     {
       "route_id": "admin-parameters",
@@ -445,7 +445,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-parameters.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-parameters.png"
     },
     {
       "route_id": "admin-permissions",
@@ -503,7 +503,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-permissions.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-permissions.png"
     },
     {
       "route_id": "admin-roles",
@@ -555,7 +555,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-roles.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-roles.png"
     },
     {
       "route_id": "admin-templates",
@@ -607,7 +607,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-templates.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-templates.png"
     },
     {
       "route_id": "admin-users",
@@ -665,7 +665,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admin-users.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admin-users.png"
     },
     {
       "route_id": "admission-bed",
@@ -715,7 +715,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/admission-bed.png"
+      "artifact_path": "docs/design/ui-delivery/screens/admission-bed.png"
     },
     {
       "route_id": "agent",
@@ -765,7 +765,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/agent.png"
+      "artifact_path": "docs/design/ui-delivery/screens/agent.png"
     },
     {
       "route_id": "agent-catalog",
@@ -819,7 +819,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/agent-catalog.png"
+      "artifact_path": "docs/design/ui-delivery/screens/agent-catalog.png"
     },
     {
       "route_id": "agent-compose",
@@ -873,7 +873,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/agent-compose.png"
+      "artifact_path": "docs/design/ui-delivery/screens/agent-compose.png"
     },
     {
       "route_id": "agent-context",
@@ -927,7 +927,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/agent-context.png"
+      "artifact_path": "docs/design/ui-delivery/screens/agent-context.png"
     },
     {
       "route_id": "agent-evals",
@@ -981,7 +981,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/agent-evals.png"
+      "artifact_path": "docs/design/ui-delivery/screens/agent-evals.png"
     },
     {
       "route_id": "ai-action-review",
@@ -1035,7 +1035,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-action-review.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-action-review.png"
     },
     {
       "route_id": "ai-assistant",
@@ -1095,7 +1095,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-assistant.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-assistant.png"
     },
     {
       "route_id": "ai-assistant-policy",
@@ -1149,7 +1149,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-assistant-policy.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-assistant-policy.png"
     },
     {
       "route_id": "ai-capture",
@@ -1203,7 +1203,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-capture.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-capture.png"
     },
     {
       "route_id": "ai-center",
@@ -1249,7 +1249,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-center.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-center.png"
     },
     {
       "route_id": "ai-reminder-detail",
@@ -1303,7 +1303,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ai-reminder-detail.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ai-reminder-detail.png"
     },
     {
       "route_id": "aiops",
@@ -1357,7 +1357,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/aiops.png"
+      "artifact_path": "docs/design/ui-delivery/screens/aiops.png"
     },
     {
       "route_id": "anesthesia-workbench",
@@ -1406,7 +1406,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/anesthesia-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/anesthesia-workbench.png"
     },
     {
       "route_id": "appointment-registration",
@@ -1456,7 +1456,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/appointment-registration.png"
+      "artifact_path": "docs/design/ui-delivery/screens/appointment-registration.png"
     },
     {
       "route_id": "archive-assets",
@@ -1512,7 +1512,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-assets.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-assets.png"
     },
     {
       "route_id": "archive-borrow",
@@ -1554,7 +1554,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-borrow.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-borrow.png"
     },
     {
       "route_id": "archive-catalog",
@@ -1604,7 +1604,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-catalog.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-catalog.png"
     },
     {
       "route_id": "archive-integrity",
@@ -1646,7 +1646,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-integrity.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-integrity.png"
     },
     {
       "route_id": "archive-preservation",
@@ -1688,7 +1688,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-preservation.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-preservation.png"
     },
     {
       "route_id": "archive-scan",
@@ -1730,7 +1730,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/archive-scan.png"
+      "artifact_path": "docs/design/ui-delivery/screens/archive-scan.png"
     },
     {
       "route_id": "asset-detail",
@@ -1771,7 +1771,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/asset-detail.png"
+      "artifact_path": "docs/design/ui-delivery/screens/asset-detail.png"
     },
     {
       "route_id": "backup",
@@ -1821,7 +1821,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/backup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/backup.png"
     },
     {
       "route_id": "billing",
@@ -1870,7 +1870,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/billing.png"
+      "artifact_path": "docs/design/ui-delivery/screens/billing.png"
     },
     {
       "route_id": "capability-pack",
@@ -1920,7 +1920,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/capability-pack.png"
+      "artifact_path": "docs/design/ui-delivery/screens/capability-pack.png"
     },
     {
       "route_id": "care-operations",
@@ -1961,7 +1961,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/care-operations.png"
+      "artifact_path": "docs/design/ui-delivery/screens/care-operations.png"
     },
     {
       "route_id": "clinical",
@@ -2018,7 +2018,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/clinical.png"
+      "artifact_path": "docs/design/ui-delivery/screens/clinical.png"
     },
     {
       "route_id": "clinical-tasks",
@@ -2078,7 +2078,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/clinical-tasks.png"
+      "artifact_path": "docs/design/ui-delivery/screens/clinical-tasks.png"
     },
     {
       "route_id": "cohort-builder",
@@ -2128,7 +2128,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/cohort-builder.png"
+      "artifact_path": "docs/design/ui-delivery/screens/cohort-builder.png"
     },
     {
       "route_id": "config-release",
@@ -2178,7 +2178,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/config-release.png"
+      "artifact_path": "docs/design/ui-delivery/screens/config-release.png"
     },
     {
       "route_id": "config-upgrade",
@@ -2228,7 +2228,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/config-upgrade.png"
+      "artifact_path": "docs/design/ui-delivery/screens/config-upgrade.png"
     },
     {
       "route_id": "credentials",
@@ -2282,7 +2282,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/credentials.png"
+      "artifact_path": "docs/design/ui-delivery/screens/credentials.png"
     },
     {
       "route_id": "data-center",
@@ -2324,7 +2324,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/data-center.png"
+      "artifact_path": "docs/design/ui-delivery/screens/data-center.png"
     },
     {
       "route_id": "data-quality",
@@ -2374,7 +2374,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/data-quality.png"
+      "artifact_path": "docs/design/ui-delivery/screens/data-quality.png"
     },
     {
       "route_id": "dental-care",
@@ -2417,7 +2417,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-care.png"
     },
     {
       "route_id": "dental-evidence",
@@ -2460,7 +2460,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-evidence.png"
     },
     {
       "route_id": "dental-followup",
@@ -2503,7 +2503,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-followup.png"
     },
     {
       "route_id": "dental-qc",
@@ -2546,7 +2546,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-qc.png"
     },
     {
       "route_id": "dental-record",
@@ -2589,7 +2589,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-record.png"
     },
     {
       "route_id": "dental-treatment",
@@ -2632,7 +2632,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-treatment.png"
     },
     {
       "route_id": "dental-workbench",
@@ -2683,7 +2683,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dental-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dental-workbench.png"
     },
     {
       "route_id": "department-qc",
@@ -2741,7 +2741,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/department-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/department-qc.png"
     },
     {
       "route_id": "dermatology-care",
@@ -2784,7 +2784,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-care.png"
     },
     {
       "route_id": "dermatology-evidence",
@@ -2827,7 +2827,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-evidence.png"
     },
     {
       "route_id": "dermatology-followup",
@@ -2870,7 +2870,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-followup.png"
     },
     {
       "route_id": "dermatology-qc",
@@ -2913,7 +2913,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-qc.png"
     },
     {
       "route_id": "dermatology-record",
@@ -2956,7 +2956,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-record.png"
     },
     {
       "route_id": "dermatology-treatment",
@@ -2999,7 +2999,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-treatment.png"
     },
     {
       "route_id": "dermatology-workbench",
@@ -3050,7 +3050,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/dermatology-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/dermatology-workbench.png"
     },
     {
       "route_id": "device-monitoring",
@@ -3100,7 +3100,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/device-monitoring.png"
+      "artifact_path": "docs/design/ui-delivery/screens/device-monitoring.png"
     },
     {
       "route_id": "devices",
@@ -3151,7 +3151,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/devices.png"
+      "artifact_path": "docs/design/ui-delivery/screens/devices.png"
     },
     {
       "route_id": "emergency",
@@ -3202,7 +3202,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/emergency.png"
+      "artifact_path": "docs/design/ui-delivery/screens/emergency.png"
     },
     {
       "route_id": "emergency-access",
@@ -3253,7 +3253,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/emergency-access.png"
+      "artifact_path": "docs/design/ui-delivery/screens/emergency-access.png"
     },
     {
       "route_id": "ent-care",
@@ -3296,7 +3296,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-care.png"
     },
     {
       "route_id": "ent-evidence",
@@ -3339,7 +3339,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-evidence.png"
     },
     {
       "route_id": "ent-followup",
@@ -3382,7 +3382,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-followup.png"
     },
     {
       "route_id": "ent-qc",
@@ -3425,7 +3425,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-qc.png"
     },
     {
       "route_id": "ent-record",
@@ -3468,7 +3468,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-record.png"
     },
     {
       "route_id": "ent-treatment",
@@ -3511,7 +3511,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-treatment.png"
     },
     {
       "route_id": "ent-workbench",
@@ -3562,7 +3562,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ent-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ent-workbench.png"
     },
     {
       "route_id": "er-handoff",
@@ -3604,7 +3604,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/er-handoff.png"
+      "artifact_path": "docs/design/ui-delivery/screens/er-handoff.png"
     },
     {
       "route_id": "er-nursing",
@@ -3647,7 +3647,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/er-nursing.png"
+      "artifact_path": "docs/design/ui-delivery/screens/er-nursing.png"
     },
     {
       "route_id": "er-observation",
@@ -3689,7 +3689,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/er-observation.png"
+      "artifact_path": "docs/design/ui-delivery/screens/er-observation.png"
     },
     {
       "route_id": "er-record",
@@ -3732,7 +3732,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/er-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/er-record.png"
     },
     {
       "route_id": "er-triage",
@@ -3774,7 +3774,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/er-triage.png"
+      "artifact_path": "docs/design/ui-delivery/screens/er-triage.png"
     },
     {
       "route_id": "form-designer",
@@ -3826,7 +3826,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/form-designer.png"
+      "artifact_path": "docs/design/ui-delivery/screens/form-designer.png"
     },
     {
       "route_id": "imaging-workbench",
@@ -3875,7 +3875,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/imaging-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/imaging-workbench.png"
     },
     {
       "route_id": "infection-events",
@@ -3925,7 +3925,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/infection-events.png"
+      "artifact_path": "docs/design/ui-delivery/screens/infection-events.png"
     },
     {
       "route_id": "inpatient",
@@ -3986,7 +3986,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient.png"
     },
     {
       "route_id": "inpatient-course",
@@ -4037,7 +4037,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-course.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-course.png"
     },
     {
       "route_id": "inpatient-discharge",
@@ -4088,7 +4088,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-discharge.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-discharge.png"
     },
     {
       "route_id": "inpatient-doc-editor",
@@ -4139,7 +4139,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-doc-editor.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-doc-editor.png"
     },
     {
       "route_id": "inpatient-doc-qc",
@@ -4190,7 +4190,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-doc-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-doc-qc.png"
     },
     {
       "route_id": "inpatient-doc-versions",
@@ -4233,7 +4233,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-doc-versions.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-doc-versions.png"
     },
     {
       "route_id": "inpatient-overview",
@@ -4284,7 +4284,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-overview.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-overview.png"
     },
     {
       "route_id": "inpatient-pharmacy",
@@ -4334,7 +4334,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/inpatient-pharmacy.png"
+      "artifact_path": "docs/design/ui-delivery/screens/inpatient-pharmacy.png"
     },
     {
       "route_id": "install",
@@ -4384,7 +4384,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/install.png"
+      "artifact_path": "docs/design/ui-delivery/screens/install.png"
     },
     {
       "route_id": "integration",
@@ -4435,7 +4435,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/integration.png"
+      "artifact_path": "docs/design/ui-delivery/screens/integration.png"
     },
     {
       "route_id": "integration-connectors",
@@ -4478,7 +4478,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/integration-connectors.png"
+      "artifact_path": "docs/design/ui-delivery/screens/integration-connectors.png"
     },
     {
       "route_id": "integration-mapping",
@@ -4529,7 +4529,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/integration-mapping.png"
+      "artifact_path": "docs/design/ui-delivery/screens/integration-mapping.png"
     },
     {
       "route_id": "integration-messages",
@@ -4586,7 +4586,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/integration-messages.png"
+      "artifact_path": "docs/design/ui-delivery/screens/integration-messages.png"
     },
     {
       "route_id": "ip-consult",
@@ -4629,7 +4629,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ip-consult.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ip-consult.png"
     },
     {
       "route_id": "ip-orders",
@@ -4672,7 +4672,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ip-orders.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ip-orders.png"
     },
     {
       "route_id": "ip-pathway",
@@ -4715,7 +4715,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ip-pathway.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ip-pathway.png"
     },
     {
       "route_id": "ip-results",
@@ -4758,7 +4758,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ip-results.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ip-results.png"
     },
     {
       "route_id": "lab-workbench",
@@ -4807,7 +4807,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/lab-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/lab-workbench.png"
     },
     {
       "route_id": "lis-report",
@@ -4857,7 +4857,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/lis-report.png"
+      "artifact_path": "docs/design/ui-delivery/screens/lis-report.png"
     },
     {
       "route_id": "login-context",
@@ -4899,7 +4899,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/login-context.png"
+      "artifact_path": "docs/design/ui-delivery/screens/login-context.png"
     },
     {
       "route_id": "mental-care",
@@ -4942,7 +4942,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-care.png"
     },
     {
       "route_id": "mental-evidence",
@@ -4985,7 +4985,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-evidence.png"
     },
     {
       "route_id": "mental-followup",
@@ -5028,7 +5028,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-followup.png"
     },
     {
       "route_id": "mental-qc",
@@ -5071,7 +5071,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-qc.png"
     },
     {
       "route_id": "mental-record",
@@ -5114,7 +5114,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-record.png"
     },
     {
       "route_id": "mental-treatment",
@@ -5157,7 +5157,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-treatment.png"
     },
     {
       "route_id": "mental-workbench",
@@ -5208,7 +5208,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/mental-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/mental-workbench.png"
     },
     {
       "route_id": "migration",
@@ -5258,7 +5258,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/migration.png"
+      "artifact_path": "docs/design/ui-delivery/screens/migration.png"
     },
     {
       "route_id": "model-connection",
@@ -5312,7 +5312,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/model-connection.png"
+      "artifact_path": "docs/design/ui-delivery/screens/model-connection.png"
     },
     {
       "route_id": "model-evaluation",
@@ -5366,7 +5366,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/model-evaluation.png"
+      "artifact_path": "docs/design/ui-delivery/screens/model-evaluation.png"
     },
     {
       "route_id": "model-routing",
@@ -5420,7 +5420,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/model-routing.png"
+      "artifact_path": "docs/design/ui-delivery/screens/model-routing.png"
     },
     {
       "route_id": "models",
@@ -5470,7 +5470,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/models.png"
+      "artifact_path": "docs/design/ui-delivery/screens/models.png"
     },
     {
       "route_id": "neonatal-care",
@@ -5513,7 +5513,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-care.png"
     },
     {
       "route_id": "neonatal-evidence",
@@ -5556,7 +5556,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-evidence.png"
     },
     {
       "route_id": "neonatal-followup",
@@ -5599,7 +5599,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-followup.png"
     },
     {
       "route_id": "neonatal-qc",
@@ -5642,7 +5642,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-qc.png"
     },
     {
       "route_id": "neonatal-record",
@@ -5685,7 +5685,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-record.png"
     },
     {
       "route_id": "neonatal-treatment",
@@ -5728,7 +5728,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-treatment.png"
     },
     {
       "route_id": "neonatal-workbench",
@@ -5779,7 +5779,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/neonatal-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/neonatal-workbench.png"
     },
     {
       "route_id": "obgyn-care",
@@ -5822,7 +5822,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-care.png"
     },
     {
       "route_id": "obgyn-evidence",
@@ -5865,7 +5865,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-evidence.png"
     },
     {
       "route_id": "obgyn-followup",
@@ -5908,7 +5908,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-followup.png"
     },
     {
       "route_id": "obgyn-qc",
@@ -5951,7 +5951,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-qc.png"
     },
     {
       "route_id": "obgyn-record",
@@ -5994,7 +5994,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-record.png"
     },
     {
       "route_id": "obgyn-treatment",
@@ -6037,7 +6037,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-treatment.png"
     },
     {
       "route_id": "obgyn-workbench",
@@ -6088,7 +6088,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/obgyn-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/obgyn-workbench.png"
     },
     {
       "route_id": "opd-consult",
@@ -6131,7 +6131,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-consult.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-consult.png"
     },
     {
       "route_id": "opd-diagnosis",
@@ -6186,7 +6186,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-diagnosis.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-diagnosis.png"
     },
     {
       "route_id": "opd-followup",
@@ -6229,7 +6229,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-followup.png"
     },
     {
       "route_id": "opd-orders",
@@ -6284,7 +6284,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-orders.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-orders.png"
     },
     {
       "route_id": "opd-record",
@@ -6335,7 +6335,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-record.png"
     },
     {
       "route_id": "opd-results",
@@ -6386,7 +6386,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opd-results.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opd-results.png"
     },
     {
       "route_id": "opensource",
@@ -6440,7 +6440,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/opensource.png"
+      "artifact_path": "docs/design/ui-delivery/screens/opensource.png"
     },
     {
       "route_id": "operations",
@@ -6494,7 +6494,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/operations.png"
+      "artifact_path": "docs/design/ui-delivery/screens/operations.png"
     },
     {
       "route_id": "ophthalmology-care",
@@ -6537,7 +6537,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-care.png"
     },
     {
       "route_id": "ophthalmology-evidence",
@@ -6580,7 +6580,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-evidence.png"
     },
     {
       "route_id": "ophthalmology-followup",
@@ -6623,7 +6623,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-followup.png"
     },
     {
       "route_id": "ophthalmology-qc",
@@ -6666,7 +6666,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-qc.png"
     },
     {
       "route_id": "ophthalmology-record",
@@ -6709,7 +6709,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-record.png"
     },
     {
       "route_id": "ophthalmology-treatment",
@@ -6752,7 +6752,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-treatment.png"
     },
     {
       "route_id": "ophthalmology-workbench",
@@ -6803,7 +6803,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ophthalmology-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ophthalmology-workbench.png"
     },
     {
       "route_id": "outpatient",
@@ -6862,7 +6862,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/outpatient.png"
+      "artifact_path": "docs/design/ui-delivery/screens/outpatient.png"
     },
     {
       "route_id": "outpatient-pharmacy",
@@ -6912,7 +6912,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/outpatient-pharmacy.png"
+      "artifact_path": "docs/design/ui-delivery/screens/outpatient-pharmacy.png"
     },
     {
       "route_id": "pacs-viewer",
@@ -6954,7 +6954,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pacs-viewer.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pacs-viewer.png"
     },
     {
       "route_id": "pathology-workbench",
@@ -7003,7 +7003,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pathology-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pathology-workbench.png"
     },
     {
       "route_id": "patient-merge",
@@ -7053,7 +7053,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/patient-merge.png"
+      "artifact_path": "docs/design/ui-delivery/screens/patient-merge.png"
     },
     {
       "route_id": "patient-registry",
@@ -7107,7 +7107,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/patient-registry.png"
+      "artifact_path": "docs/design/ui-delivery/screens/patient-registry.png"
     },
     {
       "route_id": "patient-timeline",
@@ -7161,7 +7161,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/patient-timeline.png"
+      "artifact_path": "docs/design/ui-delivery/screens/patient-timeline.png"
     },
     {
       "route_id": "pediatrics-care",
@@ -7204,7 +7204,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-care.png"
     },
     {
       "route_id": "pediatrics-evidence",
@@ -7247,7 +7247,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-evidence.png"
     },
     {
       "route_id": "pediatrics-followup",
@@ -7290,7 +7290,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-followup.png"
     },
     {
       "route_id": "pediatrics-qc",
@@ -7333,7 +7333,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-qc.png"
     },
     {
       "route_id": "pediatrics-record",
@@ -7376,7 +7376,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-record.png"
     },
     {
       "route_id": "pediatrics-treatment",
@@ -7419,7 +7419,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-treatment.png"
     },
     {
       "route_id": "pediatrics-workbench",
@@ -7470,7 +7470,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/pediatrics-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/pediatrics-workbench.png"
     },
     {
       "route_id": "quality-center",
@@ -7512,7 +7512,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/quality-center.png"
+      "artifact_path": "docs/design/ui-delivery/screens/quality-center.png"
     },
     {
       "route_id": "quality-rating",
@@ -7562,7 +7562,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/quality-rating.png"
+      "artifact_path": "docs/design/ui-delivery/screens/quality-rating.png"
     },
     {
       "route_id": "record",
@@ -7612,7 +7612,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record.png"
     },
     {
       "route_id": "record-diff",
@@ -7654,7 +7654,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-diff.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-diff.png"
     },
     {
       "route_id": "record-editor",
@@ -7718,7 +7718,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-editor.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-editor.png"
     },
     {
       "route_id": "record-qc",
@@ -7760,7 +7760,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-qc.png"
     },
     {
       "route_id": "record-sign",
@@ -7814,7 +7814,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-sign.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-sign.png"
     },
     {
       "route_id": "record-sources",
@@ -7864,7 +7864,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-sources.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-sources.png"
     },
     {
       "route_id": "record-versions",
@@ -7920,7 +7920,7 @@ export const generatedRouteContract = {
       "layout": "病历与病案",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/record-versions.png"
+      "artifact_path": "docs/design/ui-delivery/screens/record-versions.png"
     },
     {
       "route_id": "release-gates",
@@ -7970,7 +7970,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/release-gates.png"
+      "artifact_path": "docs/design/ui-delivery/screens/release-gates.png"
     },
     {
       "route_id": "reproductive-care",
@@ -8013,7 +8013,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-care.png"
     },
     {
       "route_id": "reproductive-evidence",
@@ -8056,7 +8056,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-evidence.png"
     },
     {
       "route_id": "reproductive-followup",
@@ -8099,7 +8099,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-followup.png"
     },
     {
       "route_id": "reproductive-qc",
@@ -8142,7 +8142,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-qc.png"
     },
     {
       "route_id": "reproductive-record",
@@ -8185,7 +8185,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-record.png"
     },
     {
       "route_id": "reproductive-treatment",
@@ -8228,7 +8228,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-treatment.png"
     },
     {
       "route_id": "reproductive-workbench",
@@ -8279,7 +8279,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/reproductive-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/reproductive-workbench.png"
     },
     {
       "route_id": "research",
@@ -8321,7 +8321,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/research.png"
+      "artifact_path": "docs/design/ui-delivery/screens/research.png"
     },
     {
       "route_id": "research-dataset",
@@ -8371,7 +8371,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/research-dataset.png"
+      "artifact_path": "docs/design/ui-delivery/screens/research-dataset.png"
     },
     {
       "route_id": "research-stats",
@@ -8413,7 +8413,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/research-stats.png"
+      "artifact_path": "docs/design/ui-delivery/screens/research-stats.png"
     },
     {
       "route_id": "rule-center",
@@ -8469,7 +8469,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/rule-center.png"
+      "artifact_path": "docs/design/ui-delivery/screens/rule-center.png"
     },
     {
       "route_id": "scope-designer",
@@ -8519,7 +8519,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/scope-designer.png"
+      "artifact_path": "docs/design/ui-delivery/screens/scope-designer.png"
     },
     {
       "route_id": "skill-catalog",
@@ -8573,7 +8573,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/skill-catalog.png"
+      "artifact_path": "docs/design/ui-delivery/screens/skill-catalog.png"
     },
     {
       "route_id": "specialty-center",
@@ -8613,7 +8613,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/specialty-center.png"
+      "artifact_path": "docs/design/ui-delivery/screens/specialty-center.png"
     },
     {
       "route_id": "specialty-coverage",
@@ -8669,7 +8669,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/specialty-coverage.png"
+      "artifact_path": "docs/design/ui-delivery/screens/specialty-coverage.png"
     },
     {
       "route_id": "surgery-schedule",
@@ -8718,7 +8718,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/surgery-schedule.png"
+      "artifact_path": "docs/design/ui-delivery/screens/surgery-schedule.png"
     },
     {
       "route_id": "tcm-care",
@@ -8761,7 +8761,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-care.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-care.png"
     },
     {
       "route_id": "tcm-evidence",
@@ -8804,7 +8804,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-evidence.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-evidence.png"
     },
     {
       "route_id": "tcm-followup",
@@ -8847,7 +8847,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-followup.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-followup.png"
     },
     {
       "route_id": "tcm-qc",
@@ -8890,7 +8890,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-qc.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-qc.png"
     },
     {
       "route_id": "tcm-record",
@@ -8933,7 +8933,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-record.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-record.png"
     },
     {
       "route_id": "tcm-treatment",
@@ -8976,7 +8976,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-treatment.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-treatment.png"
     },
     {
       "route_id": "tcm-workbench",
@@ -9027,7 +9027,7 @@ export const generatedRouteContract = {
       "layout": "核心专科",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tcm-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tcm-workbench.png"
     },
     {
       "route_id": "therapy-workbench",
@@ -9076,7 +9076,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/therapy-workbench.png"
+      "artifact_path": "docs/design/ui-delivery/screens/therapy-workbench.png"
     },
     {
       "route_id": "tool-catalog",
@@ -9130,7 +9130,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/tool-catalog.png"
+      "artifact_path": "docs/design/ui-delivery/screens/tool-catalog.png"
     },
     {
       "route_id": "transfusion",
@@ -9179,7 +9179,7 @@ export const generatedRouteContract = {
       "layout": "医疗协同执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/transfusion.png"
+      "artifact_path": "docs/design/ui-delivery/screens/transfusion.png"
     },
     {
       "route_id": "unified-home",
@@ -9221,7 +9221,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/unified-home.png"
+      "artifact_path": "docs/design/ui-delivery/screens/unified-home.png"
     },
     {
       "route_id": "ward",
@@ -9275,7 +9275,7 @@ export const generatedRouteContract = {
       "layout": "临床工作域",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/ward.png"
+      "artifact_path": "docs/design/ui-delivery/screens/ward.png"
     },
     {
       "route_id": "workflow",
@@ -9327,7 +9327,7 @@ export const generatedRouteContract = {
       "layout": "治理与管理",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "ui-delivery/screens/workflow.png"
+      "artifact_path": "docs/design/ui-delivery/screens/workflow.png"
     }
   ]
 } as const;

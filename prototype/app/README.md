@@ -54,6 +54,6 @@ python3 -m http.server 4173 --directory prototype/app
 - 浏览器目标：桌面 Web，逐路由验证主标题、主体内容、一级导航高亮、全局 AI 入口、横向溢出和控制台错误
 - v0.10 回归结果：123/123 个路由通过；无缺失主标题、无缺失全局 AI 入口、无横向溢出、无多重一级菜单归属。病历、质量、病案之间只通过带“跨域”标识的入口跳转。
 - v0.13 增量：门诊“本次门诊病历”固定进入 `#opd-record`，“跨域：全院病历中心”固定进入 `#record`，兼容 `#record` 与 `#/record` 深链；10 个核心专科新增检查/设备证据、诊疗执行和随访交接页，并入原 S01–S10。
-- v0.13 回归结果：194/194 路由、70/70 专科页真实浏览器通过；失败路由 0、控制台错误 0、页面错误 0、横向溢出 0。证据见 `prototype/browser-verification-v013.json` 和 `output/playwright/v013/`。
+- v0.13 回归结果：194/194 路由、70/70 专科页真实浏览器通过；失败路由 0、控制台错误 0、页面错误 0、横向溢出 0。证据见 `prototype/browser-verification-v013.json` 和 `artifacts/playwright/v013/`。
 - 自包含离线原型：`prototype/prototype.html`；由 `prototype/build-self-contained.mjs` 生成并嵌入可追溯栅格资产。
 - 这不是生产系统，不包含真实患者数据、真实接口、真实签名或医疗设备集成。

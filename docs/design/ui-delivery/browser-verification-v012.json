@@ -1,0 +1,53 @@
+{
+  "build": "prototype-v0.12.3",
+  "verified_at": "2026-08-14T16:00:00+08:00",
+  "base_url": "http://127.0.0.1:4173/",
+  "scope": {
+    "global_record_routes": 1,
+    "core_specialties": 10,
+    "specialty_routes": 40,
+    "total_routes_checked": 41
+  },
+  "assertions": {
+    "failures": 0,
+    "single_primary_navigation_owner": "41/41",
+    "global_ai_entry_present": "41/41",
+    "horizontal_overflow_absent": "41/41",
+    "specialty_navigation_vertical_overlap_absent": "40/40",
+    "specialty_navigation_order": "40/40",
+    "specialty_record_has_unique_patient_context": "10/10",
+    "workbench_and_care_have_scenario_scope": "20/20",
+    "quality_pages_have_evidence_table": "10/10",
+    "global_record_center_has_no_single_patient_strip": true,
+    "global_record_center_ai_has_empty_patient_context": true
+  },
+  "route_chains": {
+    "outpatient_workbench_to_local_record": {
+      "from": "#outpatient",
+      "action": "本次病历",
+      "to": "#opd-record",
+      "owner": "门诊工作台",
+      "result": "PASS"
+    },
+    "clinical_portal_to_local_record": {
+      "from": "#clinical",
+      "action": "门诊病历与质控",
+      "to": "#opd-record",
+      "owner": "门诊工作台",
+      "result": "PASS"
+    },
+    "local_record_to_global_record_center": {
+      "from": "#opd-record",
+      "action": "跨域：进入全院病历中心",
+      "to": "#record",
+      "owner": "病历中心",
+      "heading": "全院病历中心",
+      "result": "PASS"
+    }
+  },
+  "screenshots": [
+    "artifacts/playwright/v012-global-record-center.png",
+    "artifacts/playwright/v012-obgyn-record.png"
+  ],
+  "limitations": "Static interactive prototype with synthetic data; this verification does not establish production specialty support or clinical correctness."
+}

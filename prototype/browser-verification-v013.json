@@ -20,9 +20,9 @@
     "failed_routes": 0
   },
   "artifacts": [
-    "output/playwright/v013/audit-194-routes.js",
-    "output/playwright/v013/specialty-center-v013.png",
-    "output/playwright/v013/obgyn-evidence-v013.png"
+    "artifacts/playwright/v013/audit-194-routes.js",
+    "artifacts/playwright/v013/specialty-center-v013.png",
+    "artifacts/playwright/v013/obgyn-evidence-v013.png"
   ],
   "scopeBoundary": "S003-1 prototype verification only; this is not production implementation, clinical validation, specialty expert sign-off, device integration certification, or S003-2 UI completion."
 }

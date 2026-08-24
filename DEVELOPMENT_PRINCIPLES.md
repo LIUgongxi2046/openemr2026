@@ -3,7 +3,7 @@
 > **每次开发开始前必读**（无论人还是 AI agent）。本文件来自对项目「后端优先、UI 后置」教训的复盘，把根因沉淀为可执行的硬原则。
 > **违反这些原则的提交应当被拒绝。**
 >
-> 关联文档：`planning/2026-08-14-...-backlog.md`（权威 backlog）、`planning/2026-08-22-handover.md`（纪律/踩坑）、`planning/2026-08-22-ui-replan.md`（UI 接线冲刺计划）。
+> 关联文档：`docs/process/planning/2026-08-14-...-backlog.md`（权威 backlog）、`docs/process/planning/2026-08-22-handover.md`（纪律/踩坑）、`docs/process/planning/2026-08-22-ui-replan.md`（UI 接线冲刺计划）。
 
 ---
 
@@ -57,7 +57,7 @@
 
 > 背景：把生产 Vue 应用对齐高保真原型 `prototype/app/index.html` 时，反复踩坑。以下每条都是真实发生的根因，**违反会重犯**。
 
-1. **原型是唯一视觉真相，不是 `tokens.json`。** `prototype/app/styles.css` 的 `:root` 已演进（`--r:12px`、`--green:#198754`、`--shadow:0 8px 24px` 等），与 `ui-delivery/tokens.json` 不一致。对齐视觉一律以 `prototype/app/styles.css` 为准。
+1. **原型是唯一视觉真相，不是 `tokens.json`。** `prototype/app/styles.css` 的 `:root` 已演进（`--r:12px`、`--green:#198754`、`--shadow:0 8px 24px` 等），与 `docs/design/ui-delivery/tokens.json` 不一致。对齐视觉一律以 `prototype/app/styles.css` 为准。
 2. **不要「看」截图，要「读」计算样式。** 当前模型无图像输入，肉眼看不了浏览器。用 Playwright `page.evaluate(() => getComputedStyle(...))` + `element.textContent` 把「实际渲染的 DOM 结构 + 计算样式」dump 成文本，再对齐。**禁止靠读源码猜测渲染结果。**
 3. **原型有多份导航定义，会互相覆盖。** `app.js` 里的 `pages` 是旧定义；实际渲染用的是 `coverage.js` 的 `coveragePages`（`pages.splice` 覆盖）+ `specialties.js` 的 `specialty-center` 拼接。对齐侧栏必须读 `coverage.js`，不是 `app.js`。
 4. **复用原型自己的 CSS，不要另写一套。** 生产曾用 `.admin-*`/`.vue-clinical-shell` 自制样式，与原型 `.card`/`.table`/`.metric`/`.status`/`.btn`/`.shell`/`.sidebar`/`.main` 是两套。正确做法：`cp prototype/app/styles.css web/src/prototype.css` + 最后 import，再把生产类名映射到原型值（见 `web/src/align-prototype.css`），不要手写复刻。

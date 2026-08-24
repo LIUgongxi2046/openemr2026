@@ -193,7 +193,7 @@ function primaryDomain(routeId, notes) {
 }
 
 async function routeContract() {
-  const routeRows = parseCsv(await readFile(resolve(projectDir, 'ui-delivery/route-design-map.csv'), 'utf8'));
+  const routeRows = parseCsv(await readFile(resolve(projectDir, 'docs/design/ui-delivery/route-design-map.csv'), 'utf8'));
   const traceRows = parseCsv(await readFile(resolve(projectDir, 'prototype/traceability.csv'), 'utf8'));
   const traceByRoute = new Map();
   for (const row of traceRows) {
@@ -225,13 +225,13 @@ async function routeContract() {
       layout: row.notes.split('；')[0] || 'DEFAULT',
       source_status: row.status,
       policy_status: 'INFERRED_BY_ROUTE_POLICY_V1',
-      artifact_path: `ui-delivery/${row.artifact_path}`,
+      artifact_path: `docs/design/ui-delivery/${row.artifact_path}`,
     };
   });
   routes.sort((a, b) => a.route_id.localeCompare(b.route_id));
   return {
     schema_version: 1,
-    generated_from: ['ui-delivery/route-design-map.csv', 'prototype/traceability.csv'],
+    generated_from: ['docs/design/ui-delivery/route-design-map.csv', 'prototype/traceability.csv'],
     route_count: routes.length,
     routes,
   };
@@ -350,7 +350,7 @@ outputs.set(resolve(contractsDir, 'generated/agent-tool-registry.json'), stableJ
 outputs.set(resolve(contractsDir, 'generated/route-contract.generated.json'), stableJson(generatedRouteContract));
 outputs.set(
   resolve(projectDir, 'web/src/generated/route-contract.ts'),
-  `// Generated from ui-delivery/route-design-map.csv and prototype/traceability.csv. Do not edit.\nexport const generatedRouteContract = ${JSON.stringify(generatedRouteContract, null, 2)} as const;\n`,
+  `// Generated from docs/design/ui-delivery/route-design-map.csv and prototype/traceability.csv. Do not edit.\nexport const generatedRouteContract = ${JSON.stringify(generatedRouteContract, null, 2)} as const;\n`,
 );
 
 for (const [path, content] of outputs) {

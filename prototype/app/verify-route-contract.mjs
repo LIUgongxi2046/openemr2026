@@ -4,8 +4,8 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 const app = read('./app.js');
 const index = read('./index.html');
 const specialtyV13 = read('./specialty-v13.js');
-const routeMap = read('../../ui-delivery/route-design-map.csv').trim().split(/\r?\n/).slice(1);
-const titles = JSON.parse(read('../../ui-delivery/route-titles.json'));
+const routeMap = read('../../docs/design/ui-delivery/route-design-map.csv').trim().split(/\r?\n/).slice(1);
+const titles = JSON.parse(read('../../docs/design/ui-delivery/route-titles.json'));
 const traceability = read('../traceability.csv');
 const prototypeHtml = read('../prototype.html');
 

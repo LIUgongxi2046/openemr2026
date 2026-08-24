@@ -110,6 +110,6 @@ test('generated governance artifacts are complete, unique, and mutually referent
   for (const route of routeContract.routes) {
     assert.ok(route.title && route.primary_domain && route.roles.length && route.requirement_refs.length && route.states.length && route.guards.length);
     assert.ok(['CLINICAL', 'RECORD', 'QUALITY', 'COLLABORATION', 'DATA', 'AI', 'CONFIG', 'ADMIN'].includes(route.primary_domain));
-    assert.match(route.artifact_path, /^ui-delivery\/screens\/.+\.png$/);
+    assert.match(route.artifact_path, /^docs\/design\/ui-delivery\/screens\/.+\.png$/);
   }
 });

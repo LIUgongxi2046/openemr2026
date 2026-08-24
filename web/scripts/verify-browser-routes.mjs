@@ -6,14 +6,14 @@ import { chromium } from 'playwright';
 const webDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const projectDir = resolve(webDir, '..');
 const contract = JSON.parse(await readFile(resolve(projectDir, 'contracts/generated/route-contract.generated.json'), 'utf8'));
-const semanticContract = JSON.parse(await readFile(resolve(projectDir, 'testing/route-semantic-contract.json'), 'utf8'));
+const semanticContract = JSON.parse(await readFile(resolve(projectDir, 'docs/process/testing/route-semantic-contract.json'), 'utf8'));
 const semanticById = new Map(semanticContract.routes.map((route) => [route.route_id, route]));
 const requestedRoutes = new Set((process.env.OPENEMR2026_BROWSER_ROUTES || '').split(',').filter(Boolean));
 const routes = contract.routes
   .map((route) => ({ id: route.route_id, title: route.title, semantics: semanticById.get(route.route_id) }))
   .filter((route) => requestedRoutes.size === 0 || requestedRoutes.has(route.id));
 const baseUrl = (process.env.OPENEMR2026_BROWSER_BASE_URL || 'http://127.0.0.1:4177').replace(/\/$/, '');
-const evidenceDir = resolve(projectDir, 'output/playwright-ci');
+const evidenceDir = resolve(projectDir, 'artifacts/playwright-ci');
 const viewport = {
   width: Number(process.env.OPENEMR2026_BROWSER_WIDTH || 1440),
   height: Number(process.env.OPENEMR2026_BROWSER_HEIGHT || 1000),

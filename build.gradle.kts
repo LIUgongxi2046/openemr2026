@@ -55,7 +55,7 @@ val generateContracts = tasks.register<Exec>("generateContracts") {
     inputs.file("contracts/generate.mjs")
     inputs.files(fileTree("src/main/resources/db/migration") { include("V*__*.sql") })
     inputs.file("prototype/traceability.csv")
-    inputs.file("ui-delivery/route-design-map.csv")
+    inputs.file("docs/design/ui-delivery/route-design-map.csv")
     outputs.dir(layout.buildDirectory.dir("generated/contracts/java"))
     outputs.dir("contracts/generated")
     outputs.file("web/src/generated/contracts.ts")

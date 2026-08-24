@@ -85,6 +85,6 @@ jobs:
             build/test-results/test/
             build/reports/tests/test/
             web/dist/
-            output/playwright-ci/
-            quality/2026-08-14-openemr2026-s009-test-report.md
-            security/2026-08-14-openemr2026-s010-security-assessment.md
+            artifacts/playwright-ci/
+            docs/process/quality/2026-08-14-openemr2026-s009-test-report.md
+            docs/process/security/2026-08-14-openemr2026-s010-security-assessment.md

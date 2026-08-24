@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const webDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const projectDir = resolve(webDir, '..');
 const routes = JSON.parse(await readFile(resolve(projectDir, 'contracts/generated/route-contract.generated.json'), 'utf8')).routes;
-const semantics = JSON.parse(await readFile(resolve(projectDir, 'testing/route-semantic-contract.json'), 'utf8'));
+const semantics = JSON.parse(await readFile(resolve(projectDir, 'docs/process/testing/route-semantic-contract.json'), 'utf8'));
 const failures = [];
 if (semantics.route_count !== 194 || semantics.routes.length !== 194) failures.push('SEMANTIC_ROUTE_COUNT');
 const sourceIds = new Set(routes.map((route) => route.route_id));

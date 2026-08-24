@@ -17,4 +17,4 @@ npm --prefix web test
 npm --prefix web run build
 "$script_dir/security-scan.sh"
 node prototype/app/verify-traceability.mjs
-node ui-delivery/generate-route-map.mjs --audit
+node docs/design/ui-delivery/generate-route-map.mjs --audit

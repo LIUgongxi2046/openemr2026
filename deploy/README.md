@@ -18,4 +18,4 @@ docker compose -f deploy/compose.synthetic.yml up --build
 
 上述能力只完成本机实现与合成验证，不表示已经完成真实医院 IdP/JWK、CA/时间戳、限流、等保、灾备、外部模型 Evals 或医院接口联调，因此仍不得作为真实医院生产部署。
 
-生产拓扑、变量、备份恢复与待完成门禁见 `operations/2026-08-14-openemr2026-s011-devops.md`。
+生产拓扑、变量、备份恢复与待完成门禁见 `docs/process/operations/2026-08-14-openemr2026-s011-devops.md`。

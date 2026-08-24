@@ -58,5 +58,5 @@ const contract = {
   route_count: routes.length,
   routes,
 };
-await writeFile(resolve(projectDir, 'testing/route-semantic-contract.json'), `${JSON.stringify(contract, null, 2)}\n`);
+await writeFile(resolve(projectDir, 'docs/process/testing/route-semantic-contract.json'), `${JSON.stringify(contract, null, 2)}\n`);
 console.log(JSON.stringify({ routes: routes.length, high_risk_overrides: routes.filter((route) => route.critical_text.length).length }));
