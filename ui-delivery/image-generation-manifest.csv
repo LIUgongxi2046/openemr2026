@@ -1,0 +1,3 @@
+asset_id,generation_tool,prompt_summary,source_image_path,output_file_path
+"VISUAL-001","image_gen.imagegen","十个核心专科共享一个安全临床内核","assets/generated/core-specialty-clinical-kernel.png","assets/generated/core-specialty-clinical-kernel.png"
+"VISUAL-002","image_gen.imagegen","检验超声PACS监护设备连接临床内核且单设备安全降级","assets/master/specialty-device-safe-degradation.png","assets/master/specialty-device-safe-degradation.png"

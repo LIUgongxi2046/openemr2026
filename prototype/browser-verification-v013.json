@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-08-20T12:04:00+08:00",
+  "build": "prototype-v0.13",
+  "baseUrl": "http://127.0.0.1:4174/prototype/app/index.html",
+  "tool": "Playwright CLI",
+  "viewport": "default desktop context",
+  "assertions": {
+    "expected_route_heading": "194/194",
+    "single_primary_navigation_owner": "194/194",
+    "global_ai_entry_present": "194/194",
+    "horizontal_overflow_absent": "194/194",
+    "screen_identifier_matches_route": "194/194",
+    "specialty_seven_layer_active_state": "70/70",
+    "specialty_navigation_vertical_overlap_absent": "70/70",
+    "hash_slash_record_compatibility": "PASS",
+    "outpatient_local_record_click_flow": "PASS",
+    "explicit_global_record_cross_domain_flow": "PASS",
+    "browser_console_errors": 0,
+    "browser_page_errors": 0,
+    "failed_routes": 0
+  },
+  "artifacts": [
+    "output/playwright/v013/audit-194-routes.js",
+    "output/playwright/v013/specialty-center-v013.png",
+    "output/playwright/v013/obgyn-evidence-v013.png"
+  ],
+  "scopeBoundary": "S003-1 prototype verification only; this is not production implementation, clinical validation, specialty expert sign-off, device integration certification, or S003-2 UI completion."
+}

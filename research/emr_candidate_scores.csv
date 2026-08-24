@@ -1,0 +1,11 @@
+project,role,pilot_readiness,long_term_base,functional_completeness,engineering_modernity,china_adaptability,interoperability,community_activity,license_flexibility,license,status_note
+OpenEMR,完整诊所EMR,84,64,5.0,2.7,3.2,4.1,5.0,2.0,GPL-3.0,最快试点但美国中心化和遗留架构明显
+OpenMRS O3,模块化EMR与参考应用,68,80,4.0,4.2,3.2,4.5,5.0,3.8,MPL-2.0+Disclaimer,临床平台和社区最强之一但经营模块需补齐
+Bahmni,整合式医院EMR-HIS,76,65,5.0,3.0,2.6,4.0,4.2,1.8,AGPL-3.0为主,功能全但运维和组件复杂度高
+Medplum,FHIR原生开发平台,43,88,2.2,5.0,4.3,5.0,4.6,5.0,Apache-2.0,现代工程和FHIR平台参考；不作为本项目开发底座
+Frappe Health,HIS与ERP一体化,71,73,4.0,4.1,4.2,3.1,3.4,2.0,GPL-3.0,本土运营适配潜力高但临床语义需加强
+OpenHIS Clinic,中国诊所系统,66,48,4.1,2.5,5.0,1.7,2.1,1.3,GPL-3.0+额外许可文件,贴近国内流程但安全和许可尽调是前置门槛
+GNU Health,EMR-HIS-LIMS,57,61,4.1,3.0,2.6,3.2,3.2,2.0,GPL-3.0-or-later,临床广但产品体验和国内运营差距大
+Open Hospital,医院/健康中心EMR-HIS,59,51,3.8,2.7,2.8,2.6,3.1,2.0,GPL-3.0,低资源场景可靠但不够现代
+EHRbase,openEHR后端,24,78,1.0,4.6,4.0,5.0,3.0,5.0,Apache-2.0,语义后端强而应用层全需自建
+HAPI FHIR,FHIR服务器,20,76,0.8,4.5,4.1,5.0,4.8,5.0,Apache-2.0,Java团队的稳健数据内核备选

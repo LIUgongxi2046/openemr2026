@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "generated_from": "contracts/governance.source.json",
+  "errors": [
+    {
+      "code": "API_ERROR",
+      "http_status": 500,
+      "retryable": false,
+      "user_message": "操作未完成，请使用追踪号联系管理员。",
+      "log_level": "ERROR",
+      "recovery": "CONTACT_ADMIN"
+    },
+    {
+      "code": "AUTHENTICATION_REQUIRED",
+      "http_status": 401,
+      "retryable": false,
+      "user_message": "会话已失效，请重新登录。",
+      "log_level": "INFO",
+      "recovery": "REAUTHENTICATE"
+    },
+    {
+      "code": "RESOURCE_NOT_FOUND_OR_DENIED",
+      "http_status": 404,
+      "retryable": false,
+      "user_message": "无权访问或资源不存在。",
+      "log_level": "WARN",
+      "recovery": "RETURN_TO_QUEUE"
+    },
+    {
+      "code": "SCOPE_DENIED",
+      "http_status": 403,
+      "retryable": false,
+      "user_message": "当前上下文无权执行该操作。",
+      "log_level": "WARN",
+      "recovery": "REQUEST_ACCESS"
+    },
+    {
+      "code": "PATIENT_CONTEXT_CHANGED",
+      "http_status": 409,
+      "retryable": false,
+      "user_message": "患者或就诊上下文已变化，旧操作未提交。",
+      "log_level": "WARN",
+      "recovery": "RETURN_TO_QUEUE"
+    },
+    {
+      "code": "VERSION_CONFLICT",
+      "http_status": 409,
+      "retryable": false,
+      "user_message": "资源已被更新，不能静默覆盖。",
+      "log_level": "INFO",
+      "recovery": "OPEN_DIFF"
+    },
+    {
+      "code": "RULE_BLOCKED",
+      "http_status": 422,
+      "retryable": false,
+      "user_message": "存在必须处理的安全项。",
+      "log_level": "INFO",
+      "recovery": "LOCATE_VIOLATION"
+    },
+    {
+      "code": "IDEMPOTENCY_IN_PROGRESS",
+      "http_status": 409,
+      "retryable": true,
+      "user_message": "操作仍在处理中。",
+      "log_level": "INFO",
+      "recovery": "QUERY_FINAL_STATE"
+    },
+    {
+      "code": "DEPENDENCY_TIMEOUT",
+      "http_status": 503,
+      "retryable": true,
+      "user_message": "外部服务暂不可用。",
+      "log_level": "WARN",
+      "recovery": "RECONCILE_OR_RETRY"
+    },
+    {
+      "code": "PARTIAL_SOURCE",
+      "http_status": 206,
+      "retryable": false,
+      "user_message": "部分来源不可用，当前数据不完整。",
+      "log_level": "INFO",
+      "recovery": "RETRY_MISSING_SOURCE"
+    },
+    {
+      "code": "RATE_LIMITED",
+      "http_status": 429,
+      "retryable": true,
+      "user_message": "请求过于频繁。",
+      "log_level": "INFO",
+      "recovery": "HONOR_RETRY_AFTER"
+    },
+    {
+      "code": "INTERNAL_INTEGRITY_FAILURE",
+      "http_status": 500,
+      "retryable": false,
+      "user_message": "完整性校验失败，操作未完成。",
+      "log_level": "ERROR",
+      "recovery": "BLOCK_AND_RECONCILE"
+    },
+    {
+      "code": "QUALITY_CHECK_REQUIRED",
+      "http_status": 422,
+      "retryable": false,
+      "user_message": "当前文书版本需先完成质控。",
+      "log_level": "INFO",
+      "recovery": "RUN_QUALITY_CHECK"
+    },
+    {
+      "code": "SIGNING_RULE_BLOCKED",
+      "http_status": 422,
+      "retryable": false,
+      "user_message": "当前版本不满足签署条件。",
+      "log_level": "INFO",
+      "recovery": "LOCATE_VIOLATION"
+    },
+    {
+      "code": "LEASE_EXPIRED",
+      "http_status": 409,
+      "retryable": false,
+      "user_message": "当前上下文已过期。",
+      "log_level": "INFO",
+      "recovery": "RENEW_CONTEXT"
+    },
+    {
+      "code": "SCHEMA_UNSUPPORTED",
+      "http_status": 422,
+      "retryable": false,
+      "user_message": "当前数据版本不受支持。",
+      "log_level": "WARN",
+      "recovery": "REFRESH_CLIENT"
+    }
+  ]
+}

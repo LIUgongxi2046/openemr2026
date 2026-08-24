@@ -1,0 +1,23 @@
+{
+  "java": {
+    "required": "21",
+    "verified": "21.0.2+13-58",
+    "vendor": "Oracle OpenJDK",
+    "note": "Local isolated binary; CI and release images must use a supported patched JDK 21 build."
+  },
+  "gradle": {
+    "version": "9.6.1",
+    "distributionSha256": "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14"
+  },
+  "springBoot": "4.1.0",
+  "springModulith": "2.1.0",
+  "postgresql": "18.4",
+  "node": {
+    "verified": "24.13.0",
+    "npm": "11.6.2"
+  },
+  "react": "19.2.8",
+  "vite": "8.2.1",
+  "typescript": "7.0.2"
+}
+

@@ -1,0 +1,316 @@
+{
+  "dataset_version": "1.0.0",
+  "license": "CC0-1.0",
+  "synthetic": true,
+  "notice": "完全合成数据；不对应任何真实患者、医生或医疗机构。",
+  "cases": [
+    {
+      "case_id": "syn-opd-001",
+      "patient": {
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "display_name": "合成患者甲",
+        "birth_date": "1978-04-16",
+        "gender_code": "1"
+      },
+      "encounter": {
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "encounter_type": "OUTPATIENT",
+        "status": "IN_PROGRESS",
+        "started_at": "2026-08-14T08:42:00+08:00"
+      },
+      "documents": [
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001001",
+          "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "chief_complaint": "反复心悸 3 月，加重 2 天。",
+            "present_illness": "近 3 月间歇心悸，每次约 5 分钟，近 2 天发作增多。无胸痛、黑朦或意识丧失。",
+            "assessment": "心悸待查。"
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1001"
+        }
+      ],
+      "observations": [
+        {
+          "code_system": "http://loinc.org",
+          "code": "2160-0",
+          "display": "Creatinine [Mass/volume] in Serum or Plasma",
+          "value": 78,
+          "unit_code": "umol/L",
+          "reference_range": {"low": 57, "high": 111},
+          "effective_at": "2026-08-14T08:30:00+08:00",
+          "status": "FINAL"
+        },
+        {
+          "code_system": "LOCAL-VITAL",
+          "code": "BP",
+          "display": "无创血压",
+          "value": {"systolic": 156, "diastolic": 92},
+          "unit_code": "mm[Hg]",
+          "effective_at": "2026-08-14T08:44:00+08:00",
+          "status": "FINAL"
+        }
+      ],
+      "expected_quality_findings": [
+        {
+          "code": "OPD-DOC-MISSING-PLAN",
+          "severity": "WARNING",
+          "field_path": "documents[0].sections.treatment_plan",
+          "expected": "治疗/复诊计划缺失，签署前应完成。"
+        }
+      ],
+      "expected_ai_references": [
+        {"source_type": "DOCUMENT_VERSION", "field_path": "sections.present_illness"},
+        {"source_type": "OBSERVATION", "code": "BP"},
+        {"source_type": "OBSERVATION", "code": "2160-0"}
+      ]
+    },
+    {
+      "case_id": "syn-noisy-lab-002",
+      "patient": {
+        "patient_id": "018f0000-0000-7000-8000-000000000002",
+        "display_name": "合成患者乙",
+        "birth_date": "2018-11-03",
+        "gender_code": "2"
+      },
+      "encounter": {
+        "encounter_id": "018f0000-0000-7000-8000-000000000102",
+        "encounter_type": "INPATIENT",
+        "status": "IN_PROGRESS",
+        "started_at": "2026-08-13T16:10:00+08:00"
+      },
+      "documents": [
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001002",
+          "document_type_code": "WS445.12.ADMISSION_NOTE",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "chief_complaint": "发热 2 天。",
+            "present_illness": "体温最高 39.1℃，伴咳嗽。",
+            "weight": null
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1002"
+        }
+      ],
+      "observations": [
+        {
+          "code_system": "LOCAL-LAB",
+          "code": "K",
+          "display": "血清钾",
+          "value": 3.4,
+          "unit_code": "mmol/L",
+          "effective_at": "2026-08-14T07:10:00+08:00",
+          "status": "CORRECTED",
+          "correction_of": "lab-msg-7788-v1",
+          "source_message_key": "lab-msg-7788-v2"
+        },
+        {
+          "code_system": "LOCAL-LAB",
+          "code": "CRP",
+          "display": "C 反应蛋白",
+          "value": 18,
+          "unit_code": "mg/dL",
+          "source_original_unit": "mg/L",
+          "source_original_value": 18,
+          "unit_conflict": true,
+          "effective_at": "2026-08-14T07:12:00+08:00",
+          "status": "PRELIMINARY",
+          "source_message_key": "lab-msg-7790-v1"
+        }
+      ],
+      "expected_quality_findings": [
+        {
+          "code": "PED-WEIGHT-REQUIRED",
+          "severity": "BLOCKING",
+          "field_path": "documents[0].sections.weight",
+          "expected": "儿科剂量相关操作前必须补录带时间和来源的体重。"
+        },
+        {
+          "code": "LAB-UNIT-CONFLICT",
+          "severity": "BLOCKING",
+          "source_message_key": "lab-msg-7790-v1",
+          "expected": "CRP 源值与当前单位不可直接组合，需 LIS 或检验科确认。"
+        },
+        {
+          "code": "LAB-CORRECTION-LINK",
+          "severity": "INFO",
+          "source_message_key": "lab-msg-7788-v2",
+          "expected": "展示更正链且不覆盖原结果。"
+        }
+      ]
+    },
+    {
+      "case_id": "syn-er-001",
+      "patient": {
+        "patient_id": "018f0000-0000-7000-8000-000000000003",
+        "display_name": "合成患者丙",
+        "birth_date": "1966-09-21",
+        "gender_code": "1"
+      },
+      "encounter": {
+        "encounter_id": "018f0000-0000-7000-8000-000000000103",
+        "encounter_type": "EMERGENCY",
+        "status": "IN_PROGRESS",
+        "started_at": "2026-08-14T09:38:00+08:00"
+      },
+      "documents": [
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001003",
+          "document_type_code": "WS445.3.EMERGENCY_RECORD",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "chief_complaint": "突发胸痛 40 分钟。",
+            "present_illness": "突发胸骨后压榨样疼痛，向左肩放射，伴大汗、恶心。院前心电图提示 ST 段抬高。",
+            "assessment": "急性 ST 段抬高型心肌梗死待查。",
+            "vital_signs": "BP 86/54 mmHg · HR 112 · SpO2 93%"
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1003"
+        }
+      ],
+      "observations": [
+        {
+          "code_system": "http://loinc.org",
+          "code": "6598-7",
+          "display": "Troponin I.cardiac [Mass/volume] in Serum or Plasma",
+          "value": 0.12,
+          "unit_code": "ng/mL",
+          "reference_range": {"high": 0.04},
+          "effective_at": "2026-08-14T09:52:00+08:00",
+          "status": "PRELIMINARY"
+        },
+        {
+          "code_system": "LOCAL-VITAL",
+          "code": "BP",
+          "display": "无创血压",
+          "value": {"systolic": 86, "diastolic": 54},
+          "unit_code": "mm[Hg]",
+          "effective_at": "2026-08-14T09:48:00+08:00",
+          "status": "FINAL"
+        }
+      ],
+      "expected_quality_findings": [
+        {
+          "code": "ER-CRITICAL-BP-DISPOSITION",
+          "severity": "BLOCKING",
+          "field_path": "documents[0].sections.vital_signs",
+          "expected": "低血压尚未形成处置确认，抢救与去向闭环前不可结束急诊就诊。"
+        }
+      ]
+    },
+    {
+      "case_id": "syn-ip-002",
+      "patient": {
+        "patient_id": "018f0000-0000-7000-8000-000000000004",
+        "display_name": "合成患者丁",
+        "birth_date": "1954-01-12",
+        "gender_code": "1"
+      },
+      "encounter": {
+        "encounter_id": "018f0000-0000-7000-8000-000000000104",
+        "encounter_type": "INPATIENT",
+        "status": "IN_PROGRESS",
+        "started_at": "2026-08-11T09:20:00+08:00"
+      },
+      "documents": [
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001004",
+          "document_type_code": "WS445.12.ADMISSION_NOTE",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "chief_complaint": "活动后胸闷、气促 1 周，加重 2 天。",
+            "present_illness": "近 1 周活动后胸闷气促，夜间可平卧，2 天前加重伴双下肢水肿。",
+            "physical_examination": "双肺底可闻及湿啰音，双下肢轻度水肿。",
+            "assessment": "急性心力衰竭待查。"
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1004"
+        },
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001005",
+          "document_type_code": "WS445.5.FIRST_COURSE_RECORD",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "case_features": "老年男性，冠心病、高血压病史，急性起病。",
+            "provisional_diagnosis": "急性心力衰竭；冠心病。",
+            "treatment_plan": "心电监护、利尿、扩血管及容量管理，复查电解质与肾功能。"
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1005"
+        }
+      ],
+      "observations": [
+        {
+          "code_system": "LOCAL-LAB",
+          "code": "NT-proBNP",
+          "display": "N 末端脑钠肽前体",
+          "value": 2180,
+          "unit_code": "pg/mL",
+          "effective_at": "2026-08-13T08:55:00+08:00",
+          "status": "FINAL"
+        }
+      ],
+      "expected_quality_findings": [
+        {
+          "code": "IP-FIRST-COURSE-OVERDUE",
+          "severity": "WARNING",
+          "field_path": "documents[1].sections",
+          "expected": "首次病程应于入院后 8 小时内完成。"
+        }
+      ]
+    },
+    {
+      "case_id": "syn-opd-002",
+      "patient": {
+        "patient_id": "018f0000-0000-7000-8000-000000000005",
+        "display_name": "合成患者戊",
+        "birth_date": "1982-05-30",
+        "gender_code": "2"
+      },
+      "encounter": {
+        "encounter_id": "018f0000-0000-7000-8000-000000000105",
+        "encounter_type": "OUTPATIENT",
+        "status": "IN_PROGRESS",
+        "started_at": "2026-08-14T10:15:00+08:00"
+      },
+      "documents": [
+        {
+          "document_id": "018f0000-0000-7000-8000-000000001006",
+          "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+          "version_no": 1,
+          "status": "DRAFT",
+          "sections": {
+            "chief_complaint": "头晕、血压升高 1 周。",
+            "present_illness": "一周前无明显诱因出现头晕，自测血压最高 168/96 mmHg，无胸痛黑矇。",
+            "physical_examination": "BP 156/92 mmHg，HR 76 次/分，心肺查体未见明显异常。",
+            "assessment": "原发性高血压 2 级待确认。"
+          },
+          "content_hash": "f82b8f7b6c3e9be3f2c43b7d9388c7c345c3bc9b6e7a0a8f2bd8c9c79f0a1006"
+        }
+      ],
+      "observations": [
+        {
+          "code_system": "http://loinc.org",
+          "code": "2160-0",
+          "display": "Creatinine [Mass/volume] in Serum or Plasma",
+          "value": 68,
+          "unit_code": "umol/L",
+          "reference_range": {"low": 44, "high": 80},
+          "effective_at": "2026-08-14T10:05:00+08:00",
+          "status": "FINAL"
+        }
+      ],
+      "expected_quality_findings": [
+        {
+          "code": "OPD-DOC-MISSING-PLAN",
+          "severity": "WARNING",
+          "field_path": "documents[0].sections.treatment_plan",
+          "expected": "治疗/复诊计划缺失，签署前应完成。"
+        }
+      ]
+    }
+  ]
+}

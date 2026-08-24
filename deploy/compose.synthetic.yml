@@ -1,0 +1,57 @@
+name: openemr2026-synthetic
+
+services:
+  postgres:
+    image: postgres:18.0-bookworm
+    environment:
+      POSTGRES_DB: openemr2026
+      POSTGRES_USER: openemr2026_synthetic
+      POSTGRES_PASSWORD: synthetic-only-not-for-production
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openemr2026_synthetic -d openemr2026"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - synthetic-db:/var/lib/postgresql
+    security_opt:
+      - no-new-privileges:true
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      SPRING_PROFILES_ACTIVE: dev-synthetic
+      OPENEMR2026_DB_URL: jdbc:postgresql://postgres:5432/openemr2026
+      OPENEMR2026_DB_USER: openemr2026_synthetic
+      OPENEMR2026_DB_PASSWORD: synthetic-only-not-for-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web-synthetic.Dockerfile
+    environment:
+      VITE_DEV_PROXY_TARGET: http://backend:8080
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:4177:4177"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  synthetic-db:

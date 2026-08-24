@@ -1,0 +1,64 @@
+/* 对齐高保真原型：把生产的 admin 系列、button、content 映射到原型的 card/table/metric/status/btn/main 值 */
+
+/* 消除双层 padding：.main 已提供 0 22px 28px，页面 .content 必须归零 */
+.content { padding: 0; }
+
+/* .admin-layout/.auth-layout 是生产「工作台两栏」（主区 + 侧表单），与原型管理段的同名类（176px 左导航）冲突，
+   原型类被整体 import 后覆盖了生产值，须在此还原生产语义 */
+.admin-layout { grid-template-columns: minmax(680px, 1fr) 330px; }
+.auth-layout { grid-template-columns: minmax(680px, 1fr) 340px; }
+
+/* 卡片 = 原型 .card */
+.admin-panel, .order-card, .inpatient-document-editor, .inpatient-review-rail > section {
+  border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 3px 14px rgba(18,42,67,.045); background: var(--card);
+}
+.admin-panel > header { padding: 13px 15px; border-bottom: 1px solid var(--line); background: transparent; }
+
+/* 表格 = 原型 .table */
+.admin-table { min-width: 0; }
+.admin-table th { padding: 9px 10px; font-size: 11px; color: var(--muted); background: #f8fafc; border-bottom: 1px solid var(--line); font-weight: 700; }
+.admin-table td { padding: 10px; font-size: 12px; border-bottom: 1px solid #edf1f4; }
+
+/* 指标 = 原型 .metric-grid/.metric */
+.admin-metrics { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.admin-metrics article { min-height: 0; padding: 14px 15px; border: 1px solid var(--line); border-top: none; border-radius: 11px; background: #fff; box-shadow: none; }
+.admin-metrics article > span { font-size: 11px; color: var(--muted); }
+.admin-metrics article > strong { font-size: 23px; font-weight: 800; margin: 5px 0; }
+
+/* 状态徽标 = 原型 .status */
+.admin-status { padding: 3px 7px; border-radius: 999px; font-size: 10px; font-weight: 700; gap: 5px; }
+.admin-status.active, .admin-status.green { background: #eaf8f0; color: var(--green); }
+.admin-status.inactive, .admin-status.danger { background: #fff0f0; color: var(--red); }
+.admin-status.warning, .admin-status.amber { background: #fff5df; color: var(--amber); }
+.admin-status.muted { background: #eef2f5; color: #526275; }
+
+/* 按钮 = 原型 .btn */
+.button, .task-action { border: 1px solid var(--line); background: #fff; color: #31445c; border-radius: 8px; padding: 8px 13px; font-weight: 600; font-size: 13px; cursor: pointer; }
+.button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.button.danger { background: #fff3f3; border-color: #f1b7b7; color: var(--red); }
+.task-action { padding: 6px 9px; font-size: 12px; }
+.task-action.danger { color: var(--red); border-color: #f1b7b7; }
+
+/* 表单 = 原型 .field */
+.admin-form label { font-size: 12px; font-weight: 650; }
+.admin-form input, .admin-form select, .admin-form textarea { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+
+/* 页头 = 原型 .page-head（.page-title h1 = 21px，高度 72px） */
+.page-heading { min-height: 72px; }
+.page-heading h1 { font-size: 21px; }
+
+/* 患者条内部 = 原型 .patient-name（17px / 800） */
+.patient-strip strong { font-size: 17px; font-weight: 800; }
+
+/* 门诊工作台 = 原型 .card / .module-map 令牌（去硬编码 hex） */
+.outpatient-command-card { border: 1px solid var(--line); border-radius: var(--r); box-shadow: 0 3px 14px rgba(18,42,67,.045); }
+.outpatient-route-grid a { border: 1px solid var(--line); border-radius: 9px; }
+.outpatient-route-grid a:hover { border-color: #9ab9dd; background: #f8fbff; box-shadow: none; }
+.outpatient-route-grid a > span { background: var(--blue-50); }
+
+/* 文本链接（急诊去向导航等） */
+.text-link { color: var(--blue); font-weight: 700; font-size: 12px; }
+
+/* 住院工作台三栏骨架（原型 inpatient 250px/1fr/315px） */
+.inpatient-grid { grid-template-columns: 250px minmax(0, 1fr) 315px; }
+@media (max-width: 1180px) { .inpatient-grid { grid-template-columns: 220px minmax(0, 1fr); } .inpatient-grid > .card:last-child { display: none; } }

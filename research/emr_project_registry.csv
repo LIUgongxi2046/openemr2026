@@ -1,0 +1,35 @@
+project,scope,status_as_of_2026_08_11,license,main_stack,china_clinic_fit,decision_note,source_url
+OpenEMR,完整门诊EMR与诊所运营,活跃；8.2.0于2026-07-08发布,GPL-3.0,PHP+MariaDB,高,最快形成可操作试点；美国账单和处方体系需重做且核心较老,https://www.open-emr.org/downloads/
+OpenMRS O3,模块化EMR平台与参考应用,活跃；3.7.1于2026-08-03发布,MPL-2.0+Healthcare Disclaimer,Java+React+TypeScript,中高,社区与可配置临床模型强；诊所经营和中国收费药房仍需建设,https://openmrs.org/product/
+Bahmni,整合式EMR/HIS,活跃；官网列示500+站点和50+国家,AGPL-3.0为主,Java+React+OpenMRS+ERP+LIS,中,医院功能完整但组件多且运维重；不宜作为轻量诊所首选,https://www.bahmni.org/
+GNU Health,EMR+HIS+LIMS+公共卫生,活跃；5.0系列可下载,GPL-3.0-or-later,Python+Tryton+PostgreSQL,中低,医疗与公共卫生模型完整；界面和中国诊所经营流程改造较大,https://gnuhealth.org/download.html
+Frappe Health,诊所/医院HIS与ERP一体化,活跃；主仓库2026-08仍有提交,GPL-3.0,Python+JavaScript+Frappe+MariaDB,中高,低代码和库存财务适合本土运营；临床语义和FHIR深度需核查,https://healthcare.frappe.io/docs
+OpenHIS Clinic,中国诊所门诊管理,活跃迹象；v2.0分支和约50次提交,GPL-3.0并含额外社区许可文件,Java+Vue+MySQL,高,最贴近国内预约就诊收费发药库存；许可边界和安全工程必须先审计,https://gitee.com/tntlinking-opensource/openhis-clinic
+OpenHIS Hospital,中国中小医院HIS,活跃迹象；组织主页2026仍有贡献,GPL-3.0并可能附加条款,Java+Vue+MySQL,中,国内HIS模块较全；体量和许可治理不适合作为诊所默认底座,https://gitee.com/tntlinking-opensource/openhis
+GNUmed,桌面型门诊EMR,活跃；1.8.24于2026-04-16发布,GPL家族,Python+PostgreSQL,中,确实面向多专业门诊；桌面架构和小社区限制云化产品,https://www.gnumed.de/documentation/
+Open Hospital,医院/健康中心EMR-HIS,活跃；1.15.0系列且2026有核心提交,GPL-3.0,Java+MySQL,中低,简洁可离线且覆盖药品化验住院；更偏低资源医院和桌面部署,https://www.open-hospital.org/
+OSCAR EMR/OpenOSP,加拿大门诊EMR与运维生态,部分活跃；主代码镜像2023后较少更新而OpenOSP在2026有活动,GPL-2.0,Java+Tomcat+MySQL,中低,真实门诊经验丰富；加拿大账单和技术栈本地化成本高,https://github.com/scoophealth/oscar
+LibreHealth EHR,OpenEMR分支的门诊EHR,低活跃；主仓库最后推送2023,MPL-2.0与GPL混合,PHP+MariaDB,低,与OpenEMR重叠且维护势能明显较弱,https://github.com/LibreHealthIO/lh-ehr
+FreeMED,传统门诊EMR,遗留/活跃度存疑；仓库2026有推送但产品资料陈旧,GPL-2.0,PHP+MySQL,低,只能用于历史需求参考；不进入新产品底座评审,https://github.com/freemed/freemed
+VistA/WorldVistA,大型综合医院EHR,代码仍有维护但架构高度遗留,Apache-2.0与公共领域组件混合,M/MUMPS,低,临床深度极强但人才和改造成本不适合国内诊所,https://github.com/WorldVistA/VistA
+Elexis,瑞士诊所EMR与收费,活跃；2026有提交,EPL-1.0,Java+Eclipse RCP,低,门诊工作流成熟但瑞士收费和桌面生态强绑定,https://www.elexis.info/en/home.html
+OpenMAXIMS,英国医院EPR,基本停滞；主仓库最后推送2020,AGPL-3.0,Java+Oracle,低,大型医院遗留系统；不建议新立项,https://github.com/IMS-MAXIMS/openMAXIMS
+HospitalRun,离线优先医院系统,已归档；官方2023归档,MIT,TypeScript+Node,低,离线理念值得参考但代码不再维护,https://hospitalrun.io/
+Care2x,传统医院HIS,遗留维护；2025有零星推送,许可证需逐模块核查,PHP+MySQL,低,历史功能参考价值大于底座价值,https://github.com/care2x/care2x
+ClearHealth,传统门诊EMR,停滞；最后推送2013,历史GPL/许可证需核查,PHP,低,已退出候选集,https://github.com/clearhealth/clearhealth
+GaiaEHR/MitosEHR,传统Web EMR,停滞；最后推送2012,历史GPL,JavaScript+PHP,低,仅保留在历史长名单,https://github.com/MitosEHR/MitosEHR-Official
+OpenHIMS2,新兴医院管理系统,早期；2026新项目且社区很小,MPL-2.0,Laravel+Blade,低,需等待真实部署安全审计和版本治理证据,https://github.com/OpenHIMS2/OpenHIMS2-core
+OpenClinic GA,综合医院信息系统,在用；IDB列示500+医院与5.247.01,GPL-2.0,Java,中低,部署规模可观但偏低资源医院；诊所云产品仍需大改,https://knowledge.iadb.org/en/open-knowledge/code-development/open-source-solution/openclinic-ga
+CHITS,菲律宾基层EMR,在用；官方称PhilHealth认证并支持FHIR,开源但当前代码发布边界待核验,Web平台,中低,基层工作流经验有参考价值；不宜在未取得源码和许可前做底座,https://www.pchrd.dost.gov.ph/heartnovation/community-health-information-tracking-system-chits/
+HOSxP-PCU,泰国基层医疗版HIS,混合模式；PCU历史免费而主线商业化,GPL历史版本/商业混合,Windows生态,低,代码与支持边界不清；不进入核心候选,https://en.wikipedia.org/wiki/HOSxP
+Medplum,FHIR原生医疗开发平台,高度活跃；2026-08持续提交,Apache-2.0,TypeScript+React+Node+PostgreSQL,工程参考,现代全栈和FHIR能力可供研究；不作为本项目开发底座,https://github.com/medplum/medplum
+HAPI FHIR,FHIR服务器与Java库,高度活跃；2026-08持续提交,Apache-2.0,Java+JPA,高（长期）,标准内核成熟但应用层几乎全部要自建,https://hapifhir.io/hapi-fhir/docs/server_jpa/
+EHRbase,openEHR临床数据后端,高度活跃；2026-08持续提交,Apache-2.0,Java+PostgreSQL,中高（长期）,语义模型强但中国模板建模和应用层投入大,https://www.ehrbase.org/
+OpenHIM,医疗互操作中间件,活跃,MPL-2.0,Node.js,组件,适合区域/多系统路由审计；不能替代EMR,https://openhim.org/
+OpenELIS Global,开源LIS,活跃；官方列示1000+实验室,MPL-2.0,Java+PostgreSQL,组件,未来实验室模块或集成参考；不是诊所EMR,https://openelis-global.org/
+Orthanc,DICOM服务器与影像组件,活跃,GPL/AGPL与商业许可需按组件核查,C++,组件,小型PACS和影像接入价值高；不能替代EMR,https://www.orthanc-server.com/
+dcm4che,DICOM与IHE工具集,高度活跃；2026-08有提交,MPL/LGPL混合,Java,组件,影像归档和互操作组件；不适合直接做诊所产品,https://github.com/dcm4che/dcm4che
+DHIS2,公共卫生与HMIS平台,高度活跃；2026-08有提交,BSD-3-Clause,Java+React+PostgreSQL,邻接,适合聚合上报和公共卫生；不等于点诊疗EMR,https://dhis2.org/
+Community Health Toolkit,社区健康工作者应用平台,高度活跃；2026-08有提交,AGPL-3.0,JavaScript+CouchDB,邻接,离线社区健康场景强；不适合常规城市诊所底座,https://communityhealthtoolkit.org/
+OpenIMIS,医保与社会保障管理,活跃,GPL-3.0,Python+Django+React,邻接,健康支付和保险流程参考；不是EMR,https://openimis.org/
+Ottehr,源码可见的现代EHR,高度活跃但不属于标准开源,自定义限制性许可证,TypeScript+React+托管Oystehr后端,排除,许可证禁止竞品并限制AI使用且运行依赖Oystehr；不可作为国内开源产品底座,https://github.com/masslight/ottehr/blob/main/LICENSE

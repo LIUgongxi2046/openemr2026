@@ -1,0 +1,63 @@
+package org.openemr2026.model;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.UUID;
+import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
+import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
+import org.openemr2026.contracts.ModelDeploymentWire;
+import org.openemr2026.security.ClinicalCommandSecurity;
+import org.openemr2026.security.ClinicalIdentity;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1")
+final class ModelDeploymentController {
+    private final ClinicalCommandSecurity security;
+    private final ModelDeploymentService models;
+
+    ModelDeploymentController(ClinicalCommandSecurity security, ModelDeploymentService models) {
+        this.security = security;
+        this.models = models;
+    }
+
+    @GetMapping("/model-deployments")
+    ResponseEntity<List<ModelDeploymentWire>> list(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(models.list(identity));
+    }
+
+    @PostMapping("/model-deployments")
+    ResponseEntity<ModelDeploymentWire> register(
+            HttpServletRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentRegisterRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(models.register(identity, idempotencyKey, command));
+    }
+
+    @PostMapping("/model-deployments/{model_deployment_id}/deactivations")
+    ResponseEntity<ModelDeploymentWire> deactivate(
+            HttpServletRequest request,
+            @PathVariable("model_deployment_id") UUID deploymentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentDeactivateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(models.deactivate(identity, idempotencyKey, deploymentId, command));
+    }
+}

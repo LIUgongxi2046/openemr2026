@@ -1,0 +1,60 @@
+spring:
+  datasource:
+    url: ${OPENEMR2026_DB_URL:}
+    username: ${OPENEMR2026_DB_USER:}
+    password: ${OPENEMR2026_DB_PASSWORD:}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OPENEMR2026_OIDC_ISSUER_URI:}
+          audiences: ${OPENEMR2026_OIDC_AUDIENCE:}
+
+server:
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+openemr2026:
+  synthetic-dataset-enabled: false
+  production:
+    deployment-id: ${OPENEMR2026_DEPLOYMENT_ID:}
+    allow-development-identity: false
+    data-residency: ${OPENEMR2026_DATA_RESIDENCY:ON_PREM_ONLY}
+    database:
+      password-ref: ${OPENEMR2026_DB_PASSWORD_REF:}
+    identity:
+      issuer-uri: ${OPENEMR2026_OIDC_ISSUER_URI:}
+      audience: ${OPENEMR2026_OIDC_AUDIENCE:}
+      required-acr: ${OPENEMR2026_OIDC_REQUIRED_ACR:urn:openemr2026:acr:mfa}
+      mfa-required: ${OPENEMR2026_OIDC_MFA_REQUIRED:true}
+    signing:
+      ca-base-uri: ${OPENEMR2026_CA_BASE_URI:}
+      timestamp-uri: ${OPENEMR2026_TIMESTAMP_URI:}
+      client-certificate-ref: ${OPENEMR2026_CA_CLIENT_CERTIFICATE_REF:}
+      private-key-ref: ${OPENEMR2026_CA_PRIVATE_KEY_REF:}
+      trust-anchor-ref: ${OPENEMR2026_CA_TRUST_ANCHOR_REF:}
+    encryption:
+      kms-key-uri: ${OPENEMR2026_KMS_KEY_URI:}
+      database-key-ref: ${OPENEMR2026_DATABASE_ENCRYPTION_KEY_REF:}
+      object-key-ref: ${OPENEMR2026_OBJECT_ENCRYPTION_KEY_REF:}
+    storage:
+      endpoint: ${OPENEMR2026_OBJECT_STORAGE_ENDPOINT:}
+      bucket: ${OPENEMR2026_OBJECT_STORAGE_BUCKET:}
+      access-key-ref: ${OPENEMR2026_OBJECT_STORAGE_ACCESS_KEY_REF:}
+      secret-key-ref: ${OPENEMR2026_OBJECT_STORAGE_SECRET_KEY_REF:}
+      object-lock-required: ${OPENEMR2026_OBJECT_STORAGE_LOCK_REQUIRED:true}
+    integration:
+      truststore-ref: ${OPENEMR2026_INTEGRATION_TRUSTSTORE_REF:}
+      client-certificate-ref: ${OPENEMR2026_INTEGRATION_CLIENT_CERTIFICATE_REF:}
+    ai:
+      enabled: ${OPENEMR2026_AI_ENABLED:false}
+      base-uri: ${OPENEMR2026_AI_BASE_URI:}
+      model-id: ${OPENEMR2026_AI_MODEL_ID:}
+      api-key-ref: ${OPENEMR2026_AI_API_KEY_REF:}
+      residency: ${OPENEMR2026_AI_RESIDENCY:ON_PREM_ONLY}
+  outbox:
+    enabled: true
+    batch-size: ${OPENEMR2026_OUTBOX_BATCH_SIZE:100}
+    lease-seconds: ${OPENEMR2026_OUTBOX_LEASE_SECONDS:30}
+    max-attempts: ${OPENEMR2026_OUTBOX_MAX_ATTEMPTS:8}
+    poll-delay-ms: ${OPENEMR2026_OUTBOX_POLL_DELAY_MS:500}

@@ -1,0 +1,30 @@
+{
+  "name": "@openemr2026/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "npm run check:no-react && vue-tsc -b && vite build",
+    "test": "vitest run",
+    "generate:semantic-contract": "node scripts/generate-semantic-contract.mjs",
+    "test:semantic-contract": "node scripts/verify-semantic-contract.mjs",
+    "test:routes:browser": "node scripts/verify-browser-routes.mjs",
+    "check:no-react": "node scripts/check-no-react.mjs"
+  },
+  "dependencies": {
+    "@tanstack/vue-query": "^5.101.4",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "pinia": "^3.0.4",
+    "typescript": "6.0.3",
+    "vite": "8.2.1",
+    "vue": "^3.5.41",
+    "vue-router": "^4.6.4",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1",
+    "vitest": "4.1.10",
+    "vue-tsc": "^3.3.10"
+  }
+}

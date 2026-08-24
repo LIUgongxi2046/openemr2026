@@ -1,0 +1,21 @@
+{
+  "routes": 194,
+  "verified": 191,
+  "failures": [
+    {
+      "route": "admin-templates",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "patient-merge",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "patient-registry",
+      "issue": "HORIZONTAL_OVERFLOW"
+    }
+  ],
+  "consoleIssues": [],
+  "failedResponses": [],
+  "unknownSafe": true
+}

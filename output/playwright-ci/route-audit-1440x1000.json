@@ -1,0 +1,14 @@
+{
+  "routes": 6,
+  "verified": 5,
+  "failures": [
+    {
+      "route": "data-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    }
+  ],
+  "consoleIssues": [],
+  "failedResponses": [],
+  "unknownSafe": true
+}

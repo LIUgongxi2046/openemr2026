@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "generated_from": "contracts/governance.source.json",
+  "events": [
+    {
+      "event_id": "ai.run.event.v1",
+      "topic": "ai.run.event",
+      "producer": "ai-runtime",
+      "consumers": [
+        "web-bff",
+        "audit",
+        "operations"
+      ],
+      "schema_ref": "AIRunEvent",
+      "ordering": "run_id + sequence",
+      "idempotency": "event_id",
+      "retention": "24h configurable",
+      "status": "CREATED"
+    },
+    {
+      "event_id": "clinical.fact.changed.v1",
+      "topic": "clinical.fact.changed.v1",
+      "producer": "clinical modules via outbox",
+      "consumers": [
+        "search",
+        "quality",
+        "data-center"
+      ],
+      "schema_ref": "OutboxEvent",
+      "ordering": "aggregate_id + aggregate_version",
+      "idempotency": "consumer_name + event_id",
+      "retention": "deployment policy",
+      "status": "CREATED"
+    }
+  ]
+}

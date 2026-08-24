@@ -1,0 +1,2 @@
+asset_id,generation_tool,prompt_summary,source_image_path,html_target
+GEN-SPECIALTY-001,image_gen.imagegen,十个核心专科共享一个安全临床内核的医疗信息插画,assets/generated/core-specialty-clinical-kernel.png,prototype.html#specialty-center

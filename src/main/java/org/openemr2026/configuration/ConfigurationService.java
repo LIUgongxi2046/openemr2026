@@ -1,0 +1,441 @@
+package org.openemr2026.configuration;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import org.openemr2026.contracts.ConfigurationItemDefineRequestWire;
+import org.openemr2026.contracts.ConfigurationItemUpdateRequestWire;
+import org.openemr2026.contracts.ConfigurationItemWire;
+import org.openemr2026.contracts.ConfigurationLifecycleRequestWire;
+import org.openemr2026.security.ClinicalIdentity;
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.databind.ObjectMapper;
+
+@Service
+final class ConfigurationService {
+    private static final Map<String, List<String>> REQUIRED_FIELDS = Map.ofEntries(
+            Map.entry("WORKFLOW", List.of("schema_version", "nodes", "edges", "protected_nodes", "timeout_policy")),
+            Map.entry("FORM_TEMPLATE", List.of("schema_version", "fields", "groups", "terminology_mapping", "print_template")),
+            Map.entry("RULE", List.of("schema_version", "conditions", "actions", "rule_layer", "sample_case")),
+            Map.entry("SCOPE", List.of("schema_version", "roles", "data_scopes", "separation_of_duties", "temporary_grant_hours")),
+            Map.entry("AGENT_COMPOSITION", List.of("schema_version", "agents", "skills", "tools", "budget_tokens", "stop_conditions", "compensation")),
+            Map.entry("AGENT_CONTEXT", List.of("schema_version", "data_sources", "allowed_fields", "time_window_hours", "redaction_policy", "freshness_minutes")),
+            Map.entry("AGENT_EVAL", List.of("schema_version", "dataset_version", "case_count", "pass_threshold", "red_team_profile")),
+            Map.entry("AI_ASSISTANT_POLICY", List.of("schema_version", "proactive_level", "allowed_sources", "model_policy", "rate_limit", "approval_required")),
+            Map.entry("CONFIG_RELEASE", List.of("schema_version", "diff_summary", "validation_evidence", "rollout_scope", "rollback_plan")),
+            Map.entry("CONFIG_UPGRADE", List.of("schema_version", "package_version", "compatibility", "conflicts", "recovery_point")),
+            Map.entry("MASTER_DATA", List.of("schema_version", "code_system", "hierarchy", "effective_period", "import_policy")),
+            Map.entry("PARAMETER", List.of("schema_version", "value_type", "scope", "inheritance", "secret_reference", "effective_at")),
+            Map.entry("JOB", List.of("schema_version", "schedule", "batch_size", "retry_policy", "reconciliation_rule")),
+            Map.entry("BACKUP", List.of("schema_version", "repository", "retention_days", "rpo_minutes", "rto_minutes", "checksum_policy")),
+            Map.entry("INSTALL", List.of("schema_version", "prerequisites", "database_profile", "identity_profile", "resume_step")),
+            Map.entry("OPERATION", List.of("schema_version", "health_checks", "maintenance_window", "downtime_mode", "recovery_steps")),
+            Map.entry("RELEASE_GATE", List.of("schema_version", "candidate_commit", "required_gates", "artifact_checksum", "rollback_entry")));
+
+    private final JdbcClient jdbc;
+    private final TransactionTemplate transactions;
+    private final ObjectMapper objectMapper;
+
+    ConfigurationService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper) {
+        this.jdbc = jdbc;
+        this.transactions = transactions;
+        this.objectMapper = objectMapper;
+    }
+
+    List<ConfigurationItemWire> list(ClinicalIdentity identity, String configType) {
+        StringBuilder sql = new StringBuilder("""
+                select config_id, config_type, config_key, display_name, payload::text, status,
+                       schema_version, validation_state, validation_errors::text, approval_state,
+                       approved_by, published_at, row_version, created_at, updated_at
+                from config_item where tenant_id = :tenant
+                """);
+        if (configType != null && !configType.isBlank()) sql.append(" and config_type = :type");
+        sql.append(" order by updated_at desc, config_id desc limit 500");
+        JdbcClient.StatementSpec spec = jdbc.sql(sql.toString()).param("tenant", identity.tenantId());
+        if (configType != null && !configType.isBlank()) spec = spec.param("type", configType);
+        return spec.query((rs, row) -> wire(
+                rs.getObject("config_id", UUID.class), rs.getString("config_type"), rs.getString("config_key"),
+                rs.getString("display_name"), rs.getString("payload"), rs.getString("status"),
+                rs.getInt("schema_version"), rs.getString("validation_state"), rs.getString("validation_errors"),
+                rs.getString("approval_state"), rs.getObject("approved_by", UUID.class),
+                rs.getObject("published_at", OffsetDateTime.class), rs.getLong("row_version"),
+                rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class)))
+                .list();
+    }
+
+    ConfigurationItemWire define(
+            ClinicalIdentity identity, String idempotencyKey, ConfigurationItemDefineRequestWire request) {
+        String requestHash = sha256(idempotencyKey + "|" + request.configType() + "|" + request.configKey()
+                + "|" + json(request.payload()));
+        return transactions.execute(status -> {
+            beginCommand(identity, "CONFIG_DEFINE", idempotencyKey, requestHash);
+            UUID configId = UUID.randomUUID();
+            int inserted = jdbc.sql("""
+                    insert into config_item(
+                      tenant_id, config_id, config_type, config_key, display_name, payload, status, created_by)
+                    values (:tenant, :config, :type, :key, :name, cast(:payload as jsonb), 'DRAFT', :actor)
+                    on conflict (tenant_id, config_type, config_key) do nothing
+                    """).param("tenant", identity.tenantId()).param("config", configId)
+                    .param("type", request.configType()).param("key", request.configKey())
+                    .param("name", request.displayName()).param("payload", json(request.payload()))
+                    .param("actor", identity.userId()).update();
+            if (inserted != 1) {
+                throw new ConfigurationException(
+                        "CONFIG_KEY_CONFLICT", 409, "同类型下配置键已存在：" + request.configKey());
+            }
+            appendEvidence(identity, "CONFIG_ITEM_DEFINED", request.configType(), configId, 1);
+            saveRevision(identity, configId, "configuration defined");
+            completeCommand(identity, "CONFIG_DEFINE", idempotencyKey, configId, 201);
+            return item(identity.tenantId(), configId);
+        });
+    }
+
+    ConfigurationItemWire update(
+            ClinicalIdentity identity, UUID configId, String idempotencyKey,
+            ConfigurationItemUpdateRequestWire request) {
+        String requestHash = sha256(idempotencyKey + "|" + configId + "|" + request.expectedVersion()
+                + "|" + request.displayName() + "|" + json(request.payload()));
+        return transactions.execute(status -> {
+            beginCommand(identity, "CONFIG_UPDATE", idempotencyKey, requestHash);
+            ConfigState current = state(identity.tenantId(), configId, true);
+            requireVersion(current, request.expectedVersion());
+            requireState(current, "DRAFT");
+            int updated = jdbc.sql("""
+                    update config_item set display_name = :name, payload = cast(:payload as jsonb),
+                      validation_state = 'NOT_VALIDATED', validation_errors = '[]'::jsonb,
+                      approval_state = 'DRAFT', approved_by = null, row_version = row_version + 1,
+                      updated_at = now()
+                    where tenant_id = :tenant and config_id = :config and row_version = :version
+                    """).param("name", request.displayName()).param("payload", json(request.payload()))
+                    .param("tenant", identity.tenantId()).param("config", configId)
+                    .param("version", request.expectedVersion()).update();
+            if (updated != 1) throw versionConflict();
+            ConfigurationItemWire result = item(identity.tenantId(), configId);
+            appendEvidence(identity, "CONFIG_ITEM_UPDATED", current.configType(), configId, result.rowVersion());
+            saveRevision(identity, configId, "draft updated");
+            completeCommand(identity, "CONFIG_UPDATE", idempotencyKey, configId, 200);
+            return result;
+        });
+    }
+
+    ConfigurationItemWire transition(
+            ClinicalIdentity identity, UUID configId, String idempotencyKey,
+            ConfigurationLifecycleRequestWire request) {
+        String reason = request.reason() == null ? "" : request.reason().trim();
+        if (reason.length() < 8 || reason.length() > 500) {
+            throw new ConfigurationException("CONFIG_REASON_REQUIRED", 422, "生命周期操作原因需为 8 至 500 个字符");
+        }
+        String requestHash = sha256(idempotencyKey + "|" + configId + "|" + request.action()
+                + "|" + request.expectedVersion() + "|" + reason);
+        return transactions.execute(status -> {
+            beginCommand(identity, "CONFIG_LIFECYCLE", idempotencyKey, requestHash);
+            ConfigState current = state(identity.tenantId(), configId, true);
+            requireVersion(current, request.expectedVersion());
+            List<String> errors = validate(current.configType(), current.payload());
+            String action = request.action().name();
+            switch (request.action()) {
+                case VALIDATE -> validateTransition(identity, current, errors);
+                case SUBMIT -> submitTransition(identity, current, errors);
+                case APPROVE -> approveTransition(identity, current);
+                case PUBLISH -> publishTransition(identity, current);
+                case ROLLBACK -> rollbackTransition(identity, current);
+            }
+            ConfigurationItemWire result = item(identity.tenantId(), configId);
+            appendEvidence(identity, "CONFIG_" + action, current.configType(), configId, result.rowVersion());
+            saveRevision(identity, configId, reason);
+            completeCommand(identity, "CONFIG_LIFECYCLE", idempotencyKey, configId, 200);
+            return result;
+        });
+    }
+
+    private void validateTransition(ClinicalIdentity identity, ConfigState current, List<String> errors) {
+        jdbc.sql("""
+                update config_item set validation_state = :validation, validation_errors = cast(:errors as jsonb),
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("validation", errors.isEmpty() ? "VALID" : "INVALID").param("errors", jsonList(errors))
+                .param("tenant", identity.tenantId()).param("config", current.configId())
+                .param("version", current.rowVersion()).update();
+    }
+
+    private void submitTransition(ClinicalIdentity identity, ConfigState current, List<String> errors) {
+        requireState(current, "DRAFT");
+        if (!errors.isEmpty()) throw invalidPayload(errors);
+        jdbc.sql("""
+                update config_item set status = 'PENDING_APPROVAL', validation_state = 'VALID',
+                  validation_errors = '[]'::jsonb, approval_state = 'PENDING', approved_by = null,
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("tenant", identity.tenantId()).param("config", current.configId())
+                .param("version", current.rowVersion()).update();
+    }
+
+    private void approveTransition(ClinicalIdentity identity, ConfigState current) {
+        requireState(current, "PENDING_APPROVAL");
+        if (identity.userId().equals(current.createdBy())) {
+            throw new ConfigurationException("CONFIG_SEPARATION_OF_DUTIES", 403, "配置作者不能批准自己的配置");
+        }
+        jdbc.sql("""
+                update config_item set status = 'APPROVED', approval_state = 'APPROVED',
+                  approved_by = :actor, row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("actor", identity.userId()).param("tenant", identity.tenantId())
+                .param("config", current.configId()).param("version", current.rowVersion()).update();
+    }
+
+    private void publishTransition(ClinicalIdentity identity, ConfigState current) {
+        requireState(current, "APPROVED");
+        jdbc.sql("""
+                update config_item set status = 'ACTIVE', published_at = now(),
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("tenant", identity.tenantId()).param("config", current.configId())
+                .param("version", current.rowVersion()).update();
+    }
+
+    private void rollbackTransition(ClinicalIdentity identity, ConfigState current) {
+        requireState(current, "ACTIVE");
+        Revision previous = jdbc.sql("""
+                select display_name, payload::text, schema_version
+                from config_item_revision
+                where tenant_id = :tenant and config_id = :config and revision_no < :version
+                  and payload <> cast(:payload as jsonb)
+                order by revision_no desc limit 1
+                """).param("tenant", identity.tenantId()).param("config", current.configId())
+                .param("version", current.rowVersion()).param("payload", json(current.payload()))
+                .query((rs, row) -> new Revision(rs.getString("display_name"),
+                        payload(rs.getString("payload")), rs.getInt("schema_version")))
+                .optional().orElseThrow(() -> new ConfigurationException(
+                        "CONFIG_ROLLBACK_VERSION_MISSING", 409, "没有可回退的上一配置版本"));
+        jdbc.sql("""
+                update config_item set display_name = :name, payload = cast(:payload as jsonb),
+                  schema_version = :schema_version, validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                  approval_state = 'APPROVED', published_at = now(), row_version = row_version + 1,
+                  updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("name", previous.displayName()).param("payload", json(previous.payload()))
+                .param("schema_version", previous.schemaVersion()).param("tenant", identity.tenantId())
+                .param("config", current.configId()).param("version", current.rowVersion()).update();
+    }
+
+    private List<String> validate(String configType, Map<String, Object> payload) {
+        List<String> errors = new ArrayList<>();
+        List<String> required = REQUIRED_FIELDS.get(configType);
+        if (required == null) {
+            errors.add("不支持的配置类型：" + configType);
+            return errors;
+        }
+        for (String field : required) {
+            Object value = payload.get(field);
+            if (value == null || value instanceof String text && text.isBlank()
+                    || value instanceof List<?> list && list.isEmpty()) {
+                errors.add(field + " 为必填字段");
+            }
+        }
+        Object schemaVersion = payload.get("schema_version");
+        if (!(schemaVersion instanceof Number number) || number.intValue() < 1) {
+            errors.add("schema_version 必须为正整数");
+        }
+        Object secret = payload.get("secret_reference");
+        if (secret instanceof String value && !value.isBlank()
+                && !(value.startsWith("env://") || value.startsWith("file://"))) {
+            errors.add("secret_reference 只能使用 env:// 或 file:// 引用");
+        }
+        Object threshold = payload.get("pass_threshold");
+        if (threshold instanceof Number value && (value.doubleValue() < 0 || value.doubleValue() > 1)) {
+            errors.add("pass_threshold 必须位于 0 到 1");
+        }
+        return List.copyOf(errors);
+    }
+
+    private ConfigState state(UUID tenantId, UUID configId, boolean lock) {
+        String sql = """
+                select config_id, config_type, display_name, payload::text, status, row_version, created_by
+                from config_item where tenant_id = :tenant and config_id = :config
+                """ + (lock ? " for update" : "");
+        return jdbc.sql(sql).param("tenant", tenantId).param("config", configId)
+                .query((rs, row) -> new ConfigState(
+                        rs.getObject("config_id", UUID.class), rs.getString("config_type"),
+                        rs.getString("display_name"), payload(rs.getString("payload")),
+                        rs.getString("status"), rs.getLong("row_version"),
+                        rs.getObject("created_by", UUID.class)))
+                .optional().orElseThrow(() -> new ConfigurationException("CONFIG_NOT_FOUND", 404, "配置项不存在"));
+    }
+
+    private ConfigurationItemWire item(UUID tenantId, UUID configId) {
+        return jdbc.sql("""
+                select config_id, config_type, config_key, display_name, payload::text, status,
+                       schema_version, validation_state, validation_errors::text, approval_state,
+                       approved_by, published_at, row_version, created_at, updated_at
+                from config_item where tenant_id = :tenant and config_id = :config
+                """).param("tenant", tenantId).param("config", configId)
+                .query((rs, row) -> wire(
+                        rs.getObject("config_id", UUID.class), rs.getString("config_type"),
+                        rs.getString("config_key"), rs.getString("display_name"), rs.getString("payload"),
+                        rs.getString("status"), rs.getInt("schema_version"), rs.getString("validation_state"),
+                        rs.getString("validation_errors"), rs.getString("approval_state"),
+                        rs.getObject("approved_by", UUID.class), rs.getObject("published_at", OffsetDateTime.class),
+                        rs.getLong("row_version"), rs.getObject("created_at", OffsetDateTime.class),
+                        rs.getObject("updated_at", OffsetDateTime.class)))
+                .optional().orElseThrow(() -> new ConfigurationException("CONFIG_NOT_FOUND", 404, "配置项不存在"));
+    }
+
+    private ConfigurationItemWire wire(
+            UUID configId, String configType, String configKey, String displayName, String payloadJson,
+            String status, int schemaVersion, String validationState, String validationErrorsJson,
+            String approvalState, UUID approvedBy, OffsetDateTime publishedAt, long rowVersion,
+            OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+        return new ConfigurationItemWire(
+                configId, configType, configKey, displayName, payload(payloadJson),
+                ConfigurationItemWire.StatusValue.valueOf(status), schemaVersion,
+                ConfigurationItemWire.ValidationStateValue.valueOf(validationState),
+                validationErrors(validationErrorsJson),
+                ConfigurationItemWire.ApprovalStateValue.valueOf(approvalState), approvedBy,
+                publishedAt == null ? null : publishedAt.toInstant(), rowVersion,
+                createdAt.toInstant(), updatedAt.toInstant());
+    }
+
+    private void saveRevision(ClinicalIdentity identity, UUID configId, String reason) {
+        jdbc.sql("""
+                insert into config_item_revision(
+                  tenant_id, config_id, revision_no, display_name, payload, schema_version,
+                  status, validation_state, validation_errors, approval_state, changed_by, change_reason)
+                select tenant_id, config_id, row_version, display_name, payload, schema_version,
+                       status, validation_state, validation_errors, approval_state, :actor, :reason
+                from config_item where tenant_id = :tenant and config_id = :config
+                """).param("actor", identity.userId()).param("reason", reason)
+                .param("tenant", identity.tenantId()).param("config", configId).update();
+    }
+
+    private void requireVersion(ConfigState current, Long expectedVersion) {
+        if (expectedVersion == null || current.rowVersion() != expectedVersion) throw versionConflict();
+    }
+
+    private void requireState(ConfigState current, String expected) {
+        if (!current.status().equals(expected)) {
+            throw new ConfigurationException("CONFIG_STATE_CONFLICT", 409,
+                    "配置当前状态为 " + current.status() + "，要求 " + expected);
+        }
+    }
+
+    private ConfigurationException versionConflict() {
+        return new ConfigurationException("CONFIG_VERSION_CONFLICT", 409, "配置已被其他用户更新，请刷新后重试");
+    }
+
+    private ConfigurationException invalidPayload(List<String> errors) {
+        return new ConfigurationException("CONFIG_VALIDATION_FAILED", 422, String.join("；", errors));
+    }
+
+    private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {
+        int inserted = jdbc.sql("""
+                insert into idempotency_record(
+                  tenant_id, command_scope, idempotency_key, request_hash, state, trace_id, expires_at)
+                values (:tenant, :scope, :key, :hash, 'IN_PROGRESS', :trace, now() + interval '24 hours')
+                on conflict (tenant_id, command_scope, idempotency_key) do nothing
+                """).param("tenant", identity.tenantId()).param("scope", scope).param("key", key)
+                .param("hash", requestHash).param("trace", UUID.randomUUID().toString()).update();
+        if (inserted != 1) {
+            throw new ConfigurationException("IDEMPOTENCY_REPLAY", 409, "该配置命令已提交");
+        }
+    }
+
+    private void completeCommand(
+            ClinicalIdentity identity, String scope, String key, UUID configId, int responseStatus) {
+        jdbc.sql("""
+                update idempotency_record set state = 'SUCCEEDED', response_status = :status,
+                  response_ref = jsonb_build_object('config_id', :config)
+                where tenant_id = :tenant and command_scope = :scope and idempotency_key = :key
+                """).param("status", responseStatus).param("config", configId).param("tenant", identity.tenantId())
+                .param("scope", scope).param("key", key).update();
+    }
+
+    private void appendEvidence(ClinicalIdentity identity, String action, String configType, UUID configId, long version) {
+        String previousHash = jdbc.sql(
+                "select event_hash from audit_event where tenant_id = :tenant order by occurred_at desc, audit_event_id desc limit 1")
+                .param("tenant", identity.tenantId()).query(String.class).optional().orElse(null);
+        UUID auditId = UUID.randomUUID();
+        String trace = UUID.randomUUID().toString();
+        String eventHash = sha256(identity.tenantId() + "|" + auditId + "|" + action + "|" + configId
+                + "|" + trace + "|" + (previousHash == null ? "GENESIS" : previousHash));
+        jdbc.sql("""
+                insert into audit_event(
+                  tenant_id, audit_event_id, occurred_at, actor_user_id, action_code,
+                  resource_type, resource_id, trace_id, previous_hash, event_hash, details)
+                values (:tenant, :audit, now(), :actor, :action, 'CONFIG_ITEM', :resource,
+                  :trace, :previous, :hash, jsonb_build_object('config_type', :config_type))
+                """).param("tenant", identity.tenantId()).param("audit", auditId)
+                .param("actor", identity.userId()).param("action", action).param("resource", configId)
+                .param("trace", trace).param("previous", previousHash).param("hash", eventHash)
+                .param("config_type", configType).update();
+        jdbc.sql("""
+                insert into outbox_event(
+                  tenant_id, event_id, aggregate_type, aggregate_id, aggregate_version,
+                  event_type, schema_version, payload)
+                values (:tenant, :event, 'CONFIG_ITEM', :resource, :version,
+                  :event_type, 1, jsonb_build_object('config_type', :config_type))
+                """).param("tenant", identity.tenantId()).param("event", UUID.randomUUID())
+                .param("resource", configId).param("version", version).param("event_type", action)
+                .param("config_type", configType).update();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> payload(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try {
+            return objectMapper.convertValue(objectMapper.readTree(json), Map.class);
+        } catch (Exception invalid) {
+            throw new ConfigurationException("CONFIG_PAYLOAD_INVALID", 500, "存储的配置载荷无效");
+        }
+    }
+
+    private List<String> validationErrors(String json) {
+        if (json == null || json.isBlank()) return List.of();
+        try {
+            Object value = objectMapper.convertValue(objectMapper.readTree(json), Object.class);
+            if (!(value instanceof List<?> list)) return List.of("validation_errors 存储格式无效");
+            return list.stream().map(Objects::toString).toList();
+        } catch (Exception invalid) {
+            throw new ConfigurationException("CONFIG_PAYLOAD_INVALID", 500, "校验结果载荷无效");
+        }
+    }
+
+    private String json(Map<String, Object> value) {
+        try {
+            return objectMapper.writeValueAsString(value == null ? Map.of() : value);
+        } catch (Exception invalid) {
+            throw new ConfigurationException("CONFIG_PAYLOAD_INVALID", 400, "配置载荷不可序列化");
+        }
+    }
+
+    private String jsonList(List<String> value) {
+        try {
+            return objectMapper.writeValueAsString(value == null ? List.of() : value);
+        } catch (Exception invalid) {
+            throw new ConfigurationException("CONFIG_PAYLOAD_INVALID", 400, "配置校验结果不可序列化");
+        }
+    }
+
+    private static String sha256(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) hex.append(String.format("%02x", b));
+            return hex.toString();
+        } catch (Exception impossible) {
+            throw new IllegalStateException("SHA-256 unavailable", impossible);
+        }
+    }
+
+    private record ConfigState(
+            UUID configId, String configType, String displayName, Map<String, Object> payload,
+            String status, long rowVersion, UUID createdBy) {}
+
+    private record Revision(String displayName, Map<String, Object> payload, int schemaVersion) {}
+}

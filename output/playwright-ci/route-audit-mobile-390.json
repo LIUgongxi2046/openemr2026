@@ -1,0 +1,153 @@
+{
+  "routes": 36,
+  "verified": 0,
+  "failures": [
+    {
+      "route": "admin-auth",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "agent-compose",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "agent-context",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "agent-evals",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "ai-capture",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "anesthesia-workbench",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "archive-preservation",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "archive-scan",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "backup",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "config-release",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "data-center",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "department-qc",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "device-monitoring",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "devices",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "form-designer",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "install",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "integration-connectors",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "integration-messages",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "model-connection",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "model-routing",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "operations",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "outpatient",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "pathology-workbench",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "quality-center",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "release-gates",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "research",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "research-stats",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "rule-center",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "scope-designer",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "therapy-workbench",
+      "issue": "HORIZONTAL_OVERFLOW"
+    },
+    {
+      "route": "workflow",
+      "issue": "HORIZONTAL_OVERFLOW"
+    }
+  ],
+  "consoleIssues": [],
+  "failedResponses": [],
+  "unknownSafe": true
+}

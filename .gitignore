@@ -1,0 +1,12 @@
+.DS_Store
+.gradle/
+build/
+web/node_modules/
+web/dist/
+*.tsbuildinfo
+.playwright-cli/
+release/
+*.log
+.env
+.env.*
+!.env.example

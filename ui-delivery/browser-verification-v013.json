@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-08-20T12:19:00+08:00",
+  "build": "prototype-v0.13 + ui-theme-v1.2.0",
+  "baseUrl": "http://127.0.0.1:4174/ui-delivery/preview/index.html",
+  "viewport": "1440x1000",
+  "tool": "Playwright CLI",
+  "assertions": {
+    "expected_route_heading": "194/194",
+    "single_primary_navigation_owner": "194/194",
+    "global_ai_entry_present": "194/194",
+    "horizontal_overflow_absent": "194/194",
+    "screen_identifier_matches_route": "194/194",
+    "final_navigation_svg_icons_present": "194/194",
+    "microphone_emoji_absent": "194/194",
+    "all_visible_raster_images_loaded": "194/194",
+    "specialty_seven_layer_active_state": "70/70",
+    "specialty_navigation_vertical_overlap_absent": "70/70",
+    "generated_visual_slots_loaded": "11/11",
+    "new_specialty_screens_captured": "30/30",
+    "affected_screens_refreshed": "4/4",
+    "browser_console_errors": 0,
+    "browser_page_errors": 0,
+    "failed_routes": 0
+  },
+  "artifacts": [
+    "output/playwright/ui-v013/audit-ui-194.js",
+    "output/playwright/ui-v013/capture-s0032-v013.js",
+    "output/playwright/ui-v013/obgyn-evidence-ui-v013.png",
+    "ui-delivery/screens/"
+  ]
+}

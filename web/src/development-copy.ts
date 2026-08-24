@@ -1,0 +1,21 @@
+export const developmentCopy = import.meta.env.DEV ? {
+  environmentBadge: '开发环境 · 仅合成数据',
+  patientName: '合成患者甲',
+  outpatientPatientName: '合成门诊患者',
+  inpatientPatientName: '合成患者乙',
+  clinicalPatientName: '合成临床患者',
+  patientAvatar: '合',
+  contextNotice: '仅用于开发验证',
+  resultEntryNotice: '仅合成演示录入；生产应由 LIS/RIS 授权工作流或合法人员完成。',
+  collaboratorName: '合成协作医生',
+} : {
+  environmentBadge: '受控临床环境',
+  patientName: '当前患者',
+  outpatientPatientName: '当前门诊患者',
+  inpatientPatientName: '当前住院患者',
+  clinicalPatientName: '当前临床患者',
+  patientAvatar: '患',
+  contextNotice: '身份与上下文由授权会话提供',
+  resultEntryNotice: '结果录入必须由 LIS/RIS 授权工作流或合法人员完成。',
+  collaboratorName: '待选择授权人员',
+};

@@ -1,0 +1,1165 @@
+{
+  "generatedAt": "2026-08-14T08:10:00.000Z",
+  "build": "prototype-v0.12.4 + ui-theme-v1.1.1",
+  "baseUrl": "http://127.0.0.1:4176/ui-delivery/preview/index.html",
+  "viewport": "1440x1000",
+  "assertions": {
+    "expected_route_heading": "164/164",
+    "single_primary_navigation_owner": "164/164",
+    "global_ai_entry_present": "164/164",
+    "horizontal_overflow_absent": "164/164",
+    "microphone_emoji_absent": "164/164",
+    "specialty_navigation_vertical_overlap_absent": "40/40",
+    "browser_console_errors": 0
+  },
+  "routes": [
+    {
+      "route": "clinical",
+      "active": 1,
+      "fab": true,
+      "h1": "临床业务门户",
+      "overflow": false
+    },
+    {
+      "route": "login-context",
+      "active": 1,
+      "fab": true,
+      "h1": "登录、锁屏恢复与工作上下文",
+      "overflow": false
+    },
+    {
+      "route": "unified-home",
+      "active": 1,
+      "fab": true,
+      "h1": "统一首页与任务中心",
+      "overflow": false
+    },
+    {
+      "route": "patient-registry",
+      "active": 1,
+      "fab": true,
+      "h1": "患者检索、匹配与登记",
+      "overflow": false
+    },
+    {
+      "route": "patient-merge",
+      "active": 1,
+      "fab": true,
+      "h1": "重复患者合并与撤销",
+      "overflow": false
+    },
+    {
+      "route": "patient-timeline",
+      "active": 1,
+      "fab": true,
+      "h1": "患者临床时间线",
+      "overflow": false
+    },
+    {
+      "route": "emergency-access",
+      "active": 1,
+      "fab": true,
+      "h1": "紧急访问与待核身份",
+      "overflow": false
+    },
+    {
+      "route": "appointment-registration",
+      "active": 1,
+      "fab": true,
+      "h1": "预约、挂号、分诊、叫号与留观",
+      "overflow": false
+    },
+    {
+      "route": "admission-bed",
+      "active": 1,
+      "fab": true,
+      "h1": "入院、病区与床位管理",
+      "overflow": false
+    },
+    {
+      "route": "outpatient",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊医生工作台",
+      "overflow": false
+    },
+    {
+      "route": "opd-record",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊病历",
+      "overflow": false
+    },
+    {
+      "route": "opd-diagnosis",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊诊断与问题清单",
+      "overflow": false
+    },
+    {
+      "route": "opd-orders",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊医嘱与处方",
+      "overflow": false
+    },
+    {
+      "route": "opd-results",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊检查检验与结果",
+      "overflow": false
+    },
+    {
+      "route": "opd-consult",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊会诊、转诊与协同",
+      "overflow": false
+    },
+    {
+      "route": "opd-followup",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊随访与终诊",
+      "overflow": false
+    },
+    {
+      "route": "emergency",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊工作台",
+      "overflow": false
+    },
+    {
+      "route": "er-triage",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊预检分诊与分区",
+      "overflow": false
+    },
+    {
+      "route": "er-record",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊病历与抢救记录",
+      "overflow": false
+    },
+    {
+      "route": "er-nursing",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊护理、输液与执行",
+      "overflow": false
+    },
+    {
+      "route": "er-observation",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊抢救留观与去向",
+      "overflow": false
+    },
+    {
+      "route": "er-handoff",
+      "active": 1,
+      "fab": true,
+      "h1": "急诊会诊、交接与转运",
+      "overflow": false
+    },
+    {
+      "route": "inpatient",
+      "active": 1,
+      "fab": true,
+      "h1": "住院医生工作站",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-overview",
+      "active": 1,
+      "fab": true,
+      "h1": "住院患者总览",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-course",
+      "active": 1,
+      "fab": true,
+      "h1": "住院病程与文书中心",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-doc-editor",
+      "active": 1,
+      "fab": true,
+      "h1": "住院病历 · 专注编辑",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-doc-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "住院病历质控与分级审签",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-doc-versions",
+      "active": 1,
+      "fab": true,
+      "h1": "住院文书版本与查房证据",
+      "overflow": false
+    },
+    {
+      "route": "ip-orders",
+      "active": 1,
+      "fab": true,
+      "h1": "住院医嘱与用药中心",
+      "overflow": false
+    },
+    {
+      "route": "ip-results",
+      "active": 1,
+      "fab": true,
+      "h1": "住院检查检验与危急值",
+      "overflow": false
+    },
+    {
+      "route": "ip-consult",
+      "active": 1,
+      "fab": true,
+      "h1": "住院查房、会诊与协同",
+      "overflow": false
+    },
+    {
+      "route": "ip-pathway",
+      "active": 1,
+      "fab": true,
+      "h1": "住院临床路径执行中心",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-discharge",
+      "active": 1,
+      "fab": true,
+      "h1": "出院病历与病案归档闭环",
+      "overflow": false
+    },
+    {
+      "route": "ward",
+      "active": 1,
+      "fab": true,
+      "h1": "心内科一病区 · 护理工作台",
+      "overflow": false
+    },
+    {
+      "route": "record",
+      "active": 1,
+      "fab": true,
+      "h1": "全院病历中心",
+      "overflow": false
+    },
+    {
+      "route": "record-editor",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊病历 · 专注编辑",
+      "overflow": false
+    },
+    {
+      "route": "record-sources",
+      "active": 1,
+      "fab": true,
+      "h1": "病历来源与证据中心",
+      "overflow": false
+    },
+    {
+      "route": "record-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "病历质控与审签中心",
+      "overflow": false
+    },
+    {
+      "route": "record-sign",
+      "active": 1,
+      "fab": true,
+      "h1": "病历签署确认",
+      "overflow": false
+    },
+    {
+      "route": "record-versions",
+      "active": 1,
+      "fab": true,
+      "h1": "病历版本与法律证据",
+      "overflow": false
+    },
+    {
+      "route": "record-diff",
+      "active": 1,
+      "fab": true,
+      "h1": "病历版本差异",
+      "overflow": false
+    },
+    {
+      "route": "lis-report",
+      "active": 1,
+      "fab": true,
+      "h1": "LIS 检验报告调阅",
+      "overflow": false
+    },
+    {
+      "route": "pacs-viewer",
+      "active": 1,
+      "fab": true,
+      "h1": "PACS 影像调阅",
+      "overflow": false
+    },
+    {
+      "route": "archive-assets",
+      "active": 1,
+      "fab": true,
+      "h1": "病案资产与共享文档中心",
+      "overflow": false
+    },
+    {
+      "route": "archive-catalog",
+      "active": 1,
+      "fab": true,
+      "h1": "病案目录与完整性",
+      "overflow": false
+    },
+    {
+      "route": "archive-scan",
+      "active": 1,
+      "fab": true,
+      "h1": "纸质病历扫描与智能编目",
+      "overflow": false
+    },
+    {
+      "route": "archive-integrity",
+      "active": 1,
+      "fab": true,
+      "h1": "病案完整性、签名与长期验真",
+      "overflow": false
+    },
+    {
+      "route": "archive-borrow",
+      "active": 1,
+      "fab": true,
+      "h1": "病案借阅、复制与对外提供",
+      "overflow": false
+    },
+    {
+      "route": "archive-preservation",
+      "active": 1,
+      "fab": true,
+      "h1": "病案长期保存与恢复验证",
+      "overflow": false
+    },
+    {
+      "route": "asset-detail",
+      "active": 1,
+      "fab": true,
+      "h1": "病案资产证据详情",
+      "overflow": false
+    },
+    {
+      "route": "care-operations",
+      "active": 1,
+      "fab": true,
+      "h1": "医疗协同中心",
+      "overflow": false
+    },
+    {
+      "route": "billing",
+      "active": 1,
+      "fab": true,
+      "h1": "费用、收退费、预交与结算",
+      "overflow": false
+    },
+    {
+      "route": "outpatient-pharmacy",
+      "active": 1,
+      "fab": true,
+      "h1": "门诊药房审方与调剂",
+      "overflow": false
+    },
+    {
+      "route": "inpatient-pharmacy",
+      "active": 1,
+      "fab": true,
+      "h1": "住院药房、配液与床旁给药",
+      "overflow": false
+    },
+    {
+      "route": "lab-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "检验工作台",
+      "overflow": false
+    },
+    {
+      "route": "pathology-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "病理科工作台",
+      "overflow": false
+    },
+    {
+      "route": "imaging-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "检查影像工作台",
+      "overflow": false
+    },
+    {
+      "route": "therapy-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "一般治疗工作台",
+      "overflow": false
+    },
+    {
+      "route": "surgery-schedule",
+      "active": 1,
+      "fab": true,
+      "h1": "围手术期排程与安全核查",
+      "overflow": false
+    },
+    {
+      "route": "anesthesia-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "麻醉时间轴与复苏",
+      "overflow": false
+    },
+    {
+      "route": "device-monitoring",
+      "active": 1,
+      "fab": true,
+      "h1": "监护绑定、趋势与告警",
+      "overflow": false
+    },
+    {
+      "route": "transfusion",
+      "active": 1,
+      "fab": true,
+      "h1": "输血全链工作台",
+      "overflow": false
+    },
+    {
+      "route": "clinical-tasks",
+      "active": 1,
+      "fab": true,
+      "h1": "统一临床任务与临床路径",
+      "overflow": false
+    },
+    {
+      "route": "quality-center",
+      "active": 1,
+      "fab": true,
+      "h1": "医疗质量中心",
+      "overflow": false
+    },
+    {
+      "route": "department-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "院科病历质控与整改",
+      "overflow": false
+    },
+    {
+      "route": "quality-rating",
+      "active": 1,
+      "fab": true,
+      "h1": "医疗质量与电子病历评级看板",
+      "overflow": false
+    },
+    {
+      "route": "infection-events",
+      "active": 1,
+      "fab": true,
+      "h1": "院感、传染病与不良事件",
+      "overflow": false
+    },
+    {
+      "route": "credentials",
+      "active": 1,
+      "fab": true,
+      "h1": "临床资质与医疗授权中心",
+      "overflow": false
+    },
+    {
+      "route": "data-center",
+      "active": 1,
+      "fab": true,
+      "h1": "数据中心",
+      "overflow": false
+    },
+    {
+      "route": "integration",
+      "active": 1,
+      "fab": true,
+      "h1": "外部系统集成与互操作中心",
+      "overflow": false
+    },
+    {
+      "route": "integration-connectors",
+      "active": 1,
+      "fab": true,
+      "h1": "连接器目录与能力卡",
+      "overflow": false
+    },
+    {
+      "route": "integration-mapping",
+      "active": 1,
+      "fab": true,
+      "h1": "字段映射与集成路由",
+      "overflow": false
+    },
+    {
+      "route": "integration-messages",
+      "active": 1,
+      "fab": true,
+      "h1": "集成消息追踪与业务对账",
+      "overflow": false
+    },
+    {
+      "route": "migration",
+      "active": 1,
+      "fab": true,
+      "h1": "历史数据迁移与上线切换",
+      "overflow": false
+    },
+    {
+      "route": "data-quality",
+      "active": 1,
+      "fab": true,
+      "h1": "全院数据质量与问题工单",
+      "overflow": false
+    },
+    {
+      "route": "devices",
+      "active": 1,
+      "fab": true,
+      "h1": "医疗设备目录与接入状态",
+      "overflow": false
+    },
+    {
+      "route": "research",
+      "active": 1,
+      "fab": true,
+      "h1": "科研项目与统计中心",
+      "overflow": false
+    },
+    {
+      "route": "cohort-builder",
+      "active": 1,
+      "fab": true,
+      "h1": "科研队列构建器",
+      "overflow": false
+    },
+    {
+      "route": "research-stats",
+      "active": 1,
+      "fab": true,
+      "h1": "科研统计分析",
+      "overflow": false
+    },
+    {
+      "route": "research-dataset",
+      "active": 1,
+      "fab": true,
+      "h1": "科研数据申请与受控交付",
+      "overflow": false
+    },
+    {
+      "route": "ai-center",
+      "active": 1,
+      "fab": true,
+      "h1": "AI 中心",
+      "overflow": false
+    },
+    {
+      "route": "ai-assistant",
+      "active": 1,
+      "fab": true,
+      "h1": "临床 AI 助手",
+      "overflow": false
+    },
+    {
+      "route": "ai-reminder-detail",
+      "active": 1,
+      "fab": true,
+      "h1": "AI 提醒证据详情",
+      "overflow": false
+    },
+    {
+      "route": "ai-capture",
+      "active": 1,
+      "fab": true,
+      "h1": "环境记录与转写审阅",
+      "overflow": false
+    },
+    {
+      "route": "ai-action-review",
+      "active": 1,
+      "fab": true,
+      "h1": "AI 候选动作与审批",
+      "overflow": false
+    },
+    {
+      "route": "ai-assistant-policy",
+      "active": 1,
+      "fab": true,
+      "h1": "AI 助手策略与效果治理",
+      "overflow": false
+    },
+    {
+      "route": "models",
+      "active": 1,
+      "fab": true,
+      "h1": "基座模型目录与路由",
+      "overflow": false
+    },
+    {
+      "route": "model-connection",
+      "active": 1,
+      "fab": true,
+      "h1": "模型连接与数据边界",
+      "overflow": false
+    },
+    {
+      "route": "model-routing",
+      "active": 1,
+      "fab": true,
+      "h1": "模型路由、主备与人工降级",
+      "overflow": false
+    },
+    {
+      "route": "model-evaluation",
+      "active": 1,
+      "fab": true,
+      "h1": "模型评估、影子、灰度与隔离",
+      "overflow": false
+    },
+    {
+      "route": "agent-catalog",
+      "active": 1,
+      "fab": true,
+      "h1": "Agent 目录与定义编辑器",
+      "overflow": false
+    },
+    {
+      "route": "agent",
+      "active": 1,
+      "fab": true,
+      "h1": "Agent 受控运行",
+      "overflow": false
+    },
+    {
+      "route": "agent-context",
+      "active": 1,
+      "fab": true,
+      "h1": "Agent 上下文与记忆策略",
+      "overflow": false
+    },
+    {
+      "route": "tool-catalog",
+      "active": 1,
+      "fab": true,
+      "h1": "Tool 目录、风险与审批策略",
+      "overflow": false
+    },
+    {
+      "route": "skill-catalog",
+      "active": 1,
+      "fab": true,
+      "h1": "Skill 目录与定义编辑器",
+      "overflow": false
+    },
+    {
+      "route": "agent-compose",
+      "active": 1,
+      "fab": true,
+      "h1": "Agent、Skill 与 Tool 组合画布",
+      "overflow": false
+    },
+    {
+      "route": "agent-evals",
+      "active": 1,
+      "fab": true,
+      "h1": "Agent 与 Skill 评估发布中心",
+      "overflow": false
+    },
+    {
+      "route": "aiops",
+      "active": 1,
+      "fab": true,
+      "h1": "AI 运行、预算与事件中心",
+      "overflow": false
+    },
+    {
+      "route": "workflow",
+      "active": 1,
+      "fab": true,
+      "h1": "流程与状态设计器",
+      "overflow": false
+    },
+    {
+      "route": "capability-pack",
+      "active": 1,
+      "fab": true,
+      "h1": "机构能力包与继承解析",
+      "overflow": false
+    },
+    {
+      "route": "specialty-coverage",
+      "active": 1,
+      "fab": true,
+      "h1": "科室适配与上线门禁",
+      "overflow": false
+    },
+    {
+      "route": "form-designer",
+      "active": 1,
+      "fab": true,
+      "h1": "表单与病历模板设计器",
+      "overflow": false
+    },
+    {
+      "route": "rule-center",
+      "active": 1,
+      "fab": true,
+      "h1": "规则、时限与提示中心",
+      "overflow": false
+    },
+    {
+      "route": "scope-designer",
+      "active": 1,
+      "fab": true,
+      "h1": "角色、职责与数据范围设计",
+      "overflow": false
+    },
+    {
+      "route": "config-release",
+      "active": 1,
+      "fab": true,
+      "h1": "配置差异、验证、审批与发布",
+      "overflow": false
+    },
+    {
+      "route": "config-upgrade",
+      "active": 1,
+      "fab": true,
+      "h1": "配置包与产品升级冲突中心",
+      "overflow": false
+    },
+    {
+      "route": "install",
+      "active": 1,
+      "fab": true,
+      "h1": "安装向导与首次健康检查",
+      "overflow": false
+    },
+    {
+      "route": "backup",
+      "active": 1,
+      "fab": true,
+      "h1": "备份、恢复与完整性报告",
+      "overflow": false
+    },
+    {
+      "route": "operations",
+      "active": 1,
+      "fab": true,
+      "h1": "生产运行、灾备与停机续运",
+      "overflow": false
+    },
+    {
+      "route": "release-gates",
+      "active": 1,
+      "fab": true,
+      "h1": "Release 门禁与制品发布",
+      "overflow": false
+    },
+    {
+      "route": "opensource",
+      "active": 1,
+      "fab": true,
+      "h1": "开源指标、文档与贡献入口",
+      "overflow": false
+    },
+    {
+      "route": "admin",
+      "active": 1,
+      "fab": true,
+      "h1": "系统管理工作台",
+      "overflow": false
+    },
+    {
+      "route": "admin-org",
+      "active": 1,
+      "fab": true,
+      "h1": "组织机构与工作单元",
+      "overflow": false
+    },
+    {
+      "route": "admin-users",
+      "active": 1,
+      "fab": true,
+      "h1": "用户、人员与账户管理",
+      "overflow": false
+    },
+    {
+      "route": "admin-roles",
+      "active": 1,
+      "fab": true,
+      "h1": "角色、工作组与职责分离",
+      "overflow": false
+    },
+    {
+      "route": "admin-permissions",
+      "active": 1,
+      "fab": true,
+      "h1": "权限策略与访问模拟",
+      "overflow": false
+    },
+    {
+      "route": "admin-auth",
+      "active": 1,
+      "fab": true,
+      "h1": "认证与账户安全策略",
+      "overflow": false
+    },
+    {
+      "route": "admin-dictionaries",
+      "active": 1,
+      "fab": true,
+      "h1": "字典、术语与值集中心",
+      "overflow": false
+    },
+    {
+      "route": "admin-master-data",
+      "active": 1,
+      "fab": true,
+      "h1": "医院主数据管理",
+      "overflow": false
+    },
+    {
+      "route": "admin-templates",
+      "active": 1,
+      "fab": true,
+      "h1": "模板、编号与输出管理",
+      "overflow": false
+    },
+    {
+      "route": "admin-parameters",
+      "active": 1,
+      "fab": true,
+      "h1": "系统参数与功能开关",
+      "overflow": false
+    },
+    {
+      "route": "admin-jobs",
+      "active": 1,
+      "fab": true,
+      "h1": "通知、调度与批量任务",
+      "overflow": false
+    },
+    {
+      "route": "admin-audit",
+      "active": 1,
+      "fab": true,
+      "h1": "管理审计与权限复核",
+      "overflow": false
+    },
+    {
+      "route": "specialty-center",
+      "active": 1,
+      "fab": true,
+      "h1": "核心专科工作台",
+      "overflow": false
+    },
+    {
+      "route": "obgyn-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "妇产科工作台",
+      "overflow": false
+    },
+    {
+      "route": "obgyn-record",
+      "active": 1,
+      "fab": true,
+      "h1": "妇产科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "obgyn-care",
+      "active": 1,
+      "fab": true,
+      "h1": "妇产科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "obgyn-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "妇产科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "reproductive-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "生殖医学工作台",
+      "overflow": false
+    },
+    {
+      "route": "reproductive-record",
+      "active": 1,
+      "fab": true,
+      "h1": "生殖医学专科病历",
+      "overflow": false
+    },
+    {
+      "route": "reproductive-care",
+      "active": 1,
+      "fab": true,
+      "h1": "生殖医学关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "reproductive-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "生殖医学质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "pediatrics-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "儿科工作台",
+      "overflow": false
+    },
+    {
+      "route": "pediatrics-record",
+      "active": 1,
+      "fab": true,
+      "h1": "儿科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "pediatrics-care",
+      "active": 1,
+      "fab": true,
+      "h1": "儿科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "pediatrics-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "儿科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "neonatal-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "新生儿科工作台",
+      "overflow": false
+    },
+    {
+      "route": "neonatal-record",
+      "active": 1,
+      "fab": true,
+      "h1": "新生儿科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "neonatal-care",
+      "active": 1,
+      "fab": true,
+      "h1": "新生儿科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "neonatal-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "新生儿科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "mental-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "精神心理科工作台",
+      "overflow": false
+    },
+    {
+      "route": "mental-record",
+      "active": 1,
+      "fab": true,
+      "h1": "精神心理科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "mental-care",
+      "active": 1,
+      "fab": true,
+      "h1": "精神心理科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "mental-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "精神心理科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "ophthalmology-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "眼科工作台",
+      "overflow": false
+    },
+    {
+      "route": "ophthalmology-record",
+      "active": 1,
+      "fab": true,
+      "h1": "眼科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "ophthalmology-care",
+      "active": 1,
+      "fab": true,
+      "h1": "眼科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "ophthalmology-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "眼科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "ent-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "耳鼻咽喉科工作台",
+      "overflow": false
+    },
+    {
+      "route": "ent-record",
+      "active": 1,
+      "fab": true,
+      "h1": "耳鼻咽喉科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "ent-care",
+      "active": 1,
+      "fab": true,
+      "h1": "耳鼻咽喉科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "ent-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "耳鼻咽喉科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "dental-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "口腔科工作台",
+      "overflow": false
+    },
+    {
+      "route": "dental-record",
+      "active": 1,
+      "fab": true,
+      "h1": "口腔科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "dental-care",
+      "active": 1,
+      "fab": true,
+      "h1": "口腔科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "dental-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "口腔科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "dermatology-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "皮肤科工作台",
+      "overflow": false
+    },
+    {
+      "route": "dermatology-record",
+      "active": 1,
+      "fab": true,
+      "h1": "皮肤科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "dermatology-care",
+      "active": 1,
+      "fab": true,
+      "h1": "皮肤科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "dermatology-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "皮肤科质控与安全",
+      "overflow": false
+    },
+    {
+      "route": "tcm-workbench",
+      "active": 1,
+      "fab": true,
+      "h1": "中医科工作台",
+      "overflow": false
+    },
+    {
+      "route": "tcm-record",
+      "active": 1,
+      "fab": true,
+      "h1": "中医科专科病历",
+      "overflow": false
+    },
+    {
+      "route": "tcm-care",
+      "active": 1,
+      "fab": true,
+      "h1": "中医科关键诊疗流程",
+      "overflow": false
+    },
+    {
+      "route": "tcm-qc",
+      "active": 1,
+      "fab": true,
+      "h1": "中医科质控与安全",
+      "overflow": false
+    }
+  ]
+}
