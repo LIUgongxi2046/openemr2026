@@ -171,7 +171,7 @@ async function createCheckpoint() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">数据中心 / 历史迁移</p><h1>历史迁移与切换</h1><p>源系统盘点、字段映射、患者匹配与断点重跑；切换须对账一致，进度单调可续迁。</p></div>
     </div>
@@ -186,7 +186,7 @@ async function createCheckpoint() {
           <form class="admin-inline-form" @submit.prevent="createSource">
             <input v-model="sourceForm.sourceCode" maxlength="96" required placeholder="源编码" />
             <input v-model="sourceForm.displayName" maxlength="256" required placeholder="显示名" />
-            <select v-model="sourceForm.systemType"><option value="EMR">EMR</option><option value="LIS">LIS</option><option value="PACS">PACS</option><option value="PHARMACY">PHARMACY</option><option value="BILLING">BILLING</option><option value="OTHER">OTHER</option></select>
+            <select v-model="sourceForm.systemType" aria-label="源系统类型"><option value="EMR">EMR</option><option value="LIS">LIS</option><option value="PACS">PACS</option><option value="PHARMACY">PHARMACY</option><option value="BILLING">BILLING</option><option value="OTHER">OTHER</option></select>
             <button class="button primary" :disabled="Boolean(busy)">注册</button>
           </form>
         </header>
@@ -228,7 +228,7 @@ async function createCheckpoint() {
           <form class="admin-inline-form" @submit.prevent="createCandidate">
             <input v-model="candidateForm.sourcePatientIdentifier" maxlength="128" required placeholder="源患者标识" />
             <input v-model="candidateForm.displayName" maxlength="256" required placeholder="姓名" />
-            <select v-model="candidateForm.sexCode"><option value="M">男</option><option value="F">女</option></select>
+            <select v-model="candidateForm.sexCode" aria-label="迁移源患者性别"><option value="M">男</option><option value="F">女</option></select>
             <input v-model="candidateForm.birthDate" type="date" required />
             <button class="button primary" :disabled="Boolean(busy)">登记</button>
           </form>
@@ -286,5 +286,5 @@ async function createCheckpoint() {
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

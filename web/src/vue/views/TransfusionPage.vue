@@ -79,7 +79,7 @@ async function react(transfusion: BloodTransfusionWire, reactionType: Reaction) 
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 输血</p><h1>输血全链工作台</h1><p>输血双人核验后开始输注，输注反应显式记录并触发处置闭环。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -138,5 +138,5 @@ async function react(transfusion: BloodTransfusionWire, reactionType: Reaction) 
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

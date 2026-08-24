@@ -38,7 +38,7 @@ function formatDate(value: string | null | undefined) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>Agent 受控运行</h1><p>受控运行快照与事件流（/ai/runs）· 每个动作、审批、版本与停用策略可追溯</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="runsQuery.refetch()">刷新</button></div>
@@ -88,5 +88,5 @@ function formatDate(value: string | null | undefined) {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>

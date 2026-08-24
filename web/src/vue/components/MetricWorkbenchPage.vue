@@ -36,7 +36,7 @@ function date(value?: string) { return value ? new Date(value).toLocaleString('z
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page metric-workbench-page">
+  <section data-page-root class="content vue-native-page metric-workbench-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">{{ definition.perspective }} / 指标快照</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><button class="button secondary" @click="itemsQuery.refetch()">刷新</button><button class="button primary" :disabled="Boolean(busy)" @click="computeMetrics">{{ busy === 'compute' ? '计算中…' : '按登记口径计算' }}</button></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取指标目录、血缘与快照" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="itemsQuery.refetch()" />
@@ -47,7 +47,7 @@ function date(value?: string) { return value ? new Date(value).toLocaleString('z
         <aside class="metric-side"><section class="admin-panel"><header><div><h2>业务入口</h2><p>从指标回到可整改事实</p></div></header><nav><RouterLink v-for="link in definition.links" :key="link.to" :to="link.to">{{ link.label }} →</RouterLink></nav></section><section class="admin-panel"><header><div><h2>人工参考快照</h2><p>明确标记为无自动公式</p></div></header><form class="admin-form" @submit.prevent="recordManual"><label>指标名<select v-model="form.name"><option v-for="name in definition.defaultMetrics" :key="name">{{ name }}</option></select></label><label>参考值<input v-model.number="form.value" type="number" step="0.01" /></label><label>单位<input v-model="form.unit" placeholder="可为空" /></label><button class="button secondary full" :disabled="Boolean(busy)">{{ busy === 'manual' ? '记录中…' : '记录人工快照' }}</button></form></section></aside></div>
       <section v-if="history.length" class="admin-panel metric-history"><header><div><h2>历史与人工快照</h2><p>最新自动口径之外的近 20 条记录</p></div></header><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>指标</th><th>值</th><th>来源</th><th>时间</th></tr></thead><tbody><tr v-for="item in history" :key="item.snapshot_id"><td>{{ item.metric_name }}</td><td>{{ value(item) }}</td><td>{{ item.dimension?.source ?? 'MANUAL' }}</td><td>{{ date(item.computed_at) }}</td></tr></tbody></table></div></section>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

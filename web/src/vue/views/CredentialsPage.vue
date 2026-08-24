@@ -12,7 +12,7 @@ const credentialed = computed(() => identities.value.filter((identity) => identi
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">配置中心 / 人员与资质</p><h1>人员资质</h1><p>人员、账号、角色与资质分离管理；角色任期到期即失去授权。</p></div>
     </div>
@@ -37,5 +37,5 @@ const credentialed = computed(() => identities.value.filter((identity) => identi
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

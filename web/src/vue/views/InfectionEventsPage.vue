@@ -55,7 +55,7 @@ async function resolve(event: InfectionMonitoringEventWire, resolution: 'CONFIRM
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">质量与安全 / 院感</p><h1>院感监测线索</h1><p>上报、确认与排除均留不可变证据；确认/排除必填结论。</p></div>
     </div>
@@ -92,5 +92,5 @@ async function resolve(event: InfectionMonitoringEventWire, resolution: 'CONFIRM
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

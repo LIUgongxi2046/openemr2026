@@ -217,7 +217,7 @@ function submitBedside() {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 护理协同</p><h1>医疗协同中心</h1><p>生命体征、护理计划、给药执行、交接班、出院闭环与床旁记录六类操作统一协同。</p></div>
     </div>
@@ -451,5 +451,5 @@ function submitBedside() {
         </section>
       </section>
     </template>
-  </main>
+  </section>
 </template>

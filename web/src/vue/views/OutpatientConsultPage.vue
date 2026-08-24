@@ -75,7 +75,7 @@ async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'R
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">临床工作域 / 门急诊</p>
@@ -136,5 +136,5 @@ async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'R
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

@@ -75,7 +75,7 @@ async function complete(followup: OutpatientFollowupWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>门诊随访与终诊</h1><p>教育、复诊与随访登记；结局闭环由真实随访记录驱动</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="followupsQuery.refetch()">刷新</button></div>
@@ -125,5 +125,5 @@ async function complete(followup: OutpatientFollowupWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

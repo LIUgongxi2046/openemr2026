@@ -14,7 +14,7 @@ function formatDate(value: string | null) { return value ? new Intl.DateTimeForm
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">配置中心 / 角色</p><h1>角色与任期</h1><p>角色任期到期即失去授权；账号停用会立即失效未到期租约。</p></div></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在读取角色" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
@@ -27,5 +27,5 @@ function formatDate(value: string | null) { return value ? new Intl.DateTimeForm
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

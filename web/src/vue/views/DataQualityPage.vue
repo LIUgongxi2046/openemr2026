@@ -129,7 +129,7 @@ async function recordEvaluation() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">数据中心 / 数据质量</p>
@@ -232,5 +232,5 @@ async function recordEvaluation() {
         </div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

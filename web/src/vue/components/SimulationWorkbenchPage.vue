@@ -52,7 +52,7 @@ function valueFor(key: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page simulation-workbench-page">
+  <section data-page-root class="content vue-native-page simulation-workbench-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">场景化外部依赖模拟 / {{ definition.id }}</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><RouterLink class="button secondary" to="/mock-interfaces">接口契约</RouterLink><button class="button primary" :disabled="busy || !selected" @click="runScenario">{{ busy ? '执行中…' : '运行场景' }}</button></div></div>
     <div class="portal-safety"><b>确定性合成适配器</b><span>不访问真实外部系统，不接收真实 PHI/凭据，不写入临床事实。</span><span class="status amber">待真实适配器</span></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value" kind="loading" message="正在加载模拟接口与场景契约" />
@@ -70,7 +70,7 @@ function valueFor(key: string) {
         <aside class="admin-panel"><header><div><h2>门禁与替换契约</h2><p>真实适配器必须保持同一语义</p></div></header><ul class="simulation-safeguards"><li v-for="item in definition.safeguards" :key="item">{{ item }}</li></ul><details v-if="selected"><summary>请求/响应 Schema</summary><pre class="mock-payload">{{ JSON.stringify({ request: selected.request_schema, response: selected.response_schema }, null, 2) }}</pre></details><p class="integration-doc">{{ selected?.integration_doc }}</p></aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

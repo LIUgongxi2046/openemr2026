@@ -100,7 +100,7 @@ async function reload() {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title">
         <h1>急诊工作台</h1>
@@ -187,5 +187,5 @@ async function reload() {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>

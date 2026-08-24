@@ -88,7 +88,7 @@ async function deactivate(model: ModelDeploymentWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / 基座模型目录与路由</p>
@@ -144,5 +144,5 @@ async function deactivate(model: ModelDeploymentWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

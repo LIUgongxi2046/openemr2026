@@ -113,6 +113,24 @@ final class AgentRunApiTest {
         }
     }
 
+    @Test
+    void givenAnUnauthenticatedSseRequest_whenReadingRunEvents_thenItFailsClosedWithJson401()
+            throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/ai/runs/"
+                        + UUID.randomUUID() + "/events"))
+                .header("Accept", "text/event-stream")
+                .GET()
+                .build();
+
+        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
+                value -> assertThat(value).startsWith("application/json"));
+        assertThat(response.body()).contains("AUTHENTICATION_REQUIRED").doesNotContain("stackTrace");
+    }
+
     private Lease issueLease() throws Exception {
         String body = """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s","purpose_code":"DOCUMENT_DRAFT_ASSIST"}

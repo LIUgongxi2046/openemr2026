@@ -79,7 +79,7 @@ function formatDate(value: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">病历主轴 / 确定性治理</p><h1>{{ signMode ? '病历签署与法律证据' : '病历质控与审签中心' }}</h1></div>
       <RouterLink class="button secondary" to="/opd-record">返回编辑处理</RouterLink></div>
     <p class="record-center-intro">把质控运行、问题闭环、签名证据与分级审签放在同一版本上下文中；AI 建议与硬性门禁严格分层。</p>
@@ -121,5 +121,5 @@ function formatDate(value: string) {
         <button class="button danger" :disabled="!canSign || busy" @click="signCurrentVersion">{{ busy ? '正在签署…' : (document.status === 'SIGNED' ? '当前版本已签署' : '确认签署当前版本') }}</button>
         <small v-if="!canSign && document.status !== 'SIGNED'">必须先完成当前内容确定性质控并清零阻断问题。</small></section>
     </div>
-  </main>
+  </section>
 </template>

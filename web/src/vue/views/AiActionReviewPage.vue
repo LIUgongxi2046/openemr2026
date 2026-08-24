@@ -63,7 +63,7 @@ async function settle(executionId: string, outcome: 'SUCCEEDED' | 'FAILED') {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">AI 平台 / 治理</p><h1>动作审批与执行核验</h1><p>AI 提出的高风险动作需独立审批（人机分离），执行核验仅允许已批准动作、失败必附原因。</p></div></div>
     <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || approvalsQuery.isPending.value" kind="loading" message="正在读取动作审批" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="approvalsQuery.refetch()" />
@@ -110,5 +110,5 @@ async function settle(executionId: string, outcome: 'SUCCEEDED' | 'FAILED') {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

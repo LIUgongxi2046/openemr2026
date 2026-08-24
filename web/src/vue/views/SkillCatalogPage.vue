@@ -64,7 +64,7 @@ async function deactivate(skill: SkillRegistryWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / Skill 目录与定义编辑器</p>
@@ -117,5 +117,5 @@ async function deactivate(skill: SkillRegistryWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

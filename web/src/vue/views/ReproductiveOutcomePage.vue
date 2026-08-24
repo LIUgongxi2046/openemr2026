@@ -82,7 +82,7 @@ async function createRecord() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">专科其余层 / 生殖 · 随访</p>
@@ -141,5 +141,5 @@ async function createRecord() {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

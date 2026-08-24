@@ -1,6 +1,6 @@
 <!-- 模板由脚本生成 -->
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head"><div class="page-title"><h1>AI 中心</h1><p>临床 AI 助手、模型、Agent、Skill、Tool、评估与运行治理的统一入口</p></div></div>
     <div class="portal-safety"><b>AI 边界</b><span>AI 深嵌工作流但不获得独立临床权力；每个建议、来源、动作、审批、版本和停用策略均可追溯。</span><span class="status green">核心服务正常</span></div>
     <div class="hub-hero"><div><span>CLINICAL AI PLATFORM</span><h2>AI 深嵌工作流，但不获得独立临床权力</h2><p>从随处可见的临床助手，到模型路由和 Agent 运行，每个建议、来源、动作、审批、版本和停用策略均可追溯。</p></div><div class="hub-score"><b>0</b><span>未批准临床副作用</span></div></div>
@@ -15,5 +15,5 @@
       <RouterLink class="hub-module" to="/aiops"><span>治</span><b>运行事件</b><p>质量、安全、延迟、预算和单组件停用</p><i>进入 →</i></RouterLink>
       <RouterLink class="hub-module" to="/ai-assistant-policy"><span>策</span><b>助手策略</b><p>主动级别、来源、模型、限频与门禁</p><i>进入 →</i></RouterLink>
     </div>
-  </main>
+  </section>
 </template>

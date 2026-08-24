@@ -99,7 +99,7 @@ async function transition(release: CapabilityPackReleaseWire, action: 'canary' |
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">配置中心 / 机构能力包</p><h1>能力包与灰度发布</h1><p>能力包按机构差异化配置，继承不可自指；发布走草稿→灰度→全量→退休状态机，回退必附原因。</p></div>
     </div>
@@ -159,5 +159,5 @@ async function transition(release: CapabilityPackReleaseWire, action: 'canary' |
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

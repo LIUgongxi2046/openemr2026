@@ -81,7 +81,7 @@ function date(value: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page outpatient-workspace-page">
+  <section data-page-root class="content vue-native-page outpatient-workspace-page">
     <div class="page-heading outpatient-heading"><div><p class="eyebrow">门诊 / 当日诊疗闭环</p><h1>门诊复合工作台</h1><p>候诊队列、患者上下文、风险、病历摘要与诊疗动作保持在同一屏；所有事实来自服务端当前快照。</p></div><div class="toolbar-actions"><RouterLink class="button secondary" to="/appointment-registration">预约挂号</RouterLink><button class="button secondary" @click="refreshWorkspace">刷新快照</button><RouterLink class="button primary" to="/opd-record">进入病历</RouterLink></div></div>
     <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
     <ClinicalPageState v-if="facilityLease.isPending.value || queueQuery.isPending.value || snapshotQuery.isPending.value" kind="loading" message="正在加载候诊队列与患者诊疗快照" />
@@ -101,7 +101,7 @@ function date(value: string) {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

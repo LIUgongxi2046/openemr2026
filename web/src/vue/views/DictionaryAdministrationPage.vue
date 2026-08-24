@@ -70,7 +70,7 @@ async function deactivate(item: DictionaryItemWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">配置中心 / 字典与术语</p>
@@ -128,5 +128,5 @@ async function deactivate(item: DictionaryItemWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

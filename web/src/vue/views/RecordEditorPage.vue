@@ -89,7 +89,7 @@ function sign() {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">门诊 / 专注编辑</p><h1>门诊病历 · 专注编辑</h1></div>
       <div class="status-legend" :class="`save-${saveState}`"><span class="dot" :class="saveState === 'saved' || saveState === 'signed' ? 'success' : saveState === 'conflict' ? 'danger' : 'warning'" />{{ saveStateLabel }}<small v-if="savedAt"> · {{ savedAt }}</small></div></div>
     <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
@@ -126,5 +126,5 @@ function sign() {
             <li>来源证据与 AI 候选在完整编辑工作台查看。</li>
           </ul></section></aside>
     </div>
-  </main>
+  </section>
 </template>

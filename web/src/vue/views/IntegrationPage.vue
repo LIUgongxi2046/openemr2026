@@ -43,7 +43,7 @@ function systemTypeLabel(value: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>外部系统集成与互操作中心</h1><p>LIS、PACS、HIS 医保、CA 电子签名的统一接入 · 当前为模拟接口，待真实适配器接入后替换</p></div>
       <div class="head-actions"><RouterLink class="btn" to="/mock-interfaces">查看全部模拟接口</RouterLink></div>
@@ -95,7 +95,7 @@ function systemTypeLabel(value: string) {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

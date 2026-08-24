@@ -114,7 +114,7 @@ async function deactivate(item: DocumentTemplateWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page template-admin-page">
+  <section data-page-root class="content admin-content vue-native-page template-admin-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">配置中心 / 病历模板</p><h1>病历模板与版本发布</h1><p>同一业务内核按机构、院区和科室解析模板；病历创建时永久绑定版本，必填项直接进入质控与签署门禁。</p></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/record">病历中心</RouterLink><RouterLink class="button secondary" to="/admin-permissions">权限策略</RouterLink></div>
@@ -163,5 +163,5 @@ async function deactivate(item: DocumentTemplateWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

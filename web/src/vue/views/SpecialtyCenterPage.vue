@@ -52,7 +52,7 @@ function levelClass(level: string | undefined) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">专科中心</p><h1>专科支持总览</h1><p>十个核心专科的能力包支持等级与证据状态；越界能力默认拒绝，未验证科室不能升级支持级别。</p></div>
     </div>
@@ -78,5 +78,5 @@ function levelClass(level: string | undefined) {
         </div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

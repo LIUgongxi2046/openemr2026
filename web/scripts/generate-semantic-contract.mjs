@@ -46,7 +46,7 @@ const routes = source.routes.map((route) => ({
   required_states: [...new Set(['loading', 'empty', 'error', 'permission', 'success', ...(route.states ?? [])])],
   data_source: dataSource(route),
   critical_text: criticalText(route),
-  browser_assertions: ['main.vue-native-page 可见', 'H1 非空', '一级导航唯一激活', '无横向溢出', 'API 请求可收敛'],
+  browser_assertions: ['main [data-page-root].vue-native-page 可见', 'H1 非空', '一级导航唯一激活', '无横向溢出', 'API 请求可收敛'],
   requirement_refs: route.requirement_refs,
   artifact_path: route.artifact_path,
 }));

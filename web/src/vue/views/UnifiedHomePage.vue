@@ -1,6 +1,6 @@
 <!-- 模板由脚本生成 -->
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head"><div class="page-title"><h1>统一首页与任务中心</h1><p>按角色聚合危急值、审签、会诊、路径和管理任务，正文访问仍按患者/就诊实时鉴权</p></div></div>
     <div class="portal-safety"><b>统一入口</b><span>任务只在首页聚合展示；进入来源页面后，仍按患者、就诊和任务实时鉴权，不以首页权限绕过。</span><span class="status green">核心服务正常</span></div>
     <div class="hub-hero"><div><span>UNIFIED HOME</span><h2>统一入口，不聚合权限</h2><p>从统一首页进入最高风险任务；正文访问仍按患者/就诊实时鉴权，任务终态由来源业务事实确认。</p></div><div class="hub-score"><b>9</b><span>我的待处理</span></div></div>
@@ -12,5 +12,5 @@
       <RouterLink class="hub-module" to="/inpatient"><span>▥</span><b>住院工作站</b><p>病区患者、文书任务与出院闭环</p><i>进入 →</i></RouterLink>
       <RouterLink class="hub-module" to="/ward"><span>▦</span><b>病区护理工作台</b><p>交接班与患者级交接清单</p><i>进入 →</i></RouterLink>
     </div>
-  </main>
+  </section>
 </template>

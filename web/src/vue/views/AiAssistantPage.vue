@@ -43,7 +43,7 @@ async function send() {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>临床 AI 助手</h1><p>跨页面连续但按患者、就诊和任务严格隔离 · 确定性假模型 · 建议不自动写入病历</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="messages = []">清空对话</button></div>
@@ -84,5 +84,5 @@ async function send() {
         </div>
       </section>
     </div>
-  </main>
+  </section>
 </template>

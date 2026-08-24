@@ -26,7 +26,7 @@ function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '�
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page archive-content">
+  <section data-page-root class="content vue-native-page archive-content">
     <div class="page-heading archive-heading">
       <div><p class="eyebrow">病历与病案 / 病案目录</p><h1>病案目录与完整性</h1><p>按患者编目的病案资产目录：载体类型、存放位置与 64 位内容哈希；哈希在编目后由数据库触发器强制不可变，编目即验真锚点。</p></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/archive-integrity">完整性与验真</RouterLink><RouterLink class="button primary" to="/archive-borrow">借阅与归还</RouterLink></div>
@@ -64,5 +64,5 @@ function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '�
         <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">内容哈希由数据库约束强制 64 位长度，编目后 patient_id / asset_type / location / content_hash 由触发器禁止更新，目录即长期验真的不可变锚点。</footer>
       </section>
     </template>
-  </main>
+  </section>
 </template>

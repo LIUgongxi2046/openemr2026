@@ -10,6 +10,7 @@
     "generate:semantic-contract": "node scripts/generate-semantic-contract.mjs",
     "test:semantic-contract": "node scripts/verify-semantic-contract.mjs",
     "test:routes:browser": "node scripts/verify-browser-routes.mjs",
+    "test:ui:comprehensive": "node scripts/verify-comprehensive-ui.mjs",
     "check:no-react": "node scripts/check-no-react.mjs"
   },
   "dependencies": {

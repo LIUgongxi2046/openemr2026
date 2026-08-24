@@ -82,7 +82,7 @@ async function receive(specimen: LabSpecimenWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 检验</p><h1>检验工作台</h1><p>标本申请 → 采集 → 接收三步闭环，采集人与时间强制留痕。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -134,5 +134,5 @@ async function receive(specimen: LabSpecimenWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

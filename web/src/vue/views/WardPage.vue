@@ -82,7 +82,7 @@ async function addPatient() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>病区看板</h1><p>交接班与患者级交接清单 · 交接内容不可变 · 仅接班护士可确认完成</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="handoversQuery.refetch()">刷新交接班</button></div>
@@ -140,5 +140,5 @@ async function addPatient() {
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

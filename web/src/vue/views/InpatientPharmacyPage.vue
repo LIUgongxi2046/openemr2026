@@ -67,7 +67,7 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 药房</p><h1>住院药房、配液与床旁给药</h1><p>住院摆药 → 第二人核验 → 发往病区；床旁给药（执行）在医疗协同中心闭环。</p></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/care-operations">床旁给药 / 协同中心</RouterLink><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -122,5 +122,5 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

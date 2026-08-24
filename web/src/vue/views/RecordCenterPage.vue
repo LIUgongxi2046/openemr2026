@@ -14,7 +14,7 @@ const filledSections = computed(() => Object.values(document.value?.sections ?? 
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading record-center-heading"><div><p class="eyebrow">病历主轴 / 本次就诊</p><h1>病历中心工作台</h1></div>
       <RouterLink class="button primary" to="/opd-record">进入门诊病历编辑</RouterLink></div>
     <p class="record-center-intro">病历中心独立管理文书、版本、质控、签署与来源；不与门诊工作台共用一级路由。</p>
@@ -47,5 +47,5 @@ const filledSections = computed(() => Object.values(document.value?.sections ?? 
           <div><b>来源可回看</b><span>诊断、医嘱、结果和 AI 候选均保留来源标识。</span></div>
           <div><b>一级路由隔离</b><span>进入门诊不会把病历中心标记为门诊菜单所有。</span></div></aside></div>
     </template>
-  </main>
+  </section>
 </template>

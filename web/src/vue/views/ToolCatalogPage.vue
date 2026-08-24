@@ -78,7 +78,7 @@ async function deactivate(tool: ToolRegistryWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / Tool 目录、风险与审批策略</p>
@@ -133,5 +133,5 @@ async function deactivate(tool: ToolRegistryWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

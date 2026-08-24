@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
+import { clinicalContext } from '../../clinical-api';
 import { specialtyGuardRouteIds } from '../route-registry';
+
+const GlobalAiAssistantDialog = defineAsyncComponent(() => import('./GlobalAiAssistantDialog.vue'));
 
 const route = useRoute();
 const routeId = computed(() => String(route.meta.contractId ?? 'safe-not-found'));
-const pageOwnsAssistant = computed(() => routeId.value === 'opd-record');
+const assistantOpen = ref(false);
+const assistantLauncher = ref<HTMLButtonElement | null>(null);
 
 // 与高保真原型一致的侧栏导航（coverage.js + specialty 拼接）
 interface NavItem { id: string; label: string; icon: string; group: string; count?: string }
@@ -120,6 +124,39 @@ const roleContext = computed(() => {
   if (outpatientRoutes.includes(id) || recordRoutes.includes(id)) return '病历中心 · 当前门诊就诊';
   return '管理与治理工作台';
 });
+
+const assistantContext = computed(() => {
+  const id = routeId.value;
+  if (inpatientRoutes.includes(id)) {
+    return {
+      label: `${roleContext.value} · 当前住院就诊`,
+      patientId: clinicalContext.inpatientPatientId || null,
+      encounterId: clinicalContext.inpatientEncounterId || null,
+    };
+  }
+  if (outpatientRoutes.includes(id) || recordRoutes.includes(id) || emergencyRoutes.includes(id)) {
+    return {
+      label: `${roleContext.value} · 当前患者/就诊`,
+      patientId: clinicalContext.patientId || null,
+      encounterId: clinicalContext.encounterId || null,
+    };
+  }
+  return { label: `${roleContext.value} · 机构级`, patientId: null, encounterId: null };
+});
+const assistantTaskId = computed(() => {
+  const value = route.query.task_id;
+  return typeof value === 'string' && value ? value : null;
+});
+
+watch(routeId, () => {
+  assistantOpen.value = false;
+});
+
+async function closeAssistant() {
+  assistantOpen.value = false;
+  await nextTick();
+  assistantLauncher.value?.focus();
+}
 </script>
 
 <template>
@@ -135,7 +172,7 @@ const roleContext = computed(() => {
       <div class="context-pill domain-context">{{ roleContext }}<small>⌄</small></div>
       <div class="top-search"><input type="search" placeholder="搜索患者、病历、医嘱、任务…" aria-label="全局搜索" /></div>
       <div class="top-actions">
-        <RouterLink v-if="!pageOwnsAssistant" class="topbar-ai-assistant" to="/ai-assistant" aria-label="打开随行 AI 助手"><span>AI</span><small>随行助手</small></RouterLink>
+        <button ref="assistantLauncher" class="topbar-ai-assistant" type="button" aria-label="打开随行 AI 助手" :aria-expanded="assistantOpen" @click="assistantOpen = true"><span>AI</span><small>随行助手</small></button>
         <button class="icon-btn" aria-label="帮助">?</button>
         <button class="icon-btn" aria-label="通知">♢</button>
         <span class="avatar" aria-label="当前医生">林</span>
@@ -161,5 +198,15 @@ const roleContext = computed(() => {
       </div>
       <slot />
     </main>
+    <GlobalAiAssistantDialog
+      v-if="assistantOpen"
+      :open="assistantOpen"
+      :route-id="routeId"
+      :context-label="assistantContext.label"
+      :patient-id="assistantContext.patientId"
+      :encounter-id="assistantContext.encounterId"
+      :task-id="assistantTaskId"
+      @close="closeAssistant"
+    />
   </div>
 </template>

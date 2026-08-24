@@ -140,7 +140,7 @@ function formatDate(value: string | null | undefined) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page config-studio">
+  <section data-page-root class="content vue-native-page config-studio">
     <div class="page-head">
       <div class="page-title"><p class="eyebrow">配置生命周期 / 结构化领域工作台</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div>
       <div class="head-actions">
@@ -224,7 +224,7 @@ function formatDate(value: string | null | undefined) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

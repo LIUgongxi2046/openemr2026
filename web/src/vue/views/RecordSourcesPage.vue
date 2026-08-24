@@ -69,7 +69,7 @@ function formatTime(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">病历主轴 / 来源证据</p><h1>病历来源与附件</h1></div><RouterLink class="button secondary" to="/record">返回病历工作台</RouterLink></div>
     <p class="record-center-intro">把诊断、医嘱、检验检查与外部附件固定到病历字段和精确版本；源变更后不会静默沿用旧质控结论。</p>
     <nav class="record-subnav" aria-label="病历二级导航"><RouterLink to="/record">病历工作台</RouterLink><RouterLink to="/opd-record">专注编辑</RouterLink><RouterLink class="active" to="/record-sources">来源与附件</RouterLink><RouterLink to="/record-qc">质控与审签</RouterLink><RouterLink to="/record-versions">版本证据</RouterLink></nav>
@@ -87,5 +87,5 @@ function formatTime(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
       </div>
       <section class="record-attachment-list" aria-label="不可变附件对象"><header><h2>附件对象</h2><span>不提供覆盖或删除入口</span></header><div v-if="sourceQuery.data.value.bundle.attachments.length === 0" class="record-source-empty">尚无附件。</div><article v-for="attachment in sourceQuery.data.value.bundle.attachments" :key="attachment.attachment_id"><div><strong>{{ attachment.original_filename }}</strong><small>{{ attachment.media_type }} · {{ formatBytes(attachment.byte_size) }} · {{ formatTime(attachment.created_at) }}</small></div><code>{{ attachment.content_hash.slice(0, 24) }}…</code><span>{{ attachment.storage_status }} / {{ attachment.malware_scan_status }}</span></article></section>
     </template>
-  </main>
+  </section>
 </template>

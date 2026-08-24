@@ -27,7 +27,7 @@ function formatDate(value: string | null | undefined) { return value ? new Intl.
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page archive-content">
+  <section data-page-root class="content vue-native-page archive-content">
     <div class="page-heading archive-heading">
       <div><p class="eyebrow">病历与病案 / 病案资产证据</p><h1>病案资产证据详情</h1><p>单份病案资产的不可变身份、内容哈希与借阅状态；原件哈希在编目后即长期验真锚点，不可被前端或后续流程改写。</p></div>
       <RouterLink class="button secondary" to="/archive-integrity">返回完整性验真</RouterLink>
@@ -73,5 +73,5 @@ function formatDate(value: string | null | undefined) { return value ? new Intl.
         </div>
       </aside>
     </div>
-  </main>
+  </section>
 </template>

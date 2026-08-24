@@ -45,7 +45,7 @@ async function correct() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page mpi-page">
+  <section data-page-root class="content admin-content vue-native-page mpi-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">病历中心 / 患者主索引</p><h1>患者主索引与身份核验</h1><p>统一处理相似患者、待核验身份、人口学纠错和重复建档；任何候选都必须人工确认，不以算法分数直接合并患者。</p></div><div class="toolbar-actions"><RouterLink class="button secondary" to="/patient-merge">合并与撤销</RouterLink><RouterLink class="button secondary" to="/patient-timeline">纵向时间轴</RouterLink></div></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在读取 MPI 人工复核队列" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
@@ -56,5 +56,5 @@ async function correct() {
         <div class="mpi-side"><section class="admin-panel admin-form-panel"><header><div><h2>发起候选检测</h2><p>用于迁移、注册和人工排查发现的两份档案。</p></div></header><form class="admin-form" @submit.prevent="detect"><label><span>患者 A ID</span><input v-model="detectForm.patientA" required /></label><label><span>患者 B ID</span><input v-model="detectForm.patientB" required /></label><button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'detect' ? '正在评分…' : '计算并登记候选' }}</button></form></section>
           <section v-if="history.length" class="admin-panel mpi-history"><header><div><h2>身份纠错与版本</h2><p>患者 {{ editForm.patientId }}</p></div><span>当前行 v{{ history[0]?.patient_row_version }}</span></header><form class="admin-form" @submit.prevent="correct"><label><span>姓名</span><input v-model="editForm.displayName" required /></label><div class="split-fields"><label><span>性别码</span><input v-model="editForm.sexCode" required /></label><label><span>出生日期</span><input v-model="editForm.birthDate" type="date" required /></label></div><label><span>核验状态</span><select v-model="editForm.status"><option value="ACTIVE">已核验有效</option><option value="PENDING_VERIFICATION">待核验</option><option value="POSSIBLE_DUPLICATE">疑似重复</option></select></label><label><span>纠错依据</span><textarea v-model="editForm.reason" required minlength="4" rows="2" placeholder="证件、原系统或患者本人核验依据"></textarea></label><button class="button primary full" :disabled="Boolean(busy)">保存为新版本</button></form><ol class="identity-version-list"><li v-for="version in history" :key="version.demographic_version_id"><strong>v{{ version.version_no }} · {{ version.display_name }}</strong><span>{{ version.change_type }} · {{ version.patient_status }}</span><small>{{ version.change_reason }} · {{ date(version.created_at) }}</small></li></ol></section></div></div>
     </template>
-  </main>
+  </section>
 </template>

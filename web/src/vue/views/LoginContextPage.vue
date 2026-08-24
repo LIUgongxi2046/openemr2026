@@ -3,7 +3,7 @@ import { clinicalContext } from '../../clinical-api';
 function shortId(value: string) { return value ? '…' + value.slice(-8) : '—'; }
 </script>
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head"><div class="page-title"><h1>登录、锁屏恢复与工作上下文</h1><p>专有身份标识、SSO/MFA、机构、岗位与班次上下文</p></div></div>
     <div class="portal-safety"><b>会话上下文</b><span>生产身份必须来自 OIDC 会话注入；开发合成环境使用固定合成身份。</span><span class="status green">会话有效</span></div>
     <div class="admin-layout">
@@ -29,5 +29,5 @@ function shortId(value: string) { return value ? '…' + value.slice(-8) : '—'
         </div>
       </aside>
     </div>
-  </main>
+  </section>
 </template>

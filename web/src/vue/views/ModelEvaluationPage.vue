@@ -76,7 +76,7 @@ async function record() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / 模型评估、影子、灰度与隔离</p>
@@ -139,5 +139,5 @@ async function record() {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

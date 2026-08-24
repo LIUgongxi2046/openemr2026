@@ -38,7 +38,7 @@ function actionLabel(value: AuditEventWire['action_code']) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>管理审计与权限复核</h1><p>哈希链审计事件、幂等键与 Outbox 证据可追溯；只读，不提供删除或改写</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="eventsQuery.refetch()">刷新</button></div>
@@ -87,5 +87,5 @@ function actionLabel(value: AuditEventWire['action_code']) {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>

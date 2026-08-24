@@ -368,7 +368,7 @@ async function useRemoteVersion() {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">门诊 / 病历编辑</p><h1>门诊病历工作台</h1></div>
       <div class="status-legend" :class="`save-${saveState}`"><span class="dot" :class="saveState === 'saved' || saveState === 'signed' ? 'success' : saveState === 'conflict' || saveState === 'error' ? 'danger' : 'warning'" />{{ saveStateLabel }}<small v-if="lastSavedAt"> · {{ lastSavedAt }}</small></div></div>
     <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
@@ -404,6 +404,6 @@ async function useRemoteVersion() {
             <div class="proposal-actions"><button class="button secondary" :disabled="Boolean(busy) || proposal.status !== 'PENDING_REVIEW'" @click="decide('REJECTED')">拒绝</button>
               <button class="button ai" :disabled="Boolean(busy) || proposal.status !== 'PENDING_REVIEW'" @click="decide('ACCEPTED')">接受到编辑区</button></div></template></section></aside>
     </div>
-    <button class="ai-fab" aria-label="打开随行 AI 助手" :aria-expanded="assistantOpen" @click="assistantOpen = !assistantOpen"><span>AI</span><small>{{ assistantOpen ? '收起助手' : '随行助手' }}</small></button>
-  </main>
+    <button class="ai-fab" aria-label="打开病历 AI 候选面板" :aria-expanded="assistantOpen" @click="assistantOpen = !assistantOpen"><span>AI</span><small>{{ assistantOpen ? '收起助手' : '随行助手' }}</small></button>
+  </section>
 </template>

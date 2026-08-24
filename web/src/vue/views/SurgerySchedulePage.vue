@@ -77,7 +77,7 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 围手术期</p><h1>围手术期排程与安全核查</h1><p>排程 → 安全核查（Time-Out）→ 完成三步闭环，术者与麻醉医生显式登记。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -133,5 +133,5 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

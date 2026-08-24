@@ -90,7 +90,7 @@ async function submitReverse(charge: ChargeItemWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 收费与价格</p><h1>费用、收退费、预交与结算</h1><p>按价格目录记费、冲正留痕；价格目录按版本管理，不物理删除历史价格。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -163,5 +163,5 @@ async function submitReverse(charge: ChargeItemWire) {
         </form>
       </section>
     </template>
-  </main>
+  </section>
 </template>

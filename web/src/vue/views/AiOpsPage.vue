@@ -124,7 +124,7 @@ async function recordConsumption() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / AI 运行、预算与事件中心</p>
@@ -235,5 +235,5 @@ async function recordConsumption() {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

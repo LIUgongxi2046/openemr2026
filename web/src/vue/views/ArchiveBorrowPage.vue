@@ -52,7 +52,7 @@ function formatDate(value: string | null | undefined) { return value ? new Intl.
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page archive-content">
+  <section data-page-root class="content vue-native-page archive-content">
     <div class="page-heading archive-heading">
       <div><p class="eyebrow">病历与病案 / 病案借阅</p><h1>病案借阅、复制与对外提供</h1><p>纸质与扫描病案按借阅状态机流转：在库 → 借出 → 归还；借阅必须登记到期时限，内容哈希在编目后不可变更。</p></div>
       <RouterLink class="button secondary" to="/archive-assets">返回病案归档</RouterLink>
@@ -95,5 +95,5 @@ function formatDate(value: string | null | undefined) { return value ? new Intl.
         <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">借阅与归还都是幂等命令：同一借出/归还按键不会重复入账，行版本冲突会提示重新加载后再操作。</footer>
       </section>
     </template>
-  </main>
+  </section>
 </template>

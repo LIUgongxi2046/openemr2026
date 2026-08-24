@@ -1,0 +1,2163 @@
+{
+  "run_at": "2026-08-24T08:58:51.808Z",
+  "contract_operations": 430,
+  "openapi_operations": 430,
+  "security_mode": "dev-synthetic",
+  "static_verified": 430,
+  "live_executed": 430,
+  "live_passed": 430,
+  "static_failures": [],
+  "live_failures": [],
+  "live": [
+    {
+      "operation_id": "acceptInpatientConsultation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "acknowledgeClinicalReminder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "acknowledgeCriticalValue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "activateSourceSystem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "administerMedication",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "advanceInpatientPathway",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "approvePatientMerge",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "approvePatientMergeReversal",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "approveResearchDatasetRequest",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "bookAppointment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "borrowMedicalRecordAsset",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "callWaitingQueueEntry",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "cancelAppointment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "cancelClinicalOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "checkClinicalOrderSafety",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "checkInAppointment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "claimClinicalTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "claimClinicalTaskTeamQueue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "closeNursingDischarge",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "collectLabSpecimen",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeClinicalTaskTeamQueue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeEmergencyObservation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeEmergencyResuscitation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeInpatientConsultation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeInpatientPathway",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeNursingCarePlan",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeOutpatientFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "completeShiftHandover",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "computeResearchCohortMember",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "configureSourceSystem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "confirmClinicalDiagnosis",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "consultAppointment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "convertClinicalReminderToTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "correctClinicalDiagnosis",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "correctClinicalResult",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "correctPatientIdentity",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "countValidReleaseDownloads",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createActionExecution",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createAiRun",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createArchiveCase",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createArchiveExportPackage",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createArtCycleRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createAuthorizationPolicy",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createCapabilityPackRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createCharge",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createClinicalDiagnosis",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createClinicalOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createClinicalReminder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createClinicalResult",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createClinicalTaskNotification",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createContextLease",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "createDentalCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDentalEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDentalRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDermatologyCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDermatologyEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDermatologyRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDictationNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDictionaryItem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDocument",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDocumentCorrection",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDocumentSourceReference",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDocumentTemplate",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createDocumentTemplateVersion",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEmergencyNursingNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEmergencyTriageAssessment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEncounter",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEntEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEntRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createEntTreatment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createImagingOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createInpatientAdmission",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createInpatientClinicalEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createInpatientConsultation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createInpatientDocumentTaskFromRule",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createLabSpecimen",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createMentalHealthEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createMentalHealthRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createMentalHealthTreatment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createNeonatalRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createNeonatalTreatment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createNursingBedsideNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createNursingCarePlan",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createObstetricCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createObstetricRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createOphthalmologyCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createOphthalmologyEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createOphthalmologyRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createOrganizationUnit",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createOutpatientFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createPatient",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createPediatricEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createPediatricRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createPediatricTreatment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createPriceCatalogVersion",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createReferral",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createReproductiveCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createReproductiveEvidence",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createResearchDatasetRequest",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createScheduleSlot",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createShiftHandover",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createShiftHandoverPatient",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createTcmCareNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "createTcmRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateAgent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateAgentRunBudget",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateCapabilityPack",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateDataQualityRule",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateDictionaryItem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateDocumentTemplate",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateModelDeployment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateOrganizationUnit",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateResearchCohort",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateSkill",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateSourceFieldMapping",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateTool",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deactivateWorkforceAccount",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "decideActionApproval",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "decideAiProposal",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "declareAgentDependency",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "defineAgentRunBudget",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "defineCapabilityPack",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "defineConfiguration",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "defineResearchCohort",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "delegateClinicalTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "deliverClinicalTaskNotification",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "destroyResearchDatasetRequest",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "detectPatientMatchCandidate",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "diffDocumentVersions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "dischargeInpatientAdmission",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "dispatchDueClinicalTaskNotifications",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "disposeCriticalValue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "downloadArchiveExportContent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "endWorkforceRoleAssignment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "enqueueClinicalTaskToTeamQueue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "enrollInpatientPathway",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "escalateClinicalTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "expireOverdueClinicalTasks",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "exportResearchDatasetRequest",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "failActionExecution",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "failClinicalTaskNotification",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getAgentRunBudgetSummary",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getAiRun",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "getArchiveCase",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getArchiveReadiness",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getClinicalOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getCurrentDocument",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getDepartmentSupportAssessment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getDocumentGovernanceSnapshot",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getDocumentSourceBundle",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getEncounter",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getInpatientBedBoard",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getInpatientOverview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getInpatientPathwayWorkspace",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getPatientTimeline",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "getSystemReadiness",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "operation_id": "invokeMockInterface",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "latestHistoricalMigrationCheckpoint",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "linkEmergencyPreadmission",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listActionApprovals",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listActionExecutions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAdverseEvents",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAgentDependencies",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAgentRegistry",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAgentRunBudgetConsumptions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAgentRunBudgets",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAiRuns",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAppointments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listArtCycleRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listArtEmbryoTransferRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listArtPregnancyOutcomes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAuditEvents",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listAuthorizationPolicies",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listBloodTransfusions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listCapabilityPackReleases",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listCapabilityPacks",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listCharges",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalDiagnoses",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalOrders",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalReminderConversions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalReminders",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalResults",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalTaskNotifications",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalTasks",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listClinicalTaskTeamQueues",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listConfigurations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDataQualityEvaluations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDataQualityRules",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalFollowupRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDentalTreatmentRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDepartmentSupportAssessments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyBiologicFollowups",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyBiologicScreenings",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDermatologyRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDictationNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDictionaryItems",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDocumentCorrections",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listDocumentTemplates",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listDocumentVersions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyAccessForReview",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyNursingNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyObservations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyPreadmissions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyResuscitations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEmergencyTriageAssessments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEncounterDocuments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEncounterDomainSwitches",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEncounterStateEvents",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntAirwayRiskHandovers",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntFollowupRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listEntTreatments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listHistoricalMigrationBatches",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listHistoricalMigrationCheckpoints",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listImagingOrders",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listInfectionMonitoringEvents",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listInpatientConsultations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listInpatientDocumentRules",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listInpatientWardWorklist",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listLabSpecimens",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMedicalRecordAssets",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMedicationAdministrations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthCrisisFollowups",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthCrisisHandovers",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMentalHealthTreatments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMetricSnapshots",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listMockInterfaces",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listModelDeployments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listModelEvaluations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalFollowupRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalScreeningRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalTreatments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNeonatalWristbandVerifications",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNursingBedsideNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNursingCarePlans",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listNursingDischargeClosures",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricAntenatalExams",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricDeliveryRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricPostpartumFollowups",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listObstetricRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyPostopFollowups",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyPreopVerifications",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOphthalmologyRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOrganizationUnits",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listOutpatientFollowups",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listOwnEmergencyAccess",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listPatientDemographicVersions",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listPatientEncounters",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPatientMatchCandidates",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listPatientMergeCases",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricFollowupRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricGrowthRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPediatricTreatments",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPharmacyDispensings",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listPromptReleases",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReferrals",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReleaseDownloadEvents",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReleaseMetricSnapshots",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReproductiveCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReproductiveEvidences",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listReproductiveQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listResearchCohortMembers",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listResearchCohorts",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listResearchCohortSnapshots",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listResearchDatasetRequests",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listShiftHandoverPatients",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listShiftHandovers",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listSkillRegistry",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listSourceFieldMappings",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listSourcePatientMatchCandidates",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listSourceSystems",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listSurgicalProcedures",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmCareNotes",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmFollowupRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmFourExaminations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmHerbalPrescriptions",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmQcReviews",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listTcmRecords",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listToolRegistry",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listVitalSigns",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listWaitingQueue",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "listWorkforceIdentities",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "migrateClinicalTasksToWard",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "onboardWorkforceIdentity",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "preparePharmacyDispensing",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "promoteCapabilityPackRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "proposeActionApproval",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "publishAuthorizationPolicy",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "publishDocumentTemplateVersion",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "publishPromptRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "putDepartmentSupportAssessment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "receiveLabSpecimen",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reconcileHistoricalMigrationBatch",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordAgentRunBudgetConsumption",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordArtEmbryoTransfer",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordArtPregnancyOutcome",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordBloodTransfusion",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordBloodTransfusionReaction",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDataQualityEvaluation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDentalFollowupRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDentalQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDentalTreatment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDermatologyBiologicFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDermatologyBiologicScreening",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordDermatologyQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordEncounterDomainSwitch",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordEntAirwayRiskHandover",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordEntFollowupRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordEntQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordHistoricalMigrationCheckpoint",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordMentalHealthCrisisFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordMentalHealthCrisisHandover",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordMentalHealthQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordMetricSnapshot",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordModelEvaluation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordNeonatalFollowupRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordNeonatalQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordNeonatalScreening",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordNeonatalWristbandVerification",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordObstetricAntenatalExam",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordObstetricDelivery",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordObstetricPostpartumFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordObstetricQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordOphthalmologyPostopFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordOphthalmologyPreopVerification",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordOphthalmologyQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordOrderExecutionEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordPediatricFollowup",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordPediatricGrowth",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordPediatricQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordReleaseDownloadEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordReleaseMetricSnapshot",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordReproductiveQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordResearchCohortSnapshot",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordSourcePatientMatchCandidate",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordTcmFollowupRecord",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordTcmFourExaminations",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordTcmHerbalPrescription",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordTcmQcReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recordVitalSigns",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "recoverClinicalTaskNotifications",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "refreshInpatientPathway",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerAgent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerDataQualityRule",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerEmergencyPreadmission",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerMedicalRecordAsset",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerModelDeployment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerSkill",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerSourceFieldMapping",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerSourceSystem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "registerTool",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "rejectDocumentReview",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "rejectInpatientConsultation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reportAdverseEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reportInfectionMonitoringEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "requestEmergencyAccess",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "requestInpatientPathwayVariance",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "requestPatientMerge",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "requestPatientMergeReversal",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "resolveInfectionMonitoringEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "resolveSourcePatientMatchCandidate",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "retireCapabilityPackRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "retirePromptRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "retireSourceSystem",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "retryDocumentCorrectionPropagation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "returnMedicalRecordAsset",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reverseCharge",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reviewAdverseEvent",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reviewEmergencyAccess",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "reviewInpatientPathwayVariance",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "revokeDocumentSignature",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "rollbackCapabilityPackRelease",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "rollbackHistoricalMigrationBatch",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "runDocumentQualityChecks",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "saveDocumentDraft",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "scheduleSurgicalProcedure",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "sealArchiveCase",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "searchPatients",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "signClinicalOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "signDocument",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "signInpatientConsultationOpinion",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "silenceClinicalReminder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "simulateAuthorizationDecision",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "startCapabilityPackReleaseCanary",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "startEmergencyObservation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "startEmergencyResuscitation",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "startHistoricalMigrationBatch",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "startInpatientDocumentTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "stopClinicalDiagnosis",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "stopClinicalOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "streamAiRunEvents",
+      "status": 401,
+      "pass": true
+    },
+    {
+      "operation_id": "streamClinicalAssistant",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "succeedActionExecution",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "switchHistoricalMigrationBatch",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transferClinicalTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transferInpatientAdmission",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionConfigurationLifecycle",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionDictationNote",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionEncounterState",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionImagingOrder",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionPharmacyDispensing",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionReferral",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "transitionSurgicalProcedure",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "unsealArchiveCase",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "updateConfiguration",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "uploadDocumentAttachment",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "viewClinicalTask",
+      "status": 400,
+      "pass": true
+    },
+    {
+      "operation_id": "withdrawClinicalTaskTeamQueue",
+      "status": 400,
+      "pass": true
+    }
+  ]
+}

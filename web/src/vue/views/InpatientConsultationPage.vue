@@ -144,7 +144,7 @@ function urgencyLabel(value: InpatientConsultationWire['urgency']) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page inpatient-consult-page">
+  <section data-page-root class="content vue-native-page inpatient-consult-page">
     <div class="page-heading"><div><p class="eyebrow">住院 / 跨科协同</p><h1>住院查房、会诊与协同</h1><p>申请、接诊、意见签署和申请方确认分离，通知不代表完成。</p></div><button class="button primary" type="button" @click="openCreate = !openCreate">{{ openCreate ? '收起申请' : '新建会诊' }}</button></div>
     <nav class="inpatient-subnav" aria-label="住院患者功能"><RouterLink to="/inpatient-overview">患者总览</RouterLink><RouterLink to="/inpatient-course">病程与文书</RouterLink><RouterLink to="/ip-orders">住院医嘱</RouterLink><RouterLink to="/ip-results">检查检验</RouterLink><RouterLink to="/ip-consult">会诊协同</RouterLink><RouterLink to="/ip-pathway">临床路径</RouterLink><RouterLink to="/inpatient-discharge">出院闭环</RouterLink></nav>
     <section v-if="inpatientSyntheticActors.length" class="inpatient-role-simulator" aria-label="开发环境会诊岗位身份"><div><strong>当前验收身份</strong><span>只在开发合成环境可切换；生产身份由 OIDC 与岗位任期确定</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="busy" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section>
@@ -173,5 +173,5 @@ function urgencyLabel(value: InpatientConsultationWire['urgency']) {
         <section v-else class="consult-detail clinical-empty-state">选择一条会诊查看完整证据与下一步动作。</section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

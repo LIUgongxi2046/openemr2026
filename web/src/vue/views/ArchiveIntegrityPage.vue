@@ -44,7 +44,7 @@ function archiveStatusLabel(value: string) { return ({ ARCHIVED: '已归档待�
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page archive-content">
+  <section data-page-root class="content vue-native-page archive-content">
     <div class="page-heading archive-heading">
       <div><p class="eyebrow">病历与病案 / 完整性与验真</p><h1>病案完整性、签名与长期验真</h1><p>归档前检查与归档后周期验真共用同一证据链：64 位内容哈希、文书签名摘要哈希与归档清单哈希分别锚定，重新读取即复算。</p></div>
       <div class="toolbar-actions"><button class="button primary" :disabled="verifying" @click="verify">{{ verifying ? '正在重新核验…' : '运行完整性检查' }}</button><RouterLink class="button secondary" to="/archive-assets">返回病案归档</RouterLink></div>
@@ -99,5 +99,5 @@ function archiveStatusLabel(value: string) { return ({ ARCHIVED: '已归档待�
         <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">清单哈希 = 全部文书内容哈希与签名摘要哈希的确定性聚合；导出包另附精确字节数与 SHA-256，可在系统外独立复算。</footer>
       </section>
     </template>
-  </main>
+  </section>
 </template>

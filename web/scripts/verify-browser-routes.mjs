@@ -74,9 +74,10 @@ try {
       { timeout: 5_000 },
     ).catch(() => {});
     if (route.id === 'specialty-center' || specialtyPrefixes.some((prefix) => route.id.startsWith(prefix))) {
-      // 已实现的原生专科页渲染 main.vue-native-page；未实现的门禁页渲染 .migration-notice / [role="alert"]。二者取其一即视为已挂载。
+      // Shell 保留唯一 main landmark；已实现的原生专科页渲染 [data-page-root].vue-native-page。
+      // 未实现的门禁页渲染 .migration-notice / [role="alert"]，二者取其一即视为已挂载。
       await page.waitForFunction(
-        () => document.querySelector('main.vue-native-page') != null
+        () => document.querySelector('main [data-page-root].vue-native-page') != null
           || document.querySelector('main .migration-notice') != null
           || document.querySelector('main [role="alert"]') != null,
         { timeout: 5_000 },

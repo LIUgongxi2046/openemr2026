@@ -52,7 +52,7 @@ const statusLabel: Record<EntryStatus, string> = {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">配置中心 / 系统管理工作台</p>
@@ -80,7 +80,7 @@ const statusLabel: Record<EntryStatus, string> = {
         </ul>
       </section>
     </div>
-  </main>
+  </section>
 </template>
 
 <style scoped>

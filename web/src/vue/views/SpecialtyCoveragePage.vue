@@ -15,7 +15,7 @@ function coverage(level: string) { return level === 'GENERAL_AVAILABLE' ? 100 : 
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">质量与安全 / 评级取证</p><h1>专科覆盖度</h1><p>各专科支持等级与缺失安全门；未验证科室不能升级支持级别。</p></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || assessmentsQuery.isPending.value" kind="loading" message="正在读取专科覆盖度" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="assessmentsQuery.refetch()" />
@@ -33,5 +33,5 @@ function coverage(level: string) { return level === 'GENERAL_AVAILABLE' ? 100 : 
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

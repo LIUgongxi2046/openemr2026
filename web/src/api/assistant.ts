@@ -5,7 +5,6 @@ import {
   request,
   scopedHeaders,
   streamText,
-  wardHeaders,
 } from '../clinical-api';
 import {
   actionApprovalDecideRequestWireSchema,
@@ -144,10 +143,15 @@ export interface AssistantStreamChunk {
   data: string;
 }
 
-export async function streamAssistantResponse(lease: ContextLeaseWire, message: string): Promise<AssistantStreamChunk[]> {
+export async function streamAssistantResponse(
+  lease: ContextLeaseWire,
+  message: string,
+  patientId: string | null = null,
+  encounterId: string | null = null,
+): Promise<AssistantStreamChunk[]> {
   const raw = await streamText(
     `/assistant/stream?message=${encodeURIComponent(message)}`,
-    wardHeaders(lease),
+    explicitContextHeaders(lease, patientId, encounterId),
   );
   const chunks: AssistantStreamChunk[] = [];
   for (const block of raw.split('\n\n')) {

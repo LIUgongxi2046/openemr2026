@@ -163,7 +163,7 @@ function formatDate(value?: string | null) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page pathway-page">
+  <section data-page-root class="content vue-native-page pathway-page">
     <div class="page-heading"><div><p class="eyebrow">住院 / 标准诊疗</p><h1>住院临床路径执行中心</h1><p>入径版本固定；任务由真实文书和医嘱状态驱动；变异实行提出与独立审核分离。</p></div><div class="toolbar-actions"><button v-if="instance?.status === 'ACTIVE'" class="button" :disabled="busy" @click="execute('refresh')">核验业务来源</button><button v-if="instance?.status === 'ACTIVE'" class="button primary" :disabled="busy" @click="openVariance()">记录路径变异</button></div></div>
     <nav class="inpatient-subnav" aria-label="住院患者功能"><RouterLink to="/inpatient-overview">患者总览</RouterLink><RouterLink to="/inpatient-course">病程与文书</RouterLink><RouterLink to="/ip-orders">住院医嘱</RouterLink><RouterLink to="/ip-results">检查检验</RouterLink><RouterLink to="/ip-consult">会诊协同</RouterLink><RouterLink to="/ip-pathway">临床路径</RouterLink><RouterLink to="/inpatient-discharge">出院闭环</RouterLink></nav>
     <section v-if="inpatientSyntheticActors.length" class="inpatient-role-simulator" aria-label="开发环境路径审核岗位身份"><div><strong>当前验收身份</strong><span>变异申请人与审核人必须分离；生产身份由 OIDC 和岗位任期确定</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="busy" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section>
@@ -186,5 +186,5 @@ function formatDate(value?: string | null) {
         </div>
       </template>
     </template>
-  </main>
+  </section>
 </template>

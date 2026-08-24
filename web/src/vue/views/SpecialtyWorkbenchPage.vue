@@ -55,7 +55,7 @@ function levelLabel(level: string | undefined) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">专科中心 / {{ meta.name }}</p><h1>{{ meta.name }}工作台</h1><p>支持等级 {{ levelLabel(assessment?.support_level) }}；越界能力默认拒绝，未验证科室不能升级支持级别。</p></div>
     </div>
@@ -77,5 +77,5 @@ function levelLabel(level: string | undefined) {
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

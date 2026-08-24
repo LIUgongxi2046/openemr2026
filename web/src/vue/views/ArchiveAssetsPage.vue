@@ -38,7 +38,7 @@ function formatBytes(value: number) { return value < 1024 ? `${value} B` : `${(v
 </script>
 
 <template>
-  <main id="main-content" class="content archive-content vue-native-page"><div class="page-heading archive-heading"><div><p class="eyebrow">病历中心 / 病案资产</p><h1>病案归档与法律证据</h1><p>按当前签署版本形成不可变清单，并通过职责分离完成封存；导出包可脱离系统独立读取和校验。</p></div><RouterLink class="button secondary" to="/record">返回病历中心</RouterLink></div>
+  <section data-page-root class="content archive-content vue-native-page"><div class="page-heading archive-heading"><div><p class="eyebrow">病历中心 / 病案资产</p><h1>病案归档与法律证据</h1><p>按当前签署版本形成不可变清单，并通过职责分离完成封存；导出包可脱离系统独立读取和校验。</p></div><RouterLink class="button secondary" to="/record">返回病历中心</RouterLink></div>
     <ClinicalPageState v-if="archiveQuery.isPending.value" kind="loading" message="正在核验当前版本、质控与签名证据" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="archiveQuery.refetch()" />
     <template v-else-if="readiness">
@@ -52,5 +52,5 @@ function formatBytes(value: number) { return value < 1024 ? `${value} B` : `${(v
       <div class="archive-grid archive-lower-grid"><section class="archive-panel"><div class="archive-panel-heading"><div><span class="archive-step">04</span><h2>证据事件时间轴</h2></div></div><div v-if="!archiveCase" class="archive-empty"><span>证</span><p>归档后显示不可变事件。</p></div><ol v-else class="archive-timeline"><li v-for="event in archiveCase.events" :key="event.archive_case_event_id"><span class="archive-event-dot" :class="event.event_type.toLowerCase()" /><div><strong>{{ eventLabel(event.event_type) }}</strong><small>{{ event.actor_display_name }} · {{ formatDate(event.occurred_at) }}</small><p v-if="event.reason">{{ event.reason }}</p></div><code>#{{ event.event_no }}</code></li></ol></section>
         <section class="archive-panel archive-export-panel"><div class="archive-panel-heading"><div><span class="archive-step">05</span><h2>独立可读导出</h2></div><span>JSON v1</span></div><p class="archive-panel-intro">导出正文包含病历段落、质控证据、签名证据和清单完整性信息；响应返回精确 UTF-8 字节数与 SHA-256。</p><label class="archive-field"><span>导出用途</span><input v-model="purpose" /></label><button class="button primary full" :disabled="!archiveCase || archiveCase.status !== 'SEALED' || Boolean(busy) || purpose.trim().length < 2" @click="createExport">{{ busy === 'export' ? '正在固化导出包…' : '生成带校验值的导出包' }}</button><small v-if="archiveCase && archiveCase.status !== 'SEALED'" class="archive-action-hint">只有封存状态允许生成或下载导出包。</small><div class="archive-exports"><article v-for="item in archiveCase?.export_packages || []" :key="item.export_package_id"><div><strong>{{ item.purpose }}</strong><small>{{ formatDate(item.created_at) }} · {{ formatBytes(item.byte_count) }}</small></div><code>SHA-256 {{ item.content_hash.slice(0, 16) }}…</code><span class="state-chip signed">{{ item.status }}</span></article></div></section></div>
     </template>
-  </main>
+  </section>
 </template>

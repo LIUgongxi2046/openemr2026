@@ -130,7 +130,7 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">住院 / 病历创作与分级审签</p><h1>住院病历 · 专注编辑</h1></div><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
     <section v-if="inpatientSyntheticActors.length" class="inpatient-role-simulator compact" aria-label="开发环境四角色审签身份"><div><strong>当前验收身份</strong><span>仅开发合成环境；生产由 OIDC 与岗位任期决定</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="Boolean(busy)" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section>
     <ClinicalPageState v-if="editorQuery.isPending.value" kind="loading" message="正在核验患者、住院任务、文书版本与审签证据" />
@@ -153,5 +153,5 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>

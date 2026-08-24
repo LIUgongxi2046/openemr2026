@@ -55,7 +55,7 @@ async function createNote() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">临床工作域 / 急诊</p>
@@ -106,5 +106,5 @@ async function createNote() {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

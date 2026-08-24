@@ -23,7 +23,7 @@ function abnormalLabel(value: string) { return ({ NORMAL: '正常', HIGH: '偏�
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">病历与病案 / PACS 影像报告</p><h1>PACS 影像调阅</h1></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/record-editor">引用关键结论</RouterLink><RouterLink class="button primary" to="/opd-results">返回结果工作台</RouterLink></div></div>
     <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
@@ -51,5 +51,5 @@ function abnormalLabel(value: string) { return ({ NORMAL: '正常', HIGH: '偏�
         </ul>
         <div class="archive-truth-note" style="margin-top: 14px"><strong>当前能力边界</strong><span>本页连接真实结果报告 API；像素级影像调阅依赖后续 DICOM 连接器授权。</span></div></aside>
     </div>
-  </main>
+  </section>
 </template>

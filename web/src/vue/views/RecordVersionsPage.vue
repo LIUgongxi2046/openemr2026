@@ -161,7 +161,7 @@ function statusLabel(status: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">病历主轴 / 版本证据</p><h1>病历版本与法律证据</h1></div><RouterLink v-if="versionsQuery.data.value && versionsQuery.data.value.versions.length >= 2" class="button primary" :to="diffRoute(versionsQuery.data.value.versions)">比较最近两个版本</RouterLink></div>
     <p class="record-center-intro">草稿、审签、更正与撤签形成可追溯证据链；任何操作都不会覆盖已签正文。</p>
     <nav class="record-subnav" aria-label="病历二级导航"><RouterLink to="/record">病历工作台</RouterLink><RouterLink to="/opd-record">专注编辑</RouterLink><RouterLink to="/record-sources">来源与附件</RouterLink><RouterLink to="/record-qc">质控与审签</RouterLink><RouterLink class="active" to="/record-versions">版本证据</RouterLink></nav>
@@ -211,5 +211,5 @@ function statusLabel(status: string) {
         <form v-if="revokeTarget" class="revocation-confirm" @submit.prevent="confirmRevocation"><div><strong>确认撤销 {{ revokeTarget.signer_display_name }} 的签名</strong><p>撤销后生成独立证据，原签名与正文仍保留；如撤销当前版本签名，文书头状态将转为作废。</p></div><label><span>撤销原因（必填，至少 4 字）</span><textarea v-model="revokeReason" rows="2" maxlength="2000" placeholder="填写撤销依据"></textarea></label><footer><button type="button" class="button secondary" @click="revokeTarget = null">取消</button><button type="submit" class="button danger" :disabled="busy || revokeReason.trim().length < 4">确认撤销并留痕</button></footer></form>
       </section>
     </template>
-  </main>
+  </section>
 </template>

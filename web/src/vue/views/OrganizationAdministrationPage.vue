@@ -62,7 +62,7 @@ async function deactivate(unit: OrganizationUnitWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">配置中心 / 组织与工作单元</p><h1>组织机构管理</h1><p>统一管理医疗机构、院区、科室、病区和床位的有效期层级；子单元未退出时不允许直接停用上级。</p></div><RouterLink class="button secondary" to="/admin-users">人员与账号</RouterLink></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在读取组织有效期层级" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
@@ -72,5 +72,5 @@ async function deactivate(unit: OrganizationUnitWire) {
       <div class="admin-layout"><section class="admin-panel"><header><div><h2>有效期组织台账</h2><p>所有变更都使用版本号、幂等键、审计链与事件出箱。</p></div><button class="button secondary" @click="query.refetch()">刷新</button></header><div v-if="!units.length" class="admin-empty">暂无组织单元，可在右侧新增。</div><div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>类型 / 名称</th><th>编码</th><th>上级</th><th>有效期</th><th>状态</th><th>操作</th></tr></thead><tbody><tr v-for="unit in units" :key="unit.unit_id"><td><strong>{{ label(unit) }}</strong><small>…{{ unit.unit_id.slice(-8) }} · v{{ unit.row_version }}</small></td><td><code>{{ unit.unit_code }}</code></td><td>{{ parentName(unit) }}</td><td>{{ formatDate(unit.effective_until) }}</td><td><span class="admin-status" :class="unit.status.toLowerCase()">{{ unit.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td><td><button class="task-action" :disabled="unit.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(unit)">{{ busy === unit.unit_id ? '处理中…' : '停用' }}</button></td></tr></tbody></table></div></section>
         <section class="admin-panel admin-form-panel"><header><div><h2>新增工作单元</h2><p>根据类型选择必要上级范围。</p></div></header><form class="admin-form" @submit.prevent="createUnit"><label><span>单元类型</span><select v-model="form.unitType" @change="form.parentId = ''"><option v-for="(name, type) in unitTypeLabels" :key="type" :value="type">{{ name }}</option></select></label><label><span>单元编码</span><input v-model="form.code" maxlength="96" required placeholder="例：CARD-WARD-02" /></label><label><span>显示名称</span><input v-model="form.name" maxlength="256" required placeholder="例：心内二病区" /></label><label><span>上级单元{{ parentRequired ? '' : '（可选）' }}</span><select v-model="form.parentId" :required="parentRequired"><option value="">无上级</option><option v-for="parent in parents" :key="parent.unit_id" :value="parent.unit_id">{{ label(parent) }}</option></select></label><label><span>类型 / 时区补充</span><input v-model="form.subtype" placeholder="可选，例：NURSING_UNIT" /></label><button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在创建…' : '创建并生效' }}</button></form></section></div>
     </template>
-  </main>
+  </section>
 </template>

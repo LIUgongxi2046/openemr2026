@@ -64,7 +64,7 @@ async function deactivate(agent: AgentRegistryWire) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 平台 / Agent 目录与定义编辑器</p>
@@ -117,5 +117,5 @@ async function deactivate(agent: AgentRegistryWire) {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

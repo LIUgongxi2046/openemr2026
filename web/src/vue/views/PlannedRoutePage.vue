@@ -9,7 +9,7 @@ const definition = computed(() => routeById.get(String(route.meta.contractId)));
 </script>
 
 <template>
-  <main id="main-content" class="vue-boundary-page">
+  <section data-page-root class="vue-boundary-page">
     <p class="eyebrow">{{ definition?.primary_domain }} / {{ definition?.route_id }}</p>
     <h1>{{ definition?.title }}</h1>
     <section class="migration-notice" role="status">
@@ -22,5 +22,5 @@ const definition = computed(() => routeById.get(String(route.meta.contractId)));
       <div><dt>守卫</dt><dd>{{ definition?.guards.join(' · ') }}</dd></div>
       <div><dt>必备状态</dt><dd>{{ definition?.states.join(' · ') }}</dd></div>
     </dl>
-  </main>
+  </section>
 </template>

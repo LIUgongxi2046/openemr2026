@@ -29,7 +29,7 @@ function levelLabel(level: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">质量与安全 / 评级取证</p><h1>科室支持等级</h1><p>支持等级绑定证据哈希与缺失安全门；未验证科室不能升级支持级别。</p></div>
     </div>
@@ -54,5 +54,5 @@ function levelLabel(level: string) {
         </tbody></table></div>
       </section>
     </template>
-  </main>
+  </section>
 </template>

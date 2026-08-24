@@ -120,7 +120,7 @@ function formatDate(value?: string | null) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page admission-bed-page">
+  <section data-page-root class="content vue-native-page admission-bed-page">
     <div class="page-heading admission-heading">
       <div><p class="eyebrow">住院 / 入院与床位</p><h1>入院、病区与床位管理</h1><p>患者身份核验、住院就诊、床位占用、入院任务与审计证据在服务端完成一致性校验。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="desk.isFetching.value" @click="desk.refetch()">刷新床位</button><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
@@ -182,5 +182,5 @@ function formatDate(value?: string | null) {
         </aside>
       </div>
     </template>
-  </main>
+  </section>
 </template>

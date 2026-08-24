@@ -29,7 +29,7 @@ async function register() {
 </script>
 
 <template>
-  <main id="main-content" class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">配置中心 / 集成</p><h1>集成字段映射</h1><p>源系统字段到目标实体字段的映射登记；仅已配置/激活源可登记，映射唯一。</p></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || sourcesQuery.isPending.value" kind="loading" message="正在读取源系统" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="sourcesQuery.refetch()" />
@@ -57,5 +57,5 @@ async function register() {
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

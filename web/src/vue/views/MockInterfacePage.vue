@@ -48,7 +48,7 @@ function systemTypeLabel(value: string) {
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>模拟接口</h1><p>依赖外部系统的接口统一注册：确定性合成数据 + 对接标准接口 + 对接文档 · 仅供 dev-synthetic 验证，不进入真实临床事实</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="interfacesQuery.refetch()">刷新</button></div>
@@ -109,7 +109,7 @@ function systemTypeLabel(value: string) {
         </div>
       </section>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>

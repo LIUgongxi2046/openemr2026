@@ -1,0 +1,33 @@
+{
+  "contract_version": "deepseek-openai-compatible-v1",
+  "provider_code": ["DEEPSEEK", "DEEPSEEK_OPENAI_COMPATIBLE"],
+  "transport": {
+    "method": "POST",
+    "path_suffix": "/chat/completions",
+    "tls_required": true,
+    "authentication": "bearer-from-env-or-file-secret-reference",
+    "stream": false,
+    "timeout_ms": 45000
+  },
+  "request": {
+    "required_fields": ["model", "messages", "response_format", "max_tokens", "stream"],
+    "response_format": {"type": "json_object"},
+    "allowed_roles": ["system", "user"]
+  },
+  "response": {
+    "content_path": "choices[0].message.content",
+    "content_schema": {
+      "type": "object",
+      "required": ["sections"],
+      "additionalProperties": false,
+      "properties": {"sections": {"type": "object"}}
+    }
+  },
+  "safety": {
+    "clinical_write_authority": false,
+    "human_review_required": true,
+    "post_generation_guard": "AgentOutputGuard",
+    "provider_failure_state": "DEGRADED",
+    "log_request_or_secret": false
+  }
+}

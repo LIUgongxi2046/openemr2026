@@ -76,7 +76,7 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">医疗协同执行 / 影像</p><h1>检查影像工作台</h1><p>影像申请 → 执行 → 报告三步闭环；造影剂需求显式登记。</p></div>
       <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
@@ -132,5 +132,5 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>

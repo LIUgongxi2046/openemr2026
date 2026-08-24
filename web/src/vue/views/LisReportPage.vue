@@ -23,7 +23,7 @@ function abnormalLabel(value: string) { return ({ NORMAL: '正常', HIGH: '偏�
 </script>
 
 <template>
-  <main id="main-content" class="content vue-native-page">
+  <section data-page-root class="content vue-native-page">
     <div class="page-heading"><div><p class="eyebrow">病历与病案 / LIS 检验报告</p><h1>LIS 检验报告调阅</h1></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/record-editor">引用到病历</RouterLink><RouterLink class="button primary" to="/opd-results">返回结果工作台</RouterLink></div></div>
     <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
@@ -52,5 +52,5 @@ function abnormalLabel(value: string) { return ({ NORMAL: '正常', HIGH: '偏�
         </ul>
         <div v-if="criticalOpenCount" class="archive-truth-note" style="margin-top: 14px"><strong>待接收危急值 {{ criticalOpenCount }} 项</strong><span>请到结果工作台完成复读确认与临床处置。</span></div></aside>
     </div>
-  </main>
+  </section>
 </template>

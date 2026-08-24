@@ -29,8 +29,10 @@ final class ClinicalAssistantController {
             HttpServletRequest request,
             @RequestParam("message") String message,
             @RequestHeader("X-Organization-Context") UUID organizationId,
-            @RequestHeader("X-Facility-Context") UUID facilityId) {
-        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader(value = "X-Patient-Context", required = false) UUID patientId,
+            @RequestHeader(value = "X-Encounter-Context", required = false) UUID encounterId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(assistant.stream(message));
     }

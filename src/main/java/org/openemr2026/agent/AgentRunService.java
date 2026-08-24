@@ -302,8 +302,16 @@ final class AgentRunService {
                 transition(tenantId, runId, "DEGRADED", "RunDegraded", Map.of("code", "MODEL_PROVIDER_UNAVAILABLE"));
                 return;
             }
-            Map<String, Object> payload = provider.generate(
-                    new ClinicalModelProvider.DraftPrompt(parse(source.sectionsJson()), run.maxOutputTokens()));
+            Map<String, Object> payload;
+            try {
+                payload = provider.generate(
+                        new ClinicalModelProvider.DraftPrompt(parse(source.sectionsJson()), run.maxOutputTokens()));
+            } catch (ModelProviderUnavailableException unavailable) {
+                jdbc.sql("update ai_run set error_code = :code where tenant_id = :tenant and run_id = :run")
+                        .param("code", unavailable.code()).param("tenant", tenantId).param("run", runId).update();
+                transition(tenantId, runId, "DEGRADED", "RunDegraded", Map.of("code", unavailable.code()));
+                return;
+            }
             outputGuard.validate(payload);
             ContextReferenceWire reference = reference(run, source);
             UUID proposalId = UUID.randomUUID();
