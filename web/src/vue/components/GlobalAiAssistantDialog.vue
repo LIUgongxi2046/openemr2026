@@ -131,7 +131,7 @@ async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentR
   if (busy.value) return;
   busy.value = true;
   notice.value = '';
-    messages.value.push({ role: 'user', text: child.current_action, agentName: doctorFacingAiText(child.display_name) });
+  messages.value.push({ role: 'user', text: child.current_action, agentName: doctorFacingAiText(child.display_name) });
   try {
     const runLease = await issueMedicalAgentRunLease(props.patientId, props.encounterId);
     const run = await createMedicalAgentRun(runLease, {
@@ -145,7 +145,7 @@ async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentR
     });
     const contributors = run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、');
     const summary = typeof run.output.summary === 'string'
-      ? run.output.summary : '主 Agent 已汇总子 Agent 贡献，等待人工审阅。';
+      ? run.output.summary : '医助团队已汇总专科医助工作结果，等待医生审阅。';
     messages.value.push({
       role: 'assistant',
       text: `${doctorFacingAiText(summary)}\n参与医助：${contributors || doctorFacingAiText(child.display_name)}。\n进度：${run.state === 'WAITING_FOR_REVIEW' ? '结果待医生查看' : '处理中'}；共 ${run.events.length} 条处理记录。`,
