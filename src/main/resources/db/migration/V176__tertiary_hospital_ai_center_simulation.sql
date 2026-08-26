@@ -29,6 +29,8 @@ from (values
   ('018f0000-0000-7000-8000-00000000f006', 'GLM4-PATIENT-COMMUNICATION', 'GLM', 'GLM-4 医患沟通与随访模型', 'LOCAL_PREFERRED'),
   ('018f0000-0000-7000-8000-00000000f007', 'BGE-M3-CLINICAL-RERANK', 'QWEN', 'BGE-M3 临床术语重排模型', 'ON_PREM_ONLY')
 ) as seed(id, code, provider, name, residency)
+join tenant synthetic_tenant
+  on synthetic_tenant.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
 on conflict (tenant_id, model_code) do nothing;
 
 insert into skill_registry(
@@ -49,6 +51,8 @@ from (values
   ('018f0000-0000-7000-8000-00000000f117', 'DRG_RECORD_COMPLETENESS', 'DRG 病案完整性检查'),
   ('018f0000-0000-7000-8000-00000000f118', 'PRIVACY_DEIDENTIFICATION', '医疗数据脱敏')
 ) as seed(id, code, name)
+join tenant synthetic_tenant
+  on synthetic_tenant.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
 on conflict (tenant_id, skill_code, skill_version) do nothing;
 
 insert into tool_registry(
@@ -69,6 +73,8 @@ from (values
   ('018f0000-0000-7000-8000-00000000f217', 'PATHOLOGY_REPORT_READ', '病理报告只读工具'),
   ('018f0000-0000-7000-8000-00000000f218', 'MDT_RECORD_READ', 'MDT 记录只读工具')
 ) as seed(id, code, name)
+join tenant synthetic_tenant
+  on synthetic_tenant.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
 on conflict (tenant_id, tool_code, tool_version) do nothing;
 
 insert into model_evaluation(
@@ -82,6 +88,12 @@ from (values
   ('018f0000-0000-7000-8000-00000000f406', '018f0000-0000-7000-8000-00000000f006', '医患沟通可理解性与禁忌表述门禁', 0.9740::numeric, 0.9600::numeric, 2),
   ('018f0000-0000-7000-8000-00000000f407', '018f0000-0000-7000-8000-00000000f007', '临床术语重排准确率门禁', 0.9820::numeric, 0.9700::numeric, 1)
 ) as seed(eval_id, model_id, name, score, threshold, days)
+join model_deployment model
+  on model.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+ and model.model_deployment_id = seed.model_id::uuid
+join app_user evaluator
+  on evaluator.tenant_id = model.tenant_id
+ and evaluator.user_id = '018f0000-0000-7000-8000-00000000aa04'::uuid
 on conflict (tenant_id, model_evaluation_id) do nothing;
 
 insert into agent_dependency(
@@ -110,6 +122,9 @@ from (values
   ('018f0000-0000-7000-8000-00000000f51d', '018f0000-0000-7000-8000-00000000ee05', 'TOOL', 'MDT_RECORD_READ'),
   ('018f0000-0000-7000-8000-00000000f51e', '018f0000-0000-7000-8000-00000000ee05', 'TOOL', 'MEDICATION_ADMIN_READ')
 ) as seed(id, agent_id, kind, code)
+join agent_registry agent
+  on agent.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+ and agent.agent_registry_id = seed.agent_id::uuid
 on conflict (tenant_id, agent_registry_id, dependency_type, dependency_code) do nothing;
 
 update config_item
@@ -161,6 +176,12 @@ from (values
   ('018f0000-0000-7000-8000-00000000f80e', 'eval-mdt-preparation-v1', 'MDT 病例准备与任务协同评测', 'CARE_COORDINATOR', '覆盖肿瘤、疑难、器官移植与多学科病例资料准备。', 'tertiary-mdt-golden-v1', 160, 0.9600::numeric, 0.9720::numeric, '混淆学科意见、自动生成最终诊断'),
   ('018f0000-0000-7000-8000-00000000f80f', 'eval-medication-reconciliation-v1', '跨场景用药重整评测', 'CARE_COORDINATOR', '核验门诊、急诊、住院和出院用药的差异及待确认项。', 'tertiary-medication-reconciliation-v1', 230, 0.9700::numeric, 0.9830::numeric, '未经医师确认自动停药或换药')
 ) as seed(id, key, name, agent, description, dataset, cases, threshold, score, red_team)
+join app_user approver
+  on approver.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+ and approver.user_id = '018f0000-0000-7000-8000-00000000aa06'::uuid
+join app_user creator
+  on creator.tenant_id = approver.tenant_id
+ and creator.user_id = '018f0000-0000-7000-8000-00000000aa04'::uuid
 on conflict (tenant_id, config_id) do nothing;
 
 insert into agent_run_budget_consumption(
@@ -182,4 +203,10 @@ from (values
   ('018f0000-0000-7000-8000-00000000f60e', '018f0000-0000-7000-8000-00000000f305', '018f0000-0000-7000-8000-00000000f70e', 7760::bigint, 36::bigint, 5),
   ('018f0000-0000-7000-8000-00000000f60f', '018f0000-0000-7000-8000-00000000f305', '018f0000-0000-7000-8000-00000000f70f', 10380::bigint, 52::bigint, 2)
 ) as seed(id, budget_id, run_id, tokens, seconds, hours)
+join agent_run_budget budget
+  on budget.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+ and budget.budget_id = seed.budget_id::uuid
+join app_user recorder
+  on recorder.tenant_id = budget.tenant_id
+ and recorder.user_id = '018f0000-0000-7000-8000-00000000aa04'::uuid
 on conflict (tenant_id, consumption_id) do nothing;

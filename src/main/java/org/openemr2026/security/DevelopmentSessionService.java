@@ -40,7 +40,7 @@ final class DevelopmentSessionService {
 
     SessionLoginResponseWire login(SessionLoginRequestWire request) {
         String username = request.username() == null ? "" : request.username().trim().toLowerCase();
-        return transactions.execute(status -> {
+        LoginAttempt attempt = transactions.execute(status -> {
             Credential credential = jdbc.sql("""
                     select credential.tenant_id, credential.user_id, credential.password_hash,
                       credential.failed_attempts, credential.locked_until, account.status
@@ -56,10 +56,10 @@ final class DevelopmentSessionService {
                             rs.getObject("locked_until", OffsetDateTime.class), rs.getString("status")))
                     .optional().orElse(null);
             if (credential == null || !"ACTIVE".equals(credential.accountStatus())) {
-                throw invalidCredentials();
+                return LoginAttempt.invalid();
             }
             if (credential.lockedUntil() != null && credential.lockedUntil().isAfter(OffsetDateTime.now())) {
-                throw new ResponseStatusException(HttpStatus.LOCKED, "账户暂时锁定，请稍后重试");
+                return LoginAttempt.lockedAttempt();
             }
             if (request.password() == null || !PASSWORDS.matches(request.password(), credential.passwordHash())) {
                 int failures = credential.failedAttempts() + 1;
@@ -72,7 +72,7 @@ final class DevelopmentSessionService {
                         """).param("failures", failures).param("maximum", MAX_FAILURES)
                         .param("tenant", credential.tenantId()).param("user", credential.userId()).update();
                 appendAudit(credential.tenantId(), credential.userId(), UUID.randomUUID(), "LOGIN_FAILED");
-                throw invalidCredentials();
+                return failures >= MAX_FAILURES ? LoginAttempt.lockedAttempt() : LoginAttempt.invalid();
             }
 
             byte[] raw = new byte[32];
@@ -93,8 +93,16 @@ final class DevelopmentSessionService {
                     where tenant_id = :tenant and user_id = :user
                     """).param("tenant", credential.tenantId()).param("user", credential.userId()).update();
             appendAudit(credential.tenantId(), credential.userId(), sessionId, "LOGIN_SUCCEEDED");
-            return new SessionLoginResponseWire(token, sessionUser(credential.tenantId(), credential.userId(), expiresAt));
+            return LoginAttempt.succeeded(new SessionLoginResponseWire(
+                    token, sessionUser(credential.tenantId(), credential.userId(), expiresAt)));
         });
+        if (attempt.locked()) {
+            throw new ResponseStatusException(HttpStatus.LOCKED, "账户暂时锁定，请稍后重试");
+        }
+        if (attempt.response() == null) {
+            throw invalidCredentials();
+        }
+        return attempt.response();
     }
 
     SessionUserWire current(String authorization) {
@@ -232,6 +240,19 @@ final class DevelopmentSessionService {
 
     private record Credential(UUID tenantId, UUID userId, String passwordHash, int failedAttempts,
                               OffsetDateTime lockedUntil, String accountStatus) {}
+    private record LoginAttempt(SessionLoginResponseWire response, boolean locked) {
+        private static LoginAttempt succeeded(SessionLoginResponseWire response) {
+            return new LoginAttempt(response, false);
+        }
+
+        private static LoginAttempt invalid() {
+            return new LoginAttempt(null, false);
+        }
+
+        private static LoginAttempt lockedAttempt() {
+            return new LoginAttempt(null, true);
+        }
+    }
     private record SessionHead(UUID tenantId, UUID sessionId, UUID userId, Instant expiresAt) {}
     private record Account(String displayName, UUID organizationId, String organizationName,
                            UUID facilityId, String facilityName) {}

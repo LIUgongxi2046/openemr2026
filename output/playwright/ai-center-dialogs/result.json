@@ -1,0 +1,78 @@
+{
+  "routes": 9,
+  "failures": [],
+  "observations": [
+    {
+      "route": "models",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "DeepSeek V3 临床综合主模型",
+      "overflow": false
+    },
+    {
+      "route": "agent-catalog",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "就诊摘要",
+      "overflow": false
+    },
+    {
+      "route": "skill-catalog",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "入院风险摘要",
+      "overflow": false
+    },
+    {
+      "route": "tool-catalog",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "手术排程只读工具",
+      "overflow": false
+    },
+    {
+      "route": "ai-assistant-policy",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "三级甲等医院临床工作策略",
+      "overflow": false
+    },
+    {
+      "route": "agent-evals",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "急诊分诊上下文完整性评测",
+      "overflow": false
+    },
+    {
+      "route": "aiops",
+      "create_dialog": true,
+      "edit_dialog": true,
+      "delete_dialog": true,
+      "data_text": "就诊摘要医助单次处理上限",
+      "overflow": false
+    },
+    {
+      "route": "ai-assistant",
+      "create_dialog": true,
+      "edit_dialog": false,
+      "delete_dialog": false,
+      "data_text": "小南医助团队",
+      "overflow": false
+    },
+    {
+      "route": "ai-center",
+      "create_dialog": false,
+      "edit_dialog": false,
+      "delete_dialog": false,
+      "data_text": "AI 中心",
+      "overflow": false
+    }
+  ]
+}

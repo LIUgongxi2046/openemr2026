@@ -27,7 +27,7 @@ final class ProdOidcClinicalIdentityProviderTest {
     private static final UUID TENANT = UUID.fromString("018f0000-0000-7000-8000-00000000aa01");
     private static final UUID USER = UUID.fromString("018f0000-0000-7000-8000-00000000aa04");
     private static final UUID ROLE = UUID.fromString("018f0000-0000-7000-8000-00000000aa05");
-    private static final String SUBJECT = "synthetic-clinician";
+    private static final String SUBJECT = "william.lin";
     private static final String REQUIRED_ACR = "urn:openemr2026:acr:mfa";
 
     @Autowired

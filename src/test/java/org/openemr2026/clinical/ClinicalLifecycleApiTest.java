@@ -305,7 +305,7 @@ final class ClinicalLifecycleApiTest {
         assertThat(signedSnapshot.path("quality_findings")).isEmpty();
         assertThat(signedSnapshot.path("signatures")).hasSize(1);
         assertThat(signedSnapshot.path("signatures").get(0).toString())
-                .contains("PENDING_CA_EVIDENCE", "ATTENDING", "合成临床用户", contentHash);
+                .contains("PENDING_CA_EVIDENCE", "ATTENDING", "林伟 / William Lin", contentHash);
 
         assertThatThrownBy(() -> jdbc.sql("""
                 update clinical_document_version set sections = '{"chief_complaint":"tampered"}'

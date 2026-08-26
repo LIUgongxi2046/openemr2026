@@ -158,6 +158,26 @@ final class MedicalAgentHarnessApiTest {
     }
 
     @Test
+    void runTargetMustBelongToTheLeasedPatientAndEncounter() throws Exception {
+        Lease lease = issueLease();
+        String body = """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "context_lease_id":"%s","main_agent_code":"DOCUMENT_DRAFTER","stage_code":"WARD_ROUND",
+                 "target_type":"ENCOUNTER","target_id":"%s","objective":"验证目标与租约上下文绑定"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, lease.id(), UUID.randomUUID());
+        HttpResponse<String> denied = http.send(scoped("/api/v1/medical-agents/runs", lease, PATIENT)
+                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
+
+        assertThat(denied.statusCode()).isEqualTo(403);
+        assertThat(denied.body()).contains("TARGET_CONTEXT_MISMATCH");
+        assertThat(jdbc.sql("""
+                select count(*) from medical_agent_run
+                where tenant_id = cast(:tenant as uuid) and objective = '验证目标与租约上下文绑定'
+                """).param("tenant", TENANT).query(Long.class).single()).isZero();
+    }
+
+    @Test
     void untrustedObjectiveCannotTriggerClinicalWritesAndIdempotencyReplayFailsClosed() throws Exception {
         Lease lease = issueLease();
         long documentVersionsBefore = jdbc.sql("""

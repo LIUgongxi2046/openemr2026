@@ -71,6 +71,7 @@ final class MedicalAgentHarnessService {
         validate(command);
         UUID runId = transactions.execute(status -> {
             LeaseRow lease = lease(identity, command);
+            validateTarget(identity.tenantId(), command);
             MainReleaseRow main = main(command.mainAgentCode());
             ActiveBudget budget = ensureGovernanceReady(identity.tenantId(), main.agentCode());
             List<NodeRow> nodes = nodes(main.compositionCode(), command.stageCode());
@@ -319,6 +320,30 @@ final class MedicalAgentHarnessService {
                 .query((rs, row) -> new LeaseRow(rs.getString("authorization_watermark")))
                 .optional().orElseThrow(() -> new AgentRunException(
                         "CONTEXT_NOT_PERMITTED", 403, "The medical-agent context lease is invalid or expired"));
+    }
+
+    private void validateTarget(UUID tenantId, CreateRunCommand command) {
+        boolean matchesContext = switch (command.targetType()) {
+            case "ENCOUNTER" -> command.targetId().equals(command.encounterId());
+            case "DOCUMENT" -> targetExists("clinical_document", "document_id", tenantId, command);
+            case "RESULT" -> targetExists("clinical_result", "result_id", tenantId, command);
+            case "TASK" -> targetExists("clinical_task", "task_id", tenantId, command);
+            case "CARE_PLAN" -> targetExists("nursing_care_plan", "care_plan_id", tenantId, command);
+            default -> false;
+        };
+        if (!matchesContext) {
+            throw new AgentRunException("TARGET_CONTEXT_MISMATCH", 403,
+                    "The selected target does not belong to the leased patient and encounter context");
+        }
+    }
+
+    private boolean targetExists(String table, String idColumn, UUID tenantId, CreateRunCommand command) {
+        return jdbc.sql("select count(*) from " + table
+                        + " where tenant_id = :tenant and " + idColumn + " = :target"
+                        + " and patient_id = :patient and encounter_id = :encounter")
+                .param("tenant", tenantId).param("target", command.targetId())
+                .param("patient", command.patientId()).param("encounter", command.encounterId())
+                .query(Long.class).single() == 1;
     }
 
     private MainReleaseRow main(String agentCode) {

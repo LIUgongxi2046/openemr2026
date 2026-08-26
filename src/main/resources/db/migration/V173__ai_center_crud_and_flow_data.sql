@@ -97,4 +97,10 @@ from (values
   ('018f0000-0000-7000-8000-00000000f604', '018f0000-0000-7000-8000-00000000f303', '018f0000-0000-7000-8000-00000000f704', 3860::bigint, 16::bigint, 2),
   ('018f0000-0000-7000-8000-00000000f605', '018f0000-0000-7000-8000-00000000f305', '018f0000-0000-7000-8000-00000000f705', 6120::bigint, 27::bigint, 1)
 ) as seed(consumption_id, budget_id, run_id, tokens_consumed, duration_seconds, age_hours)
+join agent_run_budget budget
+  on budget.tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+ and budget.budget_id = seed.budget_id::uuid
+join app_user recorder
+  on recorder.tenant_id = budget.tenant_id
+ and recorder.user_id = '018f0000-0000-7000-8000-00000000aa04'::uuid
 on conflict (tenant_id, consumption_id) do nothing;

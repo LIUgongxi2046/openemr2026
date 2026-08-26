@@ -51,6 +51,48 @@ final class DevelopmentSessionApiTest {
                 .query(Long.class).single()).isPositive();
     }
 
+    @Test
+    void failedLoginAttemptsCommitAndLockTheDevelopmentAccount() throws Exception {
+        resetCredential();
+        try {
+            for (int attempt = 1; attempt < 5; attempt++) {
+                HttpResponse<String> invalid = send("/api/v1/session/login", "POST",
+                        "{\"username\":\"linwei\",\"password\":\"wrong-password\"}", null);
+                assertThat(invalid.statusCode()).isEqualTo(401);
+            }
+            assertThat(failedAttempts()).isEqualTo(4);
+
+            HttpResponse<String> locked = send("/api/v1/session/login", "POST",
+                    "{\"username\":\"linwei\",\"password\":\"wrong-password\"}", null);
+            assertThat(locked.statusCode()).isEqualTo(423);
+            assertThat(failedAttempts()).isEqualTo(5);
+            assertThat(jdbc.sql("""
+                    select count(*) from dev_user_credential
+                    where lower(username) = 'linwei' and locked_until > now()
+                    """).query(Long.class).single()).isEqualTo(1);
+            assertThat(jdbc.sql("""
+                    select count(*) from audit_event audit
+                    join dev_user_credential credential on credential.tenant_id = audit.tenant_id
+                      and credential.user_id = audit.actor_user_id
+                    where lower(credential.username) = 'linwei' and audit.action_code = 'LOGIN_FAILED'
+                    """).query(Long.class).single()).isGreaterThanOrEqualTo(5);
+        } finally {
+            resetCredential();
+        }
+    }
+
+    private int failedAttempts() {
+        return jdbc.sql("select failed_attempts from dev_user_credential where lower(username) = 'linwei'")
+                .query(Integer.class).single();
+    }
+
+    private void resetCredential() {
+        jdbc.sql("""
+                update dev_user_credential set failed_attempts = 0, locked_until = null, updated_at = now()
+                where lower(username) = 'linwei'
+                """).update();
+    }
+
     private HttpResponse<String> send(String path, String method, String body, String token) throws Exception {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .timeout(Duration.ofSeconds(10));

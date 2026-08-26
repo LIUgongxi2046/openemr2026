@@ -176,6 +176,14 @@ migration_v166="$project_dir/src/main/resources/db/migration/V166__configuration
 migration_v167="$project_dir/src/main/resources/db/migration/V167__development_user_session.sql"
 migration_v168="$project_dir/src/main/resources/db/migration/V168__appointment_doctor_and_admission_registration.sql"
 migration_v169="$project_dir/src/main/resources/db/migration/V169__medical_agent_harness.sql"
+migration_v170="$project_dir/src/main/resources/db/migration/V170__medical_agent_question_examples.sql"
+migration_v171="$project_dir/src/main/resources/db/migration/V171__model_deployment_api_configuration.sql"
+migration_v172="$project_dir/src/main/resources/db/migration/V172__authorization_policy_chinese_name.sql"
+migration_v173="$project_dir/src/main/resources/db/migration/V173__ai_center_crud_and_flow_data.sql"
+migration_v174="$project_dir/src/main/resources/db/migration/V174__remove_invalid_ai_validation_model.sql"
+migration_v175="$project_dir/src/main/resources/db/migration/V175__capability_pack_editable_inheritance.sql"
+migration_v176="$project_dir/src/main/resources/db/migration/V176__tertiary_hospital_ai_center_simulation.sql"
+migration_v177="$project_dir/src/main/resources/db/migration/V177__harden_medical_agent_context_and_release_lifecycle.sql"
 assertions_v1="$project_dir/src/test/resources/schema/assert-v1.sql"
 assertions_v2="$project_dir/src/test/resources/schema/assert-v2.sql"
 assertions_v3="$project_dir/src/test/resources/schema/assert-v3.sql"
@@ -343,6 +351,7 @@ assertions_v164="$project_dir/src/test/resources/schema/assert-v164.sql"
 assertions_v165="$project_dir/src/test/resources/schema/assert-v165.sql"
 assertions_v166="$project_dir/src/test/resources/schema/assert-v166.sql"
 assertions_v169="$project_dir/src/test/resources/schema/assert-v169.sql"
+assertions_v177="$project_dir/src/test/resources/schema/assert-v177.sql"
 
 for required_file_v166 in "$migration_v166" "$assertions_v166"; do
   if [[ ! -f "$required_file_v166" ]]; then
@@ -351,7 +360,9 @@ for required_file_v166 in "$migration_v166" "$assertions_v166"; do
   fi
 done
 
-for required_file_latest in "$migration_v167" "$migration_v168" "$migration_v169" "$assertions_v169"; do
+for required_file_latest in "$migration_v167" "$migration_v168" "$migration_v169" "$assertions_v169" \
+  "$migration_v170" "$migration_v171" "$migration_v172" "$migration_v173" "$migration_v174" \
+  "$migration_v175" "$migration_v176" "$migration_v177" "$assertions_v177"; do
   if [[ ! -f "$required_file_latest" ]]; then
     echo "Missing latest schema contract file: $required_file_latest" >&2
     exit 1
@@ -538,4 +549,12 @@ done
   -f "$migration_v167" \
   -f "$migration_v168" \
   -f "$migration_v169" -f "$assertions_v169" \
+  -f "$migration_v170" \
+  -f "$migration_v171" \
+  -f "$migration_v172" \
+  -f "$migration_v173" \
+  -f "$migration_v174" \
+  -f "$migration_v175" \
+  -f "$migration_v176" \
+  -f "$migration_v177" -f "$assertions_v177" \
   -c 'rollback'

@@ -2,6 +2,7 @@ package org.openemr2026.agent;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -19,6 +20,7 @@ final class DeepSeekClinicalModelProvider implements ClinicalModelProvider {
     private final DeepSeekChatTransport testTransport;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     DeepSeekClinicalModelProvider(
             JdbcClient jdbc,
             @Value("${openemr2026.production.ai.model-id:}") String modelId,

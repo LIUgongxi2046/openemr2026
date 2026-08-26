@@ -99,7 +99,7 @@ final class InpatientAdmissionApiTest {
         JsonNode ruleCatalog = objectMapper.readTree(rules.body());
         assertThat(ruleCatalog.size()).isEqualTo(16);
         assertThat(rules.body()).contains(
-                "入院记录", "日常病程记录", "主任医师查房记录", "死亡记录", "四级审签验收文书");
+                "入院记录", "日常病程记录", "主任医师查房记录", "死亡记录", "四级审签文书");
         assertThat(jdbc.sql("""
                 select count(*) from inpatient_document_task
                 where tenant_id = cast(:tenant as uuid) and admission_id = cast(:admission as uuid)

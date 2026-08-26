@@ -176,7 +176,8 @@
     "src/main/resources/db/migration/V173__ai_center_crud_and_flow_data.sql",
     "src/main/resources/db/migration/V174__remove_invalid_ai_validation_model.sql",
     "src/main/resources/db/migration/V175__capability_pack_editable_inheritance.sql",
-    "src/main/resources/db/migration/V176__tertiary_hospital_ai_center_simulation.sql"
+    "src/main/resources/db/migration/V176__tertiary_hospital_ai_center_simulation.sql",
+    "src/main/resources/db/migration/V177__harden_medical_agent_context_and_release_lifecycle.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
   "field_count": 2748,
