@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Center reference comparison</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; background: #eef2f7; color: #152238; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    h1 { margin: 0 0 20px; font-size: 22px; }
+    h2 { margin: 0 0 12px; font-size: 16px; }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 390px)); gap: 20px; align-items: start; margin-bottom: 28px; }
+    .frame { padding: 12px; border: 1px solid #cfd8e6; border-radius: 12px; background: #fff; box-shadow: 0 6px 20px rgba(31, 48, 78, .08); }
+    img { display: block; width: 100%; height: auto; border: 1px solid #e0e6ef; }
+    .note { max-width: 800px; margin: -12px 0 28px; color: #55657d; }
+  </style>
+</head>
+<body>
+  <h1>AI 中心 390×844 视觉对照</h1>
+  <h2>AI 总览</h2>
+  <section class="comparison">
+    <article class="frame"><strong>参考原型</strong><img src="ai-center-source/ai-center-390x844.png" alt="参考原型 AI 总览"></article>
+    <article class="frame"><strong>当前实现</strong><img src="ai-center-implementation/ai-center-390x844.png" alt="当前实现 AI 总览"></article>
+  </section>
+  <h2>AI医助小南</h2>
+  <section class="comparison">
+    <article class="frame"><strong>参考原型</strong><img src="ai-center-source/ai-assistant-390x844.png" alt="参考原型 AI医助小南"></article>
+    <article class="frame"><strong>当前实现</strong><img src="ai-center-implementation/ai-assistant-390x844.png" alt="当前实现 AI医助小南"></article>
+  </section>
+  <h2>Agent 设计</h2>
+  <section class="comparison">
+    <article class="frame"><strong>参考原型</strong><img src="ai-center-source/agent-catalog-390x844.png" alt="参考原型 Agent 设计"></article>
+    <article class="frame"><strong>当前实现</strong><img src="ai-center-implementation/agent-catalog-390x844.png" alt="当前实现 Agent 设计"></article>
+  </section>
+  <p class="note">Agent 页面内容差异来自数据治理：参考图包含旧测试命名，当前实现改为 5 个诊疗主 Agent、33 个面向医生可见的子 Agent，并保留原型的导航、卡片、间距和状态表达。</p>
+</body>
+</html>

@@ -133,7 +133,7 @@ export async function silenceClinicalReminder(lease: ContextLeaseWire, reminder:
   ));
 }
 
-// ── 全局临床 AI 助手（SSE 流式 · 确定性假模型） ──────────────────
+// ── 全局AI医助小南（SSE 流式 · 确定性假模型） ──────────────────
 export function issueAssistantFacilityLease(): Promise<ContextLeaseWire> {
   return issueContextLease(null, null, 'AI_ASSISTANT');
 }

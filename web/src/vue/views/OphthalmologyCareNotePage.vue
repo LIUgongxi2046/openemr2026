@@ -52,7 +52,7 @@ async function createNote() {
       risk_flag: form.risk_flag,
       recorded_at: new Date(form.recorded_at).toISOString(),
     });
-    notice.value = form.risk_flag ? '危重护理记录已保存并标记高危。' : '护理记录已保存。';
+    notice.value = form.risk_flag ? '专科护理记录已保存并标记高风险。' : '专科护理记录已保存。';
     form.assessment = ''; form.intervention = ''; form.risk_flag = false;
     await itemsQuery.refetch();
   } catch (error) {
@@ -67,12 +67,12 @@ async function createNote() {
       <div>
         <p class="eyebrow">专科中心 / 眼科</p>
         <h1>眼科护理与术后观察</h1>
-        <p>记录急诊危重评估与护理干预/输液执行；存在危险信号时强制标记风险，驱动交接与上级复核。</p>
+        <p>记录眼科围术期护理、视力眼压变化、用药执行与术后宣教，异常结果进入复核闭环。</p>
       </div>
       
     </div>
 
-    <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取急诊护理记录" />
+    <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取专科护理记录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
@@ -88,7 +88,7 @@ async function createNote() {
           <div v-if="!items.length" class="admin-empty" role="status">暂无护理记录，可在右侧新增。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>记录时间</th><th>危重评估</th><th>护理干预/输液</th><th>风险</th></tr></thead>
+              <thead><tr><th>记录时间</th><th>护理评估</th><th>护理干预与观察</th><th>风险</th></tr></thead>
               <tbody>
                 <tr v-for="item in items" :key="item.note_id">
                   <td>{{ formatDate(item.recorded_at) }}</td>
@@ -104,8 +104,8 @@ async function createNote() {
         <section class="admin-panel admin-form-panel">
           <header><div><h2>新增护理记录</h2><p>评估与干预均为必填。</p></div></header>
           <form class="admin-form" @submit.prevent="createNote">
-            <label><span>危重评估</span><textarea v-model="form.assessment" rows="3" required placeholder="例：神志、生命体征、疼痛、出血风险" /></label>
-            <label><span>护理干预 / 输液执行</span><textarea v-model="form.intervention" rows="3" required placeholder="例：开放静脉通路、补液、给药、监测" /></label>
+            <label><span>护理评估</span><textarea v-model="form.assessment" rows="3" required placeholder="记录专科症状、生命体征、疼痛和风险评估" /></label>
+            <label><span>护理干预与观察</span><textarea v-model="form.intervention" rows="3" required placeholder="记录护理措施、用药执行、效果观察和交接计划" /></label>
             <label><span>记录时间</span><input v-model="form.recorded_at" type="datetime-local" required /></label>
             <label class="risk-confirm"><input v-model="form.risk_flag" type="checkbox" /><span>存在危险信号（需交接与复核）</span></label>
             <button class="button primary full" :disabled="busy || !form.assessment.trim() || !form.intervention.trim()">{{ busy ? '正在保存…' : '保存护理记录' }}</button>

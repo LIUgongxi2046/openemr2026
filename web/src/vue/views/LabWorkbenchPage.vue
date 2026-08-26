@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watchEffect } from 'vue';
 import type { LabSpecimenWire } from '../../generated/contracts';
+import { issueOrderLease, listClinicalOrders } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -27,15 +28,29 @@ const specimensQuery = useQuery({
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? specimensQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? specimensQuery.error.value) : null);
+const ordersQuery = useQuery({
+  queryKey: ['execution', 'lab-workbench', 'eligible-orders'],
+  queryFn: async () => {
+    const lease = await issueOrderLease('outpatient');
+    return listClinicalOrders(lease, 'outpatient');
+  },
+  retry: false,
+});
+const issue = computed(() => (leaseQuery.error.value ?? specimensQuery.error.value ?? ordersQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? specimensQuery.error.value ?? ordersQuery.error.value) : null);
 const specimens = computed(() => specimensQuery.data.value ?? []);
+const eligibleOrderItems = computed(() => (ordersQuery.data.value ?? []).flatMap((order) => order.items)
+  .filter((item) => item.item_type === 'LAB' && !specimens.value.some((specimen) => specimen.order_item_id === item.order_item_id)));
 const collectedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'COLLECTED').length);
 const receivedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'RECEIVED').length);
 
 const form = reactive({ orderItemId: '', specimenType: 'BLOOD' as SpecimenType });
 const busy = ref('');
 const notice = ref('');
+
+watchEffect(() => {
+  if (!form.orderItemId && eligibleOrderItems.value[0]) form.orderItemId = eligibleOrderItems.value[0].order_item_id;
+});
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -90,7 +105,7 @@ async function receive(specimen: LabSpecimenWire) {
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前就诊检验标本</span></div><dl><div><dt>采集</dt><dd>采集人留痕</dd></div><div><dt>接收</dt><dd>接收人留痕</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || specimensQuery.isPending.value" kind="loading" message="正在读取检验标本台账" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || specimensQuery.isPending.value || ordersQuery.isPending.value" kind="loading" message="正在读取检验标本台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
@@ -127,7 +142,11 @@ async function receive(specimen: LabSpecimenWire) {
         <section class="admin-panel admin-form-panel">
           <header><div><h2>标本申请</h2><p>关联医嘱条目 ID 与标本类型。</p></div></header>
           <form class="admin-form" @submit.prevent="create">
-            <label><span>医嘱条目 ID</span><input v-model="form.orderItemId" maxlength="36" required placeholder="UUID" /></label>
+            <label><span>检验医嘱项目</span><select v-model="form.orderItemId" required>
+              <option value="" disabled>请选择未采样项目</option>
+              <option v-for="item in eligibleOrderItems" :key="item.order_item_id" :value="item.order_item_id">{{ item.display_name }} · {{ item.catalog_code }}</option>
+            </select></label>
+            <p v-if="eligibleOrderItems.length === 0" class="admin-form-hint">暂无未采样的检验医嘱，请先在医嘱工作台创建并签署检验项目。</p>
             <label><span>标本类型</span><select v-model="form.specimenType"><option v-for="type in specimenTypes" :key="type" :value="type">{{ specimenLabels[type] }}</option></select></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在申请…' : '创建标本申请' }}</button>
           </form>

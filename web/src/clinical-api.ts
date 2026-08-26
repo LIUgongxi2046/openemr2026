@@ -104,6 +104,7 @@ import {
   type PatientSummaryWire,
   type EncounterWire,
 } from './generated/contracts';
+import { authSession } from './auth-session';
 
 const syntheticDefaults = {
   tenantId: '018f0000-0000-7000-8000-00000000aa01',
@@ -114,6 +115,8 @@ const syntheticDefaults = {
   adminRoleId: '018f0000-0000-7000-8000-00000000aa09',
   patientId: '018f0000-0000-7000-8000-000000000001',
   encounterId: '018f0000-0000-7000-8000-000000000101',
+  emergencyPatientId: '018f0000-0000-7000-8000-000000000003',
+  emergencyEncounterId: '018f0000-0000-7000-8000-000000000103',
   documentId: '018f0000-0000-7000-8000-000000001001',
   inpatientPatientId: '018f0000-0000-7000-8000-000000000002',
   inpatientEncounterId: '018f0000-0000-7000-8000-000000000102',
@@ -124,7 +127,7 @@ const syntheticDefaults = {
 
 const developmentDefaults = import.meta.env.DEV ? syntheticDefaults : {
   tenantId: '', organizationId: '', facilityId: '', userId: '', roleId: '', adminRoleId: '',
-  patientId: '', encounterId: '', documentId: '', inpatientPatientId: '',
+  patientId: '', encounterId: '', emergencyPatientId: '', emergencyEncounterId: '', documentId: '', inpatientPatientId: '',
   inpatientEncounterId: '', inpatientAdmissionId: '', inpatientWardId: '',
   collaboratorUserId: '',
 };
@@ -138,6 +141,8 @@ export const clinicalContext = {
   adminRoleId: import.meta.env.VITE_ADMIN_ROLE_ASSIGNMENT_ID || developmentDefaults.adminRoleId,
   patientId: import.meta.env.VITE_PATIENT_ID || developmentDefaults.patientId,
   encounterId: import.meta.env.VITE_ENCOUNTER_ID || developmentDefaults.encounterId,
+  emergencyPatientId: import.meta.env.VITE_EMERGENCY_PATIENT_ID || developmentDefaults.emergencyPatientId,
+  emergencyEncounterId: import.meta.env.VITE_EMERGENCY_ENCOUNTER_ID || developmentDefaults.emergencyEncounterId,
   documentId: import.meta.env.VITE_DOCUMENT_ID || developmentDefaults.documentId,
   inpatientPatientId: import.meta.env.VITE_INPATIENT_PATIENT_ID || developmentDefaults.inpatientPatientId,
   inpatientEncounterId: import.meta.env.VITE_INPATIENT_ENCOUNTER_ID || developmentDefaults.inpatientEncounterId,
@@ -146,7 +151,17 @@ export const clinicalContext = {
   collaboratorUserId: import.meta.env.VITE_COLLABORATOR_USER_ID || developmentDefaults.collaboratorUserId,
 };
 
-const developmentBearer = import.meta.env.VITE_DEV_OIDC_TOKEN || (import.meta.env.DEV ? 'dev-synthetic-token' : '');
+if (authSession.user) {
+  clinicalContext.tenantId = authSession.user.tenant_id;
+  clinicalContext.organizationId = authSession.user.organization_id;
+  clinicalContext.facilityId = authSession.user.facility_id;
+  clinicalContext.userId = authSession.user.user_id;
+  clinicalContext.roleId = authSession.user.role_assignment_ids[0] ?? clinicalContext.roleId;
+}
+
+function configuredBearer() {
+  return authSession.token || import.meta.env.VITE_DEV_OIDC_TOKEN || '';
+}
 
 export type InpatientSyntheticActorKey = 'AUTHOR' | 'ATTENDING' | 'CHIEF' | 'MEDICAL_RECORDS';
 export interface InpatientSyntheticActor {
@@ -199,24 +214,19 @@ export class ClinicalApiError extends Error {
 
 function effectiveIdentityHeaders() {
   const actor = activeInpatientSyntheticActor;
+  const roleIds = authSession.user?.role_assignment_ids.join(',');
   return {
-    Authorization: developmentBearer ? `Bearer ${developmentBearer}` : '',
-    'X-OpenEMR-Tenant-Id': clinicalContext.tenantId,
-    'X-OpenEMR-User-Id': actor?.userId ?? clinicalContext.userId,
-    'X-OpenEMR-Role-Assignment-Ids': actor?.roleId ?? clinicalContext.roleId,
+    Authorization: configuredBearer() ? `Bearer ${configuredBearer()}` : '',
+    'X-OpenEMR-Tenant-Id': authSession.user?.tenant_id ?? clinicalContext.tenantId,
+    'X-OpenEMR-User-Id': actor?.userId ?? authSession.user?.user_id ?? clinicalContext.userId,
+    'X-OpenEMR-Role-Assignment-Ids': actor?.roleId ?? roleIds ?? clinicalContext.roleId,
   };
 }
-
-const adminIdentityHeaders = {
-  ...effectiveIdentityHeaders(),
-  'X-OpenEMR-User-Id': clinicalContext.userId,
-  'X-OpenEMR-Role-Assignment-Ids': clinicalContext.adminRoleId,
-};
 
 export async function request(path: string, init: RequestInit = {}) {
   const actor = activeInpatientSyntheticActor;
   if (!clinicalContext.tenantId || !clinicalContext.organizationId || !clinicalContext.facilityId
-      || !(actor?.userId ?? clinicalContext.userId) || !(actor?.roleId ?? clinicalContext.roleId) || !developmentBearer) {
+      || !(actor?.userId ?? clinicalContext.userId) || !(actor?.roleId ?? clinicalContext.roleId) || !configuredBearer()) {
     throw new ClinicalApiError(
       'CLINICAL_IDENTITY_NOT_CONFIGURED',
       '生产构建必须由 OIDC 会话注入身份与临床上下文',
@@ -244,7 +254,7 @@ export async function request(path: string, init: RequestInit = {}) {
 export async function streamText(path: string, headers: Record<string, string> = {}) {
   const actor = activeInpatientSyntheticActor;
   if (!clinicalContext.tenantId || !clinicalContext.organizationId || !clinicalContext.facilityId
-      || !(actor?.userId ?? clinicalContext.userId) || !(actor?.roleId ?? clinicalContext.roleId) || !developmentBearer) {
+      || !(actor?.userId ?? clinicalContext.userId) || !(actor?.roleId ?? clinicalContext.roleId) || !configuredBearer()) {
     throw new ClinicalApiError(
       'CLINICAL_IDENTITY_NOT_CONFIGURED',
       '生产构建必须由 OIDC 会话注入身份与临床上下文',
@@ -269,7 +279,7 @@ export async function streamText(path: string, headers: Record<string, string> =
 }
 
 export async function adminRequest(path: string, init: RequestInit = {}) {
-  if (!clinicalContext.tenantId || !clinicalContext.userId || !clinicalContext.adminRoleId || !developmentBearer) {
+  if (!clinicalContext.tenantId || !clinicalContext.userId || !clinicalContext.adminRoleId || !configuredBearer()) {
     throw new ClinicalApiError(
       'ADMIN_IDENTITY_NOT_CONFIGURED',
       '生产构建必须由 OIDC 会话注入管理身份',
@@ -278,7 +288,12 @@ export async function adminRequest(path: string, init: RequestInit = {}) {
   }
   const response = await fetch(`/api/v1${path}`, {
     ...init,
-    headers: { ...adminIdentityHeaders, ...init.headers },
+    headers: {
+      ...effectiveIdentityHeaders(),
+      'X-OpenEMR-User-Id': clinicalContext.userId,
+      'X-OpenEMR-Role-Assignment-Ids': clinicalContext.adminRoleId,
+      ...init.headers,
+    },
   });
   const text = await response.text();
   const payload = text ? JSON.parse(text) as unknown : null;
@@ -1248,8 +1263,16 @@ export async function createInpatientEncounterForAdmission(patientId: string): P
 export async function admitInpatientFromBedBoard(
   patientId: string,
   encounterId: string,
-  bedId: string,
-  admittedAt: string,
+  input: {
+    bedId: string; wardId: string; departmentId: string; admittedAt: string;
+    admissionSource: 'OUTPATIENT' | 'EMERGENCY' | 'TRANSFER' | 'OTHER';
+    admissionType: 'ELECTIVE' | 'URGENT' | 'EMERGENCY';
+    conditionLevel: 'GENERAL' | 'SERIOUS' | 'CRITICAL';
+    diagnosisCode: string; diagnosisText: string; paymentMethodCode: string;
+    verificationMethod: 'RESIDENT_ID' | 'MEDICAL_CARD' | 'OTHER';
+    contactName: string; contactRelationship: string; contactPhone: string;
+    certificateNo: string; transferFrom: string; remarks: string;
+  },
 ): Promise<InpatientOverviewWire> {
   const lease = await issueContextLease(patientId, encounterId, 'INPATIENT_ADMISSION');
   const overview = inpatientOverviewWireSchema.parse(await request('/inpatient/admissions', {
@@ -1264,10 +1287,24 @@ export async function admitInpatientFromBedBoard(
       facility_id: clinicalContext.facilityId,
       patient_id: patientId,
       encounter_id: encounterId,
-      ward_id: clinicalContext.inpatientWardId,
-      bed_id: bedId,
+      ward_id: input.wardId,
+      bed_id: input.bedId,
       attending_user_id: getInpatientSyntheticActor()?.userId ?? clinicalContext.userId,
-      admitted_at: admittedAt,
+      admitted_at: input.admittedAt,
+      department_id: input.departmentId,
+      admission_source: input.admissionSource,
+      admission_type: input.admissionType,
+      condition_level: input.conditionLevel,
+      admitting_diagnosis_code: input.diagnosisCode || null,
+      admitting_diagnosis_text: input.diagnosisText,
+      payment_method_code: input.paymentMethodCode,
+      identity_verification_method: input.verificationMethod,
+      contact_name: input.contactName,
+      contact_relationship: input.contactRelationship,
+      contact_phone: input.contactPhone,
+      admission_certificate_no: input.certificateNo || null,
+      transfer_from: input.transferFrom || null,
+      remarks: input.remarks || null,
     }),
   }));
   selectAdmittedInpatientContext(overview);

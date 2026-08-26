@@ -1,0 +1,48 @@
+{
+  "run_at": "2026-08-25T15:53:10.646Z",
+  "passed": 8,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "twelve-prototype-admin-routes",
+      "status": "PASS",
+      "detail": "12/12 路由标题、侧栏活动态与宽屏布局全部通过"
+    },
+    {
+      "name": "admin-dashboard-data-and-links",
+      "status": "PASS",
+      "detail": "4 项指标、8 个模块入口和待办均由系统管理 API 与数据库审计聚合"
+    },
+    {
+      "name": "database-backed-administration-fixtures",
+      "status": "PASS",
+      "detail": "admin-org=15, admin-users=5, admin-roles=5, admin-permissions=5, admin-dictionaries=3, admin-master-data=5, admin-templates=10, admin-parameters=14, admin-jobs=5, admin-audit=17, admin-auth=9策略/1事件"
+    },
+    {
+      "name": "organization-create-and-deactivate",
+      "status": "PASS",
+      "detail": "新建组织单元、查询回显、停用均已写入数据库"
+    },
+    {
+      "name": "dictionary-create-and-deactivate",
+      "status": "PASS",
+      "detail": "新建字典项、查询回显、停用均已写入数据库"
+    },
+    {
+      "name": "configuration-lifecycle-write",
+      "status": "PASS",
+      "detail": "主数据草稿创建、静态校验、提交审批全部落库"
+    },
+    {
+      "name": "authentication-simulation-and-role-scan",
+      "status": "PASS",
+      "detail": "认证模拟适配器可执行，职责冲突扫描有明确结果"
+    },
+    {
+      "name": "mobile-admin-domain-layout",
+      "status": "PASS",
+      "detail": "390×844 无页面溢出，12 个原型子入口可横向滚动"
+    }
+  ],
+  "failures": []
+}

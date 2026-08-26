@@ -42,7 +42,7 @@ async function register() {
       skill_version: form.skillVersion.trim(),
     });
     form.skillCode = ''; form.skillName = ''; form.skillVersion = '';
-    notice.value = 'Skill 已登记，审计链与事件出箱已同步记录。';
+    notice.value = '医助能力已登记，版本记录和操作留痕已同步更新。';
     await skillsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -55,7 +55,7 @@ async function deactivate(skill: SkillRegistryWire) {
   busy.value = skill.skill_registry_id; notice.value = '';
   try {
     await deactivateSkill(lease, skill);
-    notice.value = `Skill ${skill.skill_name} 已停用。`;
+    notice.value = `医助能力“${skill.skill_name}”已停用。`;
     await skillsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -67,29 +67,29 @@ async function deactivate(skill: SkillRegistryWire) {
   <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
-        <p class="eyebrow">AI 平台 / Skill 目录与定义编辑器</p>
-        <h1>Skill 目录</h1>
-        <p>登记与停用可复用 Skill；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。</p>
+        <p class="eyebrow">AI 中心 / 医助能力管理</p>
+        <h1>医助能力库</h1>
+        <p>管理病历整理、证据核验、风险提示等可复用能力；所有变更保留版本和操作记录，停用后历史任务仍可追溯。</p>
       </div>
     </div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || skillsQuery.isPending.value" kind="loading" message="正在读取 Skill 目录" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || skillsQuery.isPending.value" kind="loading" message="正在读取医助能力库" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
-      <section class="admin-metrics" aria-label="Skill 统计">
-        <article><span>Skill</span><strong>{{ skills.length }}</strong><small>全部登记</small></article>
-        <article><span>有效 Skill</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
+      <section class="admin-metrics" aria-label="医助能力统计">
+        <article><span>能力总数</span><strong>{{ skills.length }}</strong><small>全部登记</small></article>
+        <article><span>可用能力</span><strong>{{ activeCount }}</strong><small>当前已启用</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
       <div class="admin-layout">
         <section class="admin-panel">
           <header>
-            <div><h2>Skill 台账</h2><p>编码与版本不可变；停用保留历史语义。</p></div>
+            <div><h2>医助能力版本台账</h2><p>编码与版本不可变；停用后保留历史记录。</p></div>
             <button class="button secondary" @click="skillsQuery.refetch()">刷新</button>
           </header>
-          <div v-if="skills.length === 0" class="admin-empty" role="status">暂无 Skill，可在右侧登记。</div>
+          <div v-if="skills.length === 0" class="admin-empty" role="status">暂无医助能力，可在右侧登记。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>名称</th><th>编码</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
@@ -107,10 +107,10 @@ async function deactivate(skill: SkillRegistryWire) {
         </section>
 
         <section class="admin-panel admin-form-panel">
-          <header><div><h2>登记 Skill</h2><p>编码、名称与版本均为必填。</p></div></header>
+          <header><div><h2>登记医助能力</h2><p>编码、名称与版本均为必填。</p></div></header>
           <form class="admin-form" @submit.prevent="register">
-            <label><span>Skill 编码</span><input v-model="form.skillCode" maxlength="128" required placeholder="例：MEDICAL-NOTE" /></label>
-            <label><span>Skill 名称</span><input v-model="form.skillName" maxlength="256" required placeholder="例：病历摘要" /></label>
+            <label><span>能力编码</span><input v-model="form.skillCode" maxlength="128" required placeholder="例：MEDICAL-NOTE" /></label>
+            <label><span>能力名称</span><input v-model="form.skillName" maxlength="256" required placeholder="例：门诊病历摘要" /></label>
             <label><span>版本</span><input v-model="form.skillVersion" maxlength="64" required placeholder="例：1.0.0" /></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在登记…' : '登记并生效' }}</button>
           </form>

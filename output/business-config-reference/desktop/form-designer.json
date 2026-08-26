@@ -1,0 +1,188 @@
+{
+  "buttons": [
+    {
+      "disabled": false,
+      "text": "江城大学附属医院⌄",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "管理与治理工作台⌄",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "搜索",
+      "type": "submit"
+    },
+    {
+      "disabled": false,
+      "text": "AI医助小南",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "3",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "林",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "刷新",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "新建草稿",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "复杂病历结构化模板syn-medical-record-v1",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "保存新版本",
+      "type": "submit"
+    },
+    {
+      "disabled": false,
+      "text": "执行静态校验",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "提交审批",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "职责分离批准",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "发布",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "回退上一版本",
+      "type": "button"
+    }
+  ],
+  "document": {
+    "height": 1141,
+    "width": 1265
+  },
+  "fields": [
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "搜索患者、病历、医嘱、任务…",
+      "tag": "INPUT",
+      "type": "search",
+      "value": ""
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "INPUT",
+      "type": null,
+      "value": "复杂病历结构化模板"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "opd-record-v1",
+      "tag": "INPUT",
+      "type": null,
+      "value": "syn-medical-record-v1"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "包含主诉、现病史、系统回顾、查体、诊断依据与计划。"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "主诉,现病史,既往史,体格检查,诊断",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "主诉,现病史,既往史,体格检查,诊断"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "病史,检查,诊断",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "病史,检查,诊断"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "diagnosis -> ICD-10; symptom -> WS 445.2",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "diagnosis -> ICD-10; symptom -> WS 445.2"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "A4-门诊病历-v1",
+      "tag": "INPUT",
+      "type": "text",
+      "value": "A4-门诊病历-v1"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "INPUT",
+      "type": null,
+      "value": "完成配置生命周期操作"
+    }
+  ],
+  "headings": [
+    "表单与病历模板设计器",
+    "版本台账",
+    "编辑草稿",
+    "表单预览",
+    "校验、审批、发布与回退"
+  ],
+  "route": "form-designer",
+  "tables": [
+    {
+      "headers": [
+        "名称 / 键",
+        "生命周期",
+        "版本",
+        "更新"
+      ],
+      "rows": 1
+    }
+  ],
+  "text": "表单与病历模板设计器\n\n字段、分组、术语映射、打印预览与历史版本\n\n刷新\n新建草稿\n安全契约\n已发布模板不覆盖旧病历绑定的版本。\n版本台账\n\nFORM_TEMPLATE · 全程审计 + Outbox\n\n1 项\n名称 / 键\t生命周期\t版本\t更新\n\n复杂病历结构化模板\nsyn-medical-record-v1\n\t草稿\n未校验\n\tv1\t2026/8/25 00:48:18\n编辑草稿\n\n版本化 Schema v1；发布后仅能通过回退恢复\n\nv1\n名称\n唯一键\n说明\n字段 fields\n分组 groups\n术语映射 terminology_mapping\n打印模板 print_template\n保存新版本\n表单预览\n\n当前草稿的可视化语义预览\n\n结构化预览\n字段\n主诉\n现病史\n既往史\n体格检查\n诊断\n分组\n病史\n检查\n诊断\n术语映射\ndiagnosis -> ICD-10\nsymptom -> WS 445.2\n打印模板\nA4-门诊病历-v1\n校验、审批、发布与回退\n\n每一步都使用幂等键、乐观锁、审计链和 Outbox\n\n操作原因\n状态\n草稿\n校验\n未校验\n审批\n未知状态\n发布\n—\n执行静态校验\n提交审批\n职责分离批准\n发布\n回退上一版本\n\n作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。",
+  "url": "http://127.0.0.1:4178/app/index.html#/form-designer",
+  "viewport": {
+    "dpr": 1,
+    "height": 720,
+    "width": 1280
+  }
+}

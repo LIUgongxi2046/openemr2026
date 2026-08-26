@@ -1,0 +1,43 @@
+{
+  "run_at": "2026-08-25T08:27:07.037Z",
+  "passed": 7,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "standalone-system-login-page",
+      "status": "PASS",
+      "detail": "独立 /login 页面，复用首页 Logo，系统中文名为电子病历系统，无业务门户壳"
+    },
+    {
+      "name": "database-login",
+      "status": "PASS",
+      "detail": "林伟 / William Lin 今日 08:00–17:00 · 2026-08-25"
+    },
+    {
+      "name": "patient-first-appointment-flow",
+      "status": "PASS",
+      "detail": "患者/医院/科室/医生/班次可见；预约、报到、叫号、接诊、退号全部写库成功"
+    },
+    {
+      "name": "schedule-configuration-moved",
+      "status": "PASS",
+      "detail": "业务配置已显示科室、医生与号源列表"
+    },
+    {
+      "name": "realistic-bed-board-and-complete-form",
+      "status": "PASS",
+      "detail": "41 张科室-床号床位，完整入院登记字段可见"
+    },
+    {
+      "name": "database-logout",
+      "status": "PASS",
+      "detail": "退出后回到独立系统登录页，旧会话不可用"
+    },
+    {
+      "name": "mobile-system-login-layout",
+      "status": "PASS",
+      "detail": "390×844 无溢出，无业务壳"
+    }
+  ],
+  "failures": []
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { clinicalContext } from '../../clinical-api';
 import type { ShiftHandoverWire } from '../../generated/contracts';
 import {
@@ -9,6 +9,7 @@ import {
   createShiftHandoverPatient,
   issueEmergencyFacilityLease,
   issueEmergencyLease,
+  issueHandoverPatientLease,
   listEncounterDomainSwitches,
   listShiftHandoverPatients,
   listShiftHandovers,
@@ -27,6 +28,11 @@ const facilityLease = useQuery({
 const patientLease = useQuery({
   queryKey: ['emergency', 'handoff', 'patient-lease'],
   queryFn: () => issueEmergencyLease('EMERGENCY_HANDOFF'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
+const handoverPatientLease = useQuery({
+  queryKey: ['emergency', 'handoff', 'admitted-patient-lease'],
+  queryFn: () => issueHandoverPatientLease(clinicalContext.inpatientPatientId, 'EMERGENCY_HANDOFF'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 
@@ -48,18 +54,21 @@ const switchesQuery = useQuery({
 });
 
 const issue = computed(() => {
-  const failed = [facilityLease, patientLease, handoversQuery, handoverPatientsQuery, switchesQuery].find((q) => q.error.value);
+  const failed = [facilityLease, patientLease, handoverPatientLease, handoversQuery, handoverPatientsQuery, switchesQuery].find((q) => q.error.value);
   return failed ? toClinicalIssue(failed.error.value) : null;
 });
 const handovers = computed(() => handoversQuery.data.value ?? []);
 const handoverPatients = computed(() => handoverPatientsQuery.data.value ?? []);
 const switches = computed(() => switchesQuery.data.value ?? []);
 const selectedHandover = computed(() => handovers.value.find((h) => h.handover_id === selectedHandoverId.value) ?? null);
+watch(handovers, (items) => {
+  if (items.length && !items.some((item) => item.handover_id === selectedHandoverId.value)) selectedHandoverId.value = items[0].handover_id;
+}, { immediate: true });
 
 const handoverForm = reactive({ shift_from: '', shift_to: '', incoming_user_id: clinicalContext.collaboratorUserId, handover_summary: '' });
 const patientForm = reactive({ summary: '', risk_flag: false });
 const switchForm = reactive({
-  from_encounter_id: clinicalContext.encounterId,
+  from_encounter_id: clinicalContext.emergencyEncounterId,
   to_encounter_id: clinicalContext.inpatientEncounterId,
   from_domain: 'EMERGENCY' as 'OUTPATIENT' | 'EMERGENCY',
   to_domain: 'OUTPATIENT' as 'OUTPATIENT' | 'EMERGENCY',
@@ -113,10 +122,10 @@ async function addHandoverPatient() {
   if (busy.value || !selectedHandover.value || !patientForm.summary.trim()) return;
   busy.value = 'patient'; notice.value = '';
   try {
-    await createShiftHandoverPatient(facilityLease.data.value!, {
+    await createShiftHandoverPatient(handoverPatientLease.data.value!, {
       ward_id: wardId,
       handover_id: selectedHandover.value.handover_id,
-      patient_id: clinicalContext.patientId,
+      patient_id: clinicalContext.inpatientPatientId,
       summary: patientForm.summary.trim(),
       risk_flag: patientForm.risk_flag,
     });
@@ -160,7 +169,7 @@ async function recordSwitch() {
       <RouterLink class="button secondary" to="/emergency">返回急诊工作台</RouterLink>
     </div>
 
-    <ClinicalPageState v-if="facilityLease.isPending.value || patientLease.isPending.value || handoversQuery.isPending.value || switchesQuery.isPending.value" kind="loading" message="正在读取交接与转运记录" />
+    <ClinicalPageState v-if="facilityLease.isPending.value || patientLease.isPending.value || handoverPatientLease.isPending.value || handoversQuery.isPending.value || switchesQuery.isPending.value" kind="loading" message="正在读取交接与转运记录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>

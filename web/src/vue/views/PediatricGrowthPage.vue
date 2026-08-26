@@ -58,7 +58,7 @@ async function createRecord() {
     await createPediatricGrowthRecord(lease, {
       height_cm: form.heightCm,
       weight_kg: form.weightKg,
-      head_circumference_cm: form.headCircumferenceCm.trim() === '' ? null : Number(form.headCircumferenceCm),
+      head_circumference_cm: String(form.headCircumferenceCm).trim() === '' ? null : Number(form.headCircumferenceCm),
       measured_at: form.measuredAt,
     });
     form.heightCm = 0; form.weightKg = 0; form.headCircumferenceCm = '';
@@ -115,7 +115,7 @@ async function createRecord() {
           <form class="admin-form" @submit.prevent="createRecord">
             <label><span>身高（cm）</span><input v-model.number="form.heightCm" type="number" min="0" step="0.1" required /></label>
             <label><span>体重（kg）</span><input v-model.number="form.weightKg" type="number" min="0" step="0.1" required /></label>
-            <label><span>头围（cm）</span><input v-model="form.headCircumferenceCm" type="number" min="0" step="0.1" placeholder="可选" /></label>
+            <label><span>头围（cm）</span><input v-model.number="form.headCircumferenceCm" type="number" min="0" step="0.1" placeholder="可选" /></label>
             <label><span>测量时间</span><input v-model="form.measuredAt" type="datetime-local" required /></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在创建…' : '创建生长发育记录' }}</button>
           </form>

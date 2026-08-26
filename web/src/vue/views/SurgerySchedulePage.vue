@@ -4,7 +4,7 @@ import { computed, reactive, ref } from 'vue';
 import type { SurgicalProcedureWire } from '../../generated/contracts';
 import { clinicalContext } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
-import { issueExecutionPatientLease, listSurgicalProcedures, scheduleSurgicalProcedure, transitionSurgicalProcedure } from '../../api/execution';
+import { issueExecutionLease, issueExecutionPatientLease, listSurgicalProcedures, scheduleSurgicalProcedure, transitionSurgicalProcedure } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -25,14 +25,19 @@ const leaseQuery = useQuery({
   queryFn: () => issueExecutionPatientLease('SURGERY_SCHEDULE'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
+const writeLeaseQuery = useQuery({
+  queryKey: ['execution', 'surgery-schedule', 'write-lease'],
+  queryFn: () => issueExecutionLease('SURGERY_SCHEDULE'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
 const proceduresQuery = useQuery({
   queryKey: ['execution', 'surgery-schedule', 'procedures'],
   queryFn: () => listSurgicalProcedures(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? proceduresQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? proceduresQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? proceduresQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? proceduresQuery.error.value) : null);
 const procedures = computed(() => proceduresQuery.data.value ?? []);
 const timeoutCount = computed(() => procedures.value.filter((p) => p.status === 'TIME_OUT_COMPLETED').length);
 
@@ -47,7 +52,7 @@ function formatDate(value: string | null | undefined) {
 async function reload() { notice.value = ''; await proceduresQuery.refetch(); }
 
 async function schedule() {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value || !form.procedureName.trim() || !form.surgeonId.trim() || !form.anesthesiologistId.trim()) return;
   busy.value = 'schedule'; notice.value = '';
   try {
@@ -64,7 +69,7 @@ async function schedule() {
 }
 
 async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' | 'COMPLETE') {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = `${action}:${procedure.surgical_procedure_id}`; notice.value = '';
   try {
@@ -85,7 +90,7 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前患者围手术期</span></div><dl><div><dt>安全核查</dt><dd>Time-Out 留痕</dd></div><div><dt>术者 / 麻醉</dt><dd>显式登记</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || proceduresQuery.isPending.value" kind="loading" message="正在读取手术排程" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || proceduresQuery.isPending.value" kind="loading" message="正在读取手术排程" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>

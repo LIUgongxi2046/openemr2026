@@ -1,0 +1,138 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "AI 中心" [level=1]
+  - paragraph: AI医助小南、模型、Agent、Skill、Tool、评估与运行治理的统一入口
+  - generic: AI 边界
+  - generic: AI 深嵌工作流但不获得独立临床权力；每个建议、来源、动作、审批、版本和停用策略均可追溯。
+  - generic: 核心服务正常
+  - text: CLINICAL AI PLATFORM
+  - heading "AI 深嵌工作流，但不获得独立临床权力" [level=2]
+  - paragraph: 从随处可见的AI医助小南，到模型路由和 Agent 运行，每个建议、来源、动作、审批、版本和停用策略均可追溯。
+  - generic: "0"
+  - generic: 未批准临床副作用
+  - link "✦ AI医助小南 随问随答、主动提醒、来源核验和任务草拟 进入 →":
+    - /url: "#/ai-assistant"
+    - generic: ✦
+    - generic: AI医助小南
+    - paragraph: 随问随答、主动提醒、来源核验和任务草拟
+    - generic: 进入 →
+  - link "模 模型目录与路由 模型画像、边界、主备、灰度和回人工 进入 →":
+    - /url: "#/models"
+    - generic: 模
+    - generic: 模型目录与路由
+    - paragraph: 模型画像、边界、主备、灰度和回人工
+    - generic: 进入 →
+  - link "A Agent 设计 目标、上下文、步骤、预算、停止和审批 进入 →":
+    - /url: "#/agent-catalog"
+    - generic: A
+    - generic: Agent 设计
+    - paragraph: 目标、上下文、步骤、预算、停止和审批
+    - generic: 进入 →
+  - link "S Skill 目录 输入输出、依赖、评估、版本和许可证 进入 →":
+    - /url: "#/skill-catalog"
+    - generic: S
+    - generic: Skill 目录
+    - paragraph: 输入输出、依赖、评估、版本和许可证
+    - generic: 进入 →
+  - link "T Tool 治理 查询/副作用契约、鉴权、幂等与补偿 进入 →":
+    - /url: "#/tool-catalog"
+    - generic: T
+    - generic: Tool 治理
+    - paragraph: 查询/副作用契约、鉴权、幂等与补偿
+    - generic: 进入 →
+  - link "运 Agent 受控运行 受控运行快照、审批、预算与事件流 进入 →":
+    - /url: "#/agent"
+    - generic: 运
+    - generic: Agent 受控运行
+    - paragraph: 受控运行快照、审批、预算与事件流
+    - generic: 进入 →
+  - link "评 评估与发布 离线评估、红队、影子、灰度与回滚 进入 →":
+    - /url: "#/agent-evals"
+    - generic: 评
+    - generic: 评估与发布
+    - paragraph: 离线评估、红队、影子、灰度与回滚
+    - generic: 进入 →
+  - link "治 运行事件 质量、安全、延迟、预算和单组件停用 进入 →":
+    - /url: "#/aiops"
+    - generic: 治
+    - generic: 运行事件
+    - paragraph: 质量、安全、延迟、预算和单组件停用
+    - generic: 进入 →
+  - link "策 小南策略 主动级别、来源、模型、限频与门禁 进入 →":
+    - /url: "#/ai-assistant-policy"
+    - generic: 策
+    - generic: 小南策略
+    - paragraph: 主动级别、来源、模型、限频与门禁
+    - generic: 进入 →

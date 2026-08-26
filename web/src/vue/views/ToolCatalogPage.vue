@@ -56,7 +56,7 @@ async function register() {
       tool_type: form.toolType,
     });
     form.toolCode = ''; form.toolName = ''; form.toolVersion = '';
-    notice.value = 'Tool 已登记，审计链与事件出箱已同步记录。';
+    notice.value = '医助工具已登记，版本记录和操作留痕已同步更新。';
     await toolsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -69,7 +69,7 @@ async function deactivate(tool: ToolRegistryWire) {
   busy.value = tool.tool_registry_id; notice.value = '';
   try {
     await deactivateTool(lease, tool);
-    notice.value = `Tool ${tool.tool_name} 已停用。`;
+    notice.value = `医助工具“${tool.tool_name}”已停用。`;
     await toolsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -81,29 +81,29 @@ async function deactivate(tool: ToolRegistryWire) {
   <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
-        <p class="eyebrow">AI 平台 / Tool 目录、风险与审批策略</p>
-        <h1>Tool 目录</h1>
-        <p>登记与停用可执行 Tool；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。</p>
+        <p class="eyebrow">AI 中心 / 医助工具管理</p>
+        <h1>医助工具库</h1>
+        <p>管理院内系统查询、临床数据读取和业务操作工具；所有变更保留版本和操作记录，高风险操作需人工审批。</p>
       </div>
     </div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || toolsQuery.isPending.value" kind="loading" message="正在读取 Tool 目录" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || toolsQuery.isPending.value" kind="loading" message="正在读取医助工具库" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
-      <section class="admin-metrics" aria-label="Tool 统计">
-        <article><span>Tool</span><strong>{{ tools.length }}</strong><small>全部登记</small></article>
-        <article><span>有效 Tool</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
+      <section class="admin-metrics" aria-label="医助工具统计">
+        <article><span>工具总数</span><strong>{{ tools.length }}</strong><small>全部登记</small></article>
+        <article><span>可用工具</span><strong>{{ activeCount }}</strong><small>当前已启用</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
       <div class="admin-layout">
         <section class="admin-panel">
           <header>
-            <div><h2>Tool 台账</h2><p>编码与版本不可变；停用保留历史语义。</p></div>
+            <div><h2>医助工具版本台账</h2><p>编码与版本不可变；停用后保留历史记录。</p></div>
             <button class="button secondary" @click="toolsQuery.refetch()">刷新</button>
           </header>
-          <div v-if="tools.length === 0" class="admin-empty" role="status">暂无 Tool，可在右侧登记。</div>
+          <div v-if="tools.length === 0" class="admin-empty" role="status">暂无医助工具，可在右侧登记。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>名称</th><th>编码</th><th>类型</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
@@ -122,10 +122,10 @@ async function deactivate(tool: ToolRegistryWire) {
         </section>
 
         <section class="admin-panel admin-form-panel">
-          <header><div><h2>登记 Tool</h2><p>编码、名称与版本均为必填。</p></div></header>
+          <header><div><h2>登记医助工具</h2><p>编码、名称与版本均为必填。</p></div></header>
           <form class="admin-form" @submit.prevent="register">
-            <label><span>Tool 编码</span><input v-model="form.toolCode" maxlength="128" required placeholder="例：DRUG-INTERACTION" /></label>
-            <label><span>Tool 名称</span><input v-model="form.toolName" maxlength="256" required placeholder="例：药物相互作用查询" /></label>
+            <label><span>工具编码</span><input v-model="form.toolCode" maxlength="128" required placeholder="例：DRUG-INTERACTION" /></label>
+            <label><span>工具名称</span><input v-model="form.toolName" maxlength="256" required placeholder="例：药物相互作用查询" /></label>
             <label><span>版本</span><input v-model="form.toolVersion" maxlength="64" required placeholder="例：1.0.0" /></label>
             <label><span>类型</span><select v-model="form.toolType"><option v-for="(name, type) in toolTypeLabels" :key="type" :value="type">{{ name }}</option></select></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在登记…' : '登记并生效' }}</button>

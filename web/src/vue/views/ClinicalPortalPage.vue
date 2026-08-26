@@ -32,14 +32,14 @@ const domains: DomainCard[] = [
     alerts: [['危急值', '1', 'red'], ['处方待审', '2', 'amber'], ['会诊临期', '1', 'amber']],
     flow: ['预约挂号', '到诊分诊', '问诊病历', '诊断医嘱', '结果处置', '签署终诊'],
     modules: [
-      { title: '预约挂号与队列', desc: '号源、到诊、分诊、叫号、过号', to: 'outpatient' },
+      { title: '预约挂号与队列', desc: '号源、到诊、分诊、叫号、过号', to: 'appointment-registration' },
       { title: '门诊病历与质控', desc: '主诉、病史、查体、诊断、签署', to: 'record' },
       { title: '医嘱处方与执行', desc: '药品、检验、检查、治疗、审方', to: 'opd-orders' },
       { title: '结果与危急值', desc: '趋势、报告更正、确认与处置', to: 'opd-results' },
       { title: '会诊转诊', desc: '申请、受理、意见、时限', to: 'opd-consult' },
       { title: '随访与终诊', desc: '教育、复诊、随访、结束就诊', to: 'opd-followup' },
     ],
-    footer: [['当前上下文', '心内科 · 门诊医生 · 今日班次'], ['最近访问', '陈建国 · OP20260813-0842 · 草稿已保存']],
+    footer: [['当前上下文', '心内科 · 门诊医生 · 今日班次'], ['最近访问', '陈建国 / James Chen · OP20260813-0842 · 草稿已保存']],
   },
   {
     type: 'emergency',
@@ -79,7 +79,7 @@ const domains: DomainCard[] = [
       { title: '会诊手术与协同', desc: '会诊、手术、转科、交班、事件文书', to: 'ip-consult' },
       { title: '出院病案闭环', desc: '出院记录、首页、质控、整改、归档', to: 'inpatient-discharge' },
     ],
-    footer: [['当前上下文', '心内科一病区 · A 医疗组'], ['最近访问', '李桂兰 · 02床 · 首程待完成']],
+    footer: [['当前上下文', '心内科一病区 · A 医疗组'], ['最近访问', '李桂兰 / Grace Li · 02床 · 首程待完成']],
   },
 ];
 
@@ -95,14 +95,15 @@ function go(to: string): void {
 </script>
 
 <template>
+  <section data-page-root class="content vue-native-page clinical-portal-page">
   <div class="page-head">
     <div class="page-title">
       <h1>临床业务门户</h1>
       <p>一级入口 · 门诊、急诊、住院三个独立临床工作域 · 数据更新 09:45</p>
     </div>
     <div class="head-actions">
-      <button class="btn" type="button" @click="go('clinical-tasks')">统一任务 9</button>
-      <button class="btn" type="button">工作设置</button>
+      <button class="btn" type="button" data-route-target="clinical-tasks" @click="go('clinical-tasks')">统一任务 9</button>
+      <button class="btn" type="button" data-route-target="workflow" @click="go('workflow')">业务配置</button>
     </div>
   </div>
 
@@ -121,7 +122,7 @@ function go(to: string): void {
           <h2>{{ d.title }}</h2>
           <p>{{ d.desc }}</p>
         </div>
-        <button class="btn domain-enter" :class="{ primary: d.type === 'outpatient' }" type="button" @click="go(d.to)">
+        <button class="btn domain-enter" :class="{ primary: d.type === 'outpatient' }" type="button" :data-route-target="d.to" @click="go(d.to)">
           进入{{ d.title }} →
         </button>
       </div>
@@ -138,7 +139,7 @@ function go(to: string): void {
         </template>
       </div>
       <div class="module-map">
-        <button v-for="m in d.modules" :key="m.title" type="button" @click="go(m.to)"><b>{{ m.title }}</b><small>{{ m.desc }}</small></button>
+        <button v-for="m in d.modules" :key="m.title" type="button" :data-route-target="m.to" @click="go(m.to)"><b>{{ m.title }}</b><small>{{ m.desc }}</small></button>
       </div>
       <div class="domain-footer">
         <div v-for="[label, value] in d.footer" :key="label"><span>{{ label }}</span><b>{{ value }}</b></div>
@@ -152,8 +153,10 @@ function go(to: string): void {
       :key="item.to"
       role="button"
       tabindex="0"
+      :data-route-target="item.to"
       @click="go(item.to)"
       @keydown.enter="go(item.to)"
     ><b>{{ item.title }}</b><span>{{ item.desc }}</span></div>
   </div>
+  </section>
 </template>

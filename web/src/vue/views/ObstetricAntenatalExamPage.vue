@@ -66,8 +66,8 @@ async function createRecord() {
   try {
     await createObstetricAntenatalExam(lease, {
       gestational_weeks: form.gestationalWeeks,
-      fundal_height_cm: form.fundalHeightCm.trim() === '' ? null : Number(form.fundalHeightCm),
-      fetal_heart_rate: form.fetalHeartRate.trim() === '' ? null : Number(form.fetalHeartRate),
+      fundal_height_cm: String(form.fundalHeightCm).trim() === '' ? null : Number(form.fundalHeightCm),
+      fetal_heart_rate: String(form.fetalHeartRate).trim() === '' ? null : Number(form.fetalHeartRate),
       systolic_bp: form.systolicBp,
       diastolic_bp: form.diastolicBp,
       proteinuria: form.proteinuria,
@@ -132,8 +132,8 @@ async function createRecord() {
           <header><div><h2>新增产前检查</h2><p>孕周、收缩压与舒张压必填。</p></div></header>
           <form class="admin-form" @submit.prevent="createRecord">
             <label><span>孕周</span><input v-model.number="form.gestationalWeeks" type="number" min="0" required /></label>
-            <label><span>宫高（cm）</span><input v-model="form.fundalHeightCm" type="number" step="0.1" placeholder="可选" /></label>
-            <label><span>胎心（次/分）</span><input v-model="form.fetalHeartRate" type="number" min="0" placeholder="可选" /></label>
+            <label><span>宫高（cm）</span><input v-model.number="form.fundalHeightCm" type="number" step="0.1" placeholder="可选" /></label>
+            <label><span>胎心（次/分）</span><input v-model.number="form.fetalHeartRate" type="number" min="0" placeholder="可选" /></label>
             <label><span>收缩压</span><input v-model.number="form.systolicBp" type="number" min="0" required /></label>
             <label><span>舒张压</span><input v-model.number="form.diastolicBp" type="number" min="0" required /></label>
             <label><span>蛋白尿</span><select v-model="form.proteinuria">

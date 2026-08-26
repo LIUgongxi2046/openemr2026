@@ -1,0 +1,22 @@
+{
+  "document": {
+    "height": 2392,
+    "width": 375
+  },
+  "headings": [
+    "角色、职责与数据范围设计器",
+    "版本台账",
+    "编辑草稿",
+    "权限模拟",
+    "校验、审批、发布与回退"
+  ],
+  "overflowX": false,
+  "route": "scope-designer",
+  "text": "角色、职责与数据范围设计器\n\n组织、岗位、患者关系、临时授权和职责分离\n\n刷新\n新建草稿\n安全契约\n临时授权必须到期，作者与审批人不得为同一人。\n版本台账\n\nSCOPE · 全程审计 + Outbox\n\n1 项\n名称 / 键\t生命周期\t版本\t更新\n\n院科患者关系数据范围\nsyn-role-scope-v1\n\t草稿\n未校验\n\tv1\t2026/8/25 00:48:18\n编辑草稿\n\n版本化 Schema v1；发布后仅能通过回退恢复\n\nv1\n名称\n唯一键\n说明\n角色 roles\n数据范围 data_scopes\n职责分离 separation_of_duties\n临时授权小时 temporary_grant_hours\n保存新版本\n权限模拟\n\n当前草稿的可视化语义预览\n\n结构化预览\n角色\n作者\n审批人\n跨科医生\n数据范围\n本科就诊\n授权患者\n脱敏汇总\n职责分离\n作者!=审批人\n跨科医生只读\n临时授权小时\n4\n校验、审批、发布与回退\n\n每一步都使用幂等键、乐观锁、审计链和 Outbox\n\n操作原因\n状态\n草稿\n校验\n未校验\n审批\n未知状态\n发布\n—\n执行静态校验\n提交审批\n职责分离批准\n发布\n回退上一版本\n\n作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。",
+  "url": "http://127.0.0.1:4178/app/index.html#/scope-designer",
+  "viewport": {
+    "dpr": 1,
+    "height": 844,
+    "width": 390
+  }
+}

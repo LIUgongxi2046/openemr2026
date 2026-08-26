@@ -116,7 +116,7 @@ try {
         });
         if (unnamed.length) issues.push({ issue: 'UNNAMED_FORM_CONTROLS', count: unnamed.length, samples: unnamed.slice(0, 5).map((element) => ({ tag: element.tagName, type: element.getAttribute('type'), class_name: element.className?.toString().slice(0, 80) })) });
 
-        const aiLauncher = document.querySelector('[aria-label="打开随行 AI 助手"]');
+        const aiLauncher = document.querySelector('[aria-label="打开AI医助小南"]');
         if (!aiLauncher || !visible(aiLauncher)) issues.push({ issue: 'GLOBAL_AI_LAUNCHER_MISSING' });
         return {
           issues,
@@ -134,7 +134,7 @@ try {
     await page.goto(`${baseUrl}/#/clinical`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.documentElement.dataset.routeId === 'clinical', { timeout: 8_000 }).catch(() => {});
     const beforeUrl = page.url();
-    const launcher = page.locator('[aria-label="打开随行 AI 助手"]');
+    const launcher = page.locator('[aria-label="打开AI医助小南"]');
     if (await launcher.count()) {
       await launcher.click();
       await page.waitForTimeout(150);
@@ -144,8 +144,8 @@ try {
       if (!routePreserved) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_LAUNCH_CHANGED_ROUTE', before: beforeUrl, after: page.url() });
       if (dialogCount === 1 && routePreserved) {
         const dialog = page.getByRole('dialog');
-        await dialog.getByLabel('输入问题').fill('验证当前页面上下文');
-        await dialog.getByRole('button', { name: '发送' }).click();
+        await dialog.getByLabel('输入问题或任务').fill('验证当前页面上下文');
+        await dialog.getByRole('button', { name: /^交给/ }).click();
         const responseVisible = await dialog.getByText('这是开发合成环境的确定性假模型回复', { exact: false })
           .waitFor({ state: 'visible', timeout: 8_000 }).then(() => true).catch(() => false);
         if (!responseVisible) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_RESPONSE_MISSING' });
@@ -153,7 +153,7 @@ try {
         await page.keyboard.press('Escape');
         await page.waitForTimeout(100);
         if (await page.getByRole('dialog').count()) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_ESCAPE_DID_NOT_CLOSE' });
-        const focusReturned = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === '打开随行 AI 助手');
+        const focusReturned = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === '打开AI医助小南');
         if (!focusReturned) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_FOCUS_NOT_RESTORED' });
       }
     } else {

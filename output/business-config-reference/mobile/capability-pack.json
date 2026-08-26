@@ -1,0 +1,43 @@
+{
+  "document": {
+    "height": 7684,
+    "width": 375
+  },
+  "headings": [
+    "能力包与灰度发布",
+    "能力包台账",
+    "新增能力包"
+  ],
+  "overflowX": false,
+  "route": "capability-pack",
+  "text": "能力包与灰度发布\n\n能力包按机构差异化配置，继承不可自指；发布走草稿→灰度→全量→退休状态机，回退必附原因。\n\n能力包台账\n\n编码唯一，停用保留继承历史。\n\n刷新\n编码 / 名称\t继承\t状态\t操作\n\n能力包-PACK-032f7bf8\nPACK-032f7bf8\n\t独立\t有效\t停用\n\n能力包-PACK-03f39e99\nPACK-03f39e99\n\t独立\t有效\t停用\n\n能力包-PACK-04fdee77\nPACK-04fdee77\n\t独立\t有效\t停用\n\n能力包-PACK-08f5ba21\nPACK-08f5ba21\n\t独立\t已停用\t停用\n\n能力包-PACK-0d451bf4\nPACK-0d451bf4\n\t独立\t有效\t停用\n\n能力包-PACK-14390820\nPACK-14390820\n\t独立\t有效\t停用\n\n能力包-PACK-15583948\nPACK-15583948\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-2232229a\nPACK-2232229a\n\t独立\t有效\t停用\n\n能力包-PACK-2b3b770e\nPACK-2b3b770e\n\t独立\t已停用\t停用\n\n能力包-PACK-3424faea\nPACK-3424faea\n\t独立\t已停用\t停用\n\n能力包-PACK-3ae463c7\nPACK-3ae463c7\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-3aee1d4d\nPACK-3aee1d4d\n\t独立\t有效\t停用\n\n能力包-PACK-409b6091\nPACK-409b6091\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-50191934\nPACK-50191934\n\t独立\t有效\t停用\n\n能力包-PACK-51d69850\nPACK-51d69850\n\t独立\t有效\t停用\n\n能力包-PACK-547a1778\nPACK-547a1778\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-582d34f8\nPACK-582d34f8\n\t独立\t有效\t停用\n\n能力包-PACK-5a567f16\nPACK-5a567f16\n\t独立\t有效\t停用\n\n能力包-PACK-5a67809f\nPACK-5a67809f\n\t独立\t有效\t停用\n\n能力包-PACK-6ba53aa3\nPACK-6ba53aa3\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-6efe62cb\nPACK-6efe62cb\n\t独立\t已停用\t停用\n\n能力包-PACK-76017545\nPACK-76017545\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-79695a21\nPACK-79695a21\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-7d6111ad\nPACK-7d6111ad\n\t独立\t有效\t停用\n\n能力包-PACK-7eaaa84f\nPACK-7eaaa84f\n\t独立\t有效\t停用\n\n能力包-PACK-888baad9\nPACK-888baad9\n\t独立\t有效\t停用\n\n能力包-PACK-89a06819\nPACK-89a06819\n\t独立\t有效\t停用\n\n能力包-PACK-93390628\nPACK-93390628\n\t独立\t有效\t停用\n\n能力包-PACK-9a258d22\nPACK-9a258d22\n\t独立\t已停用\t停用\n\n能力包-PACK-ae9a7984\nPACK-ae9a7984\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-b772d3a5\nPACK-b772d3a5\n\t独立\t有效\t停用\n\n能力包-PACK-beecbd6e\nPACK-beecbd6e\n\t独立\t已停用\t停用\n\n能力包-PACK-f3fd3d4c\nPACK-f3fd3d4c\n\t独立\t已停用\t停用\n\n能力包-PACK-f6a6ed6a\nPACK-f6a6ed6a\n\t独立\t已停用\t停用\n\n能力包-PACK-f7b75003\nPACK-f7b75003\n\t继承自其他包\t有效\t停用\n\n能力包-PACK-ff3fb604\nPACK-ff3fb604\n\t独立\t已停用\t停用\n\n能力包\nPKG-097c9cbd-39a\n\t独立\t有效\t停用\n\n能力包\nPKG-101d1630-e57\n\t独立\t有效\t停用\n\n能力包\nPKG-12ce1c80-870\n\t独立\t有效\t停用\n\n能力包\nPKG-145f455b-e63\n\t独立\t有效\t停用\n\n能力包\nPKG-159d971e-07c\n\t独立\t有效\t停用\n\n能力包\nPKG-1ae24a16-c31\n\t独立\t有效\t停用\n\n能力包\nPKG-1cfbcba2-980\n\t独立\t有效\t停用\n\n能力包\nPKG-1de034a3-6ad\n\t独立\t有效\t停用\n\n能力包\nPKG-229c1a7b-181\n\t独立\t有效\t停用\n\n能力包\nPKG-23fa28e6-bd8\n\t独立\t有效\t停用\n\n能力包\nPKG-267c92e9-6d7\n\t独立\t有效\t停用\n\n能力包\nPKG-2922aac4-951\n\t独立\t有效\t停用\n\n能力包\nPKG-2f9f39ee-325\n\t独立\t有效\t停用\n\n能力包\nPKG-31f26b94-358\n\t独立\t有效\t停用\n\n能力包\nPKG-32352cb5-ebf\n\t独立\t有效\t停用\n\n能力包\nPKG-340307e3-88d\n\t独立\t有效\t停用\n\n能力包\nPKG-35afe98c-3bd\n\t独立\t有效\t停用\n\n能力包\nPKG-384e2a0f-548\n\t独立\t有效\t停用\n\n能力包\nPKG-3d8c06c0-61b\n\t独立\t有效\t停用\n\n能力包\nPKG-435ef08a-ca4\n\t独立\t有效\t停用\n\n能力包\nPKG-493b786d-2a6\n\t独立\t有效\t停用\n\n能力包\nPKG-4ac3e272-2bc\n\t独立\t有效\t停用\n\n能力包\nPKG-4e9312e2-0ef\n\t独立\t有效\t停用\n\n能力包\nPKG-57080a6c-173\n\t独立\t有效\t停用\n\n能力包\nPKG-5cce63dd-cd2\n\t独立\t有效\t停用\n\n能力包\nPKG-5e679d38-00e\n\t独立\t有效\t停用\n\n能力包\nPKG-5ebe4834-737\n\t独立\t有效\t停用\n\n能力包\nPKG-5fefea32-3e8\n\t独立\t有效\t停用\n\n能力包\nPKG-60ae6b96-22c\n\t独立\t有效\t停用\n\n能力包\nPKG-6db4ae77-807\n\t独立\t有效\t停用\n\n能力包\nPKG-6f690c9b-2f4\n\t独立\t有效\t停用\n\n能力包\nPKG-70639005-baa\n\t独立\t有效\t停用\n\n能力包\nPKG-70ce9fde-92d\n\t独立\t有效\t停用\n\n能力包\nPKG-71a82ac0-c2e\n\t独立\t有效\t停用\n\n能力包\nPKG-71f1ddff-eed\n\t独立\t有效\t停用\n\n能力包\nPKG-72170017-459\n\t独立\t有效\t停用\n\n能力包\nPKG-72268811-ad5\n\t独立\t有效\t停用\n\n能力包\nPKG-729fbecc-9e5\n\t独立\t有效\t停用\n\n能力包\nPKG-79b67cdd-8a9\n\t独立\t有效\t停用\n\n能力包\nPKG-801c2157-856\n\t独立\t有效\t停用\n\n能力包\nPKG-83f03461-9d8\n\t独立\t有效\t停用\n\n能力包\nPKG-8628e00e-ef6\n\t独立\t有效\t停用\n\n能力包\nPKG-8858b44a-655\n\t独立\t有效\t停用\n\n能力包\nPKG-89f13550-5d6\n\t独立\t有效\t停用\n\n能力包\nPKG-8e972083-a4e\n\t独立\t有效\t停用\n\n能力包\nPKG-943e643b-819\n\t独立\t有效\t停用\n\n能力包\nPKG-a2172f53-959\n\t独立\t有效\t停用\n\n能力包\nPKG-a70f11ca-633\n\t独立\t有效\t停用\n\n能力包\nPKG-b4270eb3-560\n\t独立\t有效\t停用\n\n能力包\nPKG-bbc64700-580\n\t独立\t有效\t停用\n\n能力包\nPKG-be7ce63d-018\n\t独立\t有效\t停用\n\n能力包\nPKG-bfc7cf9f-007\n\t独立\t有效\t停用\n\n能力包\nPKG-c10014b0-44b\n\t独立\t有效\t停用\n\n能力包\nPKG-c1a12ab8-eed\n\t独立\t有效\t停用\n\n能力包\nPKG-c73239d4-009\n\t独立\t有效\t停用\n\n能力包\nPKG-c784996a-4b8\n\t独立\t有效\t停用\n\n能力包\nPKG-c8ca02de-276\n\t独立\t有效\t停用\n\n能力包\nPKG-cc7bbfc5-3de\n\t独立\t有效\t停用\n\n能力包\nPKG-cf321cf6-5d9\n\t独立\t有效\t停用\n\n能力包\nPKG-d0df67df-321\n\t独立\t有效\t停用\n\n能力包\nPKG-db0d36c0-4dd\n\t独立\t有效\t停用\n\n能力包\nPKG-ddbb49cf-e3e\n\t独立\t有效\t停用\n\n能力包\nPKG-de30f328-115\n\t独立\t有效\t停用\n\n能力包\nPKG-df0a4364-c22\n\t独立\t有效\t停用\n\n能力包\nPKG-e4efced6-7c5\n\t独立\t有效\t停用\n\n能力包\nPKG-e4f7e321-545\n\t独立\t有效\t停用\n\n能力包\nPKG-e741afea-096\n\t独立\t有效\t停用\n\n能力包\nPKG-e8c7dddf-e5d\n\t独立\t有效\t停用\n\n能力包\nPKG-f2dc5377-c33\n\t独立\t有效\t停用\n\n能力包\nPKG-f4ae4437-3a8\n\t独立\t有效\t停用\n\n能力包\nPKG-fad8caa1-49b\n\t独立\t有效\t停用\n\n能力包\nPKG-ff01c3a4-bc7\n\t独立\t有效\t停用\n新增能力包\n\n自继承会被硬门拒绝。\n\n能力包编码\n能力包名称\n继承编码（可选）\n定义能力包",
+  "url": "http://127.0.0.1:4178/app/index.html#/capability-pack",
+  "viewport": {
+    "dpr": 1,
+    "height": 844,
+    "width": 390
+  },
+  "visibleNav": [
+    "OpenEMR2026电子病历系统",
+    "⌂临床业务门户",
+    "◫门诊工作台6",
+    "✚急诊工作台4",
+    "▥住院工作站5",
+    "▤病历中心3",
+    "◈医疗质量中心7",
+    "▣病案资产中心3",
+    "✚医疗协同中心8",
+    "☑任务与临床路径9",
+    "⌁数据中心6",
+    "✦AI 中心4",
+    "⇄模拟接口",
+    "⌘业务配置",
+    "⚙系统管理7",
+    "流程设计",
+    "能力包",
+    "科室适配",
+    "表单模板",
+    "规则时限",
+    "职责范围"
+  ]
+}

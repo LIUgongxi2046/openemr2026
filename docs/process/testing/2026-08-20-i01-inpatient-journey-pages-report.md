@@ -22,7 +22,7 @@
 
 合成患者处于 `ADMITTED`，页面显示 3 项未完成文书、1 项已完成四级审签文书。版本页读取同一文书 v2 `SIGNED` 与 v1 `DRAFT`，内容哈希不同且未发生覆盖。出院页填写诊断后真实提交，服务端返回 `DISCHARGE_TASKS_OPEN`；患者仍为 `ADMITTED`，证明未完成文书门禁不依赖前端提示。
 
-桌面与 390px 视口检查通过；窄屏标题、患者级导航、岗位选择、表单和证据均可达。全局 AI 助手已移到顶部导航，移动端收缩为 36px AI 圆标，不再遮挡页面业务动作。浏览器控制台 `0 error / 0 warning`。设计证据见 `docs/process/testing/design-audit/2026-08-20-i01-inpatient-journey/audit.md`。
+桌面与 390px 视口检查通过；窄屏标题、患者级导航、岗位选择、表单和证据均可达。全局 AI医助小南已移到顶部导航，移动端收缩为 36px AI 圆标，不再遮挡页面业务动作。浏览器控制台 `0 error / 0 warning`。设计证据见 `docs/process/testing/design-audit/2026-08-20-i01-inpatient-journey/audit.md`。
 
 会诊页在真实 `dev-synthetic` 后端完成了“住院医师申请 → 主治医师独立接诊 → 主治签署意见 → 住院医师确认”。证据版本从 v1 递增到 v4，每步水印变更；390px 视口 `scrollWidth=innerWidth=390`，控制台 `0 error / 0 warning`。
 

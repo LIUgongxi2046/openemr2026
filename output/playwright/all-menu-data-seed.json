@@ -1,0 +1,11 @@
+{
+  "run_at": "2026-08-24T18:07:57.637Z",
+  "results": [
+    {
+      "route": "emergency-access",
+      "status": "SEEDED",
+      "httpStatus": 201,
+      "response": "{\"emergency_access_grant_id\":\"47410ee7-e75d-430f-a205-566002275677\",\"user_id\":\"018f0000-0000-7000-8000-00000000aa04\",\"role_assignment_id\":\"018f0000-0000-7000-8000-00000000aa05\",\"patient_id\":\"018f0000-0000-7000-8000-000000000001\",\"encounter_id\":\"018f0000-0000-7000-8000-000000000101\",\"resource_types\":[\"CLINICAL_CONTEXT\",\"DOCUMENT\"],\"action_codes\":[\"LEASE_ISSUE\",\"READ\"],\"reason\":\"合成危急患者需立即核对过敏史与最近病历，常规授权无法在抢救时限内建立。\",\"status\":\"ACTIVE\",\"requested_at\":\"2026-08-24T18:07:56.864897Z\",\"expires_at\":\"2026-0"
+    }
+  ]
+}

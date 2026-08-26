@@ -1,0 +1,272 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Tool 目录" [level=1]
+  - paragraph: 登记与停用可执行 Tool；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - region "Tool 统计":
+    - article:
+      - generic: Tool
+      - strong: "12"
+      - generic: 全部登记
+    - article:
+      - generic: 有效 Tool
+      - strong: "12"
+      - generic: ACTIVE
+  - heading "Tool 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 类型 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "类型"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "Agent 证据链追加工具 …0000f20c AGENT_EVIDENCE_APPEND 函数 1.0.0 有效 停用":
+        - cell "Agent 证据链追加工具 …0000f20c":
+          - strong: Agent 证据链追加工具
+          - generic: …0000f20c
+        - cell "AGENT_EVIDENCE_APPEND":
+          - code: AGENT_EVIDENCE_APPEND
+        - cell "函数"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "诊疗计划只读工具 …0000f209 CARE_PLAN_READ 数据库查询 1.0.0 有效 停用":
+        - cell "诊疗计划只读工具 …0000f209":
+          - strong: 诊疗计划只读工具
+          - generic: …0000f209
+        - cell "CARE_PLAN_READ":
+          - code: CARE_PLAN_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床硬规则只读评估 …0000f20b CLINICAL_RULE_EVALUATE 函数 1.0.0 有效 停用":
+        - cell "临床硬规则只读评估 …0000f20b":
+          - strong: 临床硬规则只读评估
+          - generic: …0000f20b
+        - cell "CLINICAL_RULE_EVALUATE":
+          - code: CLINICAL_RULE_EVALUATE
+        - cell "函数"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床任务只读工具 …0000f207 CLINICAL_TASK_READ 数据库查询 1.0.0 有效 停用":
+        - cell "临床任务只读工具 …0000f207":
+          - strong: 临床任务只读工具
+          - generic: …0000f207
+        - cell "CLINICAL_TASK_READ":
+          - code: CLINICAL_TASK_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "会诊协同只读工具 …0000f208 CONSULTATION_READ 数据库查询 1.0.0 有效 停用":
+        - cell "会诊协同只读工具 …0000f208":
+          - strong: 会诊协同只读工具
+          - generic: …0000f208
+        - cell "CONSULTATION_READ":
+          - code: CONSULTATION_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "危急值闭环只读工具 …0000f205 CRITICAL_VALUE_READ 数据库查询 1.0.0 有效 停用":
+        - cell "危急值闭环只读工具 …0000f205":
+          - strong: 危急值闭环只读工具
+          - generic: …0000f205
+        - cell "CRITICAL_VALUE_READ":
+          - code: CRITICAL_VALUE_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文书模板只读工具 …0000f20a DOCUMENT_TEMPLATE_READ 数据库查询 1.0.0 有效 停用":
+        - cell "文书模板只读工具 …0000f20a":
+          - strong: 文书模板只读工具
+          - generic: …0000f20a
+        - cell "DOCUMENT_TEMPLATE_READ":
+          - code: DOCUMENT_TEMPLATE_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历版本只读工具 …0000f203 DOCUMENT_VERSION_READ 数据库查询 1.0.0 有效 停用":
+        - cell "病历版本只读工具 …0000f203":
+          - strong: 病历版本只读工具
+          - generic: …0000f203
+        - cell "DOCUMENT_VERSION_READ":
+          - code: DOCUMENT_VERSION_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "就诊时间线只读工具 …0000f202 ENCOUNTER_TIMELINE_READ 数据库查询 1.0.0 有效 停用":
+        - cell "就诊时间线只读工具 …0000f202":
+          - strong: 就诊时间线只读工具
+          - generic: …0000f202
+        - cell "ENCOUNTER_TIMELINE_READ":
+          - code: ENCOUNTER_TIMELINE_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "医嘱与处方只读工具 …0000f206 ORDER_READ 数据库查询 1.0.0 有效 停用":
+        - cell "医嘱与处方只读工具 …0000f206":
+          - strong: 医嘱与处方只读工具
+          - generic: …0000f206
+        - cell "ORDER_READ":
+          - code: ORDER_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "患者概要只读工具 …0000f201 PATIENT_SUMMARY_READ 数据库查询 1.0.0 有效 停用":
+        - cell "患者概要只读工具 …0000f201":
+          - strong: 患者概要只读工具
+          - generic: …0000f201
+        - cell "PATIENT_SUMMARY_READ":
+          - code: PATIENT_SUMMARY_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "检查检验结果只读工具 …0000f204 RESULT_READ 数据库查询 1.0.0 有效 停用":
+        - cell "检查检验结果只读工具 …0000f204":
+          - strong: 检查检验结果只读工具
+          - generic: …0000f204
+        - cell "RESULT_READ":
+          - code: RESULT_READ
+        - cell "数据库查询"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Tool" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Tool 编码
+  - textbox "Tool 编码":
+    - /placeholder: 例：DRUG-INTERACTION
+  - generic: Tool 名称
+  - textbox "Tool 名称":
+    - /placeholder: 例：药物相互作用查询
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - generic: 类型
+  - combobox "类型":
+    - option "API" [selected]
+    - option "函数"
+    - option "数据库查询"
+    - option "其他"
+  - button "登记并生效"

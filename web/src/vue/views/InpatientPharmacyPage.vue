@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { PharmacyDispensingWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
-import { issueExecutionPatientLease, listPharmacyDispensings, preparePharmacyDispensing, transitionPharmacyDispensing } from '../../api/execution';
+import { issueInpatientExecutionLease, issueInpatientExecutionPatientLease, listInpatientPharmacyDispensings, prepareInpatientPharmacyDispensing, transitionInpatientPharmacyDispensing } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -12,17 +12,22 @@ const statusLabels: Record<PharmacyDispensingWire['status'], string> = {
 };
 const leaseQuery = useQuery({
   queryKey: ['execution', 'inpatient-pharmacy', 'lease'],
-  queryFn: () => issueExecutionPatientLease('PHARMACY_WORKFLOW'),
+  queryFn: () => issueInpatientExecutionPatientLease('PHARMACY_WORKFLOW'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
+const writeLeaseQuery = useQuery({
+  queryKey: ['execution', 'inpatient-pharmacy', 'write-lease'],
+  queryFn: () => issueInpatientExecutionLease('PHARMACY_WORKFLOW'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const dispensingsQuery = useQuery({
   queryKey: ['execution', 'inpatient-pharmacy', 'dispensings'],
-  queryFn: () => listPharmacyDispensings(leaseQuery.data.value!),
+  queryFn: () => listInpatientPharmacyDispensings(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? dispensingsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? dispensingsQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value) : null);
 const dispensings = computed(() => dispensingsQuery.data.value ?? []);
 const pendingCount = computed(() => dispensings.value.filter((d) => d.status !== 'DISPENSED').length);
 
@@ -37,11 +42,11 @@ function formatDate(value: string | null | undefined) {
 async function reload() { notice.value = ''; await dispensingsQuery.refetch(); }
 
 async function prepare() {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value || !form.drugCode.trim() || !form.batchNumber.trim() || form.quantity <= 0 || !form.quantityUnit.trim()) return;
   busy.value = 'prepare'; notice.value = '';
   try {
-    await preparePharmacyDispensing(lease, {
+    await prepareInpatientPharmacyDispensing(lease, {
       drug_code: form.drugCode.trim(), batch_number: form.batchNumber.trim(),
       quantity: form.quantity, quantity_unit: form.quantityUnit.trim(),
       prepared_at: new Date().toISOString(),
@@ -54,11 +59,11 @@ async function prepare() {
 }
 
 async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' | 'DISPENSE') {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = `${action}:${dispensing.dispensing_id}`; notice.value = '';
   try {
-    await transitionPharmacyDispensing(lease, dispensing, action);
+    await transitionInpatientPharmacyDispensing(lease, dispensing, action);
     notice.value = action === 'VERIFY' ? '已第二人核验摆药，可发往病区。' : '已发药，床旁给药请前往医疗协同中心。';
     await dispensingsQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -72,10 +77,10 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
       <div><p class="eyebrow">医疗协同执行 / 药房</p><h1>住院药房、配液与床旁给药</h1><p>住院摆药 → 第二人核验 → 发往病区；床旁给药（执行）在医疗协同中心闭环。</p></div>
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/care-operations">床旁给药 / 协同中心</RouterLink><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
     </div>
-    <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>住院摆药与发药</span></div><dl><div><dt>发药前提</dt><dd>双人核验</dd></div><div><dt>给药执行</dt><dd>协同中心闭环</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
+    <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.inpatientPatientName }}</strong><span>住院摆药与发药</span></div><dl><div><dt>发药前提</dt><dd>双人核验</dd></div><div><dt>给药执行</dt><dd>协同中心闭环</dd></div></dl><span class="lease-badge">当前住院患者 / 当前住院就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取住院摆药台账" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取住院摆药台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>

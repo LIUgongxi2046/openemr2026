@@ -1,19 +1,19 @@
 <!-- 模板由脚本生成 -->
 <template>
   <section data-page-root class="content vue-native-page">
-    <div class="page-head"><div class="page-title"><h1>AI 中心</h1><p>临床 AI 助手、模型、Agent、Skill、Tool、评估与运行治理的统一入口</p></div></div>
-    <div class="portal-safety"><b>AI 边界</b><span>AI 深嵌工作流但不获得独立临床权力；每个建议、来源、动作、审批、版本和停用策略均可追溯。</span><span class="status green">核心服务正常</span></div>
-    <div class="hub-hero"><div><span>CLINICAL AI PLATFORM</span><h2>AI 深嵌工作流，但不获得独立临床权力</h2><p>从随处可见的临床助手，到模型路由和 Agent 运行，每个建议、来源、动作、审批、版本和停用策略均可追溯。</p></div><div class="hub-score"><b>0</b><span>未批准临床副作用</span></div></div>
+    <div class="page-head"><div class="page-title"><h1>AI 中心</h1><p>AI医助小南、医助团队、医助能力、医助工具、评测发布与运行监测的统一入口</p></div></div>
+    <div class="portal-safety"><b>使用说明</b><span>AI医助融入诊疗工作流程，生成的建议和草稿需由医务人员确认后使用，全过程可回看。</span><span class="status green">服务运行正常</span></div>
+    <div class="hub-hero"><div><span>智慧医疗协同平台</span><h2>让AI医助真正融入中国医院诊疗流程</h2><p>从随处可用的AI医助小南，到各诊疗环节的专科医助，任务、来源、医生确认和处理结果全程留痕。</p></div><div class="hub-score ai-center-score"><b>医生确认</b><span>诊疗结果写入前</span></div></div>
     <div class="hub-module-grid">
-      <RouterLink class="hub-module" to="/ai-assistant"><span>✦</span><b>临床 AI 助手</b><p>随问随答、主动提醒、来源核验和任务草拟</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/models"><span>模</span><b>模型目录与路由</b><p>模型画像、边界、主备、灰度和回人工</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/agent-catalog"><span>A</span><b>Agent 设计</b><p>目标、上下文、步骤、预算、停止和审批</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/skill-catalog"><span>S</span><b>Skill 目录</b><p>输入输出、依赖、评估、版本和许可证</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/tool-catalog"><span>T</span><b>Tool 治理</b><p>查询/副作用契约、鉴权、幂等与补偿</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/agent"><span>运</span><b>Agent 受控运行</b><p>受控运行快照、审批、预算与事件流</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/model-evaluation"><span>评</span><b>评估与发布</b><p>离线评估、红队、影子、灰度与回滚</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/aiops"><span>治</span><b>运行事件</b><p>质量、安全、延迟、预算和单组件停用</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/ai-assistant-policy"><span>策</span><b>助手策略</b><p>主动级别、来源、模型、限频与门禁</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/ai-assistant"><span>✦</span><b>AI医助小南</b><p>随问随答、主动提醒、来源核验和任务草拟</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/models"><span>模</span><b>模型服务</b><p>模型能力、适用场景、主备切换和人工接管</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/agent-catalog"><span>医</span><b>医助团队编排</b><p>按诊疗环节配置医助分工、处理步骤和医生确认</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/skill-catalog"><span>能</span><b>医助能力库</b><p>管理病历整理、证据核验、风险提示等标准能力</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/tool-catalog"><span>工</span><b>医助工具库</b><p>管理院内系统查询、权限、审批和异常处置</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/agent"><span>运</span><b>医助任务运行</b><p>查看处理进度、医生确认、生成额度和任务记录</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/agent-evals"><span>评</span><b>医助评测发布</b><p>临床用例评测、对抗测试、试运行和版本回退</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/aiops"><span>监</span><b>医助运行监测</b><p>监测质量、响应时间、异常事件和服务停用</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/ai-assistant-policy"><span>策</span><b>小南工作策略</b><p>配置主动提醒、数据来源、模型选择和医生确认</p><i>进入 →</i></RouterLink>
     </div>
   </section>
 </template>

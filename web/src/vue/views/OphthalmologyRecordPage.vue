@@ -61,8 +61,8 @@ async function createRecord() {
   try {
     await createOphthalmologyRecord(lease, {
       laterality: form.laterality,
-      iop_od_mmhg: form.iopOd.trim() === '' ? null : Number(form.iopOd),
-      iop_os_mmhg: form.iopOs.trim() === '' ? null : Number(form.iopOs),
+      iop_od_mmhg: String(form.iopOd).trim() === '' ? null : Number(form.iopOd),
+      iop_os_mmhg: String(form.iopOs).trim() === '' ? null : Number(form.iopOs),
       surgical_eye: form.surgicalEye,
     });
     form.iopOd = ''; form.iopOs = '';
@@ -123,8 +123,8 @@ async function createRecord() {
               <option value="OS">左眼</option>
               <option value="OU">双眼</option>
             </select></label>
-            <label><span>右眼眼压（mmHg）</span><input v-model="form.iopOd" type="number" step="0.1" placeholder="可选" /></label>
-            <label><span>左眼眼压（mmHg）</span><input v-model="form.iopOs" type="number" step="0.1" placeholder="可选" /></label>
+            <label><span>右眼眼压（mmHg）</span><input v-model.number="form.iopOd" type="number" step="0.1" placeholder="可选" /></label>
+            <label><span>左眼眼压（mmHg）</span><input v-model.number="form.iopOs" type="number" step="0.1" placeholder="可选" /></label>
             <label><span>手术眼</span><select v-model="form.surgicalEye">
               <option value="NONE">无</option>
               <option value="OD">右眼</option>

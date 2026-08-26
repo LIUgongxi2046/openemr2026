@@ -1,0 +1,200 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "AI 运行预算" [level=1]
+  - paragraph: 定义 Agent 运行预算并记录消耗；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - text: 预算
+  - combobox "预算":
+    - option "请选择预算" [disabled]
+    - option "诊疗协同 Agent 单次预算（BUDGET_CARE_COORDINATOR）" [selected]
+    - option "文书起草 Agent 单次预算（BUDGET_DOCUMENT_DRAFTER）"
+    - option "就诊摘要 Agent 单次预算（BUDGET_ENCOUNTER_SUMMARIZER）"
+    - option "病历质控 Agent 单次预算（BUDGET_RECORD_QC）"
+    - option "结果闭环 Agent 单次预算（BUDGET_RESULT_FOLLOWUP）"
+  - region "预算统计":
+    - article:
+      - generic: 预算
+      - strong: "5"
+      - generic: 全部定义
+    - article:
+      - generic: 有效预算
+      - strong: "5"
+      - generic: ACTIVE
+  - heading "预算台账" [level=2]
+  - paragraph: 编码不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 / 编码 最大 Token 最大时长 状态 操作":
+        - columnheader "名称 / 编码"
+        - columnheader "最大 Token"
+        - columnheader "最大时长"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "诊疗协同 Agent 单次预算 BUDGET_CARE_COORDINATOR · …0000f305 22,000 120 秒 有效 停用":
+        - cell "诊疗协同 Agent 单次预算 BUDGET_CARE_COORDINATOR · …0000f305":
+          - strong: 诊疗协同 Agent 单次预算
+          - code: BUDGET_CARE_COORDINATOR
+          - text: · …0000f305
+        - cell "22,000"
+        - cell "120 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文书起草 Agent 单次预算 BUDGET_DOCUMENT_DRAFTER · …0000f302 22,000 120 秒 有效 停用":
+        - cell "文书起草 Agent 单次预算 BUDGET_DOCUMENT_DRAFTER · …0000f302":
+          - strong: 文书起草 Agent 单次预算
+          - code: BUDGET_DOCUMENT_DRAFTER
+          - text: · …0000f302
+        - cell "22,000"
+        - cell "120 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "就诊摘要 Agent 单次预算 BUDGET_ENCOUNTER_SUMMARIZER · …0000f301 16,000 90 秒 有效 停用":
+        - cell "就诊摘要 Agent 单次预算 BUDGET_ENCOUNTER_SUMMARIZER · …0000f301":
+          - strong: 就诊摘要 Agent 单次预算
+          - code: BUDGET_ENCOUNTER_SUMMARIZER
+          - text: · …0000f301
+        - cell "16,000"
+        - cell "90 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历质控 Agent 单次预算 BUDGET_RECORD_QC · …0000f303 16,000 90 秒 有效 停用":
+        - cell "病历质控 Agent 单次预算 BUDGET_RECORD_QC · …0000f303":
+          - strong: 病历质控 Agent 单次预算
+          - code: BUDGET_RECORD_QC
+          - text: · …0000f303
+        - cell "16,000"
+        - cell "90 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "结果闭环 Agent 单次预算 BUDGET_RESULT_FOLLOWUP · …0000f304 24,000 120 秒 有效 停用":
+        - cell "结果闭环 Agent 单次预算 BUDGET_RESULT_FOLLOWUP · …0000f304":
+          - strong: 结果闭环 Agent 单次预算
+          - code: BUDGET_RESULT_FOLLOWUP
+          - text: · …0000f304
+        - cell "24,000"
+        - cell "120 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "定义运行预算" [level=2]
+  - paragraph: 编码、名称、最大 Token 与最大时长。
+  - generic: 预算编码
+  - textbox "预算编码":
+    - /placeholder: 例：DAILY-STANDARD
+  - generic: 预算名称
+  - textbox "预算名称":
+    - /placeholder: 例：标准日预算
+  - generic: 最大 Token
+  - spinbutton "最大 Token": "1000000"
+  - generic: 最大时长（秒）
+  - spinbutton "最大时长（秒）": "600"
+  - button "定义并生效"
+  - heading "预算消耗总览" [level=2]
+  - paragraph: 当前选中预算的累计消耗与上限对比。
+  - button "刷新"
+  - generic "预算消耗总览":
+    - article:
+      - generic: 已消耗 Token
+      - strong: "0"
+      - generic: 上限 22,000
+    - article:
+      - generic: 已消耗时长
+      - strong: 0 秒
+      - generic: 上限 120 秒
+  - heading "消耗明细" [level=2]
+  - paragraph: 每次 Agent 运行的 Token 与时长消耗。
+  - button "刷新"
+  - status: ◇ 该预算暂无消耗记录，可在右侧记录。
+  - heading "记录运行消耗" [level=2]
+  - paragraph: 运行 ID 默认生成，可覆盖为已存在运行。
+  - generic: 运行 ID
+  - textbox "运行 ID":
+    - /placeholder: UUID
+    - text: 04918553-2725-402c-800b-e6164a3645c6
+  - generic: Token 消耗
+  - spinbutton "Token 消耗": "1000"
+  - generic: 时长（秒）
+  - spinbutton "时长（秒）": "30"
+  - button "记录消耗"

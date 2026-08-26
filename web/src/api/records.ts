@@ -1,5 +1,6 @@
 import {
   medicalRecordAssetBorrowRequestWireSchema,
+  medicalRecordAssetRegisterRequestWireSchema,
   medicalRecordAssetReturnRequestWireSchema,
   medicalRecordAssetWireSchema,
   type ContextLeaseWire,
@@ -43,6 +44,23 @@ export async function listMedicalRecordAssets(lease: ContextLeaseWire): Promise<
     `/medical-record-assets?patient_id=${clinicalContext.patientId}`,
     { headers: assetHeaders(lease) },
   ));
+}
+
+export async function registerMedicalRecordAsset(
+  lease: ContextLeaseWire,
+  input: { assetType: MedicalRecordAssetWire['asset_type']; location: string; contentHash: string },
+): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request('/medical-record-assets', {
+    method: 'POST',
+    headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetRegisterRequestWireSchema.parse({
+      ...orgFacilityPatient(),
+      encounter_id: clinicalContext.encounterId,
+      asset_type: input.assetType,
+      location: input.location,
+      content_hash: input.contentHash,
+    })),
+  }));
 }
 
 export async function borrowMedicalRecordAsset(

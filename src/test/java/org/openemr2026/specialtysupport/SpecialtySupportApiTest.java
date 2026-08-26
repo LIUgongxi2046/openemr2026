@@ -1,24 +1,28 @@
 package org.openemr2026.specialtysupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest
 @ActiveProfiles("dev-synthetic")
+@Transactional
 final class SpecialtySupportApiTest {
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
@@ -27,8 +31,10 @@ final class SpecialtySupportApiTest {
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
 
-    @LocalServerPort
-    private int port;
+    @Autowired
+    private WebApplicationContext applicationContext;
+
+    private MockMvc mockMvc;
 
     @Autowired
     private JdbcClient jdbc;
@@ -36,7 +42,10 @@ final class SpecialtySupportApiTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    @BeforeEach
+    void configureMockMvc() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(applicationContext).build();
+    }
 
     @Test
     void givenAnActivePackAndEvidence_whenAssessingADepartment_thenVersionAuditAndExpiryGuardAreEnforced()
@@ -48,16 +57,16 @@ final class SpecialtySupportApiTest {
         String path = "/api/v1/specialty-support/" + FACILITY + "/" + departmentId + "/OBGYN";
         String evidenceHash = "a".repeat(64);
 
-        HttpResponse<String> created = send("PUT", path, """
+        MvcResult created = send("PUT", path, """
                 {"organization_id":"%s","support_level":"BASIC_CLOSED_LOOP",
                  "pack_release_id":"%s","evidence_bundle_hash":"%s",
                  "missing_safety_gates":[],"expires_at":"2027-08-14T00:00:00Z",
                  "expected_row_version":0}
                 """.formatted(ORGANIZATION, packId, evidenceHash), lease, UUID.randomUUID().toString());
 
-        assertThat(created.statusCode()).isEqualTo(200);
-        assertThat(created.headers().firstValue("etag")).contains("\"1\"");
-        JsonNode body = objectMapper.readTree(created.body());
+        assertThat(created.getResponse().getStatus()).isEqualTo(200);
+        assertThat(created.getResponse().getHeader("etag")).isEqualTo("\"1\"");
+        JsonNode body = objectMapper.readTree(created.getResponse().getContentAsString());
         String assessmentId = body.path("department_support_assessment_id").stringValue();
         assertThat(body.path("support_level").stringValue()).isEqualTo("BASIC_CLOSED_LOOP");
         assertThat(body.path("missing_safety_gates").size()).isZero();
@@ -70,23 +79,23 @@ final class SpecialtySupportApiTest {
                   and aggregate_id = cast(:assessment as uuid) and event_type = 'DepartmentSupportAssessed'
                 """).param("tenant", TENANT).param("assessment", assessmentId).query(Long.class).single()).isEqualTo(1);
 
-        HttpResponse<String> staleUpdate = send("PUT", path, """
+        MvcResult staleUpdate = send("PUT", path, """
                 {"organization_id":"%s","support_level":"PACK_PENDING",
                  "pack_release_id":"%s","evidence_bundle_hash":null,
                  "missing_safety_gates":["DEVICE_INTERFACE"],"expires_at":null,
                  "expected_row_version":0}
                 """.formatted(ORGANIZATION, packId), lease, UUID.randomUUID().toString());
-        assertThat(staleUpdate.statusCode()).isEqualTo(409);
-        assertThat(staleUpdate.body()).contains("SUPPORT_VERSION_CONFLICT");
+        assertThat(staleUpdate.getResponse().getStatus()).isEqualTo(409);
+        assertThat(staleUpdate.getResponse().getContentAsString()).contains("SUPPORT_VERSION_CONFLICT");
 
         jdbc.sql("""
                 update department_support_assessment
                 set assessed_at = now() - interval '2 days', expires_at = now() - interval '1 day'
                 where tenant_id = cast(:tenant as uuid) and department_support_assessment_id = cast(:assessment as uuid)
                 """).param("tenant", TENANT).param("assessment", assessmentId).update();
-        HttpResponse<String> expired = send("GET", path, null, lease, null);
-        assertThat(expired.statusCode()).isEqualTo(200);
-        assertThat(expired.body()).contains("PACK_PENDING", "EVIDENCE_EXPIRED");
+        MvcResult expired = send("GET", path, null, lease, null);
+        assertThat(expired.getResponse().getStatus()).isEqualTo(200);
+        assertThat(expired.getResponse().getContentAsString()).contains("PACK_PENDING", "EVIDENCE_EXPIRED");
     }
 
     @Test
@@ -94,7 +103,7 @@ final class SpecialtySupportApiTest {
         UUID departmentId = UUID.randomUUID();
         seedDepartmentAndPack(departmentId, UUID.randomUUID());
         Lease lease = issueOrganizationLease();
-        HttpResponse<String> response = send("PUT",
+        MvcResult response = send("PUT",
                 "/api/v1/specialty-support/" + FACILITY + "/" + departmentId + "/MENTAL", """
                         {"organization_id":"%s","support_level":"BASIC_CLOSED_LOOP",
                          "pack_release_id":null,"evidence_bundle_hash":null,
@@ -102,8 +111,8 @@ final class SpecialtySupportApiTest {
                          "expires_at":"2027-08-14T00:00:00Z","expected_row_version":0}
                         """.formatted(ORGANIZATION), lease, UUID.randomUUID().toString());
 
-        assertThat(response.statusCode()).isEqualTo(409);
-        assertThat(response.body()).contains("SAFETY_GATE_MISSING");
+        assertThat(response.getResponse().getStatus()).isEqualTo(409);
+        assertThat(response.getResponse().getContentAsString()).contains("SAFETY_GATE_MISSING");
         assertThat(jdbc.sql("""
                 select count(*) from department_support_assessment
                 where tenant_id = cast(:tenant as uuid) and department_id = cast(:department as uuid)
@@ -130,20 +139,20 @@ final class SpecialtySupportApiTest {
     }
 
     private Lease issueOrganizationLease() throws Exception {
-        HttpRequest request = baseRequest("/api/v1/context-leases")
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("""
+        MockHttpServletRequestBuilder request = baseRequest("POST", "/api/v1/context-leases")
+                .contentType("application/json")
+                .content("""
                         {"organization_id":"%s","facility_id":"%s","purpose_code":"CONFIGURATION_REVIEW"}
-                        """.formatted(ORGANIZATION, FACILITY))).build();
-        HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).isEqualTo(201);
-        JsonNode json = objectMapper.readTree(response.body());
+                        """.formatted(ORGANIZATION, FACILITY));
+        MvcResult response = mockMvc.perform(request).andReturn();
+        assertThat(response.getResponse().getStatus()).isEqualTo(201);
+        JsonNode json = objectMapper.readTree(response.getResponse().getContentAsString());
         return new Lease(json.path("lease_id").stringValue(), json.path("authorization_watermark").stringValue());
     }
 
-    private HttpResponse<String> send(
+    private MvcResult send(
             String method, String path, String body, Lease lease, String idempotencyKey) throws Exception {
-        HttpRequest.Builder request = baseRequest(path)
+        MockHttpServletRequestBuilder request = baseRequest(method, path)
                 .header("X-Context-Lease-Id", lease.id())
                 .header("X-Authorization-Watermark", lease.watermark())
                 .header("X-Organization-Context", ORGANIZATION)
@@ -152,17 +161,13 @@ final class SpecialtySupportApiTest {
             request.header("Idempotency-Key", idempotencyKey);
         }
         if (body != null) {
-            request.header("Content-Type", "application/json")
-                    .method(method, HttpRequest.BodyPublishers.ofString(body));
-        } else {
-            request.method(method, HttpRequest.BodyPublishers.noBody());
+            request.contentType("application/json").content(body);
         }
-        return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+        return mockMvc.perform(request).andReturn();
     }
 
-    private HttpRequest.Builder baseRequest(String path) {
-        return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-                .timeout(Duration.ofSeconds(10))
+    private MockHttpServletRequestBuilder baseRequest(String method, String path) {
+        return request(HttpMethod.valueOf(method), path)
                 .header("Authorization", "Bearer dev-synthetic-token")
                 .header("X-OpenEMR-Tenant-Id", TENANT)
                 .header("X-OpenEMR-User-Id", USER)

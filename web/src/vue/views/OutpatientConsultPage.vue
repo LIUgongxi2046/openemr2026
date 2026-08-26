@@ -3,13 +3,13 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import { clinicalContext } from '../../clinical-api';
 import type { ReferralWire } from '../../generated/contracts';
-import { createReferral, issueEmergencyLease, listReferrals, transitionReferral } from '../../api/emergency';
+import { createReferral, issueOutpatientPatientLease, listReferrals, transitionReferral } from '../../api/emergency';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({
   queryKey: ['opd-consult', 'lease'],
-  queryFn: () => issueEmergencyLease('OPD_CONSULT'),
+  queryFn: () => issueOutpatientPatientLease('OPD_CONSULT'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const itemsQuery = useQuery({

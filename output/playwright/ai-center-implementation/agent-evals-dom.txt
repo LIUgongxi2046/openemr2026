@@ -1,0 +1,213 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Agent 评估与发布门禁" [level=1]
+  - paragraph: 数据集版本、阈值、红队、结论和差异
+  - button "刷新"
+  - button "新建草稿"
+  - note:
+    - strong: 安全契约
+    - generic: 低于阈值、红队失败或版本不可追溯时禁止发布。
+  - heading "版本台账" [level=2]
+  - paragraph: AGENT_EVAL · 全程审计 + Outbox
+  - generic: 6 项
+  - table:
+    - rowgroup:
+      - row "名称 / 键 生命周期 版本 更新":
+        - columnheader "名称 / 键"
+        - columnheader "生命周期"
+        - columnheader "版本"
+        - columnheader "更新"
+    - rowgroup:
+      - row "诊疗协同 Agent 发布门禁 eval-care-coordinator-v1 草稿 校验通过 v1 2026/8/26 01:38:45":
+        - cell "诊疗协同 Agent 发布门禁 eval-care-coordinator-v1":
+          - button "诊疗协同 Agent 发布门禁 eval-care-coordinator-v1":
+            - strong: 诊疗协同 Agent 发布门禁
+            - code: eval-care-coordinator-v1
+        - cell "草稿 校验通过":
+          - generic: 草稿
+          - generic: 校验通过
+        - cell "v1"
+        - cell "2026/8/26 01:38:45"
+      - row "结果闭环 Agent 发布门禁 eval-result-followup-v1 草稿 校验通过 v1 2026/8/26 01:38:45":
+        - cell "结果闭环 Agent 发布门禁 eval-result-followup-v1":
+          - button "结果闭环 Agent 发布门禁 eval-result-followup-v1":
+            - strong: 结果闭环 Agent 发布门禁
+            - code: eval-result-followup-v1
+        - cell "草稿 校验通过":
+          - generic: 草稿
+          - generic: 校验通过
+        - cell "v1"
+        - cell "2026/8/26 01:38:45"
+      - row "病历质控 Agent 发布门禁 eval-record-qc-v1 草稿 校验通过 v1 2026/8/26 01:38:45":
+        - cell "病历质控 Agent 发布门禁 eval-record-qc-v1":
+          - button "病历质控 Agent 发布门禁 eval-record-qc-v1":
+            - strong: 病历质控 Agent 发布门禁
+            - code: eval-record-qc-v1
+        - cell "草稿 校验通过":
+          - generic: 草稿
+          - generic: 校验通过
+        - cell "v1"
+        - cell "2026/8/26 01:38:45"
+      - row "文书起草 Agent 发布门禁 eval-document-drafter-v1 草稿 校验通过 v1 2026/8/26 01:38:45":
+        - cell "文书起草 Agent 发布门禁 eval-document-drafter-v1":
+          - button "文书起草 Agent 发布门禁 eval-document-drafter-v1":
+            - strong: 文书起草 Agent 发布门禁
+            - code: eval-document-drafter-v1
+        - cell "草稿 校验通过":
+          - generic: 草稿
+          - generic: 校验通过
+        - cell "v1"
+        - cell "2026/8/26 01:38:45"
+      - row "就诊摘要 Agent 发布门禁 eval-encounter-summarizer-v1 草稿 校验通过 v1 2026/8/26 01:38:45":
+        - cell "就诊摘要 Agent 发布门禁 eval-encounter-summarizer-v1":
+          - button "就诊摘要 Agent 发布门禁 eval-encounter-summarizer-v1":
+            - strong: 就诊摘要 Agent 发布门禁
+            - code: eval-encounter-summarizer-v1
+        - cell "草稿 校验通过":
+          - generic: 草稿
+          - generic: 校验通过
+        - cell "v1"
+        - cell "2026/8/26 01:38:45"
+      - row "临床 Agent 发布评估集 syn-agent-eval-v1 草稿 未校验 v1 2026/8/25 00:48:18":
+        - cell "临床 Agent 发布评估集 syn-agent-eval-v1":
+          - button "临床 Agent 发布评估集 syn-agent-eval-v1":
+            - strong: 临床 Agent 发布评估集
+            - code: syn-agent-eval-v1
+        - cell "草稿 未校验":
+          - generic: 草稿
+          - generic: 未校验
+        - cell "v1"
+        - cell "2026/8/25 00:48:18"
+  - heading "编辑草稿" [level=2]
+  - paragraph: 版本化 Schema v1；发布后仅能通过回退恢复
+  - generic: v1
+  - generic: 名称
+  - textbox "名称": 诊疗协同 Agent 发布门禁
+  - generic: 唯一键
+  - textbox "唯一键" [disabled]:
+    - /placeholder: clinical-agent-eval-v1
+    - text: eval-care-coordinator-v1
+  - generic: 说明
+  - textbox "说明": 核验角色边界、任务去重、责任人与截止时间完整性。
+  - text: 数据集版本
+  - code: dataset_version
+  - textbox "数据集版本 dataset_version":
+    - /placeholder: clinical-ai-golden-v1
+    - text: agent-care-golden-v1
+  - text: 用例数
+  - code: case_count
+  - spinbutton "用例数 case_count": "130"
+  - text: 通过阈值
+  - code: pass_threshold
+  - spinbutton "通过阈值 pass_threshold": "0.95"
+  - text: 红队策略
+  - code: red_team_profile
+  - textbox "红队策略 red_team_profile":
+    - /placeholder: 越权、Prompt 注入、临床自动动作、敏感数据外泄
+    - text: 越权上下文、Prompt 注入、无来源临床结论、自动临床副作用、敏感数据外泄
+  - button "保存新版本"
+  - heading "评估门禁" [level=2]
+  - paragraph: 当前草稿的可视化语义预览
+  - generic: 结构化预览
+  - article:
+    - strong: 数据集版本
+    - generic: agent-care-golden-v1
+  - article:
+    - strong: 用例数
+    - generic: "130"
+  - article:
+    - strong: 通过阈值
+    - generic: "0.95"
+  - article:
+    - strong: 红队策略
+    - generic: 越权上下文、Prompt 注入、无来源临床结论、自动临床副作用、敏感数据外泄
+  - heading "校验、审批、发布与回退" [level=2]
+  - paragraph: 每一步都使用幂等键、乐观锁、审计链和 Outbox
+  - generic: 操作原因
+  - textbox "操作原因": 完成配置生命周期操作
+  - text: 状态
+  - strong: 草稿
+  - text: 校验
+  - strong: 校验通过
+  - text: 审批
+  - strong: 未知状态
+  - text: 发布
+  - strong: —
+  - button "执行静态校验"
+  - button "提交审批"
+  - button "职责分离批准" [disabled]
+  - button "发布" [disabled]
+  - button "回退上一版本" [disabled]
+  - paragraph: 作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。

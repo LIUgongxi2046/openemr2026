@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ImagingOrderWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
-import { createImagingOrder, issueExecutionPatientLease, listImagingOrders, transitionImagingOrder } from '../../api/execution';
+import { createImagingOrder, issueExecutionLease, issueExecutionPatientLease, listImagingOrders, transitionImagingOrder } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -26,14 +26,19 @@ const leaseQuery = useQuery({
   queryFn: () => issueExecutionPatientLease('IMAGING_WORKFLOW'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
+const writeLeaseQuery = useQuery({
+  queryKey: ['execution', 'imaging-workbench', 'write-lease'],
+  queryFn: () => issueExecutionLease('IMAGING_WORKFLOW'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
 const ordersQuery = useQuery({
   queryKey: ['execution', 'imaging-workbench', 'orders'],
   queryFn: () => listImagingOrders(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? ordersQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? ordersQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? ordersQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? ordersQuery.error.value) : null);
 const orders = computed(() => ordersQuery.data.value ?? []);
 const reportedCount = computed(() => orders.value.filter((o) => o.status === 'REPORTED').length);
 
@@ -48,7 +53,7 @@ function formatDate(value: string | null | undefined) {
 async function reload() { notice.value = ''; await ordersQuery.refetch(); }
 
 async function create() {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = 'create'; notice.value = '';
   try {
@@ -63,7 +68,7 @@ async function create() {
 }
 
 async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' | 'CANCEL') {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = `${action}:${order.imaging_order_id}`; notice.value = '';
   try {
@@ -84,7 +89,7 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前患者影像检查</span></div><dl><div><dt>部位</dt><dd>显式登记</dd></div><div><dt>造影剂</dt><dd>强制勾选</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || ordersQuery.isPending.value" kind="loading" message="正在读取影像检查台账" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || ordersQuery.isPending.value" kind="loading" message="正在读取影像检查台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>

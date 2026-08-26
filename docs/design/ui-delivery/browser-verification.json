@@ -584,7 +584,7 @@
       "route": "ai-assistant",
       "active": 1,
       "fab": true,
-      "h1": "临床 AI 助手",
+      "h1": "AI医助小南",
       "overflow": false
     },
     {
@@ -612,7 +612,7 @@
       "route": "ai-assistant-policy",
       "active": 1,
       "fab": true,
-      "h1": "AI 助手策略与效果治理",
+      "h1": "AI医助小南策略与效果治理",
       "overflow": false
     },
     {

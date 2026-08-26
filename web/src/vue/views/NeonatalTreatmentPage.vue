@@ -7,19 +7,19 @@ import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const patientLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'obgyn-care', 'patient-lease'],
-  queryFn: () => issueSpecialtyPatientLease('OBGYN_CARE'),
+  queryKey: ['specialty-layers', 'neonatal-treatment', 'patient-lease'],
+  queryFn: () => issueSpecialtyPatientLease('NEONATAL_TREATMENT'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const patientLease = computed(() => patientLeaseQuery.data.value);
 const encounterLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'obgyn-care', 'encounter-lease'],
-  queryFn: () => issueSpecialtyEncounterLease('OBGYN_CARE'),
+  queryKey: ['specialty-layers', 'neonatal-treatment', 'encounter-lease'],
+  queryFn: () => issueSpecialtyEncounterLease('NEONATAL_TREATMENT'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const encounterLease = computed(() => encounterLeaseQuery.data.value);
 const itemsQuery = useQuery({
-  queryKey: ['specialty-layers', 'obgyn-care', 'items'],
+  queryKey: ['specialty-layers', 'neonatal-treatment', 'items'],
   queryFn: () => listNeonatalTreatments(patientLease.value!),
   enabled: () => Boolean(patientLease.value), retry: false,
 });
@@ -52,7 +52,7 @@ async function createNote() {
       risk_flag: form.risk_flag,
       recorded_at: new Date(form.recorded_at).toISOString(),
     });
-    notice.value = form.risk_flag ? '危重护理记录已保存并标记高危。' : '护理记录已保存。';
+    notice.value = form.risk_flag ? '治疗记录已保存并标记高风险。' : '治疗记录已保存。';
     form.assessment = ''; form.intervention = ''; form.risk_flag = false;
     await itemsQuery.refetch();
   } catch (error) {
@@ -65,30 +65,30 @@ async function createNote() {
   <section data-page-root class="content admin-content vue-native-page">
     <div class="page-heading admin-heading">
       <div>
-        <p class="eyebrow">专科中心 / neonatal</p>
-        <h1>neonatal-treatment</h1>
-        <p>记录急诊危重评估与护理干预/输液执行；存在危险信号时强制标记风险，驱动交接与上级复核。</p>
+        <p class="eyebrow">专科中心 / 新生儿</p>
+        <h1>新生儿治疗执行</h1>
+        <p>记录体重剂量、保暖与呼吸支持、喂养和感染风险，形成治疗与监护闭环。</p>
       </div>
       
     </div>
 
-    <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取急诊护理记录" />
+    <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取新生儿治疗记录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
-      <section class="admin-metrics" aria-label="护理记录统计">
-        <article><span>护理记录</span><strong>{{ items.length }}</strong><small>当前患者</small></article>
+      <section class="admin-metrics" aria-label="治疗记录统计">
+        <article><span>治疗记录</span><strong>{{ items.length }}</strong><small>当前患者</small></article>
         <article><span>高危记录</span><strong>{{ riskCount }}</strong><small>risk_flag</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
       <div class="admin-layout">
         <section class="admin-panel">
-          <header><div><h2>护理记录台账</h2><p>评估与干预分离记录，风险标记不可撤销。</p></div><button class="button secondary" @click="itemsQuery.refetch()">刷新</button></header>
-          <div v-if="!items.length" class="admin-empty" role="status">暂无护理记录，可在右侧新增。</div>
+          <header><div><h2>治疗执行台账</h2><p>治疗前评估、方案执行与疗效分项记录，高风险结果进入复核闭环。</p></div><button class="button secondary" @click="itemsQuery.refetch()">刷新</button></header>
+          <div v-if="!items.length" class="admin-empty" role="status">暂无治疗记录，可在右侧新增首条记录。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>记录时间</th><th>危重评估</th><th>护理干预/输液</th><th>风险</th></tr></thead>
+              <thead><tr><th>记录时间</th><th>治疗前评估</th><th>方案与执行</th><th>风险</th></tr></thead>
               <tbody>
                 <tr v-for="item in items" :key="item.note_id">
                   <td>{{ formatDate(item.recorded_at) }}</td>
@@ -102,13 +102,13 @@ async function createNote() {
         </section>
 
         <section class="admin-panel admin-form-panel">
-          <header><div><h2>新增护理记录</h2><p>评估与干预均为必填。</p></div></header>
+          <header><div><h2>新增治疗记录</h2><p>治疗前评估、方案与执行均为必填。</p></div></header>
           <form class="admin-form" @submit.prevent="createNote">
-            <label><span>危重评估</span><textarea v-model="form.assessment" rows="3" required placeholder="例：神志、生命体征、疼痛、出血风险" /></label>
-            <label><span>护理干预 / 输液执行</span><textarea v-model="form.intervention" rows="3" required placeholder="例：开放静脉通路、补液、给药、监测" /></label>
+            <label><span>治疗前评估</span><textarea v-model="form.assessment" rows="3" required placeholder="记录适应证、禁忌证、剂量依据和风险评估" /></label>
+            <label><span>治疗方案与执行</span><textarea v-model="form.intervention" rows="3" required placeholder="记录方案、执行过程、疗效观察和后续计划" /></label>
             <label><span>记录时间</span><input v-model="form.recorded_at" type="datetime-local" required /></label>
             <label class="risk-confirm"><input v-model="form.risk_flag" type="checkbox" /><span>存在危险信号（需交接与复核）</span></label>
-            <button class="button primary full" :disabled="busy || !form.assessment.trim() || !form.intervention.trim()">{{ busy ? '正在保存…' : '保存护理记录' }}</button>
+            <button class="button primary full" :disabled="busy || !form.assessment.trim() || !form.intervention.trim()">{{ busy ? '正在保存…' : '保存治疗记录' }}</button>
           </form>
         </section>
       </div>

@@ -81,12 +81,20 @@ final class ShiftHandoverPatientApiTest {
         jdbc.sql("""
                 insert into inpatient_admission(
                   tenant_id, admission_id, encounter_id, patient_id, facility_id, ward_id,
-                  current_bed_id, attending_user_id, status, admitted_at)
+                  current_bed_id, attending_user_id, status, admitted_at, admission_no,
+                  department_id, admission_source, admission_type, condition_level,
+                  admitting_diagnosis_text, payment_method_code, identity_verification_method,
+                  contact_name, contact_relationship, contact_phone)
                 values (cast(:tenant as uuid), :admission, :encounter, :patient, cast(:facility as uuid),
-                  cast(:ward as uuid), :bed, cast(:user as uuid), 'ADMITTED', now())
+                  cast(:ward as uuid), :bed, cast(:user as uuid), 'ADMITTED', now(), :admission_no,
+                  (select department_id from clinical_ward where tenant_id = cast(:tenant as uuid)
+                    and ward_id = cast(:ward as uuid)),
+                  'OUTPATIENT', 'ELECTIVE', 'GENERAL', '测试入院诊断', 'SELF_PAY', 'OTHER',
+                  '测试联系人', '其他', '00000000')
                 """).param("tenant", TENANT).param("admission", admissionId).param("encounter", encounterId)
                 .param("patient", patientId).param("facility", FACILITY).param("ward", WARD)
-                .param("bed", bedId).param("user", USER).update();
+                .param("bed", bedId).param("user", USER)
+                .param("admission_no", "TEST-" + admissionId.toString().substring(0, 8)).update();
         return patientId;
     }
 

@@ -1,0 +1,279 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Agent 设计与编排" [level=1]
+  - paragraph: 5 个主 Agent 统筹 33 个子 Agent，按诊前、接诊、文书、质控、结果闭环和诊疗协同环节分工；输出全部为可追溯候选。
+  - region "Agent 统计":
+    - article:
+      - generic: 主 Agent
+      - strong: "5"
+      - generic: 临床责任家族
+    - article:
+      - generic: 子 Agent
+      - strong: "33"
+      - generic: 诊疗环节协作者
+    - article:
+      - generic: 已启用发布
+      - strong: "5"
+      - generic: ACTIVE
+    - article:
+      - generic: 自主级别
+      - strong: A1
+      - generic: 只读候选制
+  - heading "主 Agent 与诊疗环节" [level=2]
+  - paragraph: 切换主 Agent 查看其下属子 Agent、当前动作、交付贡献与运行预算。
+  - generic: Harness v1.0.0
+  - tablist "主 Agent 家族":
+    - tab "诊疗协同主 Agent 6 个子 Agent" [selected]:
+      - generic: 诊疗协同主 Agent
+      - generic: 6 个子 Agent
+    - tab "文书起草主 Agent 10 个子 Agent":
+      - generic: 文书起草主 Agent
+      - generic: 10 个子 Agent
+    - tab "就诊摘要主 Agent 6 个子 Agent":
+      - generic: 就诊摘要主 Agent
+      - generic: 6 个子 Agent
+    - tab "病历质控主 Agent 5 个子 Agent":
+      - generic: 病历质控主 Agent
+      - generic: 5 个子 Agent
+    - tab "结果闭环主 Agent 6 个子 Agent":
+      - generic: 结果闭环主 Agent
+      - generic: 6 个子 Agent
+  - article:
+    - generic: A1
+    - generic: 诊疗协同总负责
+    - code: CARE_COORDINATOR@1.0.0
+    - paragraph: 准备会诊、交接、出院和随访协同候选
+    - term: 当前动作
+    - definition: 正在核对目标团队和责任范围
+    - term: 汇总交付
+    - definition: 汇总协同事实、未决问题和计划候选
+    - term: 停止预算
+    - definition: 14 步 · 24 工具调用 · 120 秒
+  - article:
+    - generic: CONSULT
+    - emphasis: A1
+    - heading "会诊准备协作者" [level=3]
+    - paragraph: 形成会诊摘要、问题和资料缺口
+    - term: 医生可见角色
+    - definition: 会诊资料准备
+    - term: 正在协助
+    - definition: 正在核对会诊目的和目标科室
+    - term: 交回贡献
+    - definition: 贡献会诊事实包和问题清单
+    - generic: 6 步 · 12 工具调用 · 40 秒
+  - article:
+    - generic: DISCHARGE
+    - emphasis: A1
+    - heading "出院衔接协作者" [level=3]
+    - paragraph: 将已确认出院计划组织为连续照护候选
+    - term: 医生可见角色
+    - definition: 出院衔接准备
+    - term: 正在协助
+    - definition: 正在核对用药、教育和随访责任
+    - term: 交回贡献
+    - definition: 贡献连续照护候选
+    - generic: 7 步 · 14 工具调用 · 50 秒
+  - article:
+    - generic: FOLLOWUP
+    - emphasis: A1
+    - heading "随访协调协作者" [level=3]
+    - paragraph: 把已确认随访计划组织为提醒和任务候选
+    - term: 医生可见角色
+    - definition: 随访协调准备
+    - term: 正在协助
+    - definition: 正在核对计划、升级条件和渠道授权
+    - term: 交回贡献
+    - definition: 贡献随访协调候选
+    - generic: 6 步 · 12 工具调用 · 40 秒
+  - article:
+    - generic: MDT
+    - emphasis: A1
+    - heading "MDT 简报协作者" [level=3]
+    - paragraph: 形成多学科简报、分歧和待决问题
+    - term: 医生可见角色
+    - definition: MDT 资料准备
+    - term: 正在协助
+    - definition: 正在整理获授权的多域资料
+    - term: 交回贡献
+    - definition: 贡献 MDT 简报和待决问题
+    - generic: 7 步 · 14 工具调用 · 50 秒
+  - article:
+    - generic: TASK_RECONCILIATION
+    - emphasis: A1
+    - heading "任务对账协作者" [level=3]
+    - paragraph: 对开放、重复、过期和转派任务提出建议
+    - term: 医生可见角色
+    - definition: 任务对账
+    - term: 正在协助
+    - definition: 正在核对任务来源状态和责任人
+    - term: 交回贡献
+    - definition: 贡献任务对账建议
+    - generic: 6 步 · 14 工具调用 · 40 秒
+  - article:
+    - generic: TRANSFER
+    - emphasis: A1
+    - heading "转科交接协作者" [level=3]
+    - paragraph: 形成转床、转科或转院交接候选
+    - term: 医生可见角色
+    - definition: 转科交接准备
+    - term: 正在协助
+    - definition: 正在核对未完成医嘱和接收状态
+    - term: 交回贡献
+    - definition: 贡献交接候选和未完成事项
+    - generic: 7 步 · 14 工具调用 · 50 秒
+  - heading "Agent 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "诊疗协同主 Agent …0000ee05 CARE_COORDINATOR 1.0.0 有效 停用":
+        - cell "诊疗协同主 Agent …0000ee05":
+          - strong: 诊疗协同主 Agent
+          - generic: …0000ee05
+        - cell "CARE_COORDINATOR":
+          - code: CARE_COORDINATOR
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文书起草主 Agent …0000ee02 DOCUMENT_DRAFTER 1.0.0 有效 停用":
+        - cell "文书起草主 Agent …0000ee02":
+          - strong: 文书起草主 Agent
+          - generic: …0000ee02
+        - cell "DOCUMENT_DRAFTER":
+          - code: DOCUMENT_DRAFTER
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "就诊摘要主 Agent …0000ee01 ENCOUNTER_SUMMARIZER 1.0.0 有效 停用":
+        - cell "就诊摘要主 Agent …0000ee01":
+          - strong: 就诊摘要主 Agent
+          - generic: …0000ee01
+        - cell "ENCOUNTER_SUMMARIZER":
+          - code: ENCOUNTER_SUMMARIZER
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历质控主 Agent …0000ee03 RECORD_QC 1.0.0 有效 停用":
+        - cell "病历质控主 Agent …0000ee03":
+          - strong: 病历质控主 Agent
+          - generic: …0000ee03
+        - cell "RECORD_QC":
+          - code: RECORD_QC
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "结果闭环主 Agent …0000ee04 RESULT_FOLLOWUP_COORDINATOR 1.0.0 有效 停用":
+        - cell "结果闭环主 Agent …0000ee04":
+          - strong: 结果闭环主 Agent
+          - generic: …0000ee04
+        - cell "RESULT_FOLLOWUP_COORDINATOR":
+          - code: RESULT_FOLLOWUP_COORDINATOR
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Agent" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Agent 编码
+  - textbox "Agent 编码":
+    - /placeholder: 例：TRIAGE-AGENT
+  - generic: Agent 名称
+  - textbox "Agent 名称":
+    - /placeholder: 例：分诊建议 Agent
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - button "登记并生效"

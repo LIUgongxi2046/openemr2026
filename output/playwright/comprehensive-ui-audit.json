@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-08-24T09:32:23.053Z",
+  "run_at": "2026-08-25T03:21:54.252Z",
   "routes": 194,
   "viewports": [
     {
@@ -24,7 +24,7 @@
       "h1": "系统管理工作台",
       "routeId": "admin",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1524
+      "bodyTextLength": 1493
     },
     {
       "route": "admin-audit",
@@ -33,7 +33,7 @@
       "h1": "管理审计与权限复核",
       "routeId": "admin-audit",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 330
+      "bodyTextLength": 49461
     },
     {
       "route": "admin-auth",
@@ -42,7 +42,7 @@
       "h1": "认证与 MFA 场景演练",
       "routeId": "admin-auth",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 405
+      "bodyTextLength": 859
     },
     {
       "route": "admin-dictionaries",
@@ -51,7 +51,7 @@
       "h1": "字典主数据",
       "routeId": "admin-dictionaries",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 352
+      "bodyTextLength": 487
     },
     {
       "route": "admin-jobs",
@@ -60,7 +60,7 @@
       "h1": "通知调度与批量任务",
       "routeId": "admin-jobs",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 745
+      "bodyTextLength": 801
     },
     {
       "route": "admin-master-data",
@@ -69,7 +69,7 @@
       "h1": "医院主数据管理",
       "routeId": "admin-master-data",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 747
+      "bodyTextLength": 805
     },
     {
       "route": "admin-org",
@@ -78,7 +78,7 @@
       "h1": "组织机构管理",
       "routeId": "admin-org",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 10659
+      "bodyTextLength": 15441
     },
     {
       "route": "admin-parameters",
@@ -87,7 +87,7 @@
       "h1": "系统参数与功能开关",
       "routeId": "admin-parameters",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 811
+      "bodyTextLength": 867
     },
     {
       "route": "admin-permissions",
@@ -96,7 +96,7 @@
       "h1": "权限策略与访问模拟",
       "routeId": "admin-permissions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 623
+      "bodyTextLength": 868
     },
     {
       "route": "admin-roles",
@@ -105,7 +105,7 @@
       "h1": "角色与任期",
       "routeId": "admin-roles",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3849
+      "bodyTextLength": 5374
     },
     {
       "route": "admin-templates",
@@ -114,7 +114,7 @@
       "h1": "病历模板与版本发布",
       "routeId": "admin-templates",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 6128
+      "bodyTextLength": 6101
     },
     {
       "route": "admin-users",
@@ -123,7 +123,7 @@
       "h1": "用户、人员与工作范围",
       "routeId": "admin-users",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 8625
+      "bodyTextLength": 12207
     },
     {
       "route": "admission-bed",
@@ -132,7 +132,7 @@
       "h1": "入院、病区与床位管理",
       "routeId": "admission-bed",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 881
+      "bodyTextLength": 966
     },
     {
       "route": "agent",
@@ -141,7 +141,7 @@
       "h1": "Agent 受控运行",
       "routeId": "agent",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 366
+      "bodyTextLength": 1138
     },
     {
       "route": "agent-catalog",
@@ -150,7 +150,7 @@
       "h1": "Agent 目录",
       "routeId": "agent-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1634
+      "bodyTextLength": 2645
     },
     {
       "route": "agent-compose",
@@ -159,7 +159,7 @@
       "h1": "Agent / Skill / Tool 组合画布",
       "routeId": "agent-compose",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 941
+      "bodyTextLength": 1000
     },
     {
       "route": "agent-context",
@@ -168,7 +168,7 @@
       "h1": "Agent 上下文策略",
       "routeId": "agent-context",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 859
+      "bodyTextLength": 914
     },
     {
       "route": "agent-evals",
@@ -177,7 +177,7 @@
       "h1": "Agent 评估与发布门禁",
       "routeId": "agent-evals",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 788
+      "bodyTextLength": 845
     },
     {
       "route": "ai-action-review",
@@ -186,25 +186,25 @@
       "h1": "动作审批与执行核验",
       "routeId": "ai-action-review",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 393
+      "bodyTextLength": 510
     },
     {
       "route": "ai-assistant",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "临床 AI 助手",
+      "h1": "AI医助小南",
       "routeId": "ai-assistant",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 562
+      "bodyTextLength": 545
     },
     {
       "route": "ai-assistant-policy",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "临床 AI 助手策略",
+      "h1": "AI医助小南策略",
       "routeId": "ai-assistant-policy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 864
+      "bodyTextLength": 919
     },
     {
       "route": "ai-capture",
@@ -213,7 +213,7 @@
       "h1": "语音采集、转写与人工复核",
       "routeId": "ai-capture",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 681
+      "bodyTextLength": 986
     },
     {
       "route": "ai-center",
@@ -222,7 +222,7 @@
       "h1": "AI 中心",
       "routeId": "ai-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 824
+      "bodyTextLength": 811
     },
     {
       "route": "ai-reminder-detail",
@@ -231,7 +231,7 @@
       "h1": "主动提醒详情",
       "routeId": "ai-reminder-detail",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 375
+      "bodyTextLength": 524
     },
     {
       "route": "aiops",
@@ -240,7 +240,7 @@
       "h1": "AI 运行预算",
       "routeId": "aiops",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2653
+      "bodyTextLength": 3872
     },
     {
       "route": "anesthesia-workbench",
@@ -249,7 +249,7 @@
       "h1": "麻醉评估、事件轴与复苏",
       "routeId": "anesthesia-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 671
+      "bodyTextLength": 1068
     },
     {
       "route": "appointment-registration",
@@ -258,7 +258,7 @@
       "h1": "预约、挂号、分诊、叫号与留观",
       "routeId": "appointment-registration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2465
+      "bodyTextLength": 407
     },
     {
       "route": "archive-assets",
@@ -267,7 +267,7 @@
       "h1": "病案归档与法律证据",
       "routeId": "archive-assets",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 999
+      "bodyTextLength": 972
     },
     {
       "route": "archive-borrow",
@@ -276,7 +276,7 @@
       "h1": "病案借阅、复制与对外提供",
       "routeId": "archive-borrow",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 576
+      "bodyTextLength": 586
     },
     {
       "route": "archive-catalog",
@@ -285,7 +285,7 @@
       "h1": "病案目录与完整性",
       "routeId": "archive-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 648
+      "bodyTextLength": 728
     },
     {
       "route": "archive-integrity",
@@ -294,7 +294,7 @@
       "h1": "病案完整性、签名与长期验真",
       "routeId": "archive-integrity",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 869
+      "bodyTextLength": 933
     },
     {
       "route": "archive-preservation",
@@ -303,7 +303,7 @@
       "h1": "病案长期保存与恢复验证",
       "routeId": "archive-preservation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 645
+      "bodyTextLength": 869
     },
     {
       "route": "archive-scan",
@@ -312,7 +312,7 @@
       "h1": "纸质病历扫描、OCR 与编目",
       "routeId": "archive-scan",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 633
+      "bodyTextLength": 1103
     },
     {
       "route": "asset-detail",
@@ -321,7 +321,7 @@
       "h1": "病案资产证据详情",
       "routeId": "asset-detail",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 431
+      "bodyTextLength": 760
     },
     {
       "route": "backup",
@@ -330,7 +330,7 @@
       "h1": "备份恢复与完整性报告",
       "routeId": "backup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 815
+      "bodyTextLength": 867
     },
     {
       "route": "billing",
@@ -339,7 +339,7 @@
       "h1": "费用、收退费、预交与结算",
       "routeId": "billing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 623
+      "bodyTextLength": 680
     },
     {
       "route": "capability-pack",
@@ -348,7 +348,7 @@
       "h1": "能力包与灰度发布",
       "routeId": "capability-pack",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1740
+      "bodyTextLength": 2578
     },
     {
       "route": "care-operations",
@@ -357,7 +357,7 @@
       "h1": "医疗协同中心",
       "routeId": "care-operations",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 454
+      "bodyTextLength": 584
     },
     {
       "route": "clinical",
@@ -366,7 +366,7 @@
       "h1": "临床业务门户",
       "routeId": "clinical",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1601
+      "bodyTextLength": 1588
     },
     {
       "route": "clinical-tasks",
@@ -375,7 +375,7 @@
       "h1": "统一临床任务中心",
       "routeId": "clinical-tasks",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 434
+      "bodyTextLength": 705
     },
     {
       "route": "cohort-builder",
@@ -384,7 +384,7 @@
       "h1": "研究队列构建器",
       "routeId": "cohort-builder",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3234
+      "bodyTextLength": 5021
     },
     {
       "route": "config-release",
@@ -393,7 +393,7 @@
       "h1": "配置差异、审批与灰度发布",
       "routeId": "config-release",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 816
+      "bodyTextLength": 869
     },
     {
       "route": "config-upgrade",
@@ -402,7 +402,7 @@
       "h1": "配置包升级与冲突处理",
       "routeId": "config-upgrade",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 806
+      "bodyTextLength": 858
     },
     {
       "route": "credentials",
@@ -411,7 +411,7 @@
       "h1": "人员资质",
       "routeId": "credentials",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3501
+      "bodyTextLength": 4847
     },
     {
       "route": "data-center",
@@ -420,7 +420,7 @@
       "h1": "数据中心指标目录与血缘",
       "routeId": "data-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 807
+      "bodyTextLength": 1276
     },
     {
       "route": "data-quality",
@@ -429,7 +429,7 @@
       "h1": "数据质量规则",
       "routeId": "data-quality",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2624
+      "bodyTextLength": 3961
     },
     {
       "route": "dental-care",
@@ -438,16 +438,16 @@
       "h1": "口腔护理与术后观察",
       "routeId": "dental-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 455
+      "bodyTextLength": 535
     },
     {
       "route": "dental-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "dental-evidence",
+      "h1": "口腔诊疗证据",
       "routeId": "dental-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 465
+      "bodyTextLength": 518
     },
     {
       "route": "dental-followup",
@@ -456,7 +456,7 @@
       "h1": "随访记录",
       "routeId": "dental-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 408
+      "bodyTextLength": 444
     },
     {
       "route": "dental-qc",
@@ -465,7 +465,7 @@
       "h1": "质控复核",
       "routeId": "dental-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 436
+      "bodyTextLength": 481
     },
     {
       "route": "dental-record",
@@ -474,7 +474,7 @@
       "h1": "口腔记录",
       "routeId": "dental-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 376
+      "bodyTextLength": 357
     },
     {
       "route": "dental-treatment",
@@ -483,7 +483,7 @@
       "h1": "口腔治疗记录",
       "routeId": "dental-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 421
+      "bodyTextLength": 480
     },
     {
       "route": "dental-workbench",
@@ -492,7 +492,7 @@
       "h1": "口腔工作台",
       "routeId": "dental-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 513
+      "bodyTextLength": 488
     },
     {
       "route": "department-qc",
@@ -501,7 +501,7 @@
       "h1": "院科病历质控与整改",
       "routeId": "department-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 566
+      "bodyTextLength": 1002
     },
     {
       "route": "dermatology-care",
@@ -510,16 +510,16 @@
       "h1": "皮肤护理与创面观察",
       "routeId": "dermatology-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 455
+      "bodyTextLength": 535
     },
     {
       "route": "dermatology-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "dermatology-evidence",
+      "h1": "皮肤诊疗证据",
       "routeId": "dermatology-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 475
+      "bodyTextLength": 517
     },
     {
       "route": "dermatology-followup",
@@ -528,7 +528,7 @@
       "h1": "生物制剂随访",
       "routeId": "dermatology-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 443
+      "bodyTextLength": 480
     },
     {
       "route": "dermatology-qc",
@@ -537,7 +537,7 @@
       "h1": "质控复核",
       "routeId": "dermatology-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 438
+      "bodyTextLength": 483
     },
     {
       "route": "dermatology-record",
@@ -546,7 +546,7 @@
       "h1": "皮肤科记录",
       "routeId": "dermatology-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 445
+      "bodyTextLength": 435
     },
     {
       "route": "dermatology-treatment",
@@ -555,7 +555,7 @@
       "h1": "生物制剂筛查",
       "routeId": "dermatology-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 435
+      "bodyTextLength": 478
     },
     {
       "route": "dermatology-workbench",
@@ -564,7 +564,7 @@
       "h1": "皮肤工作台",
       "routeId": "dermatology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 548
+      "bodyTextLength": 523
     },
     {
       "route": "device-monitoring",
@@ -573,7 +573,7 @@
       "h1": "设备遥测、趋势与告警",
       "routeId": "device-monitoring",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 682
+      "bodyTextLength": 1141
     },
     {
       "route": "devices",
@@ -582,7 +582,7 @@
       "h1": "设备目录、绑定与校准",
       "routeId": "devices",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 657
+      "bodyTextLength": 879
     },
     {
       "route": "emergency",
@@ -591,7 +591,7 @@
       "h1": "急诊工作台",
       "routeId": "emergency",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 379
+      "bodyTextLength": 393
     },
     {
       "route": "emergency-access",
@@ -600,7 +600,7 @@
       "h1": "紧急访问",
       "routeId": "emergency-access",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 588
+      "bodyTextLength": 695
     },
     {
       "route": "ent-care",
@@ -609,16 +609,16 @@
       "h1": "气道风险交接",
       "routeId": "ent-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 430
+      "bodyTextLength": 501
     },
     {
       "route": "ent-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "ent-evidence",
+      "h1": "耳鼻喉诊疗证据",
       "routeId": "ent-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 459
+      "bodyTextLength": 517
     },
     {
       "route": "ent-followup",
@@ -627,7 +627,7 @@
       "h1": "随访记录",
       "routeId": "ent-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 408
+      "bodyTextLength": 444
     },
     {
       "route": "ent-qc",
@@ -636,7 +636,7 @@
       "h1": "质控复核",
       "routeId": "ent-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 437
+      "bodyTextLength": 482
     },
     {
       "route": "ent-record",
@@ -645,16 +645,16 @@
       "h1": "耳鼻喉记录",
       "routeId": "ent-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 425
+      "bodyTextLength": 452
     },
     {
       "route": "ent-treatment",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "ent-treatment",
+      "h1": "耳鼻喉治疗执行",
       "routeId": "ent-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 460
+      "bodyTextLength": 548
     },
     {
       "route": "ent-workbench",
@@ -663,7 +663,7 @@
       "h1": "耳鼻喉工作台",
       "routeId": "ent-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 494
+      "bodyTextLength": 468
     },
     {
       "route": "er-handoff",
@@ -672,7 +672,7 @@
       "h1": "急诊会诊、交接与转运",
       "routeId": "er-handoff",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3835
+      "bodyTextLength": 6024
     },
     {
       "route": "er-nursing",
@@ -681,7 +681,7 @@
       "h1": "急诊护理、输液与执行",
       "routeId": "er-nursing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 515
+      "bodyTextLength": 779
     },
     {
       "route": "er-observation",
@@ -690,7 +690,7 @@
       "h1": "急诊抢救留观与去向",
       "routeId": "er-observation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 488
+      "bodyTextLength": 500
     },
     {
       "route": "er-record",
@@ -699,7 +699,7 @@
       "h1": "急诊病历与抢救记录",
       "routeId": "er-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 561
+      "bodyTextLength": 584
     },
     {
       "route": "er-triage",
@@ -708,7 +708,7 @@
       "h1": "急诊预检分诊",
       "routeId": "er-triage",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 560
+      "bodyTextLength": 601
     },
     {
       "route": "form-designer",
@@ -717,7 +717,7 @@
       "h1": "表单与病历模板设计器",
       "routeId": "form-designer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 776
+      "bodyTextLength": 830
     },
     {
       "route": "imaging-workbench",
@@ -726,7 +726,7 @@
       "h1": "检查影像工作台",
       "routeId": "imaging-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 614
+      "bodyTextLength": 635
     },
     {
       "route": "infection-events",
@@ -735,7 +735,7 @@
       "h1": "院感监测线索",
       "routeId": "infection-events",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 416
+      "bodyTextLength": 448
     },
     {
       "route": "inpatient",
@@ -744,7 +744,7 @@
       "h1": "住院医生工作站",
       "routeId": "inpatient",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1384
+      "bodyTextLength": 1471
     },
     {
       "route": "inpatient-course",
@@ -753,7 +753,7 @@
       "h1": "住院病程与文书中心",
       "routeId": "inpatient-course",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 929
+      "bodyTextLength": 878
     },
     {
       "route": "inpatient-discharge",
@@ -762,7 +762,7 @@
       "h1": "出院病历与病案归档闭环",
       "routeId": "inpatient-discharge",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 714
+      "bodyTextLength": 587
     },
     {
       "route": "inpatient-doc-editor",
@@ -771,16 +771,16 @@
       "h1": "住院病历 · 专注编辑",
       "routeId": "inpatient-doc-editor",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 466
+      "bodyTextLength": 994
     },
     {
       "route": "inpatient-doc-qc",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "住院病历 · 专注编辑",
+      "h1": "住院病历 · 质控与审签",
       "routeId": "inpatient-doc-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 466
+      "bodyTextLength": 995
     },
     {
       "route": "inpatient-doc-versions",
@@ -789,7 +789,7 @@
       "h1": "住院文书版本与查房证据",
       "routeId": "inpatient-doc-versions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 575
+      "bodyTextLength": 656
     },
     {
       "route": "inpatient-overview",
@@ -798,7 +798,7 @@
       "h1": "住院患者总览",
       "routeId": "inpatient-overview",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1006
+      "bodyTextLength": 941
     },
     {
       "route": "inpatient-pharmacy",
@@ -807,7 +807,7 @@
       "h1": "住院药房、配液与床旁给药",
       "routeId": "inpatient-pharmacy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 597
+      "bodyTextLength": 655
     },
     {
       "route": "install",
@@ -816,7 +816,7 @@
       "h1": "安装向导与首次健康检查",
       "routeId": "install",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 786
+      "bodyTextLength": 844
     },
     {
       "route": "integration",
@@ -825,7 +825,7 @@
       "h1": "外部系统集成与互操作中心",
       "routeId": "integration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 796
+      "bodyTextLength": 783
     },
     {
       "route": "integration-connectors",
@@ -834,7 +834,7 @@
       "h1": "集成连接器目录与健康",
       "routeId": "integration-connectors",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 789
+      "bodyTextLength": 1374
     },
     {
       "route": "integration-mapping",
@@ -843,7 +843,7 @@
       "h1": "集成字段映射",
       "routeId": "integration-mapping",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2416
+      "bodyTextLength": 3765
     },
     {
       "route": "integration-messages",
@@ -852,7 +852,7 @@
       "h1": "集成消息 Trace 与重试",
       "routeId": "integration-messages",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 779
+      "bodyTextLength": 973
     },
     {
       "route": "ip-consult",
@@ -861,7 +861,7 @@
       "h1": "住院查房、会诊与协同",
       "routeId": "ip-consult",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 691
+      "bodyTextLength": 898
     },
     {
       "route": "ip-orders",
@@ -870,7 +870,7 @@
       "h1": "住院医嘱与用药中心",
       "routeId": "ip-orders",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 448
+      "bodyTextLength": 737
     },
     {
       "route": "ip-pathway",
@@ -879,7 +879,7 @@
       "h1": "住院临床路径执行中心",
       "routeId": "ip-pathway",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 712
+      "bodyTextLength": 574
     },
     {
       "route": "ip-results",
@@ -888,7 +888,7 @@
       "h1": "住院检查检验与危急值",
       "routeId": "ip-results",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 562
+      "bodyTextLength": 969
     },
     {
       "route": "lab-workbench",
@@ -897,7 +897,7 @@
       "h1": "检验工作台",
       "routeId": "lab-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 569
+      "bodyTextLength": 630
     },
     {
       "route": "lis-report",
@@ -906,7 +906,7 @@
       "h1": "LIS 检验报告调阅",
       "routeId": "lis-report",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 503
+      "bodyTextLength": 578
     },
     {
       "route": "login-context",
@@ -915,7 +915,7 @@
       "h1": "登录、锁屏恢复与工作上下文",
       "routeId": "login-context",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 629
+      "bodyTextLength": 616
     },
     {
       "route": "mental-care",
@@ -924,16 +924,16 @@
       "h1": "心理危机交接",
       "routeId": "mental-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 430
+      "bodyTextLength": 505
     },
     {
       "route": "mental-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "mental-evidence",
+      "h1": "精神心理诊疗证据",
       "routeId": "mental-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 465
+      "bodyTextLength": 521
     },
     {
       "route": "mental-followup",
@@ -942,7 +942,7 @@
       "h1": "危机随访",
       "routeId": "mental-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 413
+      "bodyTextLength": 411
     },
     {
       "route": "mental-qc",
@@ -951,7 +951,7 @@
       "h1": "质控复核",
       "routeId": "mental-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 477
     },
     {
       "route": "mental-record",
@@ -960,16 +960,16 @@
       "h1": "精神心理健康记录",
       "routeId": "mental-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 453
+      "bodyTextLength": 474
     },
     {
       "route": "mental-treatment",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "mental-treatment",
+      "h1": "精神心理治疗执行",
       "routeId": "mental-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 466
+      "bodyTextLength": 548
     },
     {
       "route": "mental-workbench",
@@ -978,7 +978,7 @@
       "h1": "精神心理工作台",
       "routeId": "mental-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 524
+      "bodyTextLength": 497
     },
     {
       "route": "migration",
@@ -987,7 +987,7 @@
       "h1": "历史迁移与切换",
       "routeId": "migration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3781
+      "bodyTextLength": 5950
     },
     {
       "route": "model-connection",
@@ -996,7 +996,7 @@
       "h1": "模型 Provider 连接与数据边界",
       "routeId": "model-connection",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 733
+      "bodyTextLength": 1011
     },
     {
       "route": "model-evaluation",
@@ -1005,7 +1005,7 @@
       "h1": "模型评估",
       "routeId": "model-evaluation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1216
+      "bodyTextLength": 1709
     },
     {
       "route": "model-routing",
@@ -1014,7 +1014,7 @@
       "h1": "模型路由、主备与人工降级",
       "routeId": "model-routing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 723
+      "bodyTextLength": 932
     },
     {
       "route": "models",
@@ -1023,7 +1023,7 @@
       "h1": "模型部署管理",
       "routeId": "models",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 397
+      "bodyTextLength": 3207
     },
     {
       "route": "neonatal-care",
@@ -1032,7 +1032,7 @@
       "h1": "腕带核对",
       "routeId": "neonatal-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 407
+      "bodyTextLength": 573
     },
     {
       "route": "neonatal-evidence",
@@ -1041,7 +1041,7 @@
       "h1": "新生儿筛查记录",
       "routeId": "neonatal-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 478
     },
     {
       "route": "neonatal-followup",
@@ -1050,7 +1050,7 @@
       "h1": "随访记录",
       "routeId": "neonatal-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 343
+      "bodyTextLength": 444
     },
     {
       "route": "neonatal-qc",
@@ -1059,7 +1059,7 @@
       "h1": "质控复核",
       "routeId": "neonatal-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 481
     },
     {
       "route": "neonatal-record",
@@ -1068,16 +1068,16 @@
       "h1": "新生儿记录",
       "routeId": "neonatal-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 472
+      "bodyTextLength": 522
     },
     {
       "route": "neonatal-treatment",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "neonatal-treatment",
+      "h1": "新生儿治疗执行",
       "routeId": "neonatal-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 470
+      "bodyTextLength": 546
     },
     {
       "route": "neonatal-workbench",
@@ -1086,7 +1086,7 @@
       "h1": "新生儿工作台",
       "routeId": "neonatal-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 332
+      "bodyTextLength": 503
     },
     {
       "route": "obgyn-care",
@@ -1095,7 +1095,7 @@
       "h1": "妇产护理与产后观察",
       "routeId": "obgyn-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 537
     },
     {
       "route": "obgyn-evidence",
@@ -1104,7 +1104,7 @@
       "h1": "产前检查",
       "routeId": "obgyn-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 346
+      "bodyTextLength": 461
     },
     {
       "route": "obgyn-followup",
@@ -1113,7 +1113,7 @@
       "h1": "产后随访",
       "routeId": "obgyn-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 342
+      "bodyTextLength": 428
     },
     {
       "route": "obgyn-qc",
@@ -1122,7 +1122,7 @@
       "h1": "质控复核",
       "routeId": "obgyn-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 434
+      "bodyTextLength": 477
     },
     {
       "route": "obgyn-record",
@@ -1131,7 +1131,7 @@
       "h1": "妇产记录",
       "routeId": "obgyn-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 489
+      "bodyTextLength": 545
     },
     {
       "route": "obgyn-treatment",
@@ -1140,7 +1140,7 @@
       "h1": "分娩记录",
       "routeId": "obgyn-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 441
+      "bodyTextLength": 464
     },
     {
       "route": "obgyn-workbench",
@@ -1149,7 +1149,7 @@
       "h1": "妇产工作台",
       "routeId": "obgyn-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 510
+      "bodyTextLength": 485
     },
     {
       "route": "opd-consult",
@@ -1158,7 +1158,7 @@
       "h1": "门诊会诊、转诊与协同",
       "routeId": "opd-consult",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 547
+      "bodyTextLength": 613
     },
     {
       "route": "opd-diagnosis",
@@ -1167,7 +1167,7 @@
       "h1": "门诊诊断与问题清单",
       "routeId": "opd-diagnosis",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 413
+      "bodyTextLength": 860
     },
     {
       "route": "opd-followup",
@@ -1176,7 +1176,7 @@
       "h1": "门诊随访与终诊",
       "routeId": "opd-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 474
+      "bodyTextLength": 501
     },
     {
       "route": "opd-orders",
@@ -1185,7 +1185,7 @@
       "h1": "门诊医嘱与处方",
       "routeId": "opd-orders",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 429
+      "bodyTextLength": 991
     },
     {
       "route": "opd-record",
@@ -1194,7 +1194,7 @@
       "h1": "门诊病历工作台",
       "routeId": "opd-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 767
+      "bodyTextLength": 737
     },
     {
       "route": "opd-results",
@@ -1203,7 +1203,7 @@
       "h1": "门诊检查检验与结果",
       "routeId": "opd-results",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 508
+      "bodyTextLength": 884
     },
     {
       "route": "opensource",
@@ -1212,7 +1212,7 @@
       "h1": "开源发布指标",
       "routeId": "opensource",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2890
+      "bodyTextLength": 4410
     },
     {
       "route": "operations",
@@ -1221,7 +1221,7 @@
       "h1": "生产运行、灾备与停机续运",
       "routeId": "operations",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 815
+      "bodyTextLength": 867
     },
     {
       "route": "ophthalmology-care",
@@ -1230,16 +1230,16 @@
       "h1": "眼科护理与术后观察",
       "routeId": "ophthalmology-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 455
+      "bodyTextLength": 536
     },
     {
       "route": "ophthalmology-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "ophthalmology-evidence",
+      "h1": "眼科诊疗证据",
       "routeId": "ophthalmology-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 479
+      "bodyTextLength": 517
     },
     {
       "route": "ophthalmology-followup",
@@ -1248,7 +1248,7 @@
       "h1": "术后随访",
       "routeId": "ophthalmology-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 421
+      "bodyTextLength": 419
     },
     {
       "route": "ophthalmology-qc",
@@ -1257,7 +1257,7 @@
       "h1": "质控复核",
       "routeId": "ophthalmology-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 434
+      "bodyTextLength": 477
     },
     {
       "route": "ophthalmology-record",
@@ -1266,7 +1266,7 @@
       "h1": "眼科记录",
       "routeId": "ophthalmology-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 422
+      "bodyTextLength": 414
     },
     {
       "route": "ophthalmology-treatment",
@@ -1275,7 +1275,7 @@
       "h1": "术前核对",
       "routeId": "ophthalmology-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 399
+      "bodyTextLength": 469
     },
     {
       "route": "ophthalmology-workbench",
@@ -1284,7 +1284,7 @@
       "h1": "眼科工作台",
       "routeId": "ophthalmology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 562
+      "bodyTextLength": 537
     },
     {
       "route": "outpatient",
@@ -1302,7 +1302,7 @@
       "h1": "门诊药房审方与调剂",
       "routeId": "outpatient-pharmacy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 575
+      "bodyTextLength": 654
     },
     {
       "route": "pacs-viewer",
@@ -1311,7 +1311,7 @@
       "h1": "PACS 影像调阅",
       "routeId": "pacs-viewer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 578
+      "bodyTextLength": 663
     },
     {
       "route": "pathology-workbench",
@@ -1320,7 +1320,7 @@
       "h1": "病理标本到诊断签署",
       "routeId": "pathology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 652
+      "bodyTextLength": 1092
     },
     {
       "route": "patient-merge",
@@ -1329,7 +1329,7 @@
       "h1": "患者合并与可逆撤销",
       "routeId": "patient-merge",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 607
+      "bodyTextLength": 579
     },
     {
       "route": "patient-registry",
@@ -1338,7 +1338,7 @@
       "h1": "患者主索引与身份核验",
       "routeId": "patient-registry",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 586
+      "bodyTextLength": 558
     },
     {
       "route": "patient-timeline",
@@ -1347,7 +1347,7 @@
       "h1": "授权患者纵向时间线",
       "routeId": "patient-timeline",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 495
+      "bodyTextLength": 7483
     },
     {
       "route": "pediatrics-care",
@@ -1356,16 +1356,16 @@
       "h1": "生长发育记录",
       "routeId": "pediatrics-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 339
+      "bodyTextLength": 416
     },
     {
       "route": "pediatrics-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "pediatrics-evidence",
+      "h1": "儿科诊疗证据",
       "routeId": "pediatrics-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 363
+      "bodyTextLength": 521
     },
     {
       "route": "pediatrics-followup",
@@ -1374,7 +1374,7 @@
       "h1": "随访记录",
       "routeId": "pediatrics-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 408
+      "bodyTextLength": 444
     },
     {
       "route": "pediatrics-qc",
@@ -1383,7 +1383,7 @@
       "h1": "质控复核",
       "routeId": "pediatrics-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 481
     },
     {
       "route": "pediatrics-record",
@@ -1392,16 +1392,16 @@
       "h1": "儿科记录",
       "routeId": "pediatrics-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 330
+      "bodyTextLength": 470
     },
     {
       "route": "pediatrics-treatment",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "pediatrics-treatment",
+      "h1": "儿科治疗执行",
       "routeId": "pediatrics-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 474
+      "bodyTextLength": 547
     },
     {
       "route": "pediatrics-workbench",
@@ -1410,7 +1410,7 @@
       "h1": "儿科工作台",
       "routeId": "pediatrics-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 541
+      "bodyTextLength": 516
     },
     {
       "route": "quality-center",
@@ -1419,7 +1419,7 @@
       "h1": "医疗质量中心",
       "routeId": "quality-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 567
+      "bodyTextLength": 986
     },
     {
       "route": "quality-rating",
@@ -1428,7 +1428,7 @@
       "h1": "科室支持等级",
       "routeId": "quality-rating",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 640
+      "bodyTextLength": 752
     },
     {
       "route": "record",
@@ -1437,7 +1437,7 @@
       "h1": "病历中心工作台",
       "routeId": "record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 675
+      "bodyTextLength": 648
     },
     {
       "route": "record-diff",
@@ -1446,7 +1446,7 @@
       "h1": "病历版本差异",
       "routeId": "record-diff",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 350
+      "bodyTextLength": 513
     },
     {
       "route": "record-editor",
@@ -1455,7 +1455,7 @@
       "h1": "门诊病历 · 专注编辑",
       "routeId": "record-editor",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 666
+      "bodyTextLength": 641
     },
     {
       "route": "record-qc",
@@ -1464,7 +1464,7 @@
       "h1": "病历质控与审签中心",
       "routeId": "record-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 363
+      "bodyTextLength": 761
     },
     {
       "route": "record-sign",
@@ -1473,7 +1473,7 @@
       "h1": "病历签署与法律证据",
       "routeId": "record-sign",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 781
+      "bodyTextLength": 753
     },
     {
       "route": "record-sources",
@@ -1482,7 +1482,7 @@
       "h1": "病历来源与附件",
       "routeId": "record-sources",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 692
+      "bodyTextLength": 665
     },
     {
       "route": "record-versions",
@@ -1491,7 +1491,7 @@
       "h1": "病历版本与法律证据",
       "routeId": "record-versions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 428
+      "bodyTextLength": 902
     },
     {
       "route": "release-gates",
@@ -1500,7 +1500,7 @@
       "h1": "Release 门禁与制品发布",
       "routeId": "release-gates",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 910
+      "bodyTextLength": 969
     },
     {
       "route": "reproductive-care",
@@ -1509,16 +1509,16 @@
       "h1": "生殖护理与周期照护",
       "routeId": "reproductive-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 539
     },
     {
       "route": "reproductive-evidence",
       "viewport": "1280x800",
       "issues": [],
-      "h1": "reproductive-evidence",
+      "h1": "生殖诊疗证据",
       "routeId": "reproductive-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 477
+      "bodyTextLength": 519
     },
     {
       "route": "reproductive-followup",
@@ -1527,7 +1527,7 @@
       "h1": "妊娠结局",
       "routeId": "reproductive-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 427
+      "bodyTextLength": 489
     },
     {
       "route": "reproductive-qc",
@@ -1536,7 +1536,7 @@
       "h1": "质控复核",
       "routeId": "reproductive-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 435
+      "bodyTextLength": 479
     },
     {
       "route": "reproductive-record",
@@ -1545,7 +1545,7 @@
       "h1": "辅助生殖周期记录",
       "routeId": "reproductive-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 469
+      "bodyTextLength": 523
     },
     {
       "route": "reproductive-treatment",
@@ -1554,7 +1554,7 @@
       "h1": "胚胎移植记录",
       "routeId": "reproductive-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 410
+      "bodyTextLength": 547
     },
     {
       "route": "reproductive-workbench",
@@ -1563,7 +1563,7 @@
       "h1": "生殖工作台",
       "routeId": "reproductive-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 564
+      "bodyTextLength": 539
     },
     {
       "route": "research",
@@ -1572,7 +1572,7 @@
       "h1": "科研项目与统计中心",
       "routeId": "research",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 580
+      "bodyTextLength": 1014
     },
     {
       "route": "research-dataset",
@@ -1581,7 +1581,7 @@
       "h1": "研究数据集请求",
       "routeId": "research-dataset",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1090
+      "bodyTextLength": 1457
     },
     {
       "route": "research-stats",
@@ -1590,7 +1590,7 @@
       "h1": "科研统计分析",
       "routeId": "research-stats",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 360
+      "bodyTextLength": 1054
     },
     {
       "route": "rule-center",
@@ -1599,7 +1599,7 @@
       "h1": "规则、时限与提示设计器",
       "routeId": "rule-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 982
+      "bodyTextLength": 1156
     },
     {
       "route": "scope-designer",
@@ -1608,7 +1608,7 @@
       "h1": "角色、职责与数据范围设计器",
       "routeId": "scope-designer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 761
+      "bodyTextLength": 812
     },
     {
       "route": "skill-catalog",
@@ -1617,7 +1617,7 @@
       "h1": "Skill 目录",
       "routeId": "skill-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1406
+      "bodyTextLength": 1970
     },
     {
       "route": "specialty-center",
@@ -1626,7 +1626,7 @@
       "h1": "专科支持总览",
       "routeId": "specialty-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 700
+      "bodyTextLength": 680
     },
     {
       "route": "specialty-coverage",
@@ -1635,7 +1635,7 @@
       "h1": "专科覆盖度",
       "routeId": "specialty-coverage",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 559
+      "bodyTextLength": 647
     },
     {
       "route": "surgery-schedule",
@@ -1644,7 +1644,7 @@
       "h1": "围手术期排程与安全核查",
       "routeId": "surgery-schedule",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 450
+      "bodyTextLength": 698
     },
     {
       "route": "tcm-care",
@@ -1653,7 +1653,7 @@
       "h1": "中医护理与辨证施护",
       "routeId": "tcm-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 455
+      "bodyTextLength": 534
     },
     {
       "route": "tcm-evidence",
@@ -1662,7 +1662,7 @@
       "h1": "四诊记录",
       "routeId": "tcm-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 340
+      "bodyTextLength": 538
     },
     {
       "route": "tcm-followup",
@@ -1671,7 +1671,7 @@
       "h1": "随访记录",
       "routeId": "tcm-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 408
+      "bodyTextLength": 444
     },
     {
       "route": "tcm-qc",
@@ -1680,7 +1680,7 @@
       "h1": "质控复核",
       "routeId": "tcm-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 345
+      "bodyTextLength": 477
     },
     {
       "route": "tcm-record",
@@ -1689,7 +1689,7 @@
       "h1": "中医记录",
       "routeId": "tcm-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 393
+      "bodyTextLength": 526
     },
     {
       "route": "tcm-treatment",
@@ -1698,7 +1698,7 @@
       "h1": "草药处方",
       "routeId": "tcm-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 394
+      "bodyTextLength": 471
     },
     {
       "route": "tcm-workbench",
@@ -1707,7 +1707,7 @@
       "h1": "中医工作台",
       "routeId": "tcm-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 492
+      "bodyTextLength": 467
     },
     {
       "route": "therapy-workbench",
@@ -1716,7 +1716,7 @@
       "h1": "治疗排程、核对与执行",
       "routeId": "therapy-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 672
+      "bodyTextLength": 923
     },
     {
       "route": "tool-catalog",
@@ -1725,7 +1725,7 @@
       "h1": "Tool 目录",
       "routeId": "tool-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1093
+      "bodyTextLength": 1439
     },
     {
       "route": "transfusion",
@@ -1734,7 +1734,7 @@
       "h1": "输血全链工作台",
       "routeId": "transfusion",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 628
+      "bodyTextLength": 741
     },
     {
       "route": "unified-home",
@@ -1743,7 +1743,7 @@
       "h1": "统一首页与任务中心",
       "routeId": "unified-home",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 658
+      "bodyTextLength": 645
     },
     {
       "route": "ward",
@@ -1752,7 +1752,7 @@
       "h1": "病区看板",
       "routeId": "ward",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2555
+      "bodyTextLength": 3910
     },
     {
       "route": "workflow",
@@ -1761,7 +1761,7 @@
       "h1": "流程与状态设计器",
       "routeId": "workflow",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1482
+      "bodyTextLength": 1901
     },
     {
       "route": "admin",
@@ -1770,7 +1770,7 @@
       "h1": "系统管理工作台",
       "routeId": "admin",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1324
+      "bodyTextLength": 1297
     },
     {
       "route": "admin-audit",
@@ -1779,7 +1779,7 @@
       "h1": "管理审计与权限复核",
       "routeId": "admin-audit",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 130
+      "bodyTextLength": 49265
     },
     {
       "route": "admin-auth",
@@ -1788,7 +1788,7 @@
       "h1": "认证与 MFA 场景演练",
       "routeId": "admin-auth",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 490
+      "bodyTextLength": 663
     },
     {
       "route": "admin-dictionaries",
@@ -1797,7 +1797,7 @@
       "h1": "字典主数据",
       "routeId": "admin-dictionaries",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 243
+      "bodyTextLength": 291
     },
     {
       "route": "admin-jobs",
@@ -1806,7 +1806,7 @@
       "h1": "通知调度与批量任务",
       "routeId": "admin-jobs",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 545
+      "bodyTextLength": 605
     },
     {
       "route": "admin-master-data",
@@ -1815,7 +1815,7 @@
       "h1": "医院主数据管理",
       "routeId": "admin-master-data",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 547
+      "bodyTextLength": 609
     },
     {
       "route": "admin-org",
@@ -1824,7 +1824,7 @@
       "h1": "组织机构管理",
       "routeId": "admin-org",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 10459
+      "bodyTextLength": 15245
     },
     {
       "route": "admin-parameters",
@@ -1833,7 +1833,7 @@
       "h1": "系统参数与功能开关",
       "routeId": "admin-parameters",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 164
+      "bodyTextLength": 671
     },
     {
       "route": "admin-permissions",
@@ -1842,7 +1842,7 @@
       "h1": "权限策略与访问模拟",
       "routeId": "admin-permissions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 423
+      "bodyTextLength": 672
     },
     {
       "route": "admin-roles",
@@ -1851,7 +1851,7 @@
       "h1": "角色与任期",
       "routeId": "admin-roles",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3649
+      "bodyTextLength": 5178
     },
     {
       "route": "admin-templates",
@@ -1860,7 +1860,7 @@
       "h1": "病历模板与版本发布",
       "routeId": "admin-templates",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 5928
+      "bodyTextLength": 5905
     },
     {
       "route": "admin-users",
@@ -1869,7 +1869,7 @@
       "h1": "用户、人员与工作范围",
       "routeId": "admin-users",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 8425
+      "bodyTextLength": 12011
     },
     {
       "route": "admission-bed",
@@ -1878,7 +1878,7 @@
       "h1": "入院、病区与床位管理",
       "routeId": "admission-bed",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 681
+      "bodyTextLength": 770
     },
     {
       "route": "agent",
@@ -1887,7 +1887,7 @@
       "h1": "Agent 受控运行",
       "routeId": "agent",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 712
+      "bodyTextLength": 942
     },
     {
       "route": "agent-catalog",
@@ -1896,7 +1896,7 @@
       "h1": "Agent 目录",
       "routeId": "agent-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1434
+      "bodyTextLength": 2449
     },
     {
       "route": "agent-compose",
@@ -1905,7 +1905,7 @@
       "h1": "Agent / Skill / Tool 组合画布",
       "routeId": "agent-compose",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 741
+      "bodyTextLength": 804
     },
     {
       "route": "agent-context",
@@ -1914,7 +1914,7 @@
       "h1": "Agent 上下文策略",
       "routeId": "agent-context",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 659
+      "bodyTextLength": 718
     },
     {
       "route": "agent-evals",
@@ -1923,7 +1923,7 @@
       "h1": "Agent 评估与发布门禁",
       "routeId": "agent-evals",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 588
+      "bodyTextLength": 649
     },
     {
       "route": "ai-action-review",
@@ -1932,25 +1932,25 @@
       "h1": "动作审批与执行核验",
       "routeId": "ai-action-review",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 244
+      "bodyTextLength": 314
     },
     {
       "route": "ai-assistant",
       "viewport": "390x844",
       "issues": [],
-      "h1": "临床 AI 助手",
+      "h1": "AI医助小南",
       "routeId": "ai-assistant",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 362
+      "bodyTextLength": 349
     },
     {
       "route": "ai-assistant-policy",
       "viewport": "390x844",
       "issues": [],
-      "h1": "临床 AI 助手策略",
+      "h1": "AI医助小南策略",
       "routeId": "ai-assistant-policy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 664
+      "bodyTextLength": 723
     },
     {
       "route": "ai-capture",
@@ -1959,7 +1959,7 @@
       "h1": "语音采集、转写与人工复核",
       "routeId": "ai-capture",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 481
+      "bodyTextLength": 790
     },
     {
       "route": "ai-center",
@@ -1968,7 +1968,7 @@
       "h1": "AI 中心",
       "routeId": "ai-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 624
+      "bodyTextLength": 615
     },
     {
       "route": "ai-reminder-detail",
@@ -1977,7 +1977,7 @@
       "h1": "主动提醒详情",
       "routeId": "ai-reminder-detail",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 249
+      "bodyTextLength": 328
     },
     {
       "route": "aiops",
@@ -1986,7 +1986,7 @@
       "h1": "AI 运行预算",
       "routeId": "aiops",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 214
+      "bodyTextLength": 3676
     },
     {
       "route": "anesthesia-workbench",
@@ -1995,7 +1995,7 @@
       "h1": "麻醉评估、事件轴与复苏",
       "routeId": "anesthesia-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 471
+      "bodyTextLength": 872
     },
     {
       "route": "appointment-registration",
@@ -2004,7 +2004,7 @@
       "h1": "预约、挂号、分诊、叫号与留观",
       "routeId": "appointment-registration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2265
+      "bodyTextLength": 211
     },
     {
       "route": "archive-assets",
@@ -2013,7 +2013,7 @@
       "h1": "病案归档与法律证据",
       "routeId": "archive-assets",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 799
+      "bodyTextLength": 776
     },
     {
       "route": "archive-borrow",
@@ -2022,7 +2022,7 @@
       "h1": "病案借阅、复制与对外提供",
       "routeId": "archive-borrow",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 342
+      "bodyTextLength": 356
     },
     {
       "route": "archive-catalog",
@@ -2031,7 +2031,7 @@
       "h1": "病案目录与完整性",
       "routeId": "archive-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 407
+      "bodyTextLength": 491
     },
     {
       "route": "archive-integrity",
@@ -2040,7 +2040,7 @@
       "h1": "病案完整性、签名与长期验真",
       "routeId": "archive-integrity",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 626
+      "bodyTextLength": 694
     },
     {
       "route": "archive-preservation",
@@ -2049,7 +2049,7 @@
       "h1": "病案长期保存与恢复验证",
       "routeId": "archive-preservation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 445
+      "bodyTextLength": 673
     },
     {
       "route": "archive-scan",
@@ -2058,7 +2058,7 @@
       "h1": "纸质病历扫描、OCR 与编目",
       "routeId": "archive-scan",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 433
+      "bodyTextLength": 907
     },
     {
       "route": "asset-detail",
@@ -2067,7 +2067,7 @@
       "h1": "病案资产证据详情",
       "routeId": "asset-detail",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 197
+      "bodyTextLength": 530
     },
     {
       "route": "backup",
@@ -2076,7 +2076,7 @@
       "h1": "备份恢复与完整性报告",
       "routeId": "backup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 615
+      "bodyTextLength": 671
     },
     {
       "route": "billing",
@@ -2085,7 +2085,7 @@
       "h1": "费用、收退费、预交与结算",
       "routeId": "billing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 401
+      "bodyTextLength": 462
     },
     {
       "route": "capability-pack",
@@ -2094,7 +2094,7 @@
       "h1": "能力包与灰度发布",
       "routeId": "capability-pack",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1540
+      "bodyTextLength": 2382
     },
     {
       "route": "care-operations",
@@ -2103,7 +2103,7 @@
       "h1": "医疗协同中心",
       "routeId": "care-operations",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 346
+      "bodyTextLength": 372
     },
     {
       "route": "clinical",
@@ -2112,7 +2112,7 @@
       "h1": "临床业务门户",
       "routeId": "clinical",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1401
+      "bodyTextLength": 1392
     },
     {
       "route": "clinical-tasks",
@@ -2121,7 +2121,7 @@
       "h1": "统一临床任务中心",
       "routeId": "clinical-tasks",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 234
+      "bodyTextLength": 509
     },
     {
       "route": "cohort-builder",
@@ -2130,7 +2130,7 @@
       "h1": "研究队列构建器",
       "routeId": "cohort-builder",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3034
+      "bodyTextLength": 4825
     },
     {
       "route": "config-release",
@@ -2139,7 +2139,7 @@
       "h1": "配置差异、审批与灰度发布",
       "routeId": "config-release",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 616
+      "bodyTextLength": 673
     },
     {
       "route": "config-upgrade",
@@ -2148,7 +2148,7 @@
       "h1": "配置包升级与冲突处理",
       "routeId": "config-upgrade",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 606
+      "bodyTextLength": 662
     },
     {
       "route": "credentials",
@@ -2157,7 +2157,7 @@
       "h1": "人员资质",
       "routeId": "credentials",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3301
+      "bodyTextLength": 4651
     },
     {
       "route": "data-center",
@@ -2166,7 +2166,7 @@
       "h1": "数据中心指标目录与血缘",
       "routeId": "data-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 607
+      "bodyTextLength": 1080
     },
     {
       "route": "data-quality",
@@ -2175,7 +2175,7 @@
       "h1": "数据质量规则",
       "routeId": "data-quality",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2424
+      "bodyTextLength": 3765
     },
     {
       "route": "dental-care",
@@ -2184,16 +2184,16 @@
       "h1": "口腔护理与术后观察",
       "routeId": "dental-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 339
     },
     {
       "route": "dental-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "dental-evidence",
+      "h1": "口腔诊疗证据",
       "routeId": "dental-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 265
+      "bodyTextLength": 322
     },
     {
       "route": "dental-followup",
@@ -2202,7 +2202,7 @@
       "h1": "随访记录",
       "routeId": "dental-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 208
+      "bodyTextLength": 248
     },
     {
       "route": "dental-qc",
@@ -2211,7 +2211,7 @@
       "h1": "质控复核",
       "routeId": "dental-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 236
+      "bodyTextLength": 285
     },
     {
       "route": "dental-record",
@@ -2220,7 +2220,7 @@
       "h1": "口腔记录",
       "routeId": "dental-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 176
+      "bodyTextLength": 161
     },
     {
       "route": "dental-treatment",
@@ -2229,7 +2229,7 @@
       "h1": "口腔治疗记录",
       "routeId": "dental-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 221
+      "bodyTextLength": 284
     },
     {
       "route": "dental-workbench",
@@ -2238,7 +2238,7 @@
       "h1": "口腔工作台",
       "routeId": "dental-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 313
+      "bodyTextLength": 292
     },
     {
       "route": "department-qc",
@@ -2247,7 +2247,7 @@
       "h1": "院科病历质控与整改",
       "routeId": "department-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 366
+      "bodyTextLength": 806
     },
     {
       "route": "dermatology-care",
@@ -2256,16 +2256,16 @@
       "h1": "皮肤护理与创面观察",
       "routeId": "dermatology-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 339
     },
     {
       "route": "dermatology-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "dermatology-evidence",
+      "h1": "皮肤诊疗证据",
       "routeId": "dermatology-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 275
+      "bodyTextLength": 321
     },
     {
       "route": "dermatology-followup",
@@ -2274,7 +2274,7 @@
       "h1": "生物制剂随访",
       "routeId": "dermatology-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 243
+      "bodyTextLength": 284
     },
     {
       "route": "dermatology-qc",
@@ -2283,7 +2283,7 @@
       "h1": "质控复核",
       "routeId": "dermatology-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 238
+      "bodyTextLength": 287
     },
     {
       "route": "dermatology-record",
@@ -2292,7 +2292,7 @@
       "h1": "皮肤科记录",
       "routeId": "dermatology-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 245
+      "bodyTextLength": 239
     },
     {
       "route": "dermatology-treatment",
@@ -2301,7 +2301,7 @@
       "h1": "生物制剂筛查",
       "routeId": "dermatology-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 235
+      "bodyTextLength": 282
     },
     {
       "route": "dermatology-workbench",
@@ -2310,7 +2310,7 @@
       "h1": "皮肤工作台",
       "routeId": "dermatology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 348
+      "bodyTextLength": 327
     },
     {
       "route": "device-monitoring",
@@ -2319,7 +2319,7 @@
       "h1": "设备遥测、趋势与告警",
       "routeId": "device-monitoring",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 482
+      "bodyTextLength": 945
     },
     {
       "route": "devices",
@@ -2328,7 +2328,7 @@
       "h1": "设备目录、绑定与校准",
       "routeId": "devices",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 457
+      "bodyTextLength": 683
     },
     {
       "route": "emergency",
@@ -2337,7 +2337,7 @@
       "h1": "急诊工作台",
       "routeId": "emergency",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1151
+      "bodyTextLength": 195
     },
     {
       "route": "emergency-access",
@@ -2346,7 +2346,7 @@
       "h1": "紧急访问",
       "routeId": "emergency-access",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 388
+      "bodyTextLength": 499
     },
     {
       "route": "ent-care",
@@ -2355,16 +2355,16 @@
       "h1": "气道风险交接",
       "routeId": "ent-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 230
+      "bodyTextLength": 305
     },
     {
       "route": "ent-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "ent-evidence",
+      "h1": "耳鼻喉诊疗证据",
       "routeId": "ent-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 259
+      "bodyTextLength": 321
     },
     {
       "route": "ent-followup",
@@ -2373,7 +2373,7 @@
       "h1": "随访记录",
       "routeId": "ent-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 143
+      "bodyTextLength": 248
     },
     {
       "route": "ent-qc",
@@ -2382,7 +2382,7 @@
       "h1": "质控复核",
       "routeId": "ent-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 237
+      "bodyTextLength": 286
     },
     {
       "route": "ent-record",
@@ -2391,16 +2391,16 @@
       "h1": "耳鼻喉记录",
       "routeId": "ent-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 225
+      "bodyTextLength": 256
     },
     {
       "route": "ent-treatment",
       "viewport": "390x844",
       "issues": [],
-      "h1": "ent-treatment",
+      "h1": "耳鼻喉治疗执行",
       "routeId": "ent-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 260
+      "bodyTextLength": 352
     },
     {
       "route": "ent-workbench",
@@ -2409,7 +2409,7 @@
       "h1": "耳鼻喉工作台",
       "routeId": "ent-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 294
+      "bodyTextLength": 272
     },
     {
       "route": "er-handoff",
@@ -2418,7 +2418,7 @@
       "h1": "急诊会诊、交接与转运",
       "routeId": "er-handoff",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3633
+      "bodyTextLength": 5826
     },
     {
       "route": "er-nursing",
@@ -2427,7 +2427,7 @@
       "h1": "急诊护理、输液与执行",
       "routeId": "er-nursing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 313
+      "bodyTextLength": 581
     },
     {
       "route": "er-observation",
@@ -2436,7 +2436,7 @@
       "h1": "急诊抢救留观与去向",
       "routeId": "er-observation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 286
+      "bodyTextLength": 302
     },
     {
       "route": "er-record",
@@ -2445,7 +2445,7 @@
       "h1": "急诊病历与抢救记录",
       "routeId": "er-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 359
+      "bodyTextLength": 386
     },
     {
       "route": "er-triage",
@@ -2454,7 +2454,7 @@
       "h1": "急诊预检分诊",
       "routeId": "er-triage",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 358
+      "bodyTextLength": 403
     },
     {
       "route": "form-designer",
@@ -2463,7 +2463,7 @@
       "h1": "表单与病历模板设计器",
       "routeId": "form-designer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 576
+      "bodyTextLength": 634
     },
     {
       "route": "imaging-workbench",
@@ -2472,7 +2472,7 @@
       "h1": "检查影像工作台",
       "routeId": "imaging-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 397
+      "bodyTextLength": 422
     },
     {
       "route": "infection-events",
@@ -2481,7 +2481,7 @@
       "h1": "院感监测线索",
       "routeId": "infection-events",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 216
+      "bodyTextLength": 252
     },
     {
       "route": "inpatient",
@@ -2490,7 +2490,7 @@
       "h1": "住院医生工作站",
       "routeId": "inpatient",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1023
+      "bodyTextLength": 1114
     },
     {
       "route": "inpatient-course",
@@ -2499,7 +2499,7 @@
       "h1": "住院病程与文书中心",
       "routeId": "inpatient-course",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 685
+      "bodyTextLength": 638
     },
     {
       "route": "inpatient-discharge",
@@ -2508,7 +2508,7 @@
       "h1": "出院病历与病案归档闭环",
       "routeId": "inpatient-discharge",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 470
+      "bodyTextLength": 347
     },
     {
       "route": "inpatient-doc-editor",
@@ -2517,16 +2517,16 @@
       "h1": "住院病历 · 专注编辑",
       "routeId": "inpatient-doc-editor",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 261
+      "bodyTextLength": 750
     },
     {
       "route": "inpatient-doc-qc",
       "viewport": "390x844",
       "issues": [],
-      "h1": "住院病历 · 专注编辑",
+      "h1": "住院病历 · 质控与审签",
       "routeId": "inpatient-doc-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 261
+      "bodyTextLength": 751
     },
     {
       "route": "inpatient-doc-versions",
@@ -2535,7 +2535,7 @@
       "h1": "住院文书版本与查房证据",
       "routeId": "inpatient-doc-versions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 331
+      "bodyTextLength": 416
     },
     {
       "route": "inpatient-overview",
@@ -2544,7 +2544,7 @@
       "h1": "住院患者总览",
       "routeId": "inpatient-overview",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 762
+      "bodyTextLength": 701
     },
     {
       "route": "inpatient-pharmacy",
@@ -2553,7 +2553,7 @@
       "h1": "住院药房、配液与床旁给药",
       "routeId": "inpatient-pharmacy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 375
+      "bodyTextLength": 437
     },
     {
       "route": "install",
@@ -2562,7 +2562,7 @@
       "h1": "安装向导与首次健康检查",
       "routeId": "install",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 586
+      "bodyTextLength": 648
     },
     {
       "route": "integration",
@@ -2571,7 +2571,7 @@
       "h1": "外部系统集成与互操作中心",
       "routeId": "integration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 596
+      "bodyTextLength": 587
     },
     {
       "route": "integration-connectors",
@@ -2580,7 +2580,7 @@
       "h1": "集成连接器目录与健康",
       "routeId": "integration-connectors",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 589
+      "bodyTextLength": 1178
     },
     {
       "route": "integration-mapping",
@@ -2589,7 +2589,7 @@
       "h1": "集成字段映射",
       "routeId": "integration-mapping",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2216
+      "bodyTextLength": 3569
     },
     {
       "route": "integration-messages",
@@ -2598,7 +2598,7 @@
       "h1": "集成消息 Trace 与重试",
       "routeId": "integration-messages",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 579
+      "bodyTextLength": 777
     },
     {
       "route": "ip-consult",
@@ -2607,7 +2607,7 @@
       "h1": "住院查房、会诊与协同",
       "routeId": "ip-consult",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 445
+      "bodyTextLength": 656
     },
     {
       "route": "ip-orders",
@@ -2616,7 +2616,7 @@
       "h1": "住院医嘱与用药中心",
       "routeId": "ip-orders",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 201
+      "bodyTextLength": 494
     },
     {
       "route": "ip-pathway",
@@ -2625,7 +2625,7 @@
       "h1": "住院临床路径执行中心",
       "routeId": "ip-pathway",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 471
+      "bodyTextLength": 337
     },
     {
       "route": "ip-results",
@@ -2634,7 +2634,7 @@
       "h1": "住院检查检验与危急值",
       "routeId": "ip-results",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 322
+      "bodyTextLength": 733
     },
     {
       "route": "lab-workbench",
@@ -2643,7 +2643,7 @@
       "h1": "检验工作台",
       "routeId": "lab-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 351
+      "bodyTextLength": 416
     },
     {
       "route": "lis-report",
@@ -2652,7 +2652,7 @@
       "h1": "LIS 检验报告调阅",
       "routeId": "lis-report",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 334
     },
     {
       "route": "login-context",
@@ -2661,7 +2661,7 @@
       "h1": "登录、锁屏恢复与工作上下文",
       "routeId": "login-context",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 429
+      "bodyTextLength": 420
     },
     {
       "route": "mental-care",
@@ -2670,16 +2670,16 @@
       "h1": "心理危机交接",
       "routeId": "mental-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 230
+      "bodyTextLength": 309
     },
     {
       "route": "mental-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "mental-evidence",
+      "h1": "精神心理诊疗证据",
       "routeId": "mental-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 265
+      "bodyTextLength": 325
     },
     {
       "route": "mental-followup",
@@ -2688,7 +2688,7 @@
       "h1": "危机随访",
       "routeId": "mental-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 213
+      "bodyTextLength": 215
     },
     {
       "route": "mental-qc",
@@ -2697,7 +2697,7 @@
       "h1": "质控复核",
       "routeId": "mental-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 234
+      "bodyTextLength": 281
     },
     {
       "route": "mental-record",
@@ -2706,16 +2706,16 @@
       "h1": "精神心理健康记录",
       "routeId": "mental-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 253
+      "bodyTextLength": 278
     },
     {
       "route": "mental-treatment",
       "viewport": "390x844",
       "issues": [],
-      "h1": "mental-treatment",
+      "h1": "精神心理治疗执行",
       "routeId": "mental-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 266
+      "bodyTextLength": 352
     },
     {
       "route": "mental-workbench",
@@ -2724,7 +2724,7 @@
       "h1": "精神心理工作台",
       "routeId": "mental-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 324
+      "bodyTextLength": 301
     },
     {
       "route": "migration",
@@ -2733,7 +2733,7 @@
       "h1": "历史迁移与切换",
       "routeId": "migration",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 3581
+      "bodyTextLength": 5754
     },
     {
       "route": "model-connection",
@@ -2742,7 +2742,7 @@
       "h1": "模型 Provider 连接与数据边界",
       "routeId": "model-connection",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 533
+      "bodyTextLength": 815
     },
     {
       "route": "model-evaluation",
@@ -2751,7 +2751,7 @@
       "h1": "模型评估",
       "routeId": "model-evaluation",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1016
+      "bodyTextLength": 1513
     },
     {
       "route": "model-routing",
@@ -2760,7 +2760,7 @@
       "h1": "模型路由、主备与人工降级",
       "routeId": "model-routing",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 523
+      "bodyTextLength": 736
     },
     {
       "route": "models",
@@ -2769,7 +2769,7 @@
       "h1": "模型部署管理",
       "routeId": "models",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 197
+      "bodyTextLength": 3011
     },
     {
       "route": "neonatal-care",
@@ -2778,7 +2778,7 @@
       "h1": "腕带核对",
       "routeId": "neonatal-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 207
+      "bodyTextLength": 377
     },
     {
       "route": "neonatal-evidence",
@@ -2787,7 +2787,7 @@
       "h1": "新生儿筛查记录",
       "routeId": "neonatal-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 237
+      "bodyTextLength": 282
     },
     {
       "route": "neonatal-followup",
@@ -2796,7 +2796,7 @@
       "h1": "随访记录",
       "routeId": "neonatal-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 208
+      "bodyTextLength": 248
     },
     {
       "route": "neonatal-qc",
@@ -2805,7 +2805,7 @@
       "h1": "质控复核",
       "routeId": "neonatal-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 236
+      "bodyTextLength": 285
     },
     {
       "route": "neonatal-record",
@@ -2814,16 +2814,16 @@
       "h1": "新生儿记录",
       "routeId": "neonatal-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 272
+      "bodyTextLength": 326
     },
     {
       "route": "neonatal-treatment",
       "viewport": "390x844",
       "issues": [],
-      "h1": "neonatal-treatment",
+      "h1": "新生儿治疗执行",
       "routeId": "neonatal-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 270
+      "bodyTextLength": 350
     },
     {
       "route": "neonatal-workbench",
@@ -2832,7 +2832,7 @@
       "h1": "新生儿工作台",
       "routeId": "neonatal-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 329
+      "bodyTextLength": 307
     },
     {
       "route": "obgyn-care",
@@ -2841,7 +2841,7 @@
       "h1": "妇产护理与产后观察",
       "routeId": "obgyn-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 341
     },
     {
       "route": "obgyn-evidence",
@@ -2850,7 +2850,7 @@
       "h1": "产前检查",
       "routeId": "obgyn-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 233
+      "bodyTextLength": 265
     },
     {
       "route": "obgyn-followup",
@@ -2859,7 +2859,7 @@
       "h1": "产后随访",
       "routeId": "obgyn-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 220
+      "bodyTextLength": 232
     },
     {
       "route": "obgyn-qc",
@@ -2868,7 +2868,7 @@
       "h1": "质控复核",
       "routeId": "obgyn-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 234
+      "bodyTextLength": 281
     },
     {
       "route": "obgyn-record",
@@ -2877,7 +2877,7 @@
       "h1": "妇产记录",
       "routeId": "obgyn-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 289
+      "bodyTextLength": 349
     },
     {
       "route": "obgyn-treatment",
@@ -2886,7 +2886,7 @@
       "h1": "分娩记录",
       "routeId": "obgyn-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 241
+      "bodyTextLength": 268
     },
     {
       "route": "obgyn-workbench",
@@ -2895,7 +2895,7 @@
       "h1": "妇产工作台",
       "routeId": "obgyn-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 310
+      "bodyTextLength": 289
     },
     {
       "route": "opd-consult",
@@ -2904,7 +2904,7 @@
       "h1": "门诊会诊、转诊与协同",
       "routeId": "opd-consult",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 342
+      "bodyTextLength": 412
     },
     {
       "route": "opd-diagnosis",
@@ -2913,7 +2913,7 @@
       "h1": "门诊诊断与问题清单",
       "routeId": "opd-diagnosis",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 246
+      "bodyTextLength": 629
     },
     {
       "route": "opd-followup",
@@ -2922,7 +2922,7 @@
       "h1": "门诊随访与终诊",
       "routeId": "opd-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 269
+      "bodyTextLength": 300
     },
     {
       "route": "opd-orders",
@@ -2931,7 +2931,7 @@
       "h1": "门诊医嘱与处方",
       "routeId": "opd-orders",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 182
+      "bodyTextLength": 748
     },
     {
       "route": "opd-record",
@@ -2940,7 +2940,7 @@
       "h1": "门诊病历工作台",
       "routeId": "opd-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 518
+      "bodyTextLength": 492
     },
     {
       "route": "opd-results",
@@ -2949,7 +2949,7 @@
       "h1": "门诊检查检验与结果",
       "routeId": "opd-results",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 268
+      "bodyTextLength": 648
     },
     {
       "route": "opensource",
@@ -2958,7 +2958,7 @@
       "h1": "开源发布指标",
       "routeId": "opensource",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2690
+      "bodyTextLength": 4214
     },
     {
       "route": "operations",
@@ -2967,7 +2967,7 @@
       "h1": "生产运行、灾备与停机续运",
       "routeId": "operations",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 615
+      "bodyTextLength": 671
     },
     {
       "route": "ophthalmology-care",
@@ -2976,16 +2976,16 @@
       "h1": "眼科护理与术后观察",
       "routeId": "ophthalmology-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 340
     },
     {
       "route": "ophthalmology-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "ophthalmology-evidence",
+      "h1": "眼科诊疗证据",
       "routeId": "ophthalmology-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 279
+      "bodyTextLength": 321
     },
     {
       "route": "ophthalmology-followup",
@@ -2994,7 +2994,7 @@
       "h1": "术后随访",
       "routeId": "ophthalmology-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 221
+      "bodyTextLength": 223
     },
     {
       "route": "ophthalmology-qc",
@@ -3003,7 +3003,7 @@
       "h1": "质控复核",
       "routeId": "ophthalmology-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 234
+      "bodyTextLength": 281
     },
     {
       "route": "ophthalmology-record",
@@ -3012,7 +3012,7 @@
       "h1": "眼科记录",
       "routeId": "ophthalmology-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 222
+      "bodyTextLength": 218
     },
     {
       "route": "ophthalmology-treatment",
@@ -3021,7 +3021,7 @@
       "h1": "术前核对",
       "routeId": "ophthalmology-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 199
+      "bodyTextLength": 273
     },
     {
       "route": "ophthalmology-workbench",
@@ -3030,7 +3030,7 @@
       "h1": "眼科工作台",
       "routeId": "ophthalmology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 362
+      "bodyTextLength": 341
     },
     {
       "route": "outpatient",
@@ -3039,7 +3039,7 @@
       "h1": "门诊复合工作台",
       "routeId": "outpatient",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 197
+      "bodyTextLength": 201
     },
     {
       "route": "outpatient-pharmacy",
@@ -3048,7 +3048,7 @@
       "h1": "门诊药房审方与调剂",
       "routeId": "outpatient-pharmacy",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 356
+      "bodyTextLength": 439
     },
     {
       "route": "pacs-viewer",
@@ -3057,7 +3057,7 @@
       "h1": "PACS 影像调阅",
       "routeId": "pacs-viewer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 330
+      "bodyTextLength": 419
     },
     {
       "route": "pathology-workbench",
@@ -3066,7 +3066,7 @@
       "h1": "病理标本到诊断签署",
       "routeId": "pathology-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 452
+      "bodyTextLength": 896
     },
     {
       "route": "patient-merge",
@@ -3075,7 +3075,7 @@
       "h1": "患者合并与可逆撤销",
       "routeId": "patient-merge",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 407
+      "bodyTextLength": 383
     },
     {
       "route": "patient-registry",
@@ -3084,7 +3084,7 @@
       "h1": "患者主索引与身份核验",
       "routeId": "patient-registry",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 386
+      "bodyTextLength": 362
     },
     {
       "route": "patient-timeline",
@@ -3093,7 +3093,7 @@
       "h1": "授权患者纵向时间线",
       "routeId": "patient-timeline",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 7371
+      "bodyTextLength": 7287
     },
     {
       "route": "pediatrics-care",
@@ -3102,16 +3102,16 @@
       "h1": "生长发育记录",
       "routeId": "pediatrics-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 209
+      "bodyTextLength": 220
     },
     {
       "route": "pediatrics-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "pediatrics-evidence",
+      "h1": "儿科诊疗证据",
       "routeId": "pediatrics-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 273
+      "bodyTextLength": 325
     },
     {
       "route": "pediatrics-followup",
@@ -3120,7 +3120,7 @@
       "h1": "随访记录",
       "routeId": "pediatrics-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 208
+      "bodyTextLength": 248
     },
     {
       "route": "pediatrics-qc",
@@ -3129,7 +3129,7 @@
       "h1": "质控复核",
       "routeId": "pediatrics-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 236
+      "bodyTextLength": 285
     },
     {
       "route": "pediatrics-record",
@@ -3138,16 +3138,16 @@
       "h1": "儿科记录",
       "routeId": "pediatrics-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 233
+      "bodyTextLength": 274
     },
     {
       "route": "pediatrics-treatment",
       "viewport": "390x844",
       "issues": [],
-      "h1": "pediatrics-treatment",
+      "h1": "儿科治疗执行",
       "routeId": "pediatrics-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 274
+      "bodyTextLength": 351
     },
     {
       "route": "pediatrics-workbench",
@@ -3156,7 +3156,7 @@
       "h1": "儿科工作台",
       "routeId": "pediatrics-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 341
+      "bodyTextLength": 320
     },
     {
       "route": "quality-center",
@@ -3165,7 +3165,7 @@
       "h1": "医疗质量中心",
       "routeId": "quality-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 367
+      "bodyTextLength": 790
     },
     {
       "route": "quality-rating",
@@ -3174,7 +3174,7 @@
       "h1": "科室支持等级",
       "routeId": "quality-rating",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 440
+      "bodyTextLength": 556
     },
     {
       "route": "record",
@@ -3183,7 +3183,7 @@
       "h1": "病历中心工作台",
       "routeId": "record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 434
+      "bodyTextLength": 411
     },
     {
       "route": "record-diff",
@@ -3192,7 +3192,7 @@
       "h1": "病历版本差异",
       "routeId": "record-diff",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 145
+      "bodyTextLength": 312
     },
     {
       "route": "record-editor",
@@ -3201,7 +3201,7 @@
       "h1": "门诊病历 · 专注编辑",
       "routeId": "record-editor",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 417
+      "bodyTextLength": 396
     },
     {
       "route": "record-qc",
@@ -3210,7 +3210,7 @@
       "h1": "病历质控与审签中心",
       "routeId": "record-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 584
+      "bodyTextLength": 560
     },
     {
       "route": "record-sign",
@@ -3219,7 +3219,7 @@
       "h1": "病历签署与法律证据",
       "routeId": "record-sign",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 576
+      "bodyTextLength": 552
     },
     {
       "route": "record-sources",
@@ -3228,7 +3228,7 @@
       "h1": "病历来源与附件",
       "routeId": "record-sources",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 445
+      "bodyTextLength": 422
     },
     {
       "route": "record-versions",
@@ -3237,7 +3237,7 @@
       "h1": "病历版本与法律证据",
       "routeId": "record-versions",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 605
+      "bodyTextLength": 652
     },
     {
       "route": "release-gates",
@@ -3246,7 +3246,7 @@
       "h1": "Release 门禁与制品发布",
       "routeId": "release-gates",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 710
+      "bodyTextLength": 773
     },
     {
       "route": "reproductive-care",
@@ -3255,16 +3255,16 @@
       "h1": "生殖护理与周期照护",
       "routeId": "reproductive-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 343
     },
     {
       "route": "reproductive-evidence",
       "viewport": "390x844",
       "issues": [],
-      "h1": "reproductive-evidence",
+      "h1": "生殖诊疗证据",
       "routeId": "reproductive-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 277
+      "bodyTextLength": 323
     },
     {
       "route": "reproductive-followup",
@@ -3273,7 +3273,7 @@
       "h1": "妊娠结局",
       "routeId": "reproductive-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 227
+      "bodyTextLength": 293
     },
     {
       "route": "reproductive-qc",
@@ -3282,7 +3282,7 @@
       "h1": "质控复核",
       "routeId": "reproductive-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 235
+      "bodyTextLength": 283
     },
     {
       "route": "reproductive-record",
@@ -3291,7 +3291,7 @@
       "h1": "辅助生殖周期记录",
       "routeId": "reproductive-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 269
+      "bodyTextLength": 327
     },
     {
       "route": "reproductive-treatment",
@@ -3300,7 +3300,7 @@
       "h1": "胚胎移植记录",
       "routeId": "reproductive-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 210
+      "bodyTextLength": 351
     },
     {
       "route": "reproductive-workbench",
@@ -3309,7 +3309,7 @@
       "h1": "生殖工作台",
       "routeId": "reproductive-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 364
+      "bodyTextLength": 343
     },
     {
       "route": "research",
@@ -3318,7 +3318,7 @@
       "h1": "科研项目与统计中心",
       "routeId": "research",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 380
+      "bodyTextLength": 818
     },
     {
       "route": "research-dataset",
@@ -3327,7 +3327,7 @@
       "h1": "研究数据集请求",
       "routeId": "research-dataset",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 890
+      "bodyTextLength": 1261
     },
     {
       "route": "research-stats",
@@ -3336,7 +3336,7 @@
       "h1": "科研统计分析",
       "routeId": "research-stats",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 369
+      "bodyTextLength": 858
     },
     {
       "route": "rule-center",
@@ -3345,7 +3345,7 @@
       "h1": "规则、时限与提示设计器",
       "routeId": "rule-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 782
+      "bodyTextLength": 960
     },
     {
       "route": "scope-designer",
@@ -3354,7 +3354,7 @@
       "h1": "角色、职责与数据范围设计器",
       "routeId": "scope-designer",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 561
+      "bodyTextLength": 616
     },
     {
       "route": "skill-catalog",
@@ -3363,7 +3363,7 @@
       "h1": "Skill 目录",
       "routeId": "skill-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1206
+      "bodyTextLength": 1774
     },
     {
       "route": "specialty-center",
@@ -3372,7 +3372,7 @@
       "h1": "专科支持总览",
       "routeId": "specialty-center",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 500
+      "bodyTextLength": 484
     },
     {
       "route": "specialty-coverage",
@@ -3381,7 +3381,7 @@
       "h1": "专科覆盖度",
       "routeId": "specialty-coverage",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 359
+      "bodyTextLength": 451
     },
     {
       "route": "surgery-schedule",
@@ -3390,7 +3390,7 @@
       "h1": "围手术期排程与安全核查",
       "routeId": "surgery-schedule",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 403
+      "bodyTextLength": 472
     },
     {
       "route": "tcm-care",
@@ -3399,7 +3399,7 @@
       "h1": "中医护理与辨证施护",
       "routeId": "tcm-care",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 255
+      "bodyTextLength": 338
     },
     {
       "route": "tcm-evidence",
@@ -3408,7 +3408,7 @@
       "h1": "四诊记录",
       "routeId": "tcm-evidence",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 194
+      "bodyTextLength": 342
     },
     {
       "route": "tcm-followup",
@@ -3417,7 +3417,7 @@
       "h1": "随访记录",
       "routeId": "tcm-followup",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 208
+      "bodyTextLength": 248
     },
     {
       "route": "tcm-qc",
@@ -3426,7 +3426,7 @@
       "h1": "质控复核",
       "routeId": "tcm-qc",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 234
+      "bodyTextLength": 281
     },
     {
       "route": "tcm-record",
@@ -3435,7 +3435,7 @@
       "h1": "中医记录",
       "routeId": "tcm-record",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 193
+      "bodyTextLength": 330
     },
     {
       "route": "tcm-treatment",
@@ -3444,7 +3444,7 @@
       "h1": "草药处方",
       "routeId": "tcm-treatment",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 194
+      "bodyTextLength": 275
     },
     {
       "route": "tcm-workbench",
@@ -3453,7 +3453,7 @@
       "h1": "中医工作台",
       "routeId": "tcm-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 292
+      "bodyTextLength": 271
     },
     {
       "route": "therapy-workbench",
@@ -3462,7 +3462,7 @@
       "h1": "治疗排程、核对与执行",
       "routeId": "therapy-workbench",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 472
+      "bodyTextLength": 727
     },
     {
       "route": "tool-catalog",
@@ -3471,7 +3471,7 @@
       "h1": "Tool 目录",
       "routeId": "tool-catalog",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 893
+      "bodyTextLength": 1243
     },
     {
       "route": "transfusion",
@@ -3480,7 +3480,7 @@
       "h1": "输血全链工作台",
       "routeId": "transfusion",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 407
+      "bodyTextLength": 524
     },
     {
       "route": "unified-home",
@@ -3489,7 +3489,7 @@
       "h1": "统一首页与任务中心",
       "routeId": "unified-home",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 458
+      "bodyTextLength": 449
     },
     {
       "route": "ward",
@@ -3498,7 +3498,7 @@
       "h1": "病区看板",
       "routeId": "ward",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2350
+      "bodyTextLength": 3709
     },
     {
       "route": "workflow",
@@ -3507,7 +3507,7 @@
       "h1": "流程与状态设计器",
       "routeId": "workflow",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1282
+      "bodyTextLength": 1705
     }
   ]
 }

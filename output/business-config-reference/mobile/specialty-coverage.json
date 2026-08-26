@@ -1,0 +1,42 @@
+{
+  "document": {
+    "height": 987,
+    "width": 375
+  },
+  "headings": [
+    "专科覆盖度",
+    "专科覆盖台账"
+  ],
+  "overflowX": false,
+  "route": "specialty-coverage",
+  "text": "专科覆盖度\n\n各专科支持等级与缺失安全门；未验证科室不能升级支持级别。\n\n专科覆盖台账\n\n证据哈希与缺失安全门决定评级。\n\n刷新\n范围\t支持等级\t覆盖度\t缺失安全门\t证据有效期\n\nOBGYN\n…2ce67fc0\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…a6b096ca\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…e1ff56a8\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…7b897924\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…dccf16f2\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…2f45b408\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…c1075be9\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…bf86c2e6\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…0b24e2b5\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日",
+  "url": "http://127.0.0.1:4178/app/index.html#/specialty-coverage",
+  "viewport": {
+    "dpr": 1,
+    "height": 844,
+    "width": 390
+  },
+  "visibleNav": [
+    "OpenEMR2026电子病历系统",
+    "⌂临床业务门户",
+    "◫门诊工作台6",
+    "✚急诊工作台4",
+    "▥住院工作站5",
+    "▤病历中心3",
+    "◈医疗质量中心7",
+    "▣病案资产中心3",
+    "✚医疗协同中心8",
+    "☑任务与临床路径9",
+    "⌁数据中心6",
+    "✦AI 中心4",
+    "⇄模拟接口",
+    "⌘业务配置",
+    "⚙系统管理7",
+    "流程设计",
+    "能力包",
+    "科室适配",
+    "表单模板",
+    "规则时限",
+    "职责范围"
+  ]
+}

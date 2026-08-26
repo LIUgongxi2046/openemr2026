@@ -1,0 +1,4110 @@
+{
+  "run_at": "2026-08-25T03:36:48.725Z",
+  "routes": 194,
+  "total_buttons": 2346,
+  "enabled_buttons": 2025,
+  "named_buttons": 2346,
+  "safe_buttons_clicked": 140,
+  "routes_with_safe_clicks": 127,
+  "severity_counts": {},
+  "findings": [],
+  "observations": [
+    {
+      "route": "admin",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "admin-audit",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-audit",
+          "afterRoute": "admin-audit"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "admin-auth",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "admin-dictionaries",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-dictionaries",
+          "afterRoute": "admin-dictionaries"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "创建并生效"
+      ]
+    },
+    {
+      "route": "admin-jobs",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-jobs",
+          "afterRoute": "admin-jobs"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "admin-master-data",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-master-data",
+          "afterRoute": "admin-master-data"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "admin-org",
+      "buttons": 251,
+      "enabled": 251,
+      "named": 251,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-org",
+          "afterRoute": "admin-org"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "创建并生效"
+      ]
+    },
+    {
+      "route": "admin-parameters",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-parameters",
+          "afterRoute": "admin-parameters"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "admin-permissions",
+      "buttons": 5,
+      "enabled": 2,
+      "named": 5,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "使用运行时决策器模拟",
+        "升级"
+      ]
+    },
+    {
+      "route": "admin-roles",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-roles",
+          "afterRoute": "admin-roles"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "admin-templates",
+      "buttons": 59,
+      "enabled": 40,
+      "named": 59,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-templates",
+          "afterRoute": "admin-templates"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "保存 v1 草案"
+      ]
+    },
+    {
+      "route": "admin-users",
+      "buttons": 108,
+      "enabled": 108,
+      "named": 108,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "admin-users",
+          "afterRoute": "admin-users"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号",
+        "停用账号"
+      ]
+    },
+    {
+      "route": "admission-bed",
+      "buttons": 15,
+      "enabled": 13,
+      "named": 15,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "核验并确认入院"
+      ]
+    },
+    {
+      "route": "agent",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "agent",
+          "afterRoute": "agent"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "agent-catalog",
+      "buttons": 53,
+      "enabled": 48,
+      "named": 53,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "agent-catalog",
+          "afterRoute": "agent-catalog"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "登记并生效"
+      ]
+    },
+    {
+      "route": "agent-compose",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "agent-compose",
+          "afterRoute": "agent-compose"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "agent-context",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "agent-context",
+          "afterRoute": "agent-context"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "agent-evals",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "agent-evals",
+          "afterRoute": "agent-evals"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "临床 Agent 发布评估集syn-agent-eval-v1",
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "ai-action-review",
+      "buttons": 4,
+      "enabled": 3,
+      "named": 4,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ai-action-review",
+          "afterRoute": "ai-action-review"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "批准",
+        "拒绝"
+      ]
+    },
+    {
+      "route": "ai-assistant",
+      "buttons": 3,
+      "enabled": 2,
+      "named": 3,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "ai-assistant-policy",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ai-assistant-policy",
+          "afterRoute": "ai-assistant-policy"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "ai-capture",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "ai-center",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "ai-reminder-detail",
+      "buttons": 4,
+      "enabled": 3,
+      "named": 4,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ai-reminder-detail",
+          "afterRoute": "ai-reminder-detail"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "确认",
+        "静默",
+        "创建提醒"
+      ]
+    },
+    {
+      "route": "aiops",
+      "buttons": 50,
+      "enabled": 40,
+      "named": 50,
+      "safeCandidates": 3,
+      "clicked": 3,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "aiops",
+          "afterRoute": "aiops"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "aiops",
+          "afterRoute": "aiops"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "aiops",
+          "afterRoute": "aiops"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "记录消耗"
+      ]
+    },
+    {
+      "route": "anesthesia-workbench",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "appointment-registration",
+      "buttons": 186,
+      "enabled": 106,
+      "named": 186,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "appointment-registration",
+          "afterRoute": "appointment-registration"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建班次号源"
+      ]
+    },
+    {
+      "route": "archive-assets",
+      "buttons": 2,
+      "enabled": 0,
+      "named": 2,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "archive-borrow",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "archive-catalog",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "archive-integrity",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行完整性检查"
+      ]
+    },
+    {
+      "route": "archive-preservation",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "archive-scan",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "asset-detail",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "backup",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "backup",
+          "afterRoute": "backup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "billing",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "billing",
+          "afterRoute": "billing"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "billing",
+          "afterRoute": "billing"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "冲正",
+        "记费入账",
+        "创建价格版本"
+      ]
+    },
+    {
+      "route": "capability-pack",
+      "buttons": 122,
+      "enabled": 117,
+      "named": 122,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "capability-pack",
+          "afterRoute": "capability-pack"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用"
+      ]
+    },
+    {
+      "route": "care-operations",
+      "buttons": 7,
+      "enabled": 7,
+      "named": 7,
+      "safeCandidates": 3,
+      "clicked": 3,
+      "clicks": [
+        {
+          "label": "生命体征",
+          "status": "PASS",
+          "beforeRoute": "care-operations",
+          "afterRoute": "care-operations"
+        },
+        {
+          "label": "护理计划",
+          "status": "PASS",
+          "beforeRoute": "care-operations",
+          "afterRoute": "care-operations"
+        },
+        {
+          "label": "给药执行",
+          "status": "PASS",
+          "beforeRoute": "care-operations",
+          "afterRoute": "care-operations"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "给药执行",
+        "床旁记录",
+        "记录体征"
+      ]
+    },
+    {
+      "route": "clinical",
+      "buttons": 23,
+      "enabled": 23,
+      "named": 23,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "门诊病历与质控主诉、病史、查体、诊断、签署",
+        "医嘱处方与执行药品、检验、检查、治疗、审方",
+        "结果与危急值趋势、报告更正、确认与处置",
+        "会诊转诊申请、受理、意见、时限",
+        "急诊病历与抢救时间轴、抢救记录、医嘱结果",
+        "急诊护理与输液生命体征、执行、异常",
+        "留观与转住院观察记录、去向、接收",
+        "医嘱用药与执行长期/临时医嘱、给药、停止与重整",
+        "出院病案闭环出院记录、首页、质控、整改、归档"
+      ]
+    },
+    {
+      "route": "clinical-tasks",
+      "buttons": 7,
+      "enabled": 7,
+      "named": 7,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "门诊",
+          "status": "PASS",
+          "beforeRoute": "clinical-tasks",
+          "afterRoute": "clinical-tasks"
+        },
+        {
+          "label": "住院",
+          "status": "PASS",
+          "beforeRoute": "clinical-tasks",
+          "afterRoute": "clinical-tasks"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "接手任务",
+        "接手任务"
+      ]
+    },
+    {
+      "route": "cohort-builder",
+      "buttons": 133,
+      "enabled": 118,
+      "named": 133,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "cohort-builder",
+          "afterRoute": "cohort-builder"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用"
+      ]
+    },
+    {
+      "route": "config-release",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "config-release",
+          "afterRoute": "config-release"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "配置灰度发布批次syn-config-release-v1",
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "config-upgrade",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "config-upgrade",
+          "afterRoute": "config-upgrade"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "配置包升级预演syn-config-upgrade-v1",
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "credentials",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "credentials",
+          "afterRoute": "credentials"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "data-center",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "data-center",
+          "afterRoute": "data-center"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "按登记口径计算",
+        "记录人工快照"
+      ]
+    },
+    {
+      "route": "data-quality",
+      "buttons": 93,
+      "enabled": 83,
+      "named": 93,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "data-quality",
+          "afterRoute": "data-quality"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用"
+      ]
+    },
+    {
+      "route": "dental-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-care",
+          "afterRoute": "dental-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "dental-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-evidence",
+          "afterRoute": "dental-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "dental-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-followup",
+          "afterRoute": "dental-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建随访记录"
+      ]
+    },
+    {
+      "route": "dental-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-qc",
+          "afterRoute": "dental-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "dental-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-record",
+          "afterRoute": "dental-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建口腔记录"
+      ]
+    },
+    {
+      "route": "dental-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dental-treatment",
+          "afterRoute": "dental-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建口腔治疗记录"
+      ]
+    },
+    {
+      "route": "dental-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "department-qc",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "department-qc",
+          "afterRoute": "department-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "按登记口径计算",
+        "记录人工快照"
+      ]
+    },
+    {
+      "route": "dermatology-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-care",
+          "afterRoute": "dermatology-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "dermatology-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-evidence",
+          "afterRoute": "dermatology-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "dermatology-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-followup",
+          "afterRoute": "dermatology-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建生物制剂随访"
+      ]
+    },
+    {
+      "route": "dermatology-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-qc",
+          "afterRoute": "dermatology-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "dermatology-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-record",
+          "afterRoute": "dermatology-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建皮肤科记录"
+      ]
+    },
+    {
+      "route": "dermatology-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "dermatology-treatment",
+          "afterRoute": "dermatology-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建生物制剂筛查"
+      ]
+    },
+    {
+      "route": "dermatology-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "device-monitoring",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "devices",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "emergency",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "emergency-access",
+      "buttons": 1,
+      "enabled": 0,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "ent-care",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-care",
+          "afterRoute": "ent-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建气道风险交接"
+      ]
+    },
+    {
+      "route": "ent-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-evidence",
+          "afterRoute": "ent-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "ent-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-followup",
+          "afterRoute": "ent-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建随访记录"
+      ]
+    },
+    {
+      "route": "ent-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-qc",
+          "afterRoute": "ent-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "ent-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-record",
+          "afterRoute": "ent-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建耳鼻喉记录"
+      ]
+    },
+    {
+      "route": "ent-treatment",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ent-treatment",
+          "afterRoute": "ent-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存治疗记录"
+      ]
+    },
+    {
+      "route": "ent-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "er-handoff",
+      "buttons": 40,
+      "enabled": 32,
+      "named": 40,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-handoff",
+          "afterRoute": "er-handoff"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-handoff",
+          "afterRoute": "er-handoff"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "完成交接",
+        "创建交接班",
+        "记录域切换"
+      ]
+    },
+    {
+      "route": "er-nursing",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-nursing",
+          "afterRoute": "er-nursing"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "er-observation",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-observation",
+          "afterRoute": "er-observation"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "er-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-record",
+          "afterRoute": "er-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "开启抢救记录"
+      ]
+    },
+    {
+      "route": "er-triage",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "er-triage",
+          "afterRoute": "er-triage"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存分诊评估"
+      ]
+    },
+    {
+      "route": "form-designer",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "form-designer",
+          "afterRoute": "form-designer"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "imaging-workbench",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "imaging-workbench",
+          "afterRoute": "imaging-workbench"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "imaging-workbench",
+          "afterRoute": "imaging-workbench"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "登记执行",
+        "申请检查"
+      ]
+    },
+    {
+      "route": "infection-events",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "infection-events",
+          "afterRoute": "infection-events"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "确认",
+        "上报线索"
+      ]
+    },
+    {
+      "route": "inpatient",
+      "buttons": 21,
+      "enabled": 21,
+      "named": 21,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "记录临床事件",
+        "开始书写",
+        "开始书写",
+        "开始书写",
+        "开始书写"
+      ]
+    },
+    {
+      "route": "inpatient-course",
+      "buttons": 9,
+      "enabled": 9,
+      "named": 9,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "开始书写",
+        "开始书写",
+        "开始书写",
+        "开始书写"
+      ]
+    },
+    {
+      "route": "inpatient-discharge",
+      "buttons": 5,
+      "enabled": 4,
+      "named": 5,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "校验并确认出院"
+      ]
+    },
+    {
+      "route": "inpatient-doc-editor",
+      "buttons": 8,
+      "enabled": 6,
+      "named": 8,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "运行确定性质控",
+        "执行作者签名"
+      ]
+    },
+    {
+      "route": "inpatient-doc-qc",
+      "buttons": 8,
+      "enabled": 6,
+      "named": 8,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "运行确定性质控",
+        "执行作者签名"
+      ]
+    },
+    {
+      "route": "inpatient-doc-versions",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "inpatient-overview",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "inpatient-pharmacy",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "inpatient-pharmacy",
+          "afterRoute": "inpatient-pharmacy"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "inpatient-pharmacy",
+          "afterRoute": "inpatient-pharmacy"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "第二人核验",
+        "摆药并待核验"
+      ]
+    },
+    {
+      "route": "install",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "install",
+          "afterRoute": "install"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "integration",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "integration-connectors",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "integration-mapping",
+      "buttons": 90,
+      "enabled": 90,
+      "named": 90,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "integration-messages",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "ip-consult",
+      "buttons": 6,
+      "enabled": 6,
+      "named": 6,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "心血管内科普通合成复杂病例：多系统合并风险，已完成身份、过敏史与关键检查复核，需跨科协同并持续追踪处置闭环。合成住院医师 · 08/25 01:35待接诊已超时08/25 03:35前"
+      ]
+    },
+    {
+      "route": "ip-orders",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "ip-pathway",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "确认入径并固定版本"
+      ]
+    },
+    {
+      "route": "ip-results",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "复读并确认接收",
+        "复读并确认接收"
+      ]
+    },
+    {
+      "route": "lab-workbench",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "lab-workbench",
+          "afterRoute": "lab-workbench"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "lab-workbench",
+          "afterRoute": "lab-workbench"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建标本申请"
+      ]
+    },
+    {
+      "route": "lis-report",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "login-context",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "mental-care",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-care",
+          "afterRoute": "mental-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建危机交接"
+      ]
+    },
+    {
+      "route": "mental-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-evidence",
+          "afterRoute": "mental-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "mental-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-followup",
+          "afterRoute": "mental-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建危机随访"
+      ]
+    },
+    {
+      "route": "mental-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-qc",
+          "afterRoute": "mental-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "mental-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-record",
+          "afterRoute": "mental-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建风险评估"
+      ]
+    },
+    {
+      "route": "mental-treatment",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "mental-treatment",
+          "afterRoute": "mental-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存治疗记录"
+      ]
+    },
+    {
+      "route": "mental-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "migration",
+      "buttons": 318,
+      "enabled": 318,
+      "named": 318,
+      "safeCandidates": 3,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "切换",
+          "status": "PASS",
+          "beforeRoute": "migration",
+          "afterRoute": "migration"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "开始试迁"
+      ]
+    },
+    {
+      "route": "model-connection",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "model-evaluation",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "model-evaluation",
+          "afterRoute": "model-evaluation"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "记录并判定"
+      ]
+    },
+    {
+      "route": "model-routing",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "models",
+      "buttons": 37,
+      "enabled": 32,
+      "named": 37,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "models",
+          "afterRoute": "models"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "登记并生效"
+      ]
+    },
+    {
+      "route": "neonatal-care",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-care",
+          "afterRoute": "neonatal-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建腕带核对"
+      ]
+    },
+    {
+      "route": "neonatal-evidence",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-evidence",
+          "afterRoute": "neonatal-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建筛查记录"
+      ]
+    },
+    {
+      "route": "neonatal-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-followup",
+          "afterRoute": "neonatal-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建随访记录"
+      ]
+    },
+    {
+      "route": "neonatal-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-qc",
+          "afterRoute": "neonatal-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "neonatal-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-record",
+          "afterRoute": "neonatal-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建新生儿记录"
+      ]
+    },
+    {
+      "route": "neonatal-treatment",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "neonatal-treatment",
+          "afterRoute": "neonatal-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存治疗记录"
+      ]
+    },
+    {
+      "route": "neonatal-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "obgyn-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-care",
+          "afterRoute": "obgyn-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "obgyn-evidence",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-evidence",
+          "afterRoute": "obgyn-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建产前检查"
+      ]
+    },
+    {
+      "route": "obgyn-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-followup",
+          "afterRoute": "obgyn-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建产后随访"
+      ]
+    },
+    {
+      "route": "obgyn-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-qc",
+          "afterRoute": "obgyn-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "obgyn-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-record",
+          "afterRoute": "obgyn-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建妇产记录"
+      ]
+    },
+    {
+      "route": "obgyn-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "obgyn-treatment",
+          "afterRoute": "obgyn-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建分娩记录"
+      ]
+    },
+    {
+      "route": "obgyn-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "opd-consult",
+      "buttons": 8,
+      "enabled": 4,
+      "named": 8,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "opd-consult",
+          "afterRoute": "opd-consult"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "拒绝",
+        "拒绝"
+      ]
+    },
+    {
+      "route": "opd-diagnosis",
+      "buttons": 6,
+      "enabled": 6,
+      "named": 6,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "确认诊断"
+      ]
+    },
+    {
+      "route": "opd-followup",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "opd-followup",
+          "afterRoute": "opd-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "完成",
+        "登记随访"
+      ]
+    },
+    {
+      "route": "opd-orders",
+      "buttons": 8,
+      "enabled": 8,
+      "named": 8,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "完成剩余",
+        "取消医嘱",
+        "停止医嘱",
+        "部分执行",
+        "完成剩余",
+        "取消医嘱",
+        "停止医嘱"
+      ]
+    },
+    {
+      "route": "opd-record",
+      "buttons": 5,
+      "enabled": 5,
+      "named": 5,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行质控",
+        "立即保存",
+        "签署当前版本"
+      ]
+    },
+    {
+      "route": "opd-results",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "复读并确认接收"
+      ]
+    },
+    {
+      "route": "opensource",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "记录快照",
+        "记录下载事件"
+      ]
+    },
+    {
+      "route": "operations",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "operations",
+          "afterRoute": "operations"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "生产运行与停机续运预案syn-operations-v1",
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "ophthalmology-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-care",
+          "afterRoute": "ophthalmology-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "ophthalmology-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-evidence",
+          "afterRoute": "ophthalmology-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "ophthalmology-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-followup",
+          "afterRoute": "ophthalmology-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建术后随访"
+      ]
+    },
+    {
+      "route": "ophthalmology-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-qc",
+          "afterRoute": "ophthalmology-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "ophthalmology-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-record",
+          "afterRoute": "ophthalmology-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建眼科记录"
+      ]
+    },
+    {
+      "route": "ophthalmology-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ophthalmology-treatment",
+          "afterRoute": "ophthalmology-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建术前核对"
+      ]
+    },
+    {
+      "route": "ophthalmology-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "outpatient",
+      "buttons": 25,
+      "enabled": 17,
+      "named": 25,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "outpatient-pharmacy",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "outpatient-pharmacy",
+          "afterRoute": "outpatient-pharmacy"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "outpatient-pharmacy",
+          "afterRoute": "outpatient-pharmacy"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "第二人核验",
+        "调配并待核验"
+      ]
+    },
+    {
+      "route": "pacs-viewer",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "pathology-workbench",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "patient-merge",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "patient-merge",
+          "afterRoute": "patient-merge"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "提交第二人审批"
+      ]
+    },
+    {
+      "route": "patient-registry",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "patient-registry",
+          "afterRoute": "patient-registry"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "计算并登记候选"
+      ]
+    },
+    {
+      "route": "patient-timeline",
+      "buttons": 9,
+      "enabled": 9,
+      "named": 9,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "加载更早记录"
+      ]
+    },
+    {
+      "route": "pediatrics-care",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-care",
+          "afterRoute": "pediatrics-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建生长发育记录"
+      ]
+    },
+    {
+      "route": "pediatrics-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-evidence",
+          "afterRoute": "pediatrics-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "pediatrics-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-followup",
+          "afterRoute": "pediatrics-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建随访记录"
+      ]
+    },
+    {
+      "route": "pediatrics-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-qc",
+          "afterRoute": "pediatrics-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "pediatrics-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-record",
+          "afterRoute": "pediatrics-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建儿科记录"
+      ]
+    },
+    {
+      "route": "pediatrics-treatment",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "pediatrics-treatment",
+          "afterRoute": "pediatrics-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存治疗记录"
+      ]
+    },
+    {
+      "route": "pediatrics-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "quality-center",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "quality-center",
+          "afterRoute": "quality-center"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "按登记口径计算",
+        "记录人工快照"
+      ]
+    },
+    {
+      "route": "quality-rating",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "quality-rating",
+          "afterRoute": "quality-rating"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "record",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "record-diff",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "record-editor",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行质控",
+        "立即保存",
+        "签署当前版本"
+      ]
+    },
+    {
+      "route": "record-qc",
+      "buttons": 1,
+      "enabled": 0,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "确认签署当前版本"
+      ]
+    },
+    {
+      "route": "record-sign",
+      "buttons": 1,
+      "enabled": 0,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "确认签署当前版本"
+      ]
+    },
+    {
+      "route": "record-sources",
+      "buttons": 2,
+      "enabled": 0,
+      "named": 2,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "record-versions",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "release-gates",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "release-gates",
+          "afterRoute": "release-gates"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "OpenEMR2026 发布门禁syn-release-gate-v1",
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "reproductive-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-care",
+          "afterRoute": "reproductive-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "reproductive-evidence",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-evidence",
+          "afterRoute": "reproductive-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存诊疗证据"
+      ]
+    },
+    {
+      "route": "reproductive-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-followup",
+          "afterRoute": "reproductive-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建妊娠结局"
+      ]
+    },
+    {
+      "route": "reproductive-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-qc",
+          "afterRoute": "reproductive-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "reproductive-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-record",
+          "afterRoute": "reproductive-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建周期记录"
+      ]
+    },
+    {
+      "route": "reproductive-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "reproductive-treatment",
+          "afterRoute": "reproductive-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建胚胎移植记录"
+      ]
+    },
+    {
+      "route": "reproductive-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "research",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "research",
+          "afterRoute": "research"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "按登记口径计算",
+        "记录人工快照"
+      ]
+    },
+    {
+      "route": "research-dataset",
+      "buttons": 47,
+      "enabled": 12,
+      "named": 47,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "research-dataset",
+          "afterRoute": "research-dataset"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "批准",
+        "创建请求"
+      ]
+    },
+    {
+      "route": "research-stats",
+      "buttons": 3,
+      "enabled": 3,
+      "named": 3,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "research-stats",
+          "afterRoute": "research-stats"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "按登记口径计算",
+        "记录人工快照"
+      ]
+    },
+    {
+      "route": "rule-center",
+      "buttons": 15,
+      "enabled": 12,
+      "named": 15,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "rule-center",
+          "afterRoute": "rule-center"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "scope-designer",
+      "buttons": 9,
+      "enabled": 6,
+      "named": 9,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "scope-designer",
+          "afterRoute": "scope-designer"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    },
+    {
+      "route": "skill-catalog",
+      "buttons": 37,
+      "enabled": 22,
+      "named": 37,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "skill-catalog",
+          "afterRoute": "skill-catalog"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "登记并生效"
+      ]
+    },
+    {
+      "route": "specialty-center",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "specialty-center",
+          "afterRoute": "specialty-center"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "specialty-coverage",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "specialty-coverage",
+          "afterRoute": "specialty-coverage"
+        }
+      ],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "surgery-schedule",
+      "buttons": 4,
+      "enabled": 4,
+      "named": 4,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "surgery-schedule",
+          "afterRoute": "surgery-schedule"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "surgery-schedule",
+          "afterRoute": "surgery-schedule"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "排程手术"
+      ]
+    },
+    {
+      "route": "tcm-care",
+      "buttons": 2,
+      "enabled": 1,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-care",
+          "afterRoute": "tcm-care"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存护理记录"
+      ]
+    },
+    {
+      "route": "tcm-evidence",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-evidence",
+          "afterRoute": "tcm-evidence"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建四诊记录"
+      ]
+    },
+    {
+      "route": "tcm-followup",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-followup",
+          "afterRoute": "tcm-followup"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建随访记录"
+      ]
+    },
+    {
+      "route": "tcm-qc",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-qc",
+          "afterRoute": "tcm-qc"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建质控复核"
+      ]
+    },
+    {
+      "route": "tcm-record",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-record",
+          "afterRoute": "tcm-record"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建中医记录"
+      ]
+    },
+    {
+      "route": "tcm-treatment",
+      "buttons": 2,
+      "enabled": 2,
+      "named": 2,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tcm-treatment",
+          "afterRoute": "tcm-treatment"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "创建草药处方"
+      ]
+    },
+    {
+      "route": "tcm-workbench",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "therapy-workbench",
+      "buttons": 1,
+      "enabled": 1,
+      "named": 1,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": [
+        "运行场景"
+      ]
+    },
+    {
+      "route": "tool-catalog",
+      "buttons": 22,
+      "enabled": 17,
+      "named": 22,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "tool-catalog",
+          "afterRoute": "tool-catalog"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "停用",
+        "登记并生效"
+      ]
+    },
+    {
+      "route": "transfusion",
+      "buttons": 9,
+      "enabled": 9,
+      "named": 9,
+      "safeCandidates": 2,
+      "clicked": 2,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "transfusion",
+          "afterRoute": "transfusion"
+        },
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "transfusion",
+          "afterRoute": "transfusion"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "双人核验并开始输注"
+      ]
+    },
+    {
+      "route": "unified-home",
+      "buttons": 0,
+      "enabled": 0,
+      "named": 0,
+      "safeCandidates": 0,
+      "clicked": 0,
+      "clicks": [],
+      "mutatingOrWorkflowButtons": []
+    },
+    {
+      "route": "ward",
+      "buttons": 73,
+      "enabled": 68,
+      "named": 73,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "ward",
+          "afterRoute": "ward"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "完成",
+        "创建交接班"
+      ]
+    },
+    {
+      "route": "workflow",
+      "buttons": 27,
+      "enabled": 22,
+      "named": 27,
+      "safeCandidates": 1,
+      "clicked": 1,
+      "clicks": [
+        {
+          "label": "刷新",
+          "status": "PASS",
+          "beforeRoute": "workflow",
+          "afterRoute": "workflow"
+        }
+      ],
+      "mutatingOrWorkflowButtons": [
+        "保存新版本",
+        "执行静态校验",
+        "提交审批",
+        "职责分离批准",
+        "发布"
+      ]
+    }
+  ]
+}

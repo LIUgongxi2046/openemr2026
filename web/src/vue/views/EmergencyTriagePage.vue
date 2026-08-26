@@ -79,7 +79,7 @@ async function createAssessment() {
 
     <template v-else>
       <section class="admin-metrics" aria-label="分诊统计">
-        <article><span>分诊评估</span><strong>{{ items.length }}</strong><small>患者 …{{ clinicalContext.patientId.slice(-8) }}</small></article>
+        <article><span>分诊评估</span><strong>{{ items.length }}</strong><small>患者 …{{ clinicalContext.emergencyPatientId.slice(-8) }}</small></article>
         <article><span>当前生效</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>

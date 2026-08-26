@@ -2,6 +2,7 @@ import { createMemoryHistory, createRouter, createWebHashHistory, type RouterHis
 
 import { nativeVueRouteIds, routeRegistry, specialtyGuardRouteIds } from './route-registry';
 import { clearInpatientSyntheticActor } from '../clinical-api';
+import { authSession } from '../auth-session';
 
 const plannedComponent = () => import('./views/PlannedRoutePage.vue');
 const specialtyGuardComponent = () => import('./views/SpecialtySupportGuardPage.vue');
@@ -204,6 +205,7 @@ const nativeComponents: Record<string, () => Promise<unknown>> = {
 
 function vuePath(routeId: string): string {
   if (routeId === 'record-diff') return '/record-diff/:documentId?/:fromVersionId?/:toVersionId?';
+  if (routeId === 'login-context') return '/login';
   return `/${routeId}`;
 }
 
@@ -211,14 +213,18 @@ export function buildContractRoutes(): RouteRecordRaw[] {
   return routeRegistry.map((definition) => ({
     path: vuePath(definition.route_id),
     name: definition.route_id,
-    ...(definition.route_id === 'clinical-tasks' ? { alias: ['/tasks'] } : {}),
+    ...(definition.route_id === 'clinical-tasks'
+      ? { alias: ['/tasks'] }
+      : definition.route_id === 'login-context' ? { alias: ['/login-context'] } : {}),
     component: nativeComponents[definition.route_id]
       ?? (specialtyGuardRouteIds.has(definition.route_id) ? specialtyGuardComponent : undefined)
       ?? plannedComponent,
     meta: {
       contractId: definition.route_id,
-      primaryDomain: definition.primary_domain,
-      guards: definition.guards,
+      primaryDomain: definition.route_id === 'login-context' ? 'SYSTEM' : definition.primary_domain,
+      guards: definition.route_id === 'login-context' ? [] : definition.guards,
+      layout: definition.route_id === 'login-context' ? 'SYSTEM_AUTH' : 'APPLICATION',
+      publicRoute: definition.route_id === 'login-context',
       implementation: nativeVueRouteIds.has(definition.route_id)
         ? 'VUE_NATIVE'
         : (specialtyGuardRouteIds.has(definition.route_id)
@@ -252,6 +258,17 @@ export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
 
 export const router = createOpenEmrRouter();
 
+router.beforeEach((to) => {
+  if (to.meta.publicRoute) {
+    if (authSession.token) return { path: '/clinical' };
+    return true;
+  }
+  if (!authSession.token) {
+    return { name: 'login-context', query: { redirect: to.fullPath } };
+  }
+  return true;
+});
+
 router.afterEach((to) => {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.routeId = String(to.meta.contractId ?? to.name ?? 'unknown');
@@ -265,5 +282,7 @@ declare module 'vue-router' {
     primaryDomain?: string;
     guards?: readonly string[];
     implementation?: 'VUE_NATIVE' | 'SUPPORT_GUARD' | 'NOT_AVAILABLE';
+    layout?: 'SYSTEM_AUTH' | 'APPLICATION';
+    publicRoute?: boolean;
   }
 }

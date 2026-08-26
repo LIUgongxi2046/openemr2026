@@ -61,7 +61,7 @@ async function createRecord() {
     await createDermatologyRecord(lease, {
       body_site: form.bodySite,
       bsa_percent: form.bsaPercent,
-      pasi_score: form.pasiScore.trim() === '' ? null : Number(form.pasiScore),
+      pasi_score: String(form.pasiScore).trim() === '' ? null : Number(form.pasiScore),
     });
     form.bsaPercent = 0; form.pasiScore = '';
     notice.value = '皮肤科记录已创建，受累部位、体表面积与 PASI 评分已留痕。';
@@ -128,7 +128,7 @@ async function createRecord() {
               <option value="OTHER">其他</option>
             </select></label>
             <label><span>BSA（%）</span><input v-model.number="form.bsaPercent" type="number" min="0" max="100" step="0.1" required /></label>
-            <label><span>PASI 评分</span><input v-model="form.pasiScore" type="number" step="0.1" placeholder="可选" /></label>
+            <label><span>PASI 评分</span><input v-model.number="form.pasiScore" type="number" step="0.1" placeholder="可选" /></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在创建…' : '创建皮肤科记录' }}</button>
           </form>
         </section>

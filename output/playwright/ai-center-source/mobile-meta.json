@@ -1,0 +1,137 @@
+[
+  {
+    "route": "#/ai-center",
+    "body": {
+      "h": 1516,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "AI 中心"
+  },
+  {
+    "route": "#/ai-assistant",
+    "body": {
+      "h": 1426,
+      "w": 375
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 375,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "AI医助小南"
+  },
+  {
+    "route": "#/ai-assistant-policy",
+    "body": {
+      "h": 2450,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "AI医助小南策略"
+  },
+  {
+    "route": "#/models",
+    "body": {
+      "h": 4798,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "模型部署管理"
+  },
+  {
+    "route": "#/agent-catalog",
+    "body": {
+      "h": 6459,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "Agent 目录"
+  },
+  {
+    "route": "#/skill-catalog",
+    "body": {
+      "h": 4990,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "Skill 目录"
+  },
+  {
+    "route": "#/tool-catalog",
+    "body": {
+      "h": 3364,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "Tool 目录"
+  },
+  {
+    "route": "#/agent-evals",
+    "body": {
+      "h": 2291,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "Agent 评估与发布门禁"
+  },
+  {
+    "route": "#/aiops",
+    "body": {
+      "h": 7180,
+      "w": 390
+    },
+    "horizontalOverflow": false,
+    "navRect": {
+      "h": 48,
+      "w": 390,
+      "x": 0,
+      "y": 110
+    },
+    "visibleH1": "AI 运行预算"
+  }
+]

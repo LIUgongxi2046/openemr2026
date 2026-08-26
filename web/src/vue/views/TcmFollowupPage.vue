@@ -7,21 +7,21 @@ import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const patientLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'patient-lease'],
-  queryFn: () => issueSpecialtyPatientLease('PEDIATRICS_FOLLOWUP'),
+  queryKey: ['specialty-layers', 'tcm-followup', 'patient-lease'],
+  queryFn: () => issueSpecialtyPatientLease('TCM_FOLLOWUP'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const patientLease = computed(() => patientLeaseQuery.data.value);
 
 const encounterLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'encounter-lease'],
-  queryFn: () => issueSpecialtyEncounterLease('PEDIATRICS_FOLLOWUP'),
+  queryKey: ['specialty-layers', 'tcm-followup', 'encounter-lease'],
+  queryFn: () => issueSpecialtyEncounterLease('TCM_FOLLOWUP'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const encounterLease = computed(() => encounterLeaseQuery.data.value);
 
 const recordsQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'records'],
+  queryKey: ['specialty-layers', 'tcm-followup', 'records'],
   queryFn: () => listTcmFollowupRecords(patientLease.value!),
   enabled: () => Boolean(patientLease.value),
   retry: false,

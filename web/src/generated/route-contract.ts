@@ -1041,7 +1041,7 @@ export const generatedRouteContract = {
       "route_id": "ai-assistant",
       "path": "#/ai-assistant",
       "screen_id": "HASH-082",
-      "title": "临床 AI 助手",
+      "title": "AI医助小南",
       "primary_domain": "AI",
       "roles": [
         "AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"
@@ -1101,7 +1101,7 @@ export const generatedRouteContract = {
       "route_id": "ai-assistant-policy",
       "path": "#/ai-assistant-policy",
       "screen_id": "HASH-086",
-      "title": "AI 助手策略与效果治理",
+      "title": "AI医助小南策略与效果治理",
       "primary_domain": "AI",
       "roles": [
         "AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"

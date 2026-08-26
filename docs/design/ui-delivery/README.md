@@ -11,5 +11,6 @@
 - 资产与溯源：`asset-manifest.csv` + `page-asset-map.csv`
 - 生成栅格资产溯源：`image-generation-manifest.csv`
 - 审计结论：`ui-audit.md`
+- Agent 优化版增量设计：[`ai-medical-assistant-v2/`](./ai-medical-assistant-v2/)；承接 5 个主 Agent、诊疗环节子 Agent、任务优先路由、流程内侧面板与完整任务工作台
 
 本目录为 `DESIGN` 交付，独立预览层不是生产前端。

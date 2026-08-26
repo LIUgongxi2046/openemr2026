@@ -7,21 +7,21 @@ import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const patientLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'patient-lease'],
-  queryFn: () => issueSpecialtyPatientLease('PEDIATRICS_FOLLOWUP'),
+  queryKey: ['specialty-layers', 'dental-followup', 'patient-lease'],
+  queryFn: () => issueSpecialtyPatientLease('DENTAL_FOLLOWUP'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const patientLease = computed(() => patientLeaseQuery.data.value);
 
 const encounterLeaseQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'encounter-lease'],
-  queryFn: () => issueSpecialtyEncounterLease('PEDIATRICS_FOLLOWUP'),
+  queryKey: ['specialty-layers', 'dental-followup', 'encounter-lease'],
+  queryFn: () => issueSpecialtyEncounterLease('DENTAL_FOLLOWUP'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const encounterLease = computed(() => encounterLeaseQuery.data.value);
 
 const recordsQuery = useQuery({
-  queryKey: ['specialty-layers', 'pediatrics-followup', 'records'],
+  queryKey: ['specialty-layers', 'dental-followup', 'records'],
   queryFn: () => listDentalFollowupRecords(patientLease.value!),
   enabled: () => Boolean(patientLease.value),
   retry: false,

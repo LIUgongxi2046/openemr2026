@@ -11,7 +11,7 @@
 
 | 项目 | 当前证据 |
 |---|---|
-| 候选 commit | 基线 `db049ae`；本轮修复与测试资产均未 commit/push |
+| 候选 commit | S009 修复基线 `709ea86`；顶栏按钮补充修复尚未 commit/push |
 | 后端 | Java 21.0.12.1、Spring Boot 4.1.0 |
 | 数据库 | PostgreSQL 18.4；首轮审计 `127.0.0.1:55433/openemr2026_s009`，修复后回归 `127.0.0.1:55432/openemr2026_dev`；Flyway V1–V166，全部合成数据 |
 | 前端 | Node 24.13.0、Vue 3、Vite 8.2.1 |
@@ -49,13 +49,14 @@
 | DeepSeek harness | `node evals/check-deepseek-harness.mjs` + `run-harness.mjs` | adapter/harness 结构无缺失；**INTEGRATED_BLOCKED / INSUFFICIENT_EVIDENCE / NO_GO**，0 真实模型用例 |
 | 语义/追溯 | semantic contract + traceability + route map | **PASS**；194/194 routes，138/138 FR/AC |
 | 安全扫描 | `scripts/security-scan.sh` | **PASS** |
-| 生产构建 | `npm --prefix web run build` | **PASS**；576 modules；全局 AI 对话已异步分块；主 chunk 528.10 kB 警告 |
+| 生产构建 | `npm --prefix web run build` | **PASS**；577 modules；全局 AI 对话已异步分块；主 chunk 538.99 kB 警告 |
+| 顶栏按钮专项 | `npm --prefix web run test:ui:topbar` | **19/19 PASS**；OpenEMR2026 品牌、医院、角色、搜索、AI、指引快捷动作、通知状态与跳转、账户/登录、专科菜单隐藏，覆盖桌面与移动 |
 
 ## 5. 缺陷清单
 
 ### S009-DEF-001 · 全局 AI 入口不是弹窗式随行交互（P0，FIXED/VERIFIED）
 
-- 复现：在 `#/clinical` 点击 `aria-label="打开随行 AI 助手"`。
+- 复现：在 `#/clinical` 点击 `aria-label="打开AI医助小南"`。
 - 实际：没有 `role=dialog`；URL 从 `#/clinical` 变为 `#/ai-assistant`。
 - 影响：当前工作页、患者/就诊/任务视觉上下文被替换，无法满足“任何授权页面随时交互”的交互要求。
 - 证据：两个视口均出现 `AI_NOT_OPENED_AS_DIALOG` 和 `AI_LAUNCH_CHANGED_ROUTE`。
@@ -95,7 +96,7 @@
 
 ### S009-OBS-007 · 生产主 chunk 超过 500 kB（P2）
 
-- 修复后全局 AI dialog 已异步分块，但 `dist/assets/index-*.js` 仍为 528.10 kB（gzip 114.91 kB），Vite 警告仍在；保留 P2 优化任务。
+- 修复后全局 AI dialog 已异步分块，但 `dist/assets/index-*.js` 仍为 538.99 kB（gzip 118.74 kB），Vite 警告仍在；保留 P2 优化任务。
 
 ## 6. 通过项与残余风险
 
@@ -120,9 +121,71 @@
 SHA-256：
 
 - 数据集：`30643365aabf5945287625f63cadd8332854ddf1eb74756fc55942217557eea9`
-- 测试矩阵：`09c64cd3e20378767696849178a8740f016752532fdb15cd5feaa186d272a59a`
+- 测试矩阵：`28a9860622b2087dd93ed86a4c7413b41570e54e9e9ad842a0e68f4c72ff5c05`
 - API 在线审计：`e86760e15b598d3555efb3dc8a05bf2d91ab47e5310396e6d3f7ac07f710df41`
-- UI 严格门禁：`b36e25f4dbd0c8ef2bab7fb428cc2a4ed649448cb60fdc159002bec5c3bc6dce`
+- UI 严格门禁：`ca0a8d2acccdaee1518eaf173e1cd9f3412bbe3cc2c42a940da0d9bed1421d07`
 - 桌面/移动路由功能审计：`ed6b2276a72397c567f8a00a416f0cc220763db8dd6655d35fca52c16836e99e`
 - DeepSeek provider 契约：`7c8b6028b005e1807c6b9da9982d6ee8d97e9854d604ff695e34416ddea5d39d`
 - DeepSeek harness 配置：`3939b4df35bfc0289daf0ddb079a0e334581d71ec3f73aa3c0a0fb3c3f7c63ce`
+
+## 9. 顶栏按钮补充复测
+
+后续发现医院、角色、帮助、通知和用户入口为静态或无事件控件，品牌仍显示旧标记。上述问题已修复；产品名保持 `OpenEMR2026`，消息中心支持筛选/单条已读/业务跳转，操作指引支持快捷动作，核心专科工作台菜单暂时隐藏。最终专项 19/19、全量 UI 388/388、两视口路由 194/194 均通过。完整证据见 `docs/process/testing/2026-08-24-topbar-button-retest-report.md`。
+
+## 10. 全页面数据与功能补充修复（2026-08-24）
+
+### 10.1 本批次实现
+
+- 顶部副标题由“临床核心系统”改为主题深蓝色“电子病历系统”；产品名仍为 `OpenEMR2026`。
+- 全局的“AI医助小南”展示 6 个受支持 Agent、各自介入时机、能力边界和可执行任务；用户可点击任务直接执行，也可选择 Agent 后提交自定义任务。所有请求显式携带 Agent code、name、version 与 boundary，不自动写入临床事实。
+- `dev-synthetic` 幂等注入 2 条诊断、3 条医嘱、1 条异常检验结果和 2 条会诊/转诊记录；门诊首页、诊断、医嘱处方、检查检验、会诊转诊形成可复测的数据闭环。
+- 门诊诊断、医嘱处方、检查检验页面新增主题化统计卡、检索与状态/类别筛选；会诊转诊页已有统计、表格、表单和状态动作，复用并纳入回归。
+- 源码契约审计发现并修复 15 个专科页面错误复用 query key / ContextLease purpose 的问题，覆盖口腔、皮肤、耳鼻喉、精神、眼科、儿科、新生儿、生殖和中医等页面，避免跨专科缓存与上下文串用。
+
+### 10.2 S009 执行证据
+
+| 门禁 | 结果 |
+|---|---|
+| Web 单元测试 | **42/42 PASS**；11 files |
+| Java 编译 | **PASS**；Java 21、`compileJava` |
+| Web 生产构建 | **PASS**；579 modules；主 chunk 539.09 kB 警告保留为 P2 |
+| 顶栏与 AI Agent 专项 | **19/19 PASS**；桌面与移动端 |
+| 门诊数据与操作专项 | **5/5 PASS** |
+| 全页面数据/功能审计 | **194/194 遍历**；194 页均有可用交互；0 P0/P1 |
+| 严格 UI 门禁 | **388/388 route-viewports PASS**；0 findings |
+| 桌面路由审计 | **194/194 PASS**；0 console/HTTP/overflow failure |
+| 移动路由审计 | **194/194 PASS**；0 console/HTTP/overflow failure |
+| 源码格式 | `git diff --check` **PASS** |
+
+数据审计中，59 个路由当前直接渲染数据行或数据卡；120 个路由出现明确的初始/空状态。复核后这些状态均有可用操作，未发现运行时 P0/P1，故作为 P2 数据丰富度清单保留；它们包含“选择场景后执行”等尚未执行的工作区状态，不能简单等同于功能未开发。
+
+### 10.3 新增证据索引
+
+- 全页面数据/功能：`output/playwright/page-data-function-audit.json`
+- 门诊专项：`output/playwright/outpatient-data-function-audit.json`
+- 严格双视口：`output/playwright/comprehensive-ui-audit.json`
+- 桌面路由：`artifacts/playwright-ci/route-audit-full-page-data-1280x800.json`
+- 移动路由：`artifacts/playwright-ci/route-audit-full-page-data-390x844.json`
+- AI医助小南截图：`output/playwright/ai-assistant-1280x800.png`、`output/playwright/ai-assistant-390x844.png`
+- 门诊截图：`output/playwright/opd-diagnosis-1440x1000.png`、`output/playwright/opd-orders-1440x1000.png`、`output/playwright/opd-results-1440x1000.png`、`output/playwright/opd-consult-1440x1000.png`
+
+SHA-256：
+
+- 全页面数据/功能审计：`c10ae37a34962d0c34dbd866b93351afaaafc37443ca57c2676345b37585adaa`
+- 门诊专项：`fa581bbe2008e8344d20290f9e9f98ea4bd30cbb51c728f0037d46a869f96796`
+
+## 11. AI医助小南品牌统一与拟人 Logo（2026-08-24）
+
+- 将原有通用称呼统一为“AI医助小南”，覆盖顶栏、弹窗、AI 中心、完整工作台、门诊病历候选面板、操作指引、策略页、路由标题、原型与产品/测试文档；内部 API 与 route id 保持兼容。
+- 使用内置图像生成能力制作透明底拟人化医疗 AI 形象，项目版本为 512×512 RGBA PNG、304 kB；顶栏使用 30px，弹窗使用 52px，完整工作台使用 58px。
+- 新增品牌契约测试，禁止用户界面回退到旧称呼，并验证顶栏与弹窗 Logo 资源真实加载。
+- 当前证据：Web 单元 **42/42 PASS**，Java 编译 PASS，生产构建 PASS，顶栏/弹窗专项 **19/19 PASS**，194 路由双视口 **388/388 PASS**、0 findings。
+
+证据：
+
+- Logo：`web/public/brand/ai-medical-assistant-xiaonan.png`
+- 品牌契约：`web/src/vue/ai-medical-assistant-brand.test.ts`
+- 桌面截图：`output/playwright/ai-assistant-1280x800.png`、`output/playwright/topbar-1280x800.png`
+- 移动截图：`output/playwright/ai-assistant-390x844.png`、`output/playwright/topbar-390x844.png`
+- Logo SHA-256：`af83248463239b0397ddd8b0d6cb94c155c6acbc8b671f5d99a2665ab5714c29`
+- 顶栏专项 SHA-256：`b8c3741dc925c8752d8fe259810b268933dad7cbfb1eb0048c77b87beca55d66`

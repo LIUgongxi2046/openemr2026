@@ -1,0 +1,138 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "AI医助小南" [level=1]
+  - paragraph: 跨页面连续但按患者、就诊和任务严格隔离 · 确定性假模型 · 建议不自动写入病历
+  - button "清空对话"
+  - complementary:
+    - generic: 上下文与权限
+    - generic: 患者/就诊隔离
+    - text: 本会话按上下文租约隔离，跨患者或跨就诊不共享会话；AI 只出候选，不获得独立临床权力。
+    - text: 当前作用域
+    - generic: 院区级（无患者）
+    - text: 允许动作
+    - generic: 只读问答 · 不写入病历
+    - text: 模型行为
+    - generic: DETERMINISTIC_FAKE
+  - text: 与AI医助小南协作
+  - generic: 确定性假模型
+  - text: AI医助小南已就绪
+  - paragraph: 输入问题后，小南返回确定性测试回复以验证 SSE 流式通道；建议均为候选，不会自动写入病历、诊断、医嘱或处方。
+  - textbox "询问当前患者，或要求生成可核验的草稿……"
+  - button "清空"
+  - button "发送" [disabled]
+  - text: 主 Agent 与子 Agent 协作
+  - generic: Medical Harness · 候选制
+  - generic: Agent 协作上下文不可用，请核对当前患者、就诊和 ContextLease。

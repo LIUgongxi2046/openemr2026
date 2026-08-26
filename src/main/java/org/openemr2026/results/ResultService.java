@@ -84,7 +84,7 @@ final class ResultService {
 
     List<ClinicalResultWire> list(
             ClinicalIdentity identity, UUID patientId, UUID encounterId, UUID facilityId) {
-        requireEncounter(identity.tenantId(), patientId, encounterId, facilityId);
+        requireReadableEncounter(identity.tenantId(), patientId, encounterId, facilityId);
         return jdbc.sql("""
                 select result_id from clinical_result
                 where tenant_id = :tenant and patient_id = :patient
@@ -534,6 +534,16 @@ final class ResultService {
         long count = jdbc.sql("""
                 select count(*) from encounter where tenant_id = :tenant and encounter_id = :encounter
                   and patient_id = :patient and facility_id = :facility and status = 'IN_PROGRESS'
+                """).param("tenant", tenantId).param("encounter", encounterId)
+                .param("patient", patientId).param("facility", facilityId).query(Long.class).single();
+        if (count != 1) throw contextDenied();
+    }
+
+    private void requireReadableEncounter(UUID tenantId, UUID patientId, UUID encounterId, UUID facilityId) {
+        long count = jdbc.sql("""
+                select count(*) from encounter where tenant_id = :tenant and encounter_id = :encounter
+                  and patient_id = :patient and facility_id = :facility
+                  and status in ('PLANNED', 'ARRIVED', 'IN_PROGRESS', 'SUSPENDED', 'FINISHED')
                 """).param("tenant", tenantId).param("encounter", encounterId)
                 .param("patient", patientId).param("facility", facilityId).query(Long.class).single();
         if (count != 1) throw contextDenied();

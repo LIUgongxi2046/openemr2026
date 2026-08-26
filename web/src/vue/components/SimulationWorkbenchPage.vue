@@ -16,6 +16,7 @@ const busy = ref(false);
 const result = ref<MockInvocationResultWire | null>(null);
 const notice = ref('');
 const failure = ref<{ code: string; message: string } | null>(null);
+const autoStarted = ref(false);
 
 const leaseQuery = useQuery({ queryKey: ['mock', 'lease'], queryFn: () => issueMockLease(), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const interfacesQuery = useQuery({ queryKey: ['mock', 'interfaces'], queryFn: () => listMockInterfaces(leaseQuery.data.value!), enabled: () => Boolean(leaseQuery.data.value), retry: false });
@@ -23,6 +24,11 @@ const issue = computed(() => (leaseQuery.error.value ?? interfacesQuery.error.va
 const interfaces = computed(() => (interfacesQuery.data.value ?? []).filter((item) => item.system_type.startsWith(props.definition.systemType)));
 const selected = computed<MockInterfaceWire | null>(() => interfaces.value.find((item) => item.code === selectedCode.value) ?? interfaces.value[0] ?? null);
 watch(interfaces, (items) => { if (!selectedCode.value && items[0]) selectedCode.value = props.definition.interfaceCode ?? items[0].code; }, { immediate: true });
+watch([selected, () => leaseQuery.data.value], ([item, lease]) => {
+  if (!item || !lease || autoStarted.value) return;
+  autoStarted.value = true;
+  void runScenario();
+}, { immediate: true });
 
 async function runScenario() {
   const lease = leaseQuery.data.value;
@@ -64,7 +70,7 @@ function valueFor(key: string) {
       <div class="simulation-layout">
         <section class="admin-panel"><header><div><h2>场景结果</h2><p>{{ selected?.standard_interface ?? '标准接口' }}</p></div><span v-if="result" class="admin-status" :class="result.scenario === 'DEGRADED' ? 'warning' : 'active'">{{ result.scenario }}</span></header>
           <div v-if="failure" class="simulation-unavailable"><strong>{{ failure.code }}</strong><p>{{ failure.message }}</p><ol><li>保留当前输入和上下文，不自动重试写操作</li><li>转人工工作队列并记录外部依赖状态</li><li>恢复后使用相同业务键幂等重放</li></ol></div>
-          <div v-else-if="!result" class="admin-empty">请选择成功、降级或不可用场景并执行。</div>
+          <div v-else-if="!result" class="admin-empty rich"><strong>正在生成成功场景的合成证据</strong><p>页面会自动运行一次确定性场景；也可修改参数后重新执行。</p></div>
           <template v-else><dl class="simulation-evidence"><div><dt>确定性键</dt><dd><code>{{ result.deterministic_key }}</code></dd></div><div><dt>请求 ID</dt><dd><code>{{ result.request_id }}</code></dd></div><div><dt>合成时间</dt><dd>{{ new Date(result.produced_at).toLocaleString('zh-CN', { hour12: false }) }}</dd></div></dl><div class="simulation-focus"><article v-for="key in definition.resultFocus" :key="key"><span>{{ key }}</span><pre>{{ JSON.stringify(valueFor(key) ?? '—', null, 2) }}</pre></article></div></template>
         </section>
         <aside class="admin-panel"><header><div><h2>门禁与替换契约</h2><p>真实适配器必须保持同一语义</p></div></header><ul class="simulation-safeguards"><li v-for="item in definition.safeguards" :key="item">{{ item }}</li></ul><details v-if="selected"><summary>请求/响应 Schema</summary><pre class="mock-payload">{{ JSON.stringify({ request: selected.request_schema, response: selected.response_schema }, null, 2) }}</pre></details><p class="integration-doc">{{ selected?.integration_doc }}</p></aside>

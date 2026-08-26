@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed } from 'vue';
-import { issueMedicalRecordAssetLease, listMedicalRecordAssets } from '../../api/records';
+import { computed, reactive, ref } from 'vue';
+import { issueMedicalRecordAssetLease, listMedicalRecordAssets, registerMedicalRecordAsset } from '../../api/records';
 import { developmentCopy } from '../../development-copy';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
@@ -16,10 +16,28 @@ const assetsQuery = useQuery({
 });
 const issue = computed(() => assetsQuery.error.value ? toClinicalIssue(assetsQuery.error.value) : null);
 const assets = computed(() => assetsQuery.data.value?.assets ?? []);
+const busy = ref(false);
+const notice = ref('');
+const formOpen = ref(false);
+const form = reactive({ assetType: 'SCAN' as 'PAPER' | 'SCAN' | 'DIGITAL', location: '', contentHash: '' });
 const paperCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'PAPER').length);
 const scanCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'SCAN').length);
 const digitalCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'DIGITAL').length);
 const verifiedCount = computed(() => assets.value.filter((asset) => asset.content_hash.length === 64).length);
+
+async function registerAsset() {
+  const data = assetsQuery.data.value;
+  if (!data || busy.value || form.location.trim().length < 2 || !/^[a-fA-F0-9]{64}$/.test(form.contentHash.trim())) return;
+  busy.value = true; notice.value = '';
+  try {
+    await registerMedicalRecordAsset(data.lease, { assetType: form.assetType, location: form.location.trim(), contentHash: form.contentHash.trim().toLowerCase() });
+    form.location = ''; form.contentHash = ''; formOpen.value = false;
+    notice.value = '病案资产已完成编目，内容哈希成为不可变验真锚点。';
+    await assetsQuery.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = false; }
+}
 
 function typeLabel(value: string) { return ({ PAPER: '纸质原件', SCAN: '扫描件', DIGITAL: '数字原生' } as Record<string, string>)[value] || value; }
 function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '借出中' } as Record<string, string>)[value] || value; }
@@ -29,7 +47,7 @@ function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '�
   <section data-page-root class="content vue-native-page archive-content">
     <div class="page-heading archive-heading">
       <div><p class="eyebrow">病历与病案 / 病案目录</p><h1>病案目录与完整性</h1><p>按患者编目的病案资产目录：载体类型、存放位置与 64 位内容哈希；哈希在编目后由数据库触发器强制不可变，编目即验真锚点。</p></div>
-      <div class="toolbar-actions"><RouterLink class="button secondary" to="/archive-integrity">完整性与验真</RouterLink><RouterLink class="button primary" to="/archive-borrow">借阅与归还</RouterLink></div>
+      <div class="toolbar-actions"><button class="button secondary" type="button" @click="formOpen = !formOpen">{{ formOpen ? '收起编目' : '新增资产编目' }}</button><RouterLink class="button secondary" to="/archive-integrity">完整性与验真</RouterLink><RouterLink class="button primary" to="/archive-borrow">借阅与归还</RouterLink></div>
     </div>
     <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
       <div><strong>{{ developmentCopy.patientName }}</strong><span>病案资产编目 · 患者级上下文</span></div><dl>
@@ -40,6 +58,14 @@ function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '�
     <ClinicalPageState v-if="assetsQuery.isPending.value" kind="loading" message="正在加载病案目录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="assetsQuery.refetch()" />
     <template v-else>
+      <div v-if="notice" class="notice archive-notice" role="status">{{ notice }}</div>
+      <form v-if="formOpen" class="archive-catalog-create" @submit.prevent="registerAsset">
+        <div><strong>新增病案资产编目</strong><span>编目后载体、位置与 SHA-256 哈希不允许覆盖；需更正时应新增资产并保留原证据。</span></div>
+        <label>载体类型<select v-model="form.assetType"><option value="PAPER">纸质原件</option><option value="SCAN">扫描件</option><option value="DIGITAL">数字原生</option></select></label>
+        <label>存放位置<input v-model="form.location" required minlength="2" maxlength="128" placeholder="例：病案库 A 区 03 柜" /></label>
+        <label>内容哈希（SHA-256）<input v-model="form.contentHash" required minlength="64" maxlength="64" pattern="[a-fA-F0-9]{64}" placeholder="64 位十六进制哈希" /></label>
+        <button class="button primary" :disabled="busy || form.location.trim().length < 2 || !/^[a-fA-F0-9]{64}$/.test(form.contentHash.trim())">{{ busy ? '编目中…' : '完成资产编目' }}</button>
+      </form>
       <section class="archive-metrics" aria-label="目录完整性摘要">
         <article><span>纸质原件</span><strong>{{ paperCount }}</strong><small>需扫描/长期保存切片</small></article>
         <article><span>扫描件</span><strong>{{ scanCount }}</strong><small>PDF/A 等载体</small></article>

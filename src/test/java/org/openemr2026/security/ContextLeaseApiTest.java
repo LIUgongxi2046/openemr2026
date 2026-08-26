@@ -62,6 +62,57 @@ final class ContextLeaseApiTest {
     }
 
     @Test
+    void givenAnArrivedSyntheticPatient_whenSwitchingContext_thenTheLeaseIsIssued() throws Exception {
+        String[] arrivedContext = jdbc.sql("""
+                select patient_id::text, encounter_id::text
+                from encounter
+                where tenant_id = :tenant and source_system = 'SYNTHETIC-50' and status = 'ARRIVED'
+                order by source_key
+                limit 1
+                """)
+                .param("tenant", UUID.fromString(TENANT))
+                .query((resultSet, rowNumber) -> new String[] {
+                        resultSet.getString(1), resultSet.getString(2)
+                })
+                .single();
+
+        HttpResponse<String> response = send(arrivedContext[0], arrivedContext[1]);
+
+        assertThat(response.statusCode()).isEqualTo(201);
+        assertThat(response.body()).doesNotContain("CONTEXT_NOT_PERMITTED");
+        assertThat(objectMapper.readTree(response.body()).path("patient_id").stringValue())
+                .isEqualTo(arrivedContext[0]);
+    }
+
+    @Test
+    void givenAnArrivedSyntheticPatient_whenLoadingTheWorkspace_thenAllClinicalFactsRemainReadable()
+            throws Exception {
+        String[] arrivedContext = jdbc.sql("""
+                select patient_id::text, encounter_id::text
+                from encounter
+                where tenant_id = :tenant and source_system = 'SYNTHETIC-50' and status = 'ARRIVED'
+                order by source_key
+                limit 1
+                """)
+                .param("tenant", UUID.fromString(TENANT))
+                .query((resultSet, rowNumber) -> new String[] {
+                        resultSet.getString(1), resultSet.getString(2)
+                })
+                .single();
+        var lease = objectMapper.readTree(send(arrivedContext[0], arrivedContext[1]).body());
+
+        for (String resource : java.util.List.of("diagnoses", "orders", "results")) {
+            HttpResponse<String> response = getClinicalFacts(
+                    resource, arrivedContext[0], arrivedContext[1],
+                    lease.path("lease_id").stringValue(),
+                    lease.path("authorization_watermark").stringValue());
+
+            assertThat(response.statusCode()).as(resource).isEqualTo(200);
+            assertThat(objectMapper.readTree(response.body()).size()).as(resource).isEqualTo(1);
+        }
+    }
+
+    @Test
     void givenAPatientOutsideTheLeaseContext_whenIssuingALease_thenItIsDeniedWithoutSideEffects() throws Exception {
         long before = jdbc.sql("select count(*) from context_lease where tenant_id = :tenant")
                 .param("tenant", UUID.fromString(TENANT)).query(Long.class).single();
@@ -102,6 +153,27 @@ final class ContextLeaseApiTest {
                 .header("X-OpenEMR-User-Id", USER)
                 .header("X-OpenEMR-Role-Assignment-Ids", ROLE)
                 .POST(HttpRequest.BodyPublishers.ofString(body))
+                .build();
+        return http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> getClinicalFacts(
+            String resource, String patientId, String encounterId, String leaseId, String watermark)
+            throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/" + resource
+                        + "?encounter_id=" + encounterId))
+                .header("Authorization", "Bearer dev-synthetic-token")
+                .header("X-OpenEMR-Tenant-Id", TENANT)
+                .header("X-OpenEMR-User-Id", USER)
+                .header("X-OpenEMR-Role-Assignment-Ids", ROLE)
+                .header("X-Context-Lease-Id", leaseId)
+                .header("X-Authorization-Watermark", watermark)
+                .header("X-Organization-Context", ORGANIZATION)
+                .header("X-Facility-Context", FACILITY)
+                .header("X-Patient-Context", patientId)
+                .header("X-Encounter-Context", encounterId)
+                .GET()
                 .build();
         return http.send(request, HttpResponse.BodyHandlers.ofString());
     }

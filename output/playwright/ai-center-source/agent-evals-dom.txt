@@ -1,0 +1,204 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Agent 评估与发布门禁" [level=1]
+  - paragraph: 数据集版本、阈值、红队、结论和差异
+  - button "刷新"
+  - button "新建草稿"
+  - note:
+    - strong: 安全契约
+    - generic: 低于阈值、红队失败或版本不可追溯时禁止发布。
+  - heading "版本台账" [level=2]
+  - paragraph: AGENT_EVAL · 全程审计 + Outbox
+  - generic: 1 项
+  - table:
+    - rowgroup:
+      - row "名称 / 键 生命周期 版本 更新":
+        - columnheader "名称 / 键"
+        - columnheader "生命周期"
+        - columnheader "版本"
+        - columnheader "更新"
+    - rowgroup:
+      - row "临床 Agent 发布评估集 syn-agent-eval-v1 草稿 未校验 v1 2026/8/25 00:48:18":
+        - cell "临床 Agent 发布评估集 syn-agent-eval-v1":
+          - button "临床 Agent 发布评估集 syn-agent-eval-v1":
+            - strong: 临床 Agent 发布评估集
+            - code: syn-agent-eval-v1
+        - cell "草稿 未校验":
+          - generic: 草稿
+          - generic: 未校验
+        - cell "v1"
+        - cell "2026/8/25 00:48:18"
+  - heading "编辑草稿" [level=2]
+  - paragraph: 版本化 Schema v1；发布后仅能通过回退恢复
+  - generic: v1
+  - generic: 名称
+  - textbox "名称": 临床 Agent 发布评估集
+  - generic: 唯一键
+  - textbox "唯一键" [disabled]:
+    - /placeholder: clinical-agent-eval-v1
+    - text: syn-agent-eval-v1
+  - generic: 说明
+  - textbox "说明": 包含事实一致性、引用覆盖、拒答和红队样本。
+  - text: 数据集版本
+  - code: dataset_version
+  - textbox "数据集版本 dataset_version":
+    - /placeholder: clinical-ai-golden-v1
+    - text: clinical-ai-golden-v1
+  - text: 用例数
+  - code: case_count
+  - spinbutton "用例数 case_count": "100"
+  - text: 通过阈值
+  - code: pass_threshold
+  - spinbutton "通过阈值 pass_threshold": "0.95"
+  - text: 红队策略
+  - code: red_team_profile
+  - textbox "红队策略 red_team_profile":
+    - /placeholder: 越权、Prompt 注入、临床自动动作、敏感数据外泄
+    - text: 越权、Prompt 注入、临床自动动作、敏感数据外泄
+  - button "保存新版本"
+  - heading "评估门禁" [level=2]
+  - paragraph: 当前草稿的可视化语义预览
+  - generic: 结构化预览
+  - article:
+    - strong: 数据集版本
+    - generic: clinical-ai-golden-v1
+  - article:
+    - strong: 用例数
+    - generic: "100"
+  - article:
+    - strong: 通过阈值
+    - generic: "0.95"
+  - article:
+    - strong: 红队策略
+    - generic: 越权、Prompt 注入、临床自动动作、敏感数据外泄
+  - heading "校验、审批、发布与回退" [level=2]
+  - paragraph: 每一步都使用幂等键、乐观锁、审计链和 Outbox
+  - generic: 操作原因
+  - textbox "操作原因": 完成配置生命周期操作
+  - text: 状态
+  - strong: 草稿
+  - text: 校验
+  - strong: 未校验
+  - text: 审批
+  - strong: 未知状态
+  - text: 发布
+  - strong: —
+  - button "执行静态校验"
+  - button "提交审批"
+  - button "职责分离批准" [disabled]
+  - button "发布" [disabled]
+  - button "回退上一版本" [disabled]
+  - paragraph: 作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。

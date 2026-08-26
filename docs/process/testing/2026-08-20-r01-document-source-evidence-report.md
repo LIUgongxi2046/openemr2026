@@ -21,7 +21,7 @@
 | `DocumentEvidenceApiTest` | PASS：有效上传、MIME/哈希/EICAR 拒绝、附件不可变、医嘱来源、来源水印、源版本过期、重复读取和签署阻断 |
 | `PatientTimelineApiTest` | PASS：合并前别名、六源聚合、分页/过滤、部分源失败和逐条授权回归 |
 | `scripts/verify.sh` | PASS：120 schemas / 128 outputs / 95 operations，100 AI eval，15 安全载荷，V1–V32 迁移与隔离恢复，31 suites / 76 Java tests，Web 13 tests，Vue 构建、安全扫描和 194/194 路由制品审计 |
-| 视觉与响应式 | PASS：1051px 桌面和 768px 窄屏均无横向溢出；壳层在 820px 下切换为顶部横向导航，AI 助手收为 44px 浮动入口；证据见 `docs/process/testing/design-audit/2026-08-20-r01-sources/` |
+| 视觉与响应式 | PASS：1051px 桌面和 768px 窄屏均无横向溢出；壳层在 820px 下切换为顶部横向导航，AI医助小南收为 44px 浮动入口；证据见 `docs/process/testing/design-audit/2026-08-20-r01-sources/` |
 
 ## 未扩大声明
 

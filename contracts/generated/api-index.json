@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 430,
+  "operation_count": 438,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -1303,6 +1303,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createMedicalAgentRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-agents/runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalAgentRunCreateRequest",
+      "output_schema": "MedicalAgentRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createMedicalAgentRun",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createMentalHealthEvidence",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2512,6 +2529,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "getCurrentSession",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/session/current",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "SessionUser",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getCurrentSession",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "getDepartmentSupportAssessment",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -2627,6 +2661,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:getInpatientPathwayWorkspace",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getMedicalAgentRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-agents/runs/{run_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MedicalAgentRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getMedicalAgentRun",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3906,6 +3957,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listMedicalAgentCatalog",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-agents/catalog",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MedicalAgentFamily[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMedicalAgentCatalog",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listMedicalAgentRuns",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-agents/runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MedicalAgentRun[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMedicalAgentRuns",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listMedicalRecordAssets",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -4892,6 +4977,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listScheduleSlots",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/schedule-slots",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ScheduleSlot[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listScheduleSlots",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listShiftHandoverPatients",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -5177,6 +5279,40 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listWorkforceIdentities",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "loginSession",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/session/login",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "SessionLoginRequest",
+      "output_schema": "SessionLoginResponse",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:loginSession",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "logoutSession",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/session/logout",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "HTTP_204",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:logoutSession",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

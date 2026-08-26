@@ -103,9 +103,10 @@ async function createRecord() {
           <div v-if="records.length === 0" class="admin-empty" role="status">暂无周期记录，可在右侧新增。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>周期类型</th><th>序号</th><th>伦理同意日期</th><th>伴侣患者</th><th>同意书</th><th>状态</th></tr></thead>
+              <thead><tr><th>周期ID</th><th>周期类型</th><th>序号</th><th>伦理同意日期</th><th>伴侣患者</th><th>同意书</th><th>状态</th></tr></thead>
               <tbody>
                 <tr v-for="record in records" :key="record.cycle_id">
+                  <td><code>{{ record.cycle_id }}</code></td>
                   <td>{{ record.cycle_type }}</td>
                   <td>{{ record.cycle_number }}</td>
                   <td>{{ formatDate(record.ethics_consent_date) }}</td>

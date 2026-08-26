@@ -961,9 +961,13 @@ final class InpatientAdmissionApiTest {
         return send("POST", "/api/v1/inpatient/admissions", """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s",
                  "encounter_id":"%s","ward_id":"%s","bed_id":"%s",
-                 "attending_user_id":"%s","admitted_at":"%s"}
+                 "attending_user_id":"%s","admitted_at":"%s","department_id":"%s",
+                 "admission_source":"OUTPATIENT","admission_type":"ELECTIVE","condition_level":"GENERAL",
+                 "admitting_diagnosis_code":"I50.9","admitting_diagnosis_text":"心力衰竭待诊",
+                 "payment_method_code":"URBMI","identity_verification_method":"RESIDENT_ID",
+                 "contact_name":"张敏","contact_relationship":"配偶","contact_phone":"13800138000"}
                 """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId(),
-                ward.wardId(), ward.bedId(), USER, admittedAt), lease,
+                ward.wardId(), ward.bedId(), USER, admittedAt, DEPARTMENT), lease,
                 context.patientId().toString(), context.encounterId().toString(), idempotencyKey);
     }
 

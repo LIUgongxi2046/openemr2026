@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>系统管理原型对照</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 2880px; height: 1040px; margin: 0; overflow: hidden; background: #111; }
+      body { display: grid; grid-template-columns: 1440px 1440px; grid-template-rows: 40px 1000px; color: #fff; font: 700 16px system-ui, sans-serif; }
+      .label { display: grid; place-items: center; background: #172230; }
+      .label.implementation { background: #0b5cab; }
+      img { width: 1440px; height: 1000px; object-fit: fill; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <div class="label" id="source-label">原型</div>
+    <div class="label implementation" id="implementation-label">最终实现</div>
+    <img id="source" alt="原型截图" />
+    <img id="implementation" alt="最终实现截图" />
+    <script>
+      const route = new URLSearchParams(location.search).get('route') || 'admin';
+      document.querySelector('#source-label').textContent = `原型 · ${route}`;
+      document.querySelector('#implementation-label').textContent = `最终实现 · ${route}`;
+      const root = '/qa-system-admin';
+      document.querySelector('#source').src = `${root}/prototype/${route}-1440x1000.png`;
+      document.querySelector('#implementation').src = `${root}/revised/${route}-1440x1000.png`;
+    </script>
+  </body>
+</html>

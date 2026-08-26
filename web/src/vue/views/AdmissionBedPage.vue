@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import type { InpatientBedBoardItemWire, PatientSummaryWire } from '../../generated/contracts';
 import {
@@ -37,6 +37,14 @@ const selectedPatient = ref<PatientSummaryWire | null>(null);
 const selectedBedId = ref('');
 const pendingEncounterId = ref('');
 const admittedAtLocal = ref(toLocalInput(new Date()));
+const registration = reactive({
+  admissionSource: 'OUTPATIENT' as 'OUTPATIENT' | 'EMERGENCY' | 'TRANSFER' | 'OTHER',
+  admissionType: 'ELECTIVE' as 'ELECTIVE' | 'URGENT' | 'EMERGENCY',
+  conditionLevel: 'GENERAL' as 'GENERAL' | 'SERIOUS' | 'CRITICAL',
+  diagnosisCode: '', diagnosisText: '', paymentMethodCode: 'URBMI',
+  verificationMethod: 'RESIDENT_ID' as 'RESIDENT_ID' | 'MEDICAL_CARD' | 'OTHER',
+  contactName: '', contactRelationship: '', contactPhone: '', certificateNo: '', transferFrom: '', remarks: '',
+});
 
 const issue = computed(() => desk.error.value ? toClinicalIssue(desk.error.value) : null);
 const beds = computed(() => desk.data.value?.beds ?? []);
@@ -93,8 +101,11 @@ async function admit() {
     const overview = await admitInpatientFromBedBoard(
       selectedPatient.value.patient_id,
       pendingEncounterId.value,
-      selectedBed.value.bed_id,
-      new Date(admittedAtLocal.value).toISOString(),
+      {
+        bedId: selectedBed.value.bed_id, wardId: selectedBed.value.ward_id,
+        departmentId: selectedBed.value.department_id,
+        admittedAt: new Date(admittedAtLocal.value).toISOString(), ...registration,
+      },
     );
     notice.value = `${overview.patient_display_name} 已入住 ${overview.ward_display_name} ${overview.bed_label}床；入院任务、审计与事件已同事务建立。`;
     await desk.refetch();
@@ -149,7 +160,7 @@ function formatDate(value?: string | null) {
               :disabled="bed.bed_status !== 'ACTIVE'"
               @click="chooseBed(bed)"
             >
-              <span><b>{{ bed.bed_label }}床</b><em>{{ bed.occupancy_status === 'AVAILABLE' ? '可入床' : '在院' }}</em></span>
+              <span><b>{{ bed.display_bed_no }}</b><em>{{ bed.occupancy_status === 'AVAILABLE' ? '可入床' : '在院' }}</em></span>
               <strong>{{ bed.patient_display_name || '空床' }}</strong>
               <small v-if="bed.occupancy_status === 'OCCUPIED'">入院 {{ formatDate(bed.admitted_at) }} · 点击进入患者</small>
               <small v-else>{{ bed.bed_status === 'ACTIVE' ? '点击选择此床位' : '床位已停用' }}</small>
@@ -172,11 +183,20 @@ function formatDate(value?: string | null) {
             </div>
             <div v-else class="admission-empty">先检索并选择已完成身份核验的患者。</div>
             <label>已选床位
-              <div class="admission-selection" :class="{ ready: selectedBed }"><strong>{{ selectedBed ? `${selectedBed.bed_label}床` : '尚未选择空床' }}</strong><small>{{ selectedBed ? '提交时服务端再次核验占用状态' : '请在左侧床位图选择可用床位' }}</small></div>
+              <div class="admission-selection" :class="{ ready: selectedBed }"><strong>{{ selectedBed ? selectedBed.display_bed_no : '尚未选择空床' }}</strong><small>{{ selectedBed ? `${selectedBed.facility_name} · ${selectedBed.ward_name}` : '请在左侧床位图选择可用床位' }}</small></div>
             </label>
             <label>入院时间<input v-model="admittedAtLocal" type="datetime-local" required /></label>
+            <div class="form-row"><label>入院途径<select v-model="registration.admissionSource"><option value="OUTPATIENT">门诊</option><option value="EMERGENCY">急诊</option><option value="TRANSFER">转院</option><option value="OTHER">其他</option></select></label><label>入院类型<select v-model="registration.admissionType"><option value="ELECTIVE">择期</option><option value="URGENT">紧急</option><option value="EMERGENCY">急诊</option></select></label></div>
+            <label>入院病情<select v-model="registration.conditionLevel"><option value="GENERAL">一般</option><option value="SERIOUS">病重</option><option value="CRITICAL">病危</option></select></label>
+            <div class="form-row"><label>诊断编码<input v-model="registration.diagnosisCode" maxlength="64" placeholder="如 I50.9（选填）" /></label><label>付费方式<select v-model="registration.paymentMethodCode"><option value="URBMI">城镇职工医保</option><option value="URRMI">城乡居民医保</option><option value="SELF_PAY">自费</option><option value="OTHER">其他</option></select></label></div>
+            <label>入院诊断<input v-model="registration.diagnosisText" maxlength="1000" required placeholder="填写门/急诊入院诊断" /></label>
+            <div class="form-row"><label>身份核验<select v-model="registration.verificationMethod"><option value="RESIDENT_ID">居民身份证</option><option value="MEDICAL_CARD">就诊卡/电子健康卡</option><option value="OTHER">其他证件</option></select></label><label>入院证/医嘱号<input v-model="registration.certificateNo" maxlength="96" /></label></div>
+            <div class="form-row"><label>联系人姓名<input v-model="registration.contactName" maxlength="128" required /></label><label>与患者关系<input v-model="registration.contactRelationship" maxlength="64" required /></label></div>
+            <label>联系人电话<input v-model="registration.contactPhone" type="tel" maxlength="32" required /></label>
+            <label v-if="registration.admissionSource === 'TRANSFER'">转出医疗机构<input v-model="registration.transferFrom" maxlength="256" required /></label>
+            <label>登记备注<textarea v-model="registration.remarks" maxlength="1000" rows="2"></textarea></label>
             <div v-if="pendingEncounterId" class="admission-recovery"><strong>住院就诊已建立</strong><small>…{{ pendingEncounterId.slice(-8) }}；如入床冲突，可选择其他空床后重试，不重复建就诊。</small></div>
-            <button class="button primary" :disabled="Boolean(busy) || !selectedPatient || !selectedBed || !admittedAtLocal">{{ busy === 'admit' ? '正在创建住院事实…' : '核验并确认入院' }}</button>
+            <button class="button primary" :disabled="Boolean(busy) || !selectedPatient || !selectedBed || !admittedAtLocal || !registration.diagnosisText.trim() || !registration.contactName.trim() || !registration.contactRelationship.trim() || !registration.contactPhone.trim()">{{ busy === 'admit' ? '正在创建住院事实…' : '核验并确认入院' }}</button>
           </form>
           <section class="admission-safety"><strong>安全与恢复</strong><ul><li>患者搜索不返回未授权病历正文</li><li>住院就诊创建后入床失败可继续重试</li><li>已占床患者点击后切换为明确患者上下文</li><li>入院成功后自动进入住院患者总览</li></ul></section>
         </aside>

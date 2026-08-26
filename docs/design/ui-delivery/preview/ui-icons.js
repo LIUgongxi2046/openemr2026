@@ -14,7 +14,7 @@
       if(slot&&name&&!slot.querySelector('svg'))slot.innerHTML=svg(name);
     });
     document.querySelectorAll('.ai-top-trigger').forEach(button=>{
-      if(!button.querySelector('svg'))button.innerHTML=svg('ai','打开 AI 助手');
+      if(!button.querySelector('svg'))button.innerHTML=svg('ai','打开 AI医助小南');
     });
     document.querySelectorAll('.top-actions>.icon-btn:not(.ai-top-trigger)').forEach(button=>{
       if(button.querySelector('svg'))return;

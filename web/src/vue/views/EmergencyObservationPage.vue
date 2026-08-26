@@ -27,6 +27,7 @@ const dispositionLabels: Record<string, string> = {
 const form = reactive({ observation_started_at: new Date().toISOString().slice(0, 16) });
 const busy = ref<string>('');
 const notice = ref('');
+const startedAtInput = ref<HTMLInputElement | null>(null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)) : '—';
@@ -36,6 +37,8 @@ async function reload() {
   notice.value = '';
   await itemsQuery.refetch();
 }
+
+function focusStartForm() { startedAtInput.value?.focus(); }
 
 async function startObservation() {
   const lease = leaseQuery.data.value;
@@ -88,7 +91,7 @@ async function complete(item: EmergencyObservationWire, disposition: 'DISCHARGED
       <div class="admin-layout">
         <section class="admin-panel">
           <header><div><h2>留观台账</h2><p>观察中的记录可记录去向完成闭环。</p></div><button class="button secondary" @click="itemsQuery.refetch()">刷新</button></header>
-          <div v-if="!items.length" class="admin-empty" role="status">暂无留观记录，可在右侧开启留观。</div>
+          <div v-if="!items.length" class="admin-empty rich" role="status"><span class="admin-empty-icon" aria-hidden="true">⌁</span><strong>当前患者还没有留观记录</strong><p>符合持续观察或抢救条件时，可在右侧确认开始时间并开启留观。开启后必须记录离院、收住院或转科转院去向。</p><button class="button primary" type="button" @click="focusStartForm">填写留观开始时间</button></div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>开始时间</th><th>完成时间</th><th>去向</th><th>状态</th><th>操作</th></tr></thead>
@@ -115,7 +118,7 @@ async function complete(item: EmergencyObservationWire, disposition: 'DISCHARGED
         <section class="admin-panel admin-form-panel">
           <header><div><h2>开启抢救留观</h2><p>留观开始时间默认当前，去向初始为待定。</p></div></header>
           <form class="admin-form" @submit.prevent="startObservation">
-            <label><span>留观开始时间</span><input v-model="form.observation_started_at" type="datetime-local" required /></label>
+            <label><span>留观开始时间</span><input ref="startedAtInput" v-model="form.observation_started_at" type="datetime-local" required /></label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'start' ? '正在开启…' : '开启留观' }}</button>
           </form>
         </section>

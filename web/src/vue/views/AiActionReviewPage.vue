@@ -24,6 +24,8 @@ const executionsQuery = useQuery({ queryKey: ['assistant', 'action', 'executions
 const executions = computed(() => executionsQuery.data.value ?? []);
 
 function statusLabel(s: string) { const m: Record<string, string> = { PROPOSED: '待审批', APPROVED: '已批准', REJECTED: '已拒绝' }; return m[s] ?? s; }
+function actionTypeLabel(s: string) { const m: Record<string, string> = { ORDER_MEDICATION: '开具用药医嘱', ORDER_LAB: '开具检验医嘱', ORDER_IMAGING: '开具影像检查', DOCUMENT_SIGN: '签署病历', OTHER: '其他临床操作' }; return m[s] ?? '其他临床操作'; }
+function executionStatusLabel(s: string) { const m: Record<string, string> = { PENDING: '待执行', SUCCEEDED: '执行成功', FAILED: '执行失败' }; return m[s] ?? s; }
 
 async function propose() {
   const lease = encounterLease.value;
@@ -64,18 +66,18 @@ async function settle(executionId: string, outcome: 'SUCCEEDED' | 'FAILED') {
 
 <template>
   <section data-page-root class="content admin-content vue-native-page">
-    <div class="page-heading admin-heading"><div><p class="eyebrow">AI 平台 / 治理</p><h1>动作审批与执行核验</h1><p>AI 提出的高风险动作需独立审批（人机分离），执行核验仅允许已批准动作、失败必附原因。</p></div></div>
+    <div class="page-heading admin-heading"><div><p class="eyebrow">AI 中心 / 医生确认</p><h1>临床操作确认与执行核验</h1><p>医助提出的临床操作必须由具备权限的医务人员独立确认；只有已批准操作可以执行，失败时必须记录原因。</p></div></div>
     <ClinicalPageState v-if="patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || approvalsQuery.isPending.value" kind="loading" message="正在读取动作审批" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="approvalsQuery.refetch()" />
     <template v-else>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
       <div class="admin-layout">
         <section class="admin-panel">
-          <header><div><h2>动作审批台账</h2><p>提议人与审批人分离。</p></div><button class="button secondary" @click="approvalsQuery.refetch()">刷新</button></header>
-          <div v-if="!approvals.length" class="admin-empty">暂无动作提案。</div>
+          <header><div><h2>临床操作确认台账</h2><p>提出人与确认人必须分离。</p></div><button class="button secondary" @click="approvalsQuery.refetch()">刷新</button></header>
+          <div v-if="!approvals.length" class="admin-empty">暂无待确认的临床操作。</div>
           <div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>动作</th><th>摘要</th><th>状态</th><th>操作</th></tr></thead><tbody>
             <tr v-for="approval in approvals" :key="approval.action_approval_id">
-              <td><strong>{{ approval.action_type }}</strong><small>…{{ approval.action_approval_id.slice(-8) }}</small></td>
+              <td><strong>{{ actionTypeLabel(approval.action_type) }}</strong><small>…{{ approval.action_approval_id.slice(-8) }}</small></td>
               <td>{{ approval.proposed_action_summary }}</td>
               <td><span class="admin-status" :class="approval.status.toLowerCase()">{{ statusLabel(approval.status) }}</span></td>
               <td>
@@ -90,7 +92,7 @@ async function settle(executionId: string, outcome: 'SUCCEEDED' | 'FAILED') {
             <div v-if="!executions.length" class="admin-empty">暂无执行核验。</div>
             <div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>状态</th><th>执行人</th><th>结果说明</th><th>操作</th></tr></thead><tbody>
               <tr v-for="execution in executions" :key="execution.execution_id">
-                <td><span class="admin-status">{{ execution.execution_status }}</span></td>
+                <td><span class="admin-status">{{ executionStatusLabel(execution.execution_status) }}</span></td>
                 <td><code>{{ execution.executed_by ? `…${execution.executed_by.slice(-8)}` : '—' }}</code></td>
                 <td>{{ execution.result_note ?? '—' }}</td>
                 <td>
@@ -101,11 +103,11 @@ async function settle(executionId: string, outcome: 'SUCCEEDED' | 'FAILED') {
             </tbody></table></div>
           </div>
         </section>
-        <section class="admin-panel admin-form-panel"><header><div><h2>提议动作</h2><p>动作类型与摘要必填。</p></div></header>
+        <section class="admin-panel admin-form-panel"><header><div><h2>新增待确认操作</h2><p>临床操作类型与摘要必填。</p></div></header>
           <form class="admin-form" @submit.prevent="propose">
             <label><span>动作类型</span><select v-model="form.actionType"><option value="ORDER_MEDICATION">开药</option><option value="ORDER_LAB">开检验</option><option value="ORDER_IMAGING">开影像</option><option value="DOCUMENT_SIGN">签署</option><option value="OTHER">其他</option></select></label>
             <label><span>动作摘要</span><textarea v-model="form.summary" rows="3" required /></label>
-            <button class="button primary full" :disabled="busy || !form.summary.trim()">提议动作</button>
+            <button class="button primary full" :disabled="busy || !form.summary.trim()">提交医生确认</button>
           </form>
         </section>
       </div>

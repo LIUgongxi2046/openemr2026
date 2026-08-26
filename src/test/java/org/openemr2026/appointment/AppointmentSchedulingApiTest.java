@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.openemr2026.contracts.AppointmentBookRequestWire;
 import org.openemr2026.contracts.AppointmentCancelRequestWire;
 import org.openemr2026.contracts.AppointmentCheckInRequestWire;
@@ -21,10 +22,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev-synthetic")
+@Transactional
 final class AppointmentSchedulingApiTest {
+    private static final AtomicInteger SLOT_SEQUENCE = new AtomicInteger();
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
     private static final String ORGANIZATION = "018f0000-0000-7000-8000-00000000aa02";
@@ -32,6 +36,7 @@ final class AppointmentSchedulingApiTest {
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
     private static final String PATIENT = "018f0000-0000-7000-8000-000000000001";
+    private static final String DEPARTMENT = "018f0000-0000-7000-8000-00000000aa08";
 
     @Autowired
     private AppointmentService appointments;
@@ -49,10 +54,26 @@ final class AppointmentSchedulingApiTest {
     }
 
     private ScheduleSlotWire createSlot(int capacity) {
+        int runOffset = Math.floorMod(UUID.randomUUID().hashCode(), 20_000) + 365;
         return appointments.createScheduleSlot(identity(), "slot-" + UUID.randomUUID(),
-                new ScheduleSlotCreateRequestWire(organization, facility, null,
+                new ScheduleSlotCreateRequestWire(organization, facility, UUID.fromString(DEPARTMENT), UUID.fromString(USER),
                         ScheduleSlotCreateRequestWire.VisitTypeValue.OUTPATIENT,
-                        LocalDate.now().plusDays(1), "09:00:00", "10:00:00", capacity));
+                        LocalDate.now().plusDays(runOffset + SLOT_SEQUENCE.incrementAndGet()),
+                        "09:00:00", "10:00:00", capacity));
+    }
+
+    @Test
+    void givenSyntheticWaitingQueue_whenListed_thenEveryEntryHasEncounterContext() {
+        List<WaitingQueueEntryWire> queue = appointments.listWaitingQueue(identity(), facility, LocalDate.now());
+
+        assertThat(queue).isNotEmpty();
+        assertThat(queue).allSatisfy(entry -> {
+            assertThat(entry.encounterId()).isNotNull();
+            assertThat(entry.patientDisplayName()).matches("\\p{IsHan}{2,4}")
+                    .doesNotContain("合成", "测试", "患者");
+            assertThat(entry.patientSexCode()).isIn("M", "F");
+            assertThat(entry.patientBirthDate()).isNotNull();
+        });
     }
 
     @Test
@@ -64,6 +85,7 @@ final class AppointmentSchedulingApiTest {
                 new AppointmentBookRequestWire(organization, facility, patient, slot.scheduleSlotId(),
                         AppointmentBookRequestWire.SourceValue.APPOINTMENT));
         assertThat(first.status()).isEqualTo(AppointmentWire.StatusValue.BOOKED);
+        assertThat(first.patientDisplayName()).isEqualTo("张慧敏");
         assertThat(jdbc.sql("""
                 select booked_count from schedule_slot
                 where tenant_id = cast(:tenant as uuid) and schedule_slot_id = :slot

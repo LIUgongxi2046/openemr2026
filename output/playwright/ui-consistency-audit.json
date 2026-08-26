@@ -1,0 +1,6867 @@
+{
+  "run_at": "2026-08-25T03:19:59.258Z",
+  "routes": 194,
+  "viewports": 2,
+  "route_viewports": 388,
+  "routes_with_standard_header": 194,
+  "visible_page_hierarchy_labels": 0,
+  "insufficient_top_gaps": 0,
+  "severity_counts": {},
+  "findings": [],
+  "observations": [
+    {
+      "route": "admin",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "组织机构",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "系统管理工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-audit",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "管理审计与权限复核",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-auth",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "执行中…",
+          "width": 79,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "认证与 MFA 场景演练",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-dictionaries",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "字典主数据",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-jobs",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "通知调度与批量任务",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-master-data",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "医院主数据管理",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-org",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "人员与账号",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "组织机构管理",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-parameters",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "系统参数与功能开关",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-permissions",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "人员管理",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "紧急访问",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "权限策略与访问模拟",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-roles",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "角色与任期",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-templates",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "病历中心",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "权限策略",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历模板与版本发布",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-users",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "组织机构",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "用户、人员与工作范围",
+      "findingCount": 0
+    },
+    {
+      "route": "admission-bed",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新床位",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "入院、病区与床位管理",
+      "findingCount": 0
+    },
+    {
+      "route": "agent",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 受控运行",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-catalog",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Agent 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-compose",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent / Skill / Tool 组合画布",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-context",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 上下文策略",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-evals",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 评估与发布门禁",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-action-review",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "动作审批与执行核验",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-assistant",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "清空对话",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "AI医助小南",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-assistant-policy",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "AI医助小南策略",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-capture",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "语音采集、转写与人工复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-center",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "AI 中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-reminder-detail",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "主动提醒详情",
+      "findingCount": 0
+    },
+    {
+      "route": "aiops",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "AI 运行预算",
+      "findingCount": 0
+    },
+    {
+      "route": "anesthesia-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "麻醉评估、事件轴与复苏",
+      "findingCount": 0
+    },
+    {
+      "route": "appointment-registration",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "预约、挂号、分诊、叫号与留观",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-assets",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病历中心",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案归档与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-borrow",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病案归档",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案借阅、复制与对外提供",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-catalog",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增资产编目",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "完整性与验真",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "借阅与归还",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案目录与完整性",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-integrity",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "运行完整性检查",
+          "width": 119,
+          "height": 36
+        },
+        {
+          "label": "返回病案归档",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案完整性、签名与长期验真",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-preservation",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案长期保存与恢复验证",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-scan",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "纸质病历扫描、OCR 与编目",
+      "findingCount": 0
+    },
+    {
+      "route": "asset-detail",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回完整性验真",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案资产证据详情",
+      "findingCount": 0
+    },
+    {
+      "route": "backup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "备份恢复与完整性报告",
+      "findingCount": 0
+    },
+    {
+      "route": "billing",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "费用、收退费、预交与结算",
+      "findingCount": 0
+    },
+    {
+      "route": "capability-pack",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "能力包与灰度发布",
+      "findingCount": 0
+    },
+    {
+      "route": "care-operations",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "医疗协同中心",
+      "findingCount": 0
+    },
+    {
+      "route": "clinical",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "统一任务 9",
+          "width": 97,
+          "height": 38
+        },
+        {
+          "label": "工作设置",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "临床业务门户",
+      "findingCount": 0
+    },
+    {
+      "route": "clinical-tasks",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "门诊",
+          "width": 56,
+          "height": 34
+        },
+        {
+          "label": "住院",
+          "width": 56,
+          "height": 34
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "统一临床任务中心",
+      "findingCount": 0
+    },
+    {
+      "route": "cohort-builder",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "研究队列构建器",
+      "findingCount": 0
+    },
+    {
+      "route": "config-release",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "配置差异、审批与灰度发布",
+      "findingCount": 0
+    },
+    {
+      "route": "config-upgrade",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "配置包升级与冲突处理",
+      "findingCount": 0
+    },
+    {
+      "route": "credentials",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "人员资质",
+      "findingCount": 0
+    },
+    {
+      "route": "data-center",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "数据中心指标目录与血缘",
+      "findingCount": 0
+    },
+    {
+      "route": "data-quality",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "数据质量规则",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔护理与术后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "口腔记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "口腔治疗记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "department-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "院科病历质控与整改",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤护理与创面观察",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生物制剂随访",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "皮肤科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生物制剂筛查",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "device-monitoring",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "设备遥测、趋势与告警",
+      "findingCount": 0
+    },
+    {
+      "route": "devices",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "设备目录、绑定与校准",
+      "findingCount": 0
+    },
+    {
+      "route": "emergency",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "急诊工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "emergency-access",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "紧急访问",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "气道风险交接",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "耳鼻喉记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "er-handoff",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊会诊、交接与转运",
+      "findingCount": 0
+    },
+    {
+      "route": "er-nursing",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊护理、输液与执行",
+      "findingCount": 0
+    },
+    {
+      "route": "er-observation",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊抢救留观与去向",
+      "findingCount": 0
+    },
+    {
+      "route": "er-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊病历与抢救记录",
+      "findingCount": 0
+    },
+    {
+      "route": "er-triage",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊预检分诊",
+      "findingCount": 0
+    },
+    {
+      "route": "form-designer",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "表单与病历模板设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "imaging-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "检查影像工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "infection-events",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "院感监测线索",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "住院医生工作站",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-course",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病程与文书中心",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-discharge",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "出院病历与病案归档闭环",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-editor",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病历 · 专注编辑",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病历 · 质控与审签",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-versions",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院文书版本与查房证据",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-overview",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院患者总览",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-pharmacy",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "床旁给药 / 协同中心",
+          "width": 143,
+          "height": 36
+        },
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院药房、配液与床旁给药",
+      "findingCount": 0
+    },
+    {
+      "route": "install",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "安装向导与首次健康检查",
+      "findingCount": 0
+    },
+    {
+      "route": "integration",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "外部系统集成与互操作中心",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-connectors",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "集成连接器目录与健康",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-mapping",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "集成字段映射",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-messages",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "集成消息 Trace 与重试",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-consult",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新建会诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院查房、会诊与协同",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-orders",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增医嘱",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院医嘱与用药中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-pathway",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "住院临床路径执行中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-results",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查看原医嘱",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "录入结果",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院检查检验与危急值",
+      "findingCount": 0
+    },
+    {
+      "route": "lab-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "检验工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "lis-report",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "引用到病历",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "返回结果工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "LIS 检验报告调阅",
+      "findingCount": 0
+    },
+    {
+      "route": "login-context",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "登录、锁屏恢复与工作上下文",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "心理危机交接",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "危机随访",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "精神心理健康记录",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "migration",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "历史迁移与切换",
+      "findingCount": 0
+    },
+    {
+      "route": "model-connection",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "模型 Provider 连接与数据边界",
+      "findingCount": 0
+    },
+    {
+      "route": "model-evaluation",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "模型评估",
+      "findingCount": 0
+    },
+    {
+      "route": "model-routing",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "模型路由、主备与人工降级",
+      "findingCount": 0
+    },
+    {
+      "route": "models",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "模型部署管理",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "腕带核对",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "新生儿筛查记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "新生儿记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "新生儿治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "新生儿工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "妇产护理与产后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "产前检查",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "产后随访",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "妇产记录",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "分娩记录",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "妇产工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-consult",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊会诊、转诊与协同",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-diagnosis",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊病历",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "新增诊断",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊诊断与问题清单",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊随访与终诊",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-orders",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增医嘱",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊医嘱与处方",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "门诊病历工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-results",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查看原医嘱",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "录入结果",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊检查检验与结果",
+      "findingCount": 0
+    },
+    {
+      "route": "opensource",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新指标",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "开源发布指标",
+      "findingCount": 0
+    },
+    {
+      "route": "operations",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生产运行、灾备与停机续运",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科护理与术后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "术后随访",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "眼科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "术前核对",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "outpatient",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "预约挂号",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "刷新快照",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "进入病历",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊复合工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "outpatient-pharmacy",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊药房审方与调剂",
+      "findingCount": 0
+    },
+    {
+      "route": "pacs-viewer",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "引用关键结论",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "返回结果工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "PACS 影像调阅",
+      "findingCount": 0
+    },
+    {
+      "route": "pathology-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病理标本到诊断签署",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-merge",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回患者主索引",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "患者合并与可逆撤销",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-registry",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "合并与撤销",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "纵向时间轴",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "患者主索引与身份核验",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-timeline",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "患者主索引",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "重新加载",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "授权患者纵向时间线",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生长发育记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "儿科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "quality-center",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "医疗质量中心",
+      "findingCount": 0
+    },
+    {
+      "route": "quality-rating",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "科室支持等级",
+      "findingCount": 0
+    },
+    {
+      "route": "record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "进入门诊病历编辑",
+          "width": 132,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历中心工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "record-diff",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回版本链",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历版本差异",
+      "findingCount": 0
+    },
+    {
+      "route": "record-editor",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "门诊病历 · 专注编辑",
+      "findingCount": 0
+    },
+    {
+      "route": "record-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回编辑处理",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历质控与审签中心",
+      "findingCount": 0
+    },
+    {
+      "route": "record-sign",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回编辑处理",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历签署与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "record-sources",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病历工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历来源与附件",
+      "findingCount": 0
+    },
+    {
+      "route": "record-versions",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "比较最近两个版本",
+          "width": 132,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历版本与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "release-gates",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Release 门禁与制品发布",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖护理与周期照护",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "妊娠结局",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "辅助生殖周期记录",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "胚胎移植记录",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "research",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "科研项目与统计中心",
+      "findingCount": 0
+    },
+    {
+      "route": "research-dataset",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "研究数据集请求",
+      "findingCount": 0
+    },
+    {
+      "route": "research-stats",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "科研统计分析",
+      "findingCount": 0
+    },
+    {
+      "route": "rule-center",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "规则、时限与提示设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "scope-designer",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "角色、职责与数据范围设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "skill-catalog",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Skill 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "specialty-center",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "专科支持总览",
+      "findingCount": 0
+    },
+    {
+      "route": "specialty-coverage",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "专科覆盖度",
+      "findingCount": 0
+    },
+    {
+      "route": "surgery-schedule",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "围手术期排程与安全核查",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-care",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "中医护理与辨证施护",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-evidence",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "四诊记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-followup",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-qc",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-record",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "中医记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-treatment",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "草药处方",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "中医工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "therapy-workbench",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "治疗排程、核对与执行",
+      "findingCount": 0
+    },
+    {
+      "route": "tool-catalog",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Tool 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "transfusion",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "输血全链工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "unified-home",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "统一首页与任务中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ward",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新交接班",
+          "width": 98,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病区看板",
+      "findingCount": 0
+    },
+    {
+      "route": "workflow",
+      "viewport": "desktop",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 16,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        },
+        {
+          "label": "新建草稿",
+          "width": 84,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "流程与状态设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "admin",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "组织机构",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "系统管理工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-audit",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 43,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "管理审计与权限复核",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-auth",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "认证与 MFA 场景演练",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-dictionaries",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "字典主数据",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-jobs",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 50,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 72,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "通知调度与批量任务",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-master-data",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 53,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 77,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "医院主数据管理",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-org",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "人员与账号",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "组织机构管理",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-parameters",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 47,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 67,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "系统参数与功能开关",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-permissions",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "人员管理",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "紧急访问",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "权限策略与访问模拟",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-roles",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "角色与任期",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-templates",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "病历中心",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "权限策略",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历模板与版本发布",
+      "findingCount": 0
+    },
+    {
+      "route": "admin-users",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "组织机构",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "用户、人员与工作范围",
+      "findingCount": 0
+    },
+    {
+      "route": "admission-bed",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新床位",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "入院、病区与床位管理",
+      "findingCount": 0
+    },
+    {
+      "route": "agent",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 43,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 受控运行",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-catalog",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Agent 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-compose",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 49,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 70,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent / Skill / Tool 组合画布",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-context",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 51,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 74,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 上下文策略",
+      "findingCount": 0
+    },
+    {
+      "route": "agent-evals",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 55,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 82,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Agent 评估与发布门禁",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-action-review",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "动作审批与执行核验",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-assistant",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "清空对话",
+          "width": 50,
+          "height": 98
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "AI医助小南",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-assistant-policy",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 51,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 74,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "AI医助小南策略",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-capture",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "语音采集、转写与人工复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-center",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "AI 中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ai-reminder-detail",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "主动提醒详情",
+      "findingCount": 0
+    },
+    {
+      "route": "aiops",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "AI 运行预算",
+      "findingCount": 0
+    },
+    {
+      "route": "anesthesia-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "麻醉评估、事件轴与复苏",
+      "findingCount": 0
+    },
+    {
+      "route": "appointment-registration",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "预约、挂号、分诊、叫号与留观",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-assets",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病历中心",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案归档与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-borrow",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病案归档",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案借阅、复制与对外提供",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-catalog",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增资产编目",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "完整性与验真",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "借阅与归还",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案目录与完整性",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-integrity",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "运行完整性检查",
+          "width": 119,
+          "height": 36
+        },
+        {
+          "label": "返回病案归档",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案完整性、签名与长期验真",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-preservation",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案长期保存与恢复验证",
+      "findingCount": 0
+    },
+    {
+      "route": "archive-scan",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "纸质病历扫描、OCR 与编目",
+      "findingCount": 0
+    },
+    {
+      "route": "asset-detail",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回完整性验真",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病案资产证据详情",
+      "findingCount": 0
+    },
+    {
+      "route": "backup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 47,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 66,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "备份恢复与完整性报告",
+      "findingCount": 0
+    },
+    {
+      "route": "billing",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 41,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "费用、收退费、预交与结算",
+      "findingCount": 0
+    },
+    {
+      "route": "capability-pack",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "能力包与灰度发布",
+      "findingCount": 0
+    },
+    {
+      "route": "care-operations",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "医疗协同中心",
+      "findingCount": 0
+    },
+    {
+      "route": "clinical",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "统一任务 9",
+          "width": 59,
+          "height": 98
+        },
+        {
+          "label": "工作设置",
+          "width": 54,
+          "height": 98
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "临床业务门户",
+      "findingCount": 0
+    },
+    {
+      "route": "clinical-tasks",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "门诊",
+          "width": 42,
+          "height": 40
+        },
+        {
+          "label": "住院",
+          "width": 42,
+          "height": 40
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "统一临床任务中心",
+      "findingCount": 0
+    },
+    {
+      "route": "cohort-builder",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "研究队列构建器",
+      "findingCount": 0
+    },
+    {
+      "route": "config-release",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 49,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 69,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "配置差异、审批与灰度发布",
+      "findingCount": 0
+    },
+    {
+      "route": "config-upgrade",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 80,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "配置包升级与冲突处理",
+      "findingCount": 0
+    },
+    {
+      "route": "credentials",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "人员资质",
+      "findingCount": 0
+    },
+    {
+      "route": "data-center",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "数据中心指标目录与血缘",
+      "findingCount": 0
+    },
+    {
+      "route": "data-quality",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查询",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "数据质量规则",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔护理与术后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "口腔记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "口腔治疗记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dental-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "口腔工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "department-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "院科病历质控与整改",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤护理与创面观察",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生物制剂随访",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "皮肤科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生物制剂筛查",
+      "findingCount": 0
+    },
+    {
+      "route": "dermatology-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "皮肤工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "device-monitoring",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "设备遥测、趋势与告警",
+      "findingCount": 0
+    },
+    {
+      "route": "devices",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "设备目录、绑定与校准",
+      "findingCount": 0
+    },
+    {
+      "route": "emergency",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "急诊工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "emergency-access",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "紧急访问",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "气道风险交接",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "耳鼻喉记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "ent-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "耳鼻喉工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "er-handoff",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊会诊、交接与转运",
+      "findingCount": 0
+    },
+    {
+      "route": "er-nursing",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊护理、输液与执行",
+      "findingCount": 0
+    },
+    {
+      "route": "er-observation",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊抢救留观与去向",
+      "findingCount": 0
+    },
+    {
+      "route": "er-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊病历与抢救记录",
+      "findingCount": 0
+    },
+    {
+      "route": "er-triage",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回急诊工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "急诊预检分诊",
+      "findingCount": 0
+    },
+    {
+      "route": "form-designer",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 51,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 74,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "表单与病历模板设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "imaging-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 47,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "检查影像工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "infection-events",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "院感监测线索",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "住院医生工作站",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-course",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病程与文书中心",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-discharge",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "出院病历与病案归档闭环",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-editor",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病历 · 专注编辑",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院病历 · 质控与审签",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-doc-versions",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院文书版本与查房证据",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-overview",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回住院工作站",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院患者总览",
+      "findingCount": 0
+    },
+    {
+      "route": "inpatient-pharmacy",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "床旁给药 / 协同中心",
+          "width": 108,
+          "height": 54
+        },
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院药房、配液与床旁给药",
+      "findingCount": 0
+    },
+    {
+      "route": "install",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 52,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 76,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "安装向导与首次健康检查",
+      "findingCount": 0
+    },
+    {
+      "route": "integration",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "外部系统集成与互操作中心",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-connectors",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "集成连接器目录与健康",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-mapping",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "集成字段映射",
+      "findingCount": 0
+    },
+    {
+      "route": "integration-messages",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "集成消息 Trace 与重试",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-consult",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新建会诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院查房、会诊与协同",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-orders",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增医嘱",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院医嘱与用药中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-pathway",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "住院临床路径执行中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ip-results",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查看原医嘱",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "录入结果",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "住院检查检验与危急值",
+      "findingCount": 0
+    },
+    {
+      "route": "lab-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 46,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "检验工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "lis-report",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "引用到病历",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "返回结果工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "LIS 检验报告调阅",
+      "findingCount": 0
+    },
+    {
+      "route": "login-context",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "登录、锁屏恢复与工作上下文",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "心理危机交接",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "危机随访",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "精神心理健康记录",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "mental-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "精神心理工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "migration",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "历史迁移与切换",
+      "findingCount": 0
+    },
+    {
+      "route": "model-connection",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "模型 Provider 连接与数据边界",
+      "findingCount": 0
+    },
+    {
+      "route": "model-evaluation",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "模型评估",
+      "findingCount": 0
+    },
+    {
+      "route": "model-routing",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "模型路由、主备与人工降级",
+      "findingCount": 0
+    },
+    {
+      "route": "models",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "模型部署管理",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "腕带核对",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "新生儿筛查记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "新生儿记录",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "新生儿治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "neonatal-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "新生儿工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "妇产护理与产后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "产前检查",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "产后随访",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "妇产记录",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "分娩记录",
+      "findingCount": 0
+    },
+    {
+      "route": "obgyn-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "妇产工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-consult",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊会诊、转诊与协同",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-diagnosis",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回门诊病历",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "新增诊断",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊诊断与问题清单",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 56,
+          "height": 38
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊随访与终诊",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-orders",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "新增医嘱",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊医嘱与处方",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "门诊病历工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "opd-results",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "查看原医嘱",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "录入结果",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊检查检验与结果",
+      "findingCount": 0
+    },
+    {
+      "route": "opensource",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新指标",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "开源发布指标",
+      "findingCount": 0
+    },
+    {
+      "route": "operations",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 49,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 69,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生产运行、灾备与停机续运",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科护理与术后观察",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "术后随访",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "眼科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "术前核对",
+      "findingCount": 0
+    },
+    {
+      "route": "ophthalmology-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "眼科工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "outpatient",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "预约挂号",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "刷新快照",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "进入病历",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊复合工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "outpatient-pharmacy",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 44,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "门诊药房审方与调剂",
+      "findingCount": 0
+    },
+    {
+      "route": "pacs-viewer",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "引用关键结论",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "label": "返回结果工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "PACS 影像调阅",
+      "findingCount": 0
+    },
+    {
+      "route": "pathology-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病理标本到诊断签署",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-merge",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回患者主索引",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "患者合并与可逆撤销",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-registry",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "合并与撤销",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "纵向时间轴",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "患者主索引与身份核验",
+      "findingCount": 0
+    },
+    {
+      "route": "patient-timeline",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "患者主索引",
+          "width": 93,
+          "height": 36
+        },
+        {
+          "label": "重新加载",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "授权患者纵向时间线",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "生长发育记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "儿科记录",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科治疗执行",
+      "findingCount": 0
+    },
+    {
+      "route": "pediatrics-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "儿科工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "quality-center",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "医疗质量中心",
+      "findingCount": 0
+    },
+    {
+      "route": "quality-rating",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "科室支持等级",
+      "findingCount": 0
+    },
+    {
+      "route": "record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "进入门诊病历编辑",
+          "width": 132,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历中心工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "record-diff",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回版本链",
+          "width": 93,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历版本差异",
+      "findingCount": 0
+    },
+    {
+      "route": "record-editor",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "门诊病历 · 专注编辑",
+      "findingCount": 0
+    },
+    {
+      "route": "record-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回编辑处理",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历质控与审签中心",
+      "findingCount": 0
+    },
+    {
+      "route": "record-sign",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回编辑处理",
+          "width": 106,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历签署与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "record-sources",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "返回病历工作台",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历来源与附件",
+      "findingCount": 0
+    },
+    {
+      "route": "record-versions",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "比较最近两个版本",
+          "width": 132,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病历版本与法律证据",
+      "findingCount": 0
+    },
+    {
+      "route": "release-gates",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 46,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 65,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "Release 门禁与制品发布",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖护理与周期照护",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖诊疗证据",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "妊娠结局",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "辅助生殖周期记录",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "胚胎移植记录",
+      "findingCount": 0
+    },
+    {
+      "route": "reproductive-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "生殖工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "research",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "科研项目与统计中心",
+      "findingCount": 0
+    },
+    {
+      "route": "research-dataset",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "研究数据集请求",
+      "findingCount": 0
+    },
+    {
+      "route": "research-stats",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        },
+        {
+          "label": "按登记口径计算",
+          "width": 119,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "科研统计分析",
+      "findingCount": 0
+    },
+    {
+      "route": "rule-center",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 52,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 76,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "规则、时限与提示设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "scope-designer",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 48,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 67,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "角色、职责与数据范围设计器",
+      "findingCount": 0
+    },
+    {
+      "route": "skill-catalog",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Skill 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "specialty-center",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "专科支持总览",
+      "findingCount": 0
+    },
+    {
+      "route": "specialty-coverage",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "专科覆盖度",
+      "findingCount": 0
+    },
+    {
+      "route": "surgery-schedule",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 41,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "围手术期排程与安全核查",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-care",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "中医护理与辨证施护",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-evidence",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "四诊记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-followup",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "随访记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-qc",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "质控复核",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-record",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "中医记录",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-treatment",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 54,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "草药处方",
+      "findingCount": 0
+    },
+    {
+      "route": "tcm-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "中医工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "therapy-workbench",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "接口契约",
+          "width": 80,
+          "height": 36
+        },
+        {
+          "label": "运行场景",
+          "width": 80,
+          "height": 36
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "治疗排程、核对与执行",
+      "findingCount": 0
+    },
+    {
+      "route": "tool-catalog",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "Tool 目录",
+      "findingCount": 0
+    },
+    {
+      "route": "transfusion",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-heading",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 44,
+          "height": 54
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "输血全链工作台",
+      "findingCount": 0
+    },
+    {
+      "route": "unified-home",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [],
+      "actionUndersized": [],
+      "h1": "统一首页与任务中心",
+      "findingCount": 0
+    },
+    {
+      "route": "ward",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新交接班",
+          "width": 75,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "病区看板",
+      "findingCount": 0
+    },
+    {
+      "route": "workflow",
+      "viewport": "compact",
+      "hasRoot": true,
+      "headerKind": "page-head",
+      "topGap": 12,
+      "topLabels": [],
+      "actions": [
+        {
+          "label": "刷新",
+          "width": 47,
+          "height": 58
+        },
+        {
+          "label": "新建草稿",
+          "width": 67,
+          "height": 58
+        }
+      ],
+      "actionUndersized": [],
+      "h1": "流程与状态设计器",
+      "findingCount": 0
+    }
+  ]
+}

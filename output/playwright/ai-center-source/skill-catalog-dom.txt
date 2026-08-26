@@ -1,0 +1,990 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Skill 目录" [level=1]
+  - paragraph: 登记与停用可复用 Skill；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - region "Skill 统计":
+    - article:
+      - generic: Skill
+      - strong: "70"
+      - generic: 全部登记
+    - article:
+      - generic: 有效 Skill
+      - strong: "40"
+      - generic: ACTIVE
+  - heading "Skill 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "技能-摘要 …6d3585ff SK-060bbb5d 1.0.0 有效 停用":
+        - cell "技能-摘要 …6d3585ff":
+          - strong: 技能-摘要
+          - generic: …6d3585ff
+        - cell "SK-060bbb5d":
+          - code: SK-060bbb5d
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …4baee838 SK-09cd4264 1.0.0 有效 停用":
+        - cell "技能-摘要 …4baee838":
+          - strong: 技能-摘要
+          - generic: …4baee838
+        - cell "SK-09cd4264":
+          - code: SK-09cd4264
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …41308cc5 SK-0eb9ed31 1.0.0 有效 停用":
+        - cell "技能-摘要 …41308cc5":
+          - strong: 技能-摘要
+          - generic: …41308cc5
+        - cell "SK-0eb9ed31":
+          - code: SK-0eb9ed31
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …bac8f78d SK-0f9bcdfe 1.0.0 已停用 停用":
+        - cell "技能-摘要 …bac8f78d":
+          - strong: 技能-摘要
+          - generic: …bac8f78d
+        - cell "SK-0f9bcdfe":
+          - code: SK-0f9bcdfe
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …a5b70bc5 SK-172a902b 1.0.0 有效 停用":
+        - cell "技能-摘要 …a5b70bc5":
+          - strong: 技能-摘要
+          - generic: …a5b70bc5
+        - cell "SK-172a902b":
+          - code: SK-172a902b
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …017d579a SK-184a52ae 1.0.0 有效 停用":
+        - cell "技能-摘要 …017d579a":
+          - strong: 技能-摘要
+          - generic: …017d579a
+        - cell "SK-184a52ae":
+          - code: SK-184a52ae
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …9f553478 SK-2190204a 1.0.0 已停用 停用":
+        - cell "技能-摘要 …9f553478":
+          - strong: 技能-摘要
+          - generic: …9f553478
+        - cell "SK-2190204a":
+          - code: SK-2190204a
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …8c8dfa95 SK-22d0683a 1.0.0 已停用 停用":
+        - cell "技能-摘要 …8c8dfa95":
+          - strong: 技能-摘要
+          - generic: …8c8dfa95
+        - cell "SK-22d0683a":
+          - code: SK-22d0683a
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …0526bac2 SK-232e1f9f 1.0.0 已停用 停用":
+        - cell "技能-摘要 …0526bac2":
+          - strong: 技能-摘要
+          - generic: …0526bac2
+        - cell "SK-232e1f9f":
+          - code: SK-232e1f9f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …7a7fd3f5 SK-32c02447 1.0.0 有效 停用":
+        - cell "技能-摘要 …7a7fd3f5":
+          - strong: 技能-摘要
+          - generic: …7a7fd3f5
+        - cell "SK-32c02447":
+          - code: SK-32c02447
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …751202d7 SK-3557ff03 1.0.0 有效 停用":
+        - cell "技能-摘要 …751202d7":
+          - strong: 技能-摘要
+          - generic: …751202d7
+        - cell "SK-3557ff03":
+          - code: SK-3557ff03
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …c9a27352 SK-3563c7e6 1.0.0 有效 停用":
+        - cell "技能-摘要 …c9a27352":
+          - strong: 技能-摘要
+          - generic: …c9a27352
+        - cell "SK-3563c7e6":
+          - code: SK-3563c7e6
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …034faff4 SK-35857c14 1.0.0 已停用 停用":
+        - cell "技能-摘要 …034faff4":
+          - strong: 技能-摘要
+          - generic: …034faff4
+        - cell "SK-35857c14":
+          - code: SK-35857c14
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …52221c0a SK-3c5c8771 1.0.0 有效 停用":
+        - cell "技能-摘要 …52221c0a":
+          - strong: 技能-摘要
+          - generic: …52221c0a
+        - cell "SK-3c5c8771":
+          - code: SK-3c5c8771
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …ec4b1371 SK-429e0163 1.0.0 有效 停用":
+        - cell "技能-摘要 …ec4b1371":
+          - strong: 技能-摘要
+          - generic: …ec4b1371
+        - cell "SK-429e0163":
+          - code: SK-429e0163
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …165431a8 SK-44ba79ce 1.0.0 有效 停用":
+        - cell "技能-摘要 …165431a8":
+          - strong: 技能-摘要
+          - generic: …165431a8
+        - cell "SK-44ba79ce":
+          - code: SK-44ba79ce
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …1c3147e6 SK-4788b29f 1.0.0 有效 停用":
+        - cell "技能-摘要 …1c3147e6":
+          - strong: 技能-摘要
+          - generic: …1c3147e6
+        - cell "SK-4788b29f":
+          - code: SK-4788b29f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …df46f04c SK-4f402c26 1.0.0 已停用 停用":
+        - cell "技能-摘要 …df46f04c":
+          - strong: 技能-摘要
+          - generic: …df46f04c
+        - cell "SK-4f402c26":
+          - code: SK-4f402c26
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …4d22b304 SK-6729b089 1.0.0 有效 停用":
+        - cell "技能-摘要 …4d22b304":
+          - strong: 技能-摘要
+          - generic: …4d22b304
+        - cell "SK-6729b089":
+          - code: SK-6729b089
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …8e150fd1 SK-6a2f51f6 1.0.0 已停用 停用":
+        - cell "技能-摘要 …8e150fd1":
+          - strong: 技能-摘要
+          - generic: …8e150fd1
+        - cell "SK-6a2f51f6":
+          - code: SK-6a2f51f6
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …51bb80ea SK-6c632438 1.0.0 有效 停用":
+        - cell "技能-摘要 …51bb80ea":
+          - strong: 技能-摘要
+          - generic: …51bb80ea
+        - cell "SK-6c632438":
+          - code: SK-6c632438
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …0782ea69 SK-6e827c9c 1.0.0 有效 停用":
+        - cell "技能-摘要 …0782ea69":
+          - strong: 技能-摘要
+          - generic: …0782ea69
+        - cell "SK-6e827c9c":
+          - code: SK-6e827c9c
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …afebc22c SK-707e36e9 1.0.0 已停用 停用":
+        - cell "技能-摘要 …afebc22c":
+          - strong: 技能-摘要
+          - generic: …afebc22c
+        - cell "SK-707e36e9":
+          - code: SK-707e36e9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …272d16fe SK-882918ce 1.0.0 已停用 停用":
+        - cell "技能-摘要 …272d16fe":
+          - strong: 技能-摘要
+          - generic: …272d16fe
+        - cell "SK-882918ce":
+          - code: SK-882918ce
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …1225107b SK-96b18c20 1.0.0 有效 停用":
+        - cell "技能-摘要 …1225107b":
+          - strong: 技能-摘要
+          - generic: …1225107b
+        - cell "SK-96b18c20":
+          - code: SK-96b18c20
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …6c4106ff SK-9d29c3ae 1.0.0 有效 停用":
+        - cell "技能-摘要 …6c4106ff":
+          - strong: 技能-摘要
+          - generic: …6c4106ff
+        - cell "SK-9d29c3ae":
+          - code: SK-9d29c3ae
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …fd94671d SK-a63e5b0c 1.0.0 已停用 停用":
+        - cell "技能-摘要 …fd94671d":
+          - strong: 技能-摘要
+          - generic: …fd94671d
+        - cell "SK-a63e5b0c":
+          - code: SK-a63e5b0c
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …5d05c064 SK-ae71fdcd 1.0.0 有效 停用":
+        - cell "技能-摘要 …5d05c064":
+          - strong: 技能-摘要
+          - generic: …5d05c064
+        - cell "SK-ae71fdcd":
+          - code: SK-ae71fdcd
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …e9e7b444 SK-b774d9cb 1.0.0 已停用 停用":
+        - cell "技能-摘要 …e9e7b444":
+          - strong: 技能-摘要
+          - generic: …e9e7b444
+        - cell "SK-b774d9cb":
+          - code: SK-b774d9cb
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …888a62b3 SK-b7a416b2 1.0.0 有效 停用":
+        - cell "技能-摘要 …888a62b3":
+          - strong: 技能-摘要
+          - generic: …888a62b3
+        - cell "SK-b7a416b2":
+          - code: SK-b7a416b2
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …84a010fe SK-bf8055ea 1.0.0 已停用 停用":
+        - cell "技能-摘要 …84a010fe":
+          - strong: 技能-摘要
+          - generic: …84a010fe
+        - cell "SK-bf8055ea":
+          - code: SK-bf8055ea
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …75e59647 SK-c7e3202f 1.0.0 已停用 停用":
+        - cell "技能-摘要 …75e59647":
+          - strong: 技能-摘要
+          - generic: …75e59647
+        - cell "SK-c7e3202f":
+          - code: SK-c7e3202f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …e657af7d SK-c9031918 1.0.0 已停用 停用":
+        - cell "技能-摘要 …e657af7d":
+          - strong: 技能-摘要
+          - generic: …e657af7d
+        - cell "SK-c9031918":
+          - code: SK-c9031918
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …db12035e SK-d1dc930b 1.0.0 已停用 停用":
+        - cell "技能-摘要 …db12035e":
+          - strong: 技能-摘要
+          - generic: …db12035e
+        - cell "SK-d1dc930b":
+          - code: SK-d1dc930b
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …959752ec SK-d9221ecb 1.0.0 已停用 停用":
+        - cell "技能-摘要 …959752ec":
+          - strong: 技能-摘要
+          - generic: …959752ec
+        - cell "SK-d9221ecb":
+          - code: SK-d9221ecb
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …6b375732 SK-dd05c1f5 1.0.0 已停用 停用":
+        - cell "技能-摘要 …6b375732":
+          - strong: 技能-摘要
+          - generic: …6b375732
+        - cell "SK-dd05c1f5":
+          - code: SK-dd05c1f5
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …79414c13 SK-e1c48523 1.0.0 已停用 停用":
+        - cell "技能-摘要 …79414c13":
+          - strong: 技能-摘要
+          - generic: …79414c13
+        - cell "SK-e1c48523":
+          - code: SK-e1c48523
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …4ece82db SK-e539db30 1.0.0 已停用 停用":
+        - cell "技能-摘要 …4ece82db":
+          - strong: 技能-摘要
+          - generic: …4ece82db
+        - cell "SK-e539db30":
+          - code: SK-e539db30
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "技能-摘要 …282cf6bb SK-eb61adb7 1.0.0 有效 停用":
+        - cell "技能-摘要 …282cf6bb":
+          - strong: 技能-摘要
+          - generic: …282cf6bb
+        - cell "SK-eb61adb7":
+          - code: SK-eb61adb7
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "技能-摘要 …d00df0e6 SK-f858841d 1.0.0 已停用 停用":
+        - cell "技能-摘要 …d00df0e6":
+          - strong: 技能-摘要
+          - generic: …d00df0e6
+        - cell "SK-f858841d":
+          - code: SK-f858841d
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …461dfa6a SKILL-01f35831 v1 已停用 停用":
+        - cell "临床摘要技能 …461dfa6a":
+          - strong: 临床摘要技能
+          - generic: …461dfa6a
+        - cell "SKILL-01f35831":
+          - code: SKILL-01f35831
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …85224b02 SKILL-0df569d3 v1 有效 停用":
+        - cell "临床摘要技能 …85224b02":
+          - strong: 临床摘要技能
+          - generic: …85224b02
+        - cell "SKILL-0df569d3":
+          - code: SKILL-0df569d3
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …22ef7c5c SKILL-100e02a2 v1 有效 停用":
+        - cell "临床摘要技能 …22ef7c5c":
+          - strong: 临床摘要技能
+          - generic: …22ef7c5c
+        - cell "SKILL-100e02a2":
+          - code: SKILL-100e02a2
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …4b480d4d SKILL-10c43f0f v1 有效 停用":
+        - cell "临床摘要技能 …4b480d4d":
+          - strong: 临床摘要技能
+          - generic: …4b480d4d
+        - cell "SKILL-10c43f0f":
+          - code: SKILL-10c43f0f
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …823f46ec SKILL-15d05b51 v1 有效 停用":
+        - cell "临床摘要技能 …823f46ec":
+          - strong: 临床摘要技能
+          - generic: …823f46ec
+        - cell "SKILL-15d05b51":
+          - code: SKILL-15d05b51
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …7cb730b7 SKILL-1a8352d2 v1 已停用 停用":
+        - cell "临床摘要技能 …7cb730b7":
+          - strong: 临床摘要技能
+          - generic: …7cb730b7
+        - cell "SKILL-1a8352d2":
+          - code: SKILL-1a8352d2
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …9e0f52e7 SKILL-237ff896 v1 有效 停用":
+        - cell "临床摘要技能 …9e0f52e7":
+          - strong: 临床摘要技能
+          - generic: …9e0f52e7
+        - cell "SKILL-237ff896":
+          - code: SKILL-237ff896
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …3cd0e803 SKILL-2b44425c v1 有效 停用":
+        - cell "临床摘要技能 …3cd0e803":
+          - strong: 临床摘要技能
+          - generic: …3cd0e803
+        - cell "SKILL-2b44425c":
+          - code: SKILL-2b44425c
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …8bc5c52c SKILL-3c963334 v1 已停用 停用":
+        - cell "临床摘要技能 …8bc5c52c":
+          - strong: 临床摘要技能
+          - generic: …8bc5c52c
+        - cell "SKILL-3c963334":
+          - code: SKILL-3c963334
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …85f01a3d SKILL-4f156967 v1 已停用 停用":
+        - cell "临床摘要技能 …85f01a3d":
+          - strong: 临床摘要技能
+          - generic: …85f01a3d
+        - cell "SKILL-4f156967":
+          - code: SKILL-4f156967
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …e69b5e49 SKILL-5150627a v1 有效 停用":
+        - cell "临床摘要技能 …e69b5e49":
+          - strong: 临床摘要技能
+          - generic: …e69b5e49
+        - cell "SKILL-5150627a":
+          - code: SKILL-5150627a
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …322b835f SKILL-5198a77e v1 有效 停用":
+        - cell "临床摘要技能 …322b835f":
+          - strong: 临床摘要技能
+          - generic: …322b835f
+        - cell "SKILL-5198a77e":
+          - code: SKILL-5198a77e
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …ea1d0489 SKILL-559e6937 v1 已停用 停用":
+        - cell "临床摘要技能 …ea1d0489":
+          - strong: 临床摘要技能
+          - generic: …ea1d0489
+        - cell "SKILL-559e6937":
+          - code: SKILL-559e6937
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …30166b8d SKILL-56dd1fd0 v1 有效 停用":
+        - cell "临床摘要技能 …30166b8d":
+          - strong: 临床摘要技能
+          - generic: …30166b8d
+        - cell "SKILL-56dd1fd0":
+          - code: SKILL-56dd1fd0
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …5f72687a SKILL-65abdc26 v1 有效 停用":
+        - cell "临床摘要技能 …5f72687a":
+          - strong: 临床摘要技能
+          - generic: …5f72687a
+        - cell "SKILL-65abdc26":
+          - code: SKILL-65abdc26
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …449b8097 SKILL-69222154 v1 已停用 停用":
+        - cell "临床摘要技能 …449b8097":
+          - strong: 临床摘要技能
+          - generic: …449b8097
+        - cell "SKILL-69222154":
+          - code: SKILL-69222154
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …ccda401d SKILL-6d6b7a88 v1 有效 停用":
+        - cell "临床摘要技能 …ccda401d":
+          - strong: 临床摘要技能
+          - generic: …ccda401d
+        - cell "SKILL-6d6b7a88":
+          - code: SKILL-6d6b7a88
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …58360a2c SKILL-70cfaa7e v1 已停用 停用":
+        - cell "临床摘要技能 …58360a2c":
+          - strong: 临床摘要技能
+          - generic: …58360a2c
+        - cell "SKILL-70cfaa7e":
+          - code: SKILL-70cfaa7e
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …f2be97d2 SKILL-8e3348c9 v1 有效 停用":
+        - cell "临床摘要技能 …f2be97d2":
+          - strong: 临床摘要技能
+          - generic: …f2be97d2
+        - cell "SKILL-8e3348c9":
+          - code: SKILL-8e3348c9
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …1f4bb767 SKILL-97e9e8f2 v1 有效 停用":
+        - cell "临床摘要技能 …1f4bb767":
+          - strong: 临床摘要技能
+          - generic: …1f4bb767
+        - cell "SKILL-97e9e8f2":
+          - code: SKILL-97e9e8f2
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …4d0d7e98 SKILL-99d3e882 v1 有效 停用":
+        - cell "临床摘要技能 …4d0d7e98":
+          - strong: 临床摘要技能
+          - generic: …4d0d7e98
+        - cell "SKILL-99d3e882":
+          - code: SKILL-99d3e882
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …26005fb3 SKILL-99ea2d25 v1 已停用 停用":
+        - cell "临床摘要技能 …26005fb3":
+          - strong: 临床摘要技能
+          - generic: …26005fb3
+        - cell "SKILL-99ea2d25":
+          - code: SKILL-99ea2d25
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …9e8cd982 SKILL-ada284f1 v1 已停用 停用":
+        - cell "临床摘要技能 …9e8cd982":
+          - strong: 临床摘要技能
+          - generic: …9e8cd982
+        - cell "SKILL-ada284f1":
+          - code: SKILL-ada284f1
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …2ab57185 SKILL-b5b2cdc5 v1 有效 停用":
+        - cell "临床摘要技能 …2ab57185":
+          - strong: 临床摘要技能
+          - generic: …2ab57185
+        - cell "SKILL-b5b2cdc5":
+          - code: SKILL-b5b2cdc5
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …cef832d8 SKILL-bcf6fefd v1 有效 停用":
+        - cell "临床摘要技能 …cef832d8":
+          - strong: 临床摘要技能
+          - generic: …cef832d8
+        - cell "SKILL-bcf6fefd":
+          - code: SKILL-bcf6fefd
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …d195452b SKILL-c07bb99b v1 有效 停用":
+        - cell "临床摘要技能 …d195452b":
+          - strong: 临床摘要技能
+          - generic: …d195452b
+        - cell "SKILL-c07bb99b":
+          - code: SKILL-c07bb99b
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …794bf9ea SKILL-d9736518 v1 已停用 停用":
+        - cell "临床摘要技能 …794bf9ea":
+          - strong: 临床摘要技能
+          - generic: …794bf9ea
+        - cell "SKILL-d9736518":
+          - code: SKILL-d9736518
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要技能 …f5288405 SKILL-e0b7d56f v1 有效 停用":
+        - cell "临床摘要技能 …f5288405":
+          - strong: 临床摘要技能
+          - generic: …f5288405
+        - cell "SKILL-e0b7d56f":
+          - code: SKILL-e0b7d56f
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …0243343e SKILL-f1472731 v1 有效 停用":
+        - cell "临床摘要技能 …0243343e":
+          - strong: 临床摘要技能
+          - generic: …0243343e
+        - cell "SKILL-f1472731":
+          - code: SKILL-f1472731
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要技能 …b9c336e3 SKILL-f304526e v1 有效 停用":
+        - cell "临床摘要技能 …b9c336e3":
+          - strong: 临床摘要技能
+          - generic: …b9c336e3
+        - cell "SKILL-f304526e":
+          - code: SKILL-f304526e
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Skill" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Skill 编码
+  - textbox "Skill 编码":
+    - /placeholder: 例：MEDICAL-NOTE
+  - generic: Skill 名称
+  - textbox "Skill 名称":
+    - /placeholder: 例：病历摘要
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - button "登记并生效"

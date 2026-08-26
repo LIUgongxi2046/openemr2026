@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watchEffect } from 'vue';
 import type { ArtPregnancyOutcomeWire } from '../../generated/contracts';
 import { createArtPregnancyOutcome, issueSpecialtyEncounterLease, issueSpecialtyPatientLease, listArtPregnancyOutcomes } from '../../api/specialty-layers';
+import { listArtCycleRecords } from '../../api/specialty';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -26,11 +27,18 @@ const recordsQuery = useQuery({
   enabled: () => Boolean(patientLease.value),
   retry: false,
 });
+const cyclesQuery = useQuery({
+  queryKey: ['specialty-layers', 'reproductive-followup', 'cycles'],
+  queryFn: () => listArtCycleRecords(patientLease.value!),
+  enabled: () => Boolean(patientLease.value),
+  retry: false,
+});
+const cycles = computed(() => cyclesQuery.data.value ?? []);
 
-const issue = computed(() => (patientLeaseQuery.error.value ?? encounterLeaseQuery.error.value ?? recordsQuery.error.value)
-  ? toClinicalIssue(patientLeaseQuery.error.value ?? encounterLeaseQuery.error.value ?? recordsQuery.error.value) : null);
+const issue = computed(() => (patientLeaseQuery.error.value ?? encounterLeaseQuery.error.value ?? recordsQuery.error.value ?? cyclesQuery.error.value)
+  ? toClinicalIssue(patientLeaseQuery.error.value ?? encounterLeaseQuery.error.value ?? recordsQuery.error.value ?? cyclesQuery.error.value) : null);
 const records = computed(() => recordsQuery.data.value ?? []);
-const anyPending = computed(() => patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || recordsQuery.isPending.value);
+const anyPending = computed(() => patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || recordsQuery.isPending.value || cyclesQuery.isPending.value);
 
 const form = reactive({
   cycleId: '',
@@ -42,6 +50,10 @@ const form = reactive({
 });
 const busy = ref('');
 const notice = ref('');
+
+watchEffect(() => {
+  if (!form.cycleId && cycles.value[0]) form.cycleId = cycles.value[0].cycle_id;
+});
 
 function pregnancyResultLabel(value: string) {
   const map: Record<string, string> = {
@@ -125,7 +137,13 @@ async function createRecord() {
         <section class="admin-panel admin-form-panel">
           <header><div><h2>新增妊娠结局</h2><p>周期ID、妊娠结果与结局日期必填。</p></div></header>
           <form class="admin-form" @submit.prevent="createRecord">
-            <label><span>周期ID</span><input v-model="form.cycleId" required placeholder="UUID" /></label>
+            <label><span>辅助生殖周期</span><select v-model="form.cycleId" required>
+              <option value="" disabled>请选择周期</option>
+              <option v-for="cycle in cycles" :key="cycle.cycle_id" :value="cycle.cycle_id">
+                {{ cycle.cycle_type }} 第 {{ cycle.cycle_number }} 周期 · {{ cycle.status }}
+              </option>
+            </select></label>
+            <p v-if="cycles.length === 0" class="admin-form-hint">当前患者暂无周期，请先在“辅助生殖周期记录”中建档。</p>
             <label><span>妊娠结果</span><select v-model="form.pregnancyResult">
               <option value="PREGNANT">临床妊娠</option>
               <option value="NOT_PREGNANT">未妊娠</option>

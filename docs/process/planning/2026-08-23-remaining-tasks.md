@@ -5,7 +5,7 @@
 
 ## 一、按实现形态（全部 194 路由）
 
-1. **生产纵向（真实合成 API）**：临床主链、门急诊/预约、药房/收费/检验/影像/输血/手术/护理、病案/院感/评级/资质、专科 71、治理/字典/能力包/迁移、数据质量/科研/开源、AI 平台目录、管理审计、全局 AI 助手、三域门户、**门诊随访（V164）** 等。
+1. **生产纵向（真实合成 API）**：临床主链、门急诊/预约、药房/收费/检验/影像/输血/手术/护理、病案/院感/评级/资质、专科 71、治理/字典/能力包/迁移、数据质量/科研/开源、AI 平台目录、管理审计、全局 AI医助小南、三域门户、**门诊随访（V164）** 等。
 2. **模拟接口适配器（13，待真实适配器）**：admin-auth / ai-capture / model-connection / model-routing / devices / device-monitoring / integration-connectors / integration-messages / archive-scan / archive-preservation / pathology-workbench / anesthesia-workbench / therapy-workbench。
 3. **配置持久化引擎（17，已接真实 `config_item` 后端 V163，幂等+审计+Outbox）**：13 个配置路由 + 4 个编排/策略路由（agent-compose/agent-context/agent-evals/ai-assistant-policy）。
 4. **指标快照引擎（5，已接真实 `metric_snapshot` 后端 V165，审计哈希链）**：`data-center`/`research`/`research-stats`/`department-qc`/`quality-center`（指标定义 + 快照记录 + 展示；指标语义聚合计算仍待接）。

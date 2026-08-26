@@ -70,7 +70,7 @@ async function createNote() {
 
     <template v-else>
       <section class="admin-metrics" aria-label="护理记录统计">
-        <article><span>护理记录</span><strong>{{ items.length }}</strong><small>患者 …{{ clinicalContext.patientId.slice(-8) }}</small></article>
+        <article><span>护理记录</span><strong>{{ items.length }}</strong><small>患者 …{{ clinicalContext.emergencyPatientId.slice(-8) }}</small></article>
         <article><span>高危记录</span><strong>{{ riskCount }}</strong><small>risk_flag</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>

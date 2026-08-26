@@ -1,0 +1,120 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "AI医助小南" [level=1]
+  - paragraph: 跨页面连续但按患者、就诊和任务严格隔离 · 确定性假模型 · 建议不自动写入病历
+  - button "清空对话"
+  - complementary:
+    - generic: 上下文与权限
+    - generic: 患者/就诊隔离
+    - text: 本会话按上下文租约隔离，跨患者或跨就诊不共享会话；AI 只出候选，不获得独立临床权力。
+    - text: 当前作用域
+    - generic: 院区级（无患者）
+    - text: 允许动作
+    - generic: 只读问答 · 不写入病历
+    - text: 模型行为
+    - generic: DETERMINISTIC_FAKE
+  - text: 与AI医助小南协作
+  - generic: 确定性假模型
+  - text: AI医助小南已就绪
+  - paragraph: 输入问题后，小南返回确定性测试回复以验证 SSE 流式通道；建议均为候选，不会自动写入病历、诊断、医嘱或处方。
+  - textbox "询问当前患者，或要求生成可核验的草稿……"
+  - button "清空"
+  - button "发送" [disabled]
+  - text: 主 Agent 与子 Agent 协作
+  - generic: Medical Harness · 候选制
+  - text: 临床仿真上下文
+  - combobox "临床仿真上下文":
+    - option "门诊接诊" [selected]
+    - option "急诊抢救"
+    - option "住院日常"
+  - text: 负责主 Agent
+  - combobox "负责主 Agent":
+    - option "诊疗协同主 Agent" [selected]
+    - option "文书起草主 Agent"
+    - option "就诊摘要主 Agent"
+    - option "病历质控主 Agent"
+    - option "结果闭环主 Agent"
+  - text: 诊疗环节 / 子 Agent
+  - combobox "诊疗环节 / 子 Agent":
+    - option "会诊准备协作者 · CONSULT" [selected]
+    - option "出院衔接协作者 · DISCHARGE"
+    - option "随访协调协作者 · FOLLOWUP"
+    - option "MDT 简报协作者 · MDT"
+    - option "任务对账协作者 · TASK_RECONCILIATION"
+    - option "转科交接协作者 · TRANSFER"
+  - text: 本次协作目标
+  - textbox "本次协作目标": 整理当前诊疗环节的关键事实、变化、缺口和待确认问题
+  - button "启动主子 Agent 协作"
+  - paragraph: 诊疗协同总负责：准备会诊、交接、出院和随访协同候选。子 Agent 只读并提交贡献，主 Agent 汇总后仍需人工审阅。

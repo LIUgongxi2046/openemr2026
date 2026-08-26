@@ -40,7 +40,7 @@ final class DeepSeekClinicalModelProvider implements ClinicalModelProvider {
                     "model", modelId,
                     "messages", List.of(
                             Map.of("role", "system", "content", """
-                                    你是医疗文书草稿助手。只返回 JSON object，根字段必须且只能包含 sections。
+                                    你是AI医助小南的医疗文书草稿 Agent。只返回 JSON object，根字段必须且只能包含 sections。
                                     sections 只能是文书段落映射；不得返回签名、工具调用、SQL、授权或临床写入动作。
                                     保留不确定性，不编造未提供的患者事实；输出必须由医生人工审阅。
                                     """),

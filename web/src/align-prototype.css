@@ -1,7 +1,26 @@
 /* 对齐高保真原型：把生产的 admin 系列、button、content 映射到原型的 card/table/metric/status/btn/main 值 */
 
-/* 消除双层 padding：.main 已提供 0 22px 28px，页面 .content 必须归零 */
+/* 消除横向双层 padding；页头与二级导航之间保留统一的垂直呼吸区。 */
+:root {
+  --page-content-top-gap: 16px;
+  --page-content-top-gap-compact: 12px;
+  --page-heading-bottom-gap: 18px;
+}
 .content { padding: 0; }
+.main > [data-page-root].content { padding-top: var(--page-content-top-gap); }
+
+/* 主标题已能表达当前功能，删除页头重复的蓝色“领域 / 流程”眉题。
+   卡片内部的 eyebrow 仍保留，用于区分质控、证据、任务等真实信息层级。 */
+.main > [data-page-root] > .page-heading .eyebrow,
+.main > [data-page-root] > .page-head .eyebrow { display: none; }
+.page-heading { margin-bottom: var(--page-heading-bottom-gap); }
+
+/* Header switches share the same minimum interaction height as other page actions. */
+.task-domain-switch button { min-height: 34px; }
+
+@media (max-width: 600px) {
+  .main > [data-page-root].content { padding-top: var(--page-content-top-gap-compact); }
+}
 
 /* .admin-layout/.auth-layout 是生产「工作台两栏」（主区 + 侧表单），与原型管理段的同名类（176px 左导航）冲突，
    原型类被整体 import 后覆盖了生产值，须在此还原生产语义 */

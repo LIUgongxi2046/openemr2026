@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import type { InpatientDocumentTaskWire } from '../../generated/contracts';
 import {
-  dischargeInpatient, getInpatientSyntheticActor, inpatientSyntheticActors,
+  createInpatientDocumentTask, dischargeInpatient, getInpatientSyntheticActor, inpatientSyntheticActors,
   issueInpatientLease, issueWardLease, loadInpatientDocumentRules, loadInpatientDocumentVersions,
-  loadInpatientOverview, setInpatientSyntheticActor, type InpatientSyntheticActorKey,
+  loadInpatientOverview, setInpatientSyntheticActor, startInpatientDocumentTask, type InpatientSyntheticActorKey,
 } from '../../clinical-api';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const route = useRoute();
+const router = useRouter();
 const routeId = computed(() => String(route.name ?? 'inpatient-overview'));
 const selectedActorKey = ref<InpatientSyntheticActorKey>(getInpatientSyntheticActor()?.key ?? 'AUTHOR');
 const selectedDocumentId = ref(typeof route.query.document_id === 'string' ? route.query.document_id : '');
@@ -21,6 +22,9 @@ const busy = ref(false);
 const dischargeDiagnosis = ref('');
 const dispositionCode = ref<'HOME' | 'TRANSFER_TO_FACILITY' | 'DEATH' | 'OTHER'>('HOME');
 const waiverReason = ref('');
+const createOpen = ref(false);
+const selectedRuleCode = ref('IP-DAILY-COURSE');
+const occurredAt = ref(new Date().toISOString().slice(0, 16));
 
 const journey = useQuery({
   queryKey: ['clinical', 'inpatient-journey', selectedActorKey],
@@ -40,6 +44,7 @@ const pendingTasks = computed(() => overview.value?.document_tasks.filter((task)
 const completedTasks = computed(() => overview.value?.document_tasks.filter((task) => task.task_state === 'COMPLETED') ?? []);
 const documentTasks = computed(() => overview.value?.document_tasks.filter((task) => task.working_document_id || task.completed_document_id) ?? []);
 const filteredTasks = computed(() => overview.value?.document_tasks.filter((task) => taskState.value === 'ALL' || task.task_state === taskState.value) ?? []);
+const creatableRules = computed(() => journey.data.value?.rules.filter((rule) => ['DAILY', 'MANUAL'].includes(rule.trigger_type)) ?? []);
 const selectedTask = computed(() => documentTasks.value.find((task) => (task.completed_document_id || task.working_document_id) === selectedDocumentId.value));
 
 watch(documentTasks, (tasks) => {
@@ -63,7 +68,7 @@ async function switchActor(key: InpatientSyntheticActorKey) {
   try {
     setInpatientSyntheticActor(key); selectedActorKey.value = key;
     await journey.refetch();
-    notice.value = `开发验收身份已切换为${activeActor.value?.roleLabel ?? key}。`;
+    notice.value = `开发角色已切换为${activeActor.value?.roleLabel ?? key}。`;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = false; }
@@ -81,6 +86,40 @@ async function submitDischarge() {
   } finally { busy.value = false; }
 }
 
+async function createCourse(startImmediately: boolean) {
+  const current = journey.data.value;
+  const rule = current?.rules.find((candidate) => candidate.rule_code === selectedRuleCode.value);
+  if (!current || !rule || busy.value || selectedActorKey.value !== 'AUTHOR') return;
+  busy.value = true; notice.value = '';
+  try {
+    const eventAt = new Date(occurredAt.value).toISOString();
+    const task = await createInpatientDocumentTask(current.lease, current.overview, rule.rule_code, eventAt, `MANUAL:${rule.rule_code}:${eventAt}:${crypto.randomUUID()}`);
+    if (startImmediately) {
+      const document = await startInpatientDocumentTask(current.lease, task, rule);
+      await router.push({ path: '/inpatient-doc-editor', query: { document_id: document.document_id } });
+      return;
+    }
+    createOpen.value = false;
+    notice.value = `已创建「${rule.display_name}」任务，可在任务列表开始书写。`;
+    await journey.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = false; }
+}
+
+async function startTask(task: InpatientDocumentTaskWire) {
+  const current = journey.data.value;
+  if (!current || busy.value || selectedActorKey.value !== 'AUTHOR') return;
+  busy.value = true; notice.value = '';
+  try {
+    const rule = current.rules.find((candidate) => candidate.document_type_code === task.document_type_code);
+    const document = await startInpatientDocumentTask(current.lease, task, rule);
+    await router.push({ path: '/inpatient-doc-editor', query: { document_id: document.document_id } });
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = false; }
+}
+
 function documentLabel(task: InpatientDocumentTaskWire) {
   return journey.data.value?.rules.find((rule) => rule.document_type_code === task.document_type_code)?.display_name ?? task.document_type_code;
 }
@@ -93,12 +132,11 @@ function formatDate(value?: string | null) {
 <template>
   <section data-page-root class="content vue-native-page inpatient-journey-page">
     <div class="page-heading"><div><p class="eyebrow">住院 / 患者全程</p><h1>{{ routeId === 'inpatient-overview' ? '住院患者总览' : routeId === 'inpatient-course' ? '住院病程与文书中心' : routeId === 'inpatient-doc-versions' ? '住院文书版本与查房证据' : '出院病历与病案归档闭环' }}</h1></div><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
-    <nav class="inpatient-subnav" aria-label="住院患者功能"><RouterLink to="/inpatient-overview">患者总览</RouterLink><RouterLink to="/inpatient-course">病程与文书</RouterLink><RouterLink to="/ip-orders">住院医嘱</RouterLink><RouterLink to="/ip-results">检查检验</RouterLink><RouterLink to="/ip-consult">会诊协同</RouterLink><RouterLink to="/ip-pathway">临床路径</RouterLink><RouterLink to="/inpatient-discharge">出院闭环</RouterLink></nav>
-    <section v-if="inpatientSyntheticActors.length" class="inpatient-role-simulator" aria-label="开发环境住院岗位身份"><div><strong>当前验收身份</strong><span>仅开发合成环境 · 切换后重新签发患者租约</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="busy" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section>
+    <details v-if="inpatientSyntheticActors.length" class="development-acceptance-tools"><summary>开发角色模拟</summary><section class="inpatient-role-simulator" aria-label="开发环境住院岗位身份"><div><strong>岗位与分级审签模拟</strong><span>仅开发合成环境 · 切换后重新签发患者租约</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="busy" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section></details>
     <ClinicalPageState v-if="journey.isPending.value" kind="loading" message="正在校验患者租约与住院事实" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="journey.refetch()" />
     <template v-else-if="overview && admission">
-      <section class="patient-strip" aria-label="住院患者上下文"><div class="patient-avatar">合</div><div><strong>{{ overview.patient_display_name }}</strong><span>当前住院上下文 · 所有动作重新校验授权</span></div><dl><div><dt>状态</dt><dd>{{ admission.status }}</dd></div><div><dt>病区床位</dt><dd>{{ overview.ward_display_name }} · {{ overview.bed_label }}床</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '当前登录岗位' }}</dd></div></dl><span class="lease-badge">…{{ admission.admission_id.slice(-8) }}</span></section>
+      <section class="patient-strip" aria-label="住院患者上下文"><div class="patient-avatar">{{ overview.patient_display_name.slice(0, 1) }}</div><div><strong>{{ overview.patient_display_name }}</strong><span>当前住院上下文 · 所有动作重新校验授权</span></div><dl><div><dt>状态</dt><dd>{{ admission.status }}</dd></div><div><dt>病区床位</dt><dd>{{ overview.ward_display_name }} · {{ overview.bed_label }}床</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '当前登录岗位' }}</dd></div></dl><span class="lease-badge">…{{ admission.admission_id.slice(-8) }}</span></section>
       <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
       <template v-if="routeId === 'inpatient-overview'">
@@ -108,7 +146,9 @@ function formatDate(value?: string | null) {
       </template>
 
       <template v-else-if="routeId === 'inpatient-course'">
-        <section class="editor-card"><div class="card-toolbar"><div><p class="eyebrow">任务驱动</p><h2>病程、查房与事件型文书</h2></div><label class="compact-filter">任务状态<select v-model="taskState"><option value="ALL">全部</option><option value="PENDING">待开始</option><option value="IN_PROGRESS">处理中</option><option value="OVERDUE">已超时</option><option value="COMPLETED">已完成</option><option value="WAIVED">已豁免</option></select></label></div><div class="task-table-wrap"><table class="task-table"><thead><tr><th>文书类型</th><th>截止时间</th><th>审签进度</th><th>动作</th></tr></thead><tbody><tr v-for="task in filteredTasks" :key="task.task_id"><td><strong>{{ documentLabel(task) }}</strong><small>{{ task.document_type_code }}</small></td><td>{{ formatDate(task.due_at) }}</td><td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ task.current_signature_level ?? '尚未签署' }} → {{ task.next_signature_level ?? '完成' }}</small></td><td><RouterLink v-if="task.working_document_id && task.task_state !== 'COMPLETED'" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">进入书写/审签</RouterLink><RouterLink v-else-if="task.completed_document_id || task.working_document_id" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink><span v-else>从工作站开始书写</span></td></tr></tbody></table><div v-if="!filteredTasks.length" class="clinical-empty-state" role="status">当前筛选条件下没有文书任务</div></div></section>
+        <section class="editor-card"><div class="card-toolbar"><div><p class="eyebrow">任务驱动</p><h2>病程、查房与事件型文书</h2></div><div class="toolbar-actions"><label class="compact-filter">任务状态<select v-model="taskState"><option value="ALL">全部</option><option value="PENDING">待开始</option><option value="IN_PROGRESS">处理中</option><option value="OVERDUE">已超时</option><option value="COMPLETED">已完成</option><option value="WAIVED">已豁免</option></select></label><button class="button primary" type="button" :disabled="admission.status !== 'ADMITTED' || selectedActorKey !== 'AUTHOR'" @click="createOpen = !createOpen">{{ createOpen ? '收起新增' : '新增病程文书' }}</button></div></div>
+          <form v-if="createOpen" class="inpatient-course-create" @submit.prevent="createCourse(false)"><div><strong>新增病程文书任务</strong><span>先形成时限任务，再建立草稿；创建并书写会直接进入结构化编辑页。</span></div><label>文书类型<select v-model="selectedRuleCode"><option v-for="rule in creatableRules" :key="rule.rule_code" :value="rule.rule_code">{{ rule.display_name }} · {{ rule.category_code }}</option></select></label><label>事件/记录时间<input v-model="occurredAt" type="datetime-local" required /></label><div class="toolbar-actions"><button class="button secondary" type="submit" :disabled="busy">仅创建任务</button><button class="button primary" type="button" :disabled="busy" @click="createCourse(true)">{{ busy ? '正在创建…' : '创建并开始书写' }}</button></div></form>
+          <div class="task-table-wrap"><table class="task-table"><thead><tr><th>文书类型</th><th>截止时间</th><th>审签进度</th><th>动作</th></tr></thead><tbody><tr v-for="task in filteredTasks" :key="task.task_id"><td><strong>{{ documentLabel(task) }}</strong><small>{{ task.document_type_code }}</small></td><td>{{ formatDate(task.due_at) }}</td><td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ task.current_signature_level ?? '尚未签署' }} → {{ task.next_signature_level ?? '完成' }}</small></td><td><RouterLink v-if="task.working_document_id && task.task_state !== 'COMPLETED'" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">进入书写/审签</RouterLink><RouterLink v-else-if="task.completed_document_id || task.working_document_id" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink><button v-else class="task-action" type="button" :disabled="busy || selectedActorKey !== 'AUTHOR'" @click="startTask(task)">{{ selectedActorKey !== 'AUTHOR' ? '等待作者建稿' : '开始书写' }}</button></td></tr></tbody></table><div v-if="!filteredTasks.length" class="clinical-empty-state rich" role="status"><strong>当前筛选下没有文书任务</strong><p>可切换任务状态查看历史，或新增一份日常病程、查房记录等手工文书任务。</p><button class="button primary" type="button" @click="taskState = 'ALL'; createOpen = true">新增病程文书</button></div></div></section>
       </template>
 
       <template v-else-if="routeId === 'inpatient-doc-versions'">

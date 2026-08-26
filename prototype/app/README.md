@@ -1,6 +1,6 @@
 # openemr2026 可视化交互原型
 
-这是 PRD v0.15 的 Full-Coverage BUILD。SCR-001–175 均已映射到可运行页面，并增加门诊域内病历、真正的全院病历工作队列、10 类核心专科的 70 个专业深页、全局 AI 助手及完整治理页面。所有数据均为合成数据。
+这是 PRD v0.15 的 Full-Coverage BUILD。SCR-001–175 均已映射到可运行页面，并增加门诊域内病历、真正的全院病历工作队列、10 类核心专科的 70 个专业深页、全局 AI医助小南及完整治理页面。所有数据均为合成数据。
 
 ## 运行
 
@@ -10,7 +10,7 @@
 python3 -m http.server 4173 --directory prototype/app
 ```
 
-访问 `http://127.0.0.1:4173/#clinical`。AI 助手可从任意页面顶栏 `✦` 或右下角入口打开。
+访问 `http://127.0.0.1:4173/#clinical`。AI医助小南可从任意页面顶栏 `✦` 或右下角入口打开。
 
 ## 一级产品域
 
@@ -18,7 +18,7 @@ python3 -m http.server 4173 --directory prototype/app
 - 病历与质量：病历中心、医疗质量中心、病案资产中心
 - 业务协同：医疗协同中心、统一任务与临床路径
 - 数据中心：集成、迁移、质量、设备、科研
-- AI 中心：临床 AI 助手、模型、Agent、Skill、Tool、评估与运行治理
+- AI 中心：AI医助小南、模型、Agent、Skill、Tool、评估与运行治理
 - 业务配置：能力包、流程、表单、规则、职责范围、发布与升级
 - 系统管理：组织、账户、角色、权限、认证、字典、主数据、参数、作业和审计
 
@@ -32,7 +32,7 @@ python3 -m http.server 4173 --directory prototype/app
 - 病案资产：`#archive-assets`、`#archive-catalog`、`#archive-scan`、`#archive-integrity`、`#archive-borrow`、`#archive-preservation`、`#asset-detail`
 - 集成与迁移：`#integration`、`#integration-connectors`、`#integration-mapping`、`#integration-messages`、`#migration`
 - 科研统计：`#research`、`#cohort-builder`、`#research-stats`、`#research-dataset`
-- AI 助手：`#ai-center`、`#ai-assistant`、`#ai-reminder-detail`、`#ai-capture`、`#ai-action-review`、`#ai-assistant-policy`
+- AI医助小南：`#ai-center`、`#ai-assistant`、`#ai-reminder-detail`、`#ai-capture`、`#ai-action-review`、`#ai-assistant-policy`
 - AI 平台：`#models`、`#model-connection`、`#model-routing`、`#model-evaluation`、`#agent-catalog`、`#agent`、`#agent-context`、`#tool-catalog`、`#skill-catalog`、`#agent-compose`、`#agent-evals`、`#aiops`
 - 业务配置：`#workflow`、`#capability-pack`、`#form-designer`、`#rule-center`、`#scope-designer`、`#config-release`、`#config-upgrade`
 - 科室适配与病理：`#specialty-coverage`、`#pathology-workbench`；院科质控：`#department-qc`

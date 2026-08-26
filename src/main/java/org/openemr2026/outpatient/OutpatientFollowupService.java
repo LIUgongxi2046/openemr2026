@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.OutpatientFollowupCompleteRequestWire;
@@ -56,7 +57,7 @@ final class OutpatientFollowupService {
                     """).param("tenant", identity.tenantId()).param("followup", followupId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("type", request.followupType().name()).param("content", request.content())
-                    .param("due_at", request.dueAt()).update();
+                    .param("due_at", request.dueAt() == null ? null : request.dueAt().atOffset(ZoneOffset.UTC)).update();
             jdbc.sql("""
                     update idempotency_record set state = 'SUCCEEDED', response_status = 201,
                       response_ref = jsonb_build_object('followup_id', :followup)

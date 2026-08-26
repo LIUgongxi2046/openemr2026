@@ -74,6 +74,14 @@ export function issueExecutionPatientLease(purpose: string): Promise<ContextLeas
   return issueContextLease(clinicalContext.patientId, null, purpose);
 }
 
+export function issueInpatientExecutionLease(purpose: string): Promise<ContextLeaseWire> {
+  return issueContextLease(clinicalContext.inpatientPatientId, clinicalContext.inpatientEncounterId, purpose);
+}
+
+export function issueInpatientExecutionPatientLease(purpose: string): Promise<ContextLeaseWire> {
+  return issueContextLease(clinicalContext.inpatientPatientId, null, purpose);
+}
+
 /** 患者 + 就诊级别的命令上下文（绝大多数执行域写操作需要）。 */
 function scoped() {
   return {
@@ -113,6 +121,30 @@ function patientJson(method: string, lease: ContextLeaseWire, body: unknown) {
     method,
     headers: {
       ...patientOnlyHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+function inpatientScoped() {
+  return {
+    organization_id: clinicalContext.organizationId,
+    facility_id: clinicalContext.facilityId,
+    patient_id: clinicalContext.inpatientPatientId,
+    encounter_id: clinicalContext.inpatientEncounterId,
+  };
+}
+
+function inpatientPatientHeaders(lease: ContextLeaseWire) {
+  return explicitContextHeaders(lease, clinicalContext.inpatientPatientId, null);
+}
+
+function inpatientJson(method: string, lease: ContextLeaseWire, body: unknown) {
+  return {
+    method,
+    headers: {
+      ...explicitContextHeaders(lease, clinicalContext.inpatientPatientId, clinicalContext.inpatientEncounterId),
+      'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
     },
     body: JSON.stringify(body),
   };
@@ -198,7 +230,7 @@ export async function createImagingOrder(
   lease: ContextLeaseWire,
   input: Omit<import('../generated/contracts').ImagingOrderCreateRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
 ): Promise<ImagingOrderWire> {
-  return imagingOrderWireSchema.parse(await request('/imaging-orders', patientJson('POST', lease, imagingOrderCreateRequestWireSchema.parse({ ...scoped(), ...input }))));
+  return imagingOrderWireSchema.parse(await request('/imaging-orders', json('POST', lease, imagingOrderCreateRequestWireSchema.parse({ ...scoped(), ...input }))));
 }
 
 export async function transitionImagingOrder(
@@ -208,7 +240,7 @@ export async function transitionImagingOrder(
 ): Promise<ImagingOrderWire> {
   return imagingOrderWireSchema.parse(await request(
     `/imaging-orders/${order.imaging_order_id}/transitions`,
-    patientJson('POST', lease, imagingOrderTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: order.row_version, transition })),
+    json('POST', lease, imagingOrderTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: order.row_version, transition })),
   ));
 }
 
@@ -224,7 +256,7 @@ export async function preparePharmacyDispensing(
   lease: ContextLeaseWire,
   input: Omit<import('../generated/contracts').PharmacyDispensingPrepareRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
 ): Promise<PharmacyDispensingWire> {
-  return pharmacyDispensingWireSchema.parse(await request('/pharmacy-dispensings', patientJson('POST', lease, pharmacyDispensingPrepareRequestWireSchema.parse({ ...scoped(), ...input }))));
+  return pharmacyDispensingWireSchema.parse(await request('/pharmacy-dispensings', json('POST', lease, pharmacyDispensingPrepareRequestWireSchema.parse({ ...scoped(), ...input }))));
 }
 
 export async function transitionPharmacyDispensing(
@@ -234,7 +266,35 @@ export async function transitionPharmacyDispensing(
 ): Promise<PharmacyDispensingWire> {
   return pharmacyDispensingWireSchema.parse(await request(
     `/pharmacy-dispensings/${dispensing.dispensing_id}/transitions`,
-    patientJson('POST', lease, pharmacyDispensingTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: dispensing.row_version, transition })),
+    json('POST', lease, pharmacyDispensingTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: dispensing.row_version, transition })),
+  ));
+}
+
+export async function listInpatientPharmacyDispensings(lease: ContextLeaseWire): Promise<PharmacyDispensingWire[]> {
+  return pharmacyDispensingWireSchema.array().parse(await request(
+    `/pharmacy-dispensings?patient_id=${encodeURIComponent(clinicalContext.inpatientPatientId)}`,
+    { headers: inpatientPatientHeaders(lease) },
+  ));
+}
+
+export async function prepareInpatientPharmacyDispensing(
+  lease: ContextLeaseWire,
+  input: Omit<import('../generated/contracts').PharmacyDispensingPrepareRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
+): Promise<PharmacyDispensingWire> {
+  return pharmacyDispensingWireSchema.parse(await request('/pharmacy-dispensings', inpatientJson('POST', lease,
+    pharmacyDispensingPrepareRequestWireSchema.parse({ ...inpatientScoped(), ...input }))));
+}
+
+export async function transitionInpatientPharmacyDispensing(
+  lease: ContextLeaseWire,
+  dispensing: PharmacyDispensingWire,
+  transition: 'VERIFY' | 'DISPENSE',
+): Promise<PharmacyDispensingWire> {
+  return pharmacyDispensingWireSchema.parse(await request(
+    `/pharmacy-dispensings/${dispensing.dispensing_id}/transitions`,
+    inpatientJson('POST', lease, pharmacyDispensingTransitionRequestWireSchema.parse({
+      ...inpatientScoped(), expected_row_version: dispensing.row_version, transition,
+    })),
   ));
 }
 
@@ -278,7 +338,7 @@ export async function scheduleSurgicalProcedure(
   lease: ContextLeaseWire,
   input: Omit<import('../generated/contracts').SurgicalProcedureScheduleRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
 ): Promise<SurgicalProcedureWire> {
-  return surgicalProcedureWireSchema.parse(await request('/surgical-procedures', patientJson('POST', lease, surgicalProcedureScheduleRequestWireSchema.parse({ ...scoped(), ...input }))));
+  return surgicalProcedureWireSchema.parse(await request('/surgical-procedures', json('POST', lease, surgicalProcedureScheduleRequestWireSchema.parse({ ...scoped(), ...input }))));
 }
 
 export async function transitionSurgicalProcedure(
@@ -288,7 +348,7 @@ export async function transitionSurgicalProcedure(
 ): Promise<SurgicalProcedureWire> {
   return surgicalProcedureWireSchema.parse(await request(
     `/surgical-procedures/${procedure.surgical_procedure_id}/transitions`,
-    patientJson('POST', lease, surgicalProcedureTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: procedure.row_version, transition })),
+    json('POST', lease, surgicalProcedureTransitionRequestWireSchema.parse({ ...scoped(), expected_row_version: procedure.row_version, transition })),
   ));
 }
 

@@ -72,7 +72,7 @@ const uiScenarios = [
   ['DESKTOP_LAYOUT', '1280x800 下间距、行距、主列宽和横向溢出'],
   ['MOBILE_LAYOUT', '390x844 下重排、触控目标和横向溢出'],
   ['ACCESSIBILITY', 'landmark、唯一 ID、表单名称、键盘焦点'],
-  ['AI_DIALOG', '随行 AI 从当前页面以弹窗打开且不丢失上下文'],
+  ['AI_DIALOG', 'AI医助小南 从当前页面以弹窗打开且不丢失上下文'],
   ['ERROR_RECOVERY', '接口 500/超时后呈现可理解错误并可恢复'],
 ];
 

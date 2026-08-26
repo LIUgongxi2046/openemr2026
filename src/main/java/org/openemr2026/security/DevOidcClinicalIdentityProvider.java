@@ -1,8 +1,6 @@
 package org.openemr2026.security;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -13,15 +11,21 @@ final class DevOidcClinicalIdentityProvider implements ClinicalIdentityProvider 
 
     private static final String DEVELOPMENT_TOKEN = "Bearer dev-synthetic-token";
 
+    private final DevelopmentSessionService sessions;
+
+    DevOidcClinicalIdentityProvider(DevelopmentSessionService sessions) {
+        this.sessions = sessions;
+    }
+
     @Override
     public ClinicalIdentity current(HttpServletRequest request) {
         if (!DEVELOPMENT_TOKEN.equals(request.getHeader("Authorization"))) {
-            throw new ClinicalAccessDeniedException("AUTHENTICATION_REQUIRED", "A valid clinical identity is required");
+            return sessions.currentIdentity(request.getHeader("Authorization"));
         }
         try {
             UUID tenantId = UUID.fromString(requiredHeader(request, "X-OpenEMR-Tenant-Id"));
             UUID userId = UUID.fromString(requiredHeader(request, "X-OpenEMR-User-Id"));
-            List<UUID> roles = Arrays.stream(requiredHeader(request, "X-OpenEMR-Role-Assignment-Ids").split(","))
+            java.util.List<UUID> roles = java.util.Arrays.stream(requiredHeader(request, "X-OpenEMR-Role-Assignment-Ids").split(","))
                     .map(String::trim)
                     .filter(value -> !value.isEmpty())
                     .map(UUID::fromString)

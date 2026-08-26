@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { InfectionMonitoringEventWire } from '../../generated/contracts';
-import { issueInfectionLease, listInfectionMonitoringEvents, reportInfectionMonitoringEvent, resolveInfectionMonitoringEvent } from '../../api/quality';
+import { issueInfectionEncounterLease, issueInfectionLease, listInfectionMonitoringEvents, reportInfectionMonitoringEvent, resolveInfectionMonitoringEvent } from '../../api/quality';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -11,13 +11,18 @@ const leaseQuery = useQuery({
   queryFn: () => issueInfectionLease('INFECTION_MONITORING'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
+const writeLeaseQuery = useQuery({
+  queryKey: ['quality', 'infection', 'write-lease'],
+  queryFn: () => issueInfectionEncounterLease('INFECTION_MONITORING'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
 const eventsQuery = useQuery({
   queryKey: ['quality', 'infection', 'events'],
   queryFn: () => listInfectionMonitoringEvents(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value), retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? eventsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? eventsQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? eventsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? eventsQuery.error.value) : null);
 const events = computed(() => eventsQuery.data.value ?? []);
 
 const form = reactive({ infectionType: 'SURGICAL_SITE', organismCode: '', reportedAt: new Date().toISOString() });
@@ -30,7 +35,7 @@ function statusLabel(status: string) {
 }
 
 async function report() {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = 'report'; notice.value = '';
   try {
@@ -43,7 +48,7 @@ async function report() {
 }
 
 async function resolve(event: InfectionMonitoringEventWire, resolution: 'CONFIRM' | 'REFUTE') {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = event.infection_event_id; notice.value = '';
   try {
@@ -59,7 +64,7 @@ async function resolve(event: InfectionMonitoringEventWire, resolution: 'CONFIRM
     <div class="page-heading admin-heading">
       <div><p class="eyebrow">质量与安全 / 院感</p><h1>院感监测线索</h1><p>上报、确认与排除均留不可变证据；确认/排除必填结论。</p></div>
     </div>
-    <ClinicalPageState v-if="leaseQuery.isPending.value || eventsQuery.isPending.value" kind="loading" message="正在读取院感线索" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || eventsQuery.isPending.value" kind="loading" message="正在读取院感线索" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="eventsQuery.refetch()" />
     <template v-else>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>

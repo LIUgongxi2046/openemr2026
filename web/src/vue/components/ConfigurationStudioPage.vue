@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 
 import type { ConfigurationItemWire, ConfigurationLifecycleRequestWire } from '../../generated/contracts';
 import {
@@ -31,6 +31,29 @@ const issue = computed(() => (leaseQuery.error.value ?? itemsQuery.error.value)
   ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value)
   : null);
 const items = computed(() => itemsQuery.data.value ?? []);
+const adminKeyword = ref('');
+const adminScopeStatus = ref('ALL');
+const adminSort = ref<'RISK' | 'RECENT' | 'NAME'>('RISK');
+const displayItems = computed(() => {
+  let result = props.definition.routeId === 'admin-parameters'
+    ? items.value.filter((item) => !item.config_key.startsWith('auth-'))
+    : [...items.value];
+  if (isAdministrationView.value && adminKeyword.value.trim()) {
+    const needle = adminKeyword.value.trim().toLocaleLowerCase();
+    result = result.filter((item) => `${item.config_key} ${item.display_name}`.toLocaleLowerCase().includes(needle));
+  }
+  if (props.definition.routeId === 'admin-parameters' && adminScopeStatus.value !== 'ALL') {
+    result = result.filter((item) => payloadText(item, 'scope') === adminScopeStatus.value);
+  }
+  if (props.definition.routeId === 'admin-jobs' && adminScopeStatus.value !== 'ALL') {
+    result = result.filter((item) => item.status === adminScopeStatus.value);
+  }
+  return result.sort((left, right) => adminSort.value === 'NAME'
+    ? left.display_name.localeCompare(right.display_name, 'zh-CN')
+    : adminSort.value === 'RECENT'
+      ? new Date(right.updated_at ?? 0).getTime() - new Date(left.updated_at ?? 0).getTime()
+      : itemRisk(right) - itemRisk(left));
+});
 const selected = ref<ConfigurationItemWire | null>(null);
 const form = reactive({ name: '', key: '', description: '' });
 const values = reactive<Record<string, string>>(Object.fromEntries(
@@ -39,12 +62,48 @@ const values = reactive<Record<string, string>>(Object.fromEntries(
 const reason = ref('完成配置生命周期操作');
 const busy = ref('');
 const notice = ref('');
+const showEditor = ref(false);
+const showAdministrationAnalysis = ref(false);
+const administrationAnalysisMode = ref<'PRIMARY' | 'CHANNELS'>('PRIMARY');
+const isAdministrationView = computed(() => ['admin-master-data', 'admin-parameters', 'admin-jobs'].includes(props.definition.routeId));
+const isMedicalAiView = computed(() => ['agent-compose', 'agent-context', 'agent-evals', 'ai-assistant-policy'].includes(props.definition.routeId));
+const adminVariant = computed(() => props.definition.routeId.replace('admin-', ''));
+const currentItem = computed(() => selected.value && displayItems.value.some((item) => item.config_id === selected.value?.config_id)
+  ? selected.value : displayItems.value[0] ?? null);
+const masterDataDomains = computed(() => displayItems.value.filter((item) => item.config_key !== 'hospital-master-data-v1'));
+const adminCreateLabel = computed(() => ({
+  'admin-master-data': '新建主数据变更', 'admin-parameters': '创建参数变更', 'admin-jobs': '新建批量任务',
+} as Record<string, string>)[props.definition.routeId] ?? '新建草稿');
+const adminSecondaryLabel = computed(() => ({
+  'admin-master-data': '同步对账', 'admin-parameters': '作用域差异', 'admin-jobs': '调度策略',
+} as Record<string, string>)[props.definition.routeId] ?? '刷新');
+const administrationAnalysisTitle = computed(() => administrationAnalysisMode.value === 'CHANNELS' ? '通知渠道' : ({
+  'admin-master-data': '同步对账结果', 'admin-parameters': '作用域差异', 'admin-jobs': '调度策略',
+} as Record<string, string>)[props.definition.routeId] ?? '配置分析');
+const administrationAnalysisRows = computed(() => displayItems.value.map((item) => ({
+  key: item.config_key,
+  name: item.display_name,
+  left: administrationAnalysisMode.value === 'CHANNELS' ? payloadText(item, 'notification_channels', '未配置') : adminVariant.value === 'master-data' ? payloadText(item, 'authoritative_source', payloadText(item, 'code_system')) : adminVariant.value === 'parameters' ? payloadText(item, 'scope') : payloadText(item, 'schedule'),
+  right: administrationAnalysisMode.value === 'CHANNELS' ? payloadText(item, 'channel_owner', '未指定责任人') : adminVariant.value === 'master-data' ? validationLabel[item.validation_state] : adminVariant.value === 'parameters' ? payloadText(item, 'inheritance') : payloadText(item, 'retry_policy'),
+  state: item.validation_state === 'INVALID' ? '需处理' : item.status === 'ACTIVE' ? '已生效' : statusLabel[item.status],
+})));
+const administrationAnalysisHeaders = computed(() => administrationAnalysisMode.value === 'CHANNELS'
+  ? ['通知渠道', '渠道责任人']
+  : adminVariant.value === 'master-data' ? ['权威来源', '对账校验']
+    : adminVariant.value === 'parameters' ? ['作用域', '继承链'] : ['调度', '失败重试']);
 
 const statusLabel: Readonly<Record<string, string>> = Object.freeze({
   DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已批准', ACTIVE: '已发布', ARCHIVED: '已归档',
 });
 const validationLabel: Readonly<Record<string, string>> = Object.freeze({
   NOT_VALIDATED: '未校验', VALID: '校验通过', INVALID: '校验失败',
+});
+const approvalLabel: Readonly<Record<string, string>> = Object.freeze({
+  NOT_REQUIRED: '暂无审批', PENDING: '待审批', APPROVED: '已批准', REJECTED: '已驳回',
+});
+const lifecycleActionLabel: Readonly<Record<string, string>> = Object.freeze({
+  VALIDATE: '静态校验', SUBMIT: '提交审批', APPROVE: '职责分离批准',
+  PUBLISH: '发布', ROLLBACK: '回退',
 });
 
 const previewEntries = computed(() => props.definition.fields.map((field) => ({
@@ -85,6 +144,10 @@ function selectItem(item: ConfigurationItemWire) {
   notice.value = '';
 }
 
+watch(displayItems, (nextItems) => {
+  if (!selected.value && nextItems[0]) selectItem(nextItems[0]);
+}, { immediate: true });
+
 function resetDraft() {
   selected.value = null;
   form.name = '';
@@ -92,6 +155,31 @@ function resetDraft() {
   form.description = '';
   for (const field of props.definition.fields) values[field.key] = field.defaultValue;
   notice.value = '';
+  showEditor.value = true;
+}
+
+function openAdministrationAnalysis(mode: 'PRIMARY' | 'CHANNELS') {
+  administrationAnalysisMode.value = mode;
+  showAdministrationAnalysis.value = true;
+}
+
+function payloadText(item: ConfigurationItemWire, key: string, fallback = '—') {
+  const value = item.payload?.[key];
+  if (Array.isArray(value)) return value.join('、');
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  return value == null || value === '' ? fallback : String(value);
+}
+
+function parameterRisk(item: ConfigurationItemWire) {
+  if (/retention|archive/i.test(item.config_key)) return '保护';
+  if (/session|secret|password|auth|credential/i.test(item.config_key)) return '高';
+  return '中';
+}
+
+function itemRisk(item: ConfigurationItemWire) {
+  if (item.validation_state === 'INVALID') return 100;
+  if (item.status !== 'ACTIVE') return 50;
+  return parameterRisk(item) === '保护' ? 30 : parameterRisk(item) === '高' ? 20 : 10;
 }
 
 async function save() {
@@ -127,7 +215,7 @@ async function lifecycle(action: ConfigurationLifecycleRequestWire['action']) {
       action, expected_version: item.row_version, reason: reason.value.trim(),
     });
     selectItem(result);
-    notice.value = `${action} 已完成，当前版本 v${result.row_version}。`;
+    notice.value = `${lifecycleActionLabel[action] ?? action}已完成，当前版本 v${result.row_version}。`;
     await itemsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -137,6 +225,30 @@ async function lifecycle(action: ConfigurationLifecycleRequestWire['action']) {
 function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—';
 }
+
+function downloadJobDifference() {
+  const item = currentItem.value;
+  if (!item || adminVariant.value !== 'jobs') return;
+  const evidence = {
+    exported_at: new Date().toISOString(),
+    config_id: item.config_id,
+    task_code: item.config_key,
+    task_name: item.display_name,
+    status: statusLabel[item.status] ?? '未知状态',
+    validation: validationLabel[item.validation_state] ?? '未知校验状态',
+    reconciliation_rule: item.payload?.reconciliation_rule ?? null,
+    retry_policy: item.payload?.retry_policy ?? null,
+    notification_channels: item.payload?.notification_channels ?? [],
+    database_version: item.row_version,
+  };
+  const href = URL.createObjectURL(new Blob([JSON.stringify(evidence, null, 2)], { type: 'application/json;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = href;
+  anchor.download = `${item.config_key}-差异与修正清单.json`;
+  anchor.click();
+  URL.revokeObjectURL(href);
+  notice.value = '已导出当前数据库版本的差异、对账与失败重试信息。';
+}
 </script>
 
 <template>
@@ -144,27 +256,52 @@ function formatDate(value: string | null | undefined) {
     <div class="page-head">
       <div class="page-title"><p class="eyebrow">配置生命周期 / 结构化领域工作台</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div>
       <div class="head-actions">
-        <button class="btn" type="button" @click="itemsQuery.refetch()">刷新</button>
-        <button class="btn primary" type="button" @click="resetDraft">新建草稿</button>
+        <button v-if="!isAdministrationView" class="btn" type="button" @click="itemsQuery.refetch()">刷新</button>
+        <button v-else-if="adminVariant === 'jobs'" class="btn" type="button" @click="openAdministrationAnalysis('CHANNELS')">通知渠道</button>
+        <button v-if="isAdministrationView" class="btn" type="button" @click="openAdministrationAnalysis('PRIMARY')">{{ adminSecondaryLabel }}</button>
+        <button class="btn primary" type="button" @click="resetDraft">{{ isAdministrationView ? adminCreateLabel : '新建草稿' }}</button>
       </div>
     </div>
 
-    <div class="inline-notice config-safety" role="note">
-      <strong>安全契约</strong><span>{{ definition.safetyNote }}</span>
+    <div v-if="!isAdministrationView || showEditor" class="inline-notice config-safety" role="note">
+      <strong>{{ isMedicalAiView ? '发布校验' : '安全契约' }}</strong><span>{{ definition.safetyNote }}</span>
     </div>
     <div v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" class="card"><div class="card-body">正在读取配置版本…</div></div>
     <div v-else-if="issue" class="card"><div class="card-body">加载失败：{{ issue.code }} {{ issue.message }}</div></div>
     <template v-else>
       <div v-if="notice" class="inline-notice" role="status">{{ notice }}</div>
-      <div class="config-studio-layout">
+      <section v-if="isAdministrationView && showAdministrationAnalysis" class="admin-panel admin-analysis-panel"><header><div><h2>{{ administrationAnalysisTitle }}</h2><p>结果从当前数据库配置版本、作用域、校验状态和调度字段实时解析。</p></div><button class="task-action" type="button" @click="showAdministrationAnalysis = false">关闭</button></header><div class="admin-table-wrap"><table class="table"><thead><tr><th>配置</th><th>{{ administrationAnalysisHeaders[0] }}</th><th>{{ administrationAnalysisHeaders[1] }}</th><th>结论</th></tr></thead><tbody><tr v-for="row in administrationAnalysisRows" :key="row.key"><td><b>{{ row.name }}</b><br><span class="meta">{{ row.key }}</span></td><td>{{ row.left }}</td><td>{{ row.right }}</td><td><span class="status" :class="row.state === '已生效' ? 'green' : row.state === '需处理' ? 'red' : 'amber'">{{ row.state }}</span></td></tr></tbody></table></div></section>
+      <template v-if="isAdministrationView && !showEditor">
+        <template v-if="adminVariant === 'master-data'">
+          <div class="admin-domain-grid"><button v-for="item in masterDataDomains" :key="item.config_id" class="domain-data-card" type="button" @click="selectItem(item)"><b>{{ item.display_name }}</b><strong>v{{ item.row_version }}</strong><span>权威方：{{ payloadText(item, 'authoritative_source', payloadText(item, 'code_system', '机构数据库')) }}</span><div><em>{{ validationLabel[item.validation_state] }}</em><i class="status" :class="item.validation_state === 'INVALID' ? 'red' : item.status === 'ACTIVE' ? 'green' : 'amber'">{{ statusLabel[item.status] }}</i></div></button></div>
+          <div class="grid admin-overview"><section class="card"><div class="card-head">主数据版本与同步冲突</div><table class="table"><thead><tr><th>编码/名称</th><th>编码体系</th><th>层级</th><th>校验</th><th>状态</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.config_key }}</span></td><td>{{ payloadText(item, 'code_system') }}</td><td>{{ payloadText(item, 'hierarchy') }}</td><td>{{ validationLabel[item.validation_state] }}</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td></tr></tbody></table></section><aside v-if="currentItem" class="card"><div class="card-head">主从与保护字段</div><div class="card-body"><div v-for="field in definition.fields" :key="field.key" class="folder-row">{{ field.label }}<span>{{ payloadText(currentItem, field.key) }}</span></div><div class="folder-row">数据库版本<span>v{{ currentItem.row_version }}</span></div><div class="folder-row">最后更新<span>{{ formatDate(currentItem.updated_at) }}</span></div><div class="notice info">主数据保留领域属性、状态、版本和审批责任；已被临床事实引用的值不得物理删除。</div><button class="btn primary" type="button" style="width:100%" @click="showEditor = true">打开版本管理</button></div></aside></div>
+        </template>
+        <div v-else class="grid" :class="adminVariant === 'parameters' ? 'parameter-layout' : 'jobs-layout'">
+          <section class="card">
+            <div class="toolbar">
+              <input v-model="adminKeyword" class="search" :placeholder="adminVariant === 'parameters' ? '参数 Key 或名称' : '任务编码或名称'" />
+              <select v-model="adminScopeStatus" class="select">
+                <option value="ALL">{{ adminVariant === 'parameters' ? '全部作用域' : '全部状态' }}</option>
+                <template v-if="adminVariant === 'parameters'"><option value="GLOBAL">全局</option><option value="ORGANIZATION">机构</option><option value="FACILITY">院区</option></template>
+                <template v-else><option value="DRAFT">草稿</option><option value="PENDING_APPROVAL">待审批</option><option value="APPROVED">已批准</option><option value="ACTIVE">已发布</option></template>
+              </select>
+              <select v-model="adminSort" class="select"><option value="RISK">风险优先</option><option value="RECENT">最近更新</option><option value="NAME">名称排序</option></select>
+            </div>
+            <table v-if="adminVariant === 'parameters'" class="table"><thead><tr><th>参数</th><th>类型</th><th>最终值</th><th>来源</th><th>风险</th><th>状态</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.config_key }}</span></td><td>{{ payloadText(item, 'value_type') }}</td><td>{{ payloadText(item, 'configured_value', payloadText(item, 'scope')) }}</td><td>{{ payloadText(item, 'scope') }}</td><td>{{ parameterRisk(item) }}</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td></tr></tbody></table>
+            <table v-else class="table"><thead><tr><th>任务</th><th>进度/批次</th><th>状态</th><th>结果/异常</th><th>责任人</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.config_key }}</span></td><td>{{ payloadText(item, 'batch_size') }} 条/批</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td><td>{{ payloadText(item, 'reconciliation_rule') }}</td><td>{{ payloadText(item, 'channel_owner', '未指定') }}</td></tr></tbody></table>
+          </section>
+          <aside v-if="currentItem" class="card"><div class="card-head">{{ currentItem.display_name }} · 生效解析</div><div class="card-body"><div class="inherit-chain"><div v-for="field in definition.fields" :key="field.key"><span>{{ field.label }}</span><b>{{ payloadText(currentItem, field.key) }}</b><em class="status blue">→</em></div></div><div class="notice rule"><div class="notice-title">{{ validationLabel[currentItem.validation_state] }}</div>{{ definition.safetyNote }}</div><button v-if="adminVariant === 'parameters'" class="btn" type="button" style="width:100%" :disabled="currentItem.status !== 'ACTIVE' || Boolean(busy)" @click="lifecycle('ROLLBACK')">回滚到上一已发布版本</button><button v-else class="btn primary" type="button" style="width:100%" @click="downloadJobDifference">下载差异并修正</button><button class="btn primary" type="button" style="width:100%" @click="showEditor = true">打开版本与生命周期</button></div></aside>
+        </div>
+      </template>
+      <div v-if="!isAdministrationView || showEditor" class="config-studio-layout">
         <section class="card config-list-panel">
-          <div class="card-head"><div><h2>版本台账</h2><p>{{ definition.configType }} · 全程审计 + Outbox</p></div><span class="status">{{ items.length }} 项</span></div>
-          <div v-if="items.length === 0" class="empty-state"><span>配</span><p>暂无配置草稿</p><small>从右侧结构化编辑器创建</small></div>
+          <div class="card-head"><div><h2>版本台账</h2><p>{{ isMedicalAiView ? `${definition.title} · 版本留痕与操作记录` : `${definition.configType} · 全程审计 + Outbox` }}</p></div><span class="status">{{ displayItems.length }} 项</span></div>
+          <div v-if="displayItems.length === 0" class="empty-state"><span>配</span><p>暂无配置草稿</p><small>从右侧结构化编辑器创建</small></div>
           <div v-else class="table-wrap">
             <table class="table">
               <thead><tr><th>名称 / 键</th><th>生命周期</th><th>版本</th><th>更新</th></tr></thead>
               <tbody>
-                <tr v-for="item in items" :key="item.config_id" :class="{ selected: selected?.config_id === item.config_id }" @click="selectItem(item)">
+                <tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: selected?.config_id === item.config_id }" @click="selectItem(item)">
                   <td><button class="config-row-button" type="button" @click.stop="selectItem(item)"><strong>{{ item.display_name }}</strong><code>{{ item.config_key }}</code></button></td>
                   <td><span class="status" :class="item.status === 'ACTIVE' ? 'ok' : item.validation_state === 'INVALID' ? 'critical' : ''">{{ statusLabel[item.status] }}</span><small>{{ validationLabel[item.validation_state] }}</small></td>
                   <td>v{{ item.row_version }}</td><td>{{ formatDate(item.updated_at) }}</td>
@@ -175,7 +312,7 @@ function formatDate(value: string | null | undefined) {
         </section>
 
         <section class="card config-editor-panel">
-          <div class="card-head"><div><h2>{{ selected ? '编辑草稿' : '创建配置' }}</h2><p>版本化 Schema v1；发布后仅能通过回退恢复</p></div><span v-if="selected" class="status">v{{ selected.row_version }}</span></div>
+          <div class="card-head"><div><h2>{{ selected ? '编辑草稿' : '创建配置' }}</h2><p>{{ isMedicalAiView ? '结构版本 v1；发布后可通过版本回退恢复' : '版本化 Schema v1；发布后仅能通过回退恢复' }}</p></div><span v-if="selected" class="status">v{{ selected.row_version }}</span></div>
           <form class="config-form" @submit.prevent="save">
             <div class="config-core-fields">
               <label><span>名称</span><input v-model="form.name" required :disabled="Boolean(selected && selected.status !== 'DRAFT')" /></label>
@@ -195,9 +332,9 @@ function formatDate(value: string | null | undefined) {
         </section>
       </div>
 
-      <div class="config-studio-lower">
+      <div v-if="!isAdministrationView || showEditor" class="config-studio-lower">
         <section class="card config-preview">
-          <div class="card-head"><div><h2>{{ definition.previewTitle }}</h2><p>当前草稿的可视化语义预览</p></div><span class="status">合成预览</span></div>
+          <div class="card-head"><div><h2>{{ definition.previewTitle }}</h2><p>当前草稿的可视化语义预览</p></div><span class="status">结构化预览</span></div>
           <div class="config-preview-board">
             <article v-for="entry in previewEntries" :key="entry.label"><strong>{{ entry.label }}</strong><div><span v-for="value in entry.values" :key="value">{{ value }}</span></div></article>
           </div>
@@ -209,7 +346,7 @@ function formatDate(value: string | null | undefined) {
           <div v-if="selected" class="lifecycle-summary">
             <span>状态 <strong>{{ statusLabel[selected.status] }}</strong></span>
             <span>校验 <strong>{{ validationLabel[selected.validation_state] }}</strong></span>
-            <span>审批 <strong>{{ selected.approval_state }}</strong></span>
+            <span>审批 <strong>{{ approvalLabel[selected.approval_state] ?? '未知状态' }}</strong></span>
             <span>发布 <strong>{{ formatDate(selected.published_at) }}</strong></span>
           </div>
           <ul v-if="selected?.validation_errors?.length" class="validation-errors"><li v-for="error in selected.validation_errors" :key="error">{{ error }}</li></ul>

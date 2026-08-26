@@ -48,6 +48,21 @@ final class AppointmentController {
                 .body(appointments.createScheduleSlot(identity, idempotencyKey, command));
     }
 
+    @GetMapping("/schedule-slots")
+    ResponseEntity<List<ScheduleSlotWire>> listSlots(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestParam(value = "from_date", required = false) LocalDate fromDate,
+            @RequestParam(value = "department_id", required = false) UUID departmentId,
+            @RequestParam(value = "doctor_user_id", required = false) UUID doctorUserId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(appointments.listScheduleSlots(
+                        identity, facilityId, fromDate == null ? LocalDate.now() : fromDate,
+                        departmentId, doctorUserId));
+    }
+
     @GetMapping("/appointments")
     ResponseEntity<List<AppointmentWire>> list(
             HttpServletRequest request,

@@ -3,6 +3,8 @@ package org.openemr2026.appointment;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -47,28 +49,47 @@ final class AppointmentService {
                 || request.startTime().isBlank() || request.endTime().isBlank()) {
             throw invalid("start_time and end_time are required");
         }
+        UUID departmentId = request.departmentId() == null
+                ? defaultDepartment(identity.tenantId(), request.facilityId()) : request.departmentId();
+        UUID doctorUserId = request.doctorUserId() == null ? identity.userId() : request.doctorUserId();
+        requireSlotScope(identity.tenantId(), request.facilityId(), departmentId, doctorUserId);
         return transactions.execute(status -> {
             String requestHash = sha256(request.organizationId() + "|" + request.facilityId() + "|"
-                    + request.departmentId() + "|" + request.visitType() + "|" + request.slotDate() + "|"
+                    + departmentId + "|" + doctorUserId + "|" + request.visitType() + "|" + request.slotDate() + "|"
                     + request.startTime() + "|" + request.endTime() + "|" + request.totalCapacity());
             beginCommand(identity, "SCHEDULE_SLOT_CREATE", idempotencyKey, requestHash);
             UUID slotId = UUID.randomUUID();
             jdbc.sql("""
                     insert into schedule_slot(
                       tenant_id, schedule_slot_id, organization_id, facility_id, department_id,
-                      visit_type, slot_date, start_time, end_time, total_capacity, booked_count, status)
-                    values (:tenant, :slot, :organization, :facility, :department,
+                      doctor_user_id, visit_type, slot_date, start_time, end_time, total_capacity, booked_count, status)
+                    values (:tenant, :slot, :organization, :facility, :department, :doctor,
                       :visit_type, :slot_date, cast(:start_time as time), cast(:end_time as time),
                       :capacity, 0, 'OPEN')
                     """).param("tenant", identity.tenantId()).param("slot", slotId)
                     .param("organization", request.organizationId()).param("facility", request.facilityId())
-                    .param("department", request.departmentId()).param("visit_type", request.visitType().name())
+                    .param("department", departmentId).param("doctor", doctorUserId)
+                    .param("visit_type", request.visitType().name())
                     .param("slot_date", request.slotDate()).param("start_time", request.startTime())
                     .param("end_time", request.endTime()).param("capacity", request.totalCapacity()).update();
             appendEvidence(identity, null, slotId, 1, "SCHEDULE_SLOT_CREATED", "ScheduleSlotCreated");
             completeCommand(identity, "SCHEDULE_SLOT_CREATE", idempotencyKey, slotId);
             return slot(identity.tenantId(), slotId, request.facilityId());
         });
+    }
+
+    List<ScheduleSlotWire> listScheduleSlots(
+            ClinicalIdentity identity, UUID facilityId, LocalDate fromDate, UUID departmentId, UUID doctorUserId) {
+        return jdbc.sql("""
+                select schedule_slot_id from schedule_slot
+                where tenant_id = :tenant and facility_id = :facility and slot_date >= :from_date
+                  and department_id is not null and doctor_user_id is not null
+                  and (cast(:department as uuid) is null or department_id = cast(:department as uuid))
+                  and (cast(:doctor as uuid) is null or doctor_user_id = cast(:doctor as uuid))
+                order by slot_date, start_time, department_id, doctor_user_id
+                """).param("tenant", identity.tenantId()).param("facility", facilityId)
+                .param("from_date", fromDate).param("department", departmentId).param("doctor", doctorUserId)
+                .query(UUID.class).list().stream().map(id -> slot(identity.tenantId(), id, facilityId)).toList();
     }
 
     AppointmentWire bookAppointment(
@@ -175,14 +196,53 @@ final class AppointmentService {
             ClinicalIdentity identity, UUID organizationId, UUID facilityId, UUID patientId) {
         requireActivePatient(identity.tenantId(), patientId);
         return jdbc.sql("""
-                select appointment_id from appointment
-                where tenant_id = :tenant and patient_id = :patient
-                  and organization_id = :organization and facility_id = :facility
-                order by booked_at desc, appointment_id limit 100
+                select appointment.appointment_id, appointment.schedule_slot_id, appointment.patient_id,
+                  patient.display_name as patient_display_name, patient.sex_code as patient_sex_code,
+                  patient.birth_date as patient_birth_date, appointment.organization_id,
+                  appointment.facility_id, facility.display_name facility_name,
+                  coalesce(slot.department_id, fallback_department.department_id) department_id,
+                  coalesce(department.display_name, fallback_department.display_name) department_name,
+                  coalesce(slot.doctor_user_id, fallback_doctor.user_id) doctor_user_id,
+                  coalesce(doctor.display_name, fallback_doctor.display_name) doctor_display_name,
+                  slot.slot_date, slot.start_time, slot.end_time,
+                  appointment.visit_type, appointment.source, appointment.status,
+                  appointment.booked_at, appointment.cancelled_at, appointment.encounter_id,
+                  appointment.row_version
+                from appointment
+                join patient on patient.tenant_id = appointment.tenant_id
+                  and patient.patient_id = appointment.patient_id
+                join facility on facility.tenant_id = appointment.tenant_id
+                  and facility.facility_id = appointment.facility_id
+                join schedule_slot slot on slot.tenant_id = appointment.tenant_id
+                  and slot.schedule_slot_id = appointment.schedule_slot_id
+                left join clinical_department department on department.tenant_id = slot.tenant_id
+                  and department.facility_id = slot.facility_id and department.department_id = slot.department_id
+                left join app_user doctor on doctor.tenant_id = slot.tenant_id and doctor.user_id = slot.doctor_user_id
+                left join lateral (
+                  select configured.department_id, configured.display_name
+                  from clinical_department configured
+                  where configured.tenant_id = slot.tenant_id
+                    and configured.facility_id = slot.facility_id and configured.status = 'ACTIVE'
+                  order by configured.department_code, configured.department_id limit 1
+                ) fallback_department on true
+                left join lateral (
+                  select account.user_id, account.display_name
+                  from role_assignment assignment
+                  join app_user account on account.tenant_id = assignment.tenant_id
+                    and account.user_id = assignment.user_id and account.status = 'ACTIVE'
+                  where assignment.tenant_id = slot.tenant_id
+                    and assignment.organization_id = slot.organization_id
+                    and (assignment.facility_id is null or assignment.facility_id = slot.facility_id)
+                    and assignment.status = 'ACTIVE'
+                  order by case when assignment.facility_id = slot.facility_id then 0 else 1 end,
+                    account.user_id limit 1
+                ) fallback_doctor on true
+                where appointment.tenant_id = :tenant and appointment.patient_id = :patient
+                  and appointment.organization_id = :organization and appointment.facility_id = :facility
+                order by appointment.booked_at desc, appointment.appointment_id limit 100
                 """).param("tenant", identity.tenantId()).param("patient", patientId)
                 .param("organization", organizationId).param("facility", facilityId)
-                .query(UUID.class).list().stream()
-                .map(id -> appointment(identity.tenantId(), id, patientId, facilityId)).toList();
+                .query((rs, row) -> mapAppointment(rs)).list();
     }
 
     WaitingQueueEntryWire checkIn(
@@ -366,17 +426,22 @@ final class AppointmentService {
 
     private WaitingQueueEntryWire queueEntry(UUID tenantId, UUID entryId, UUID facilityId) {
         return jdbc.sql("""
-                select q.waiting_queue_entry_id, q.appointment_id, a.patient_id, a.encounter_id,
+                select q.waiting_queue_entry_id, q.appointment_id, a.patient_id,
+                  patient.display_name as patient_display_name, patient.sex_code as patient_sex_code,
+                  patient.birth_date as patient_birth_date, a.encounter_id,
                   q.facility_id, q.queue_date, q.sequence_no, q.status, q.called_at,
                   q.called_by, q.row_version
                 from waiting_queue_entry q
                 join appointment a on a.tenant_id = q.tenant_id and a.appointment_id = q.appointment_id
+                join patient on patient.tenant_id = a.tenant_id and patient.patient_id = a.patient_id
                 where q.tenant_id = :tenant and q.waiting_queue_entry_id = :entry and q.facility_id = :facility
                 """).param("tenant", tenantId).param("entry", entryId).param("facility", facilityId)
                 .query((rs, row) -> new WaitingQueueEntryWire(
                         rs.getObject("waiting_queue_entry_id", UUID.class),
                         rs.getObject("appointment_id", UUID.class),
-                        rs.getObject("patient_id", UUID.class), rs.getObject("encounter_id", UUID.class),
+                        rs.getObject("patient_id", UUID.class), rs.getString("patient_display_name"),
+                        rs.getString("patient_sex_code"), rs.getObject("patient_birth_date", LocalDate.class),
+                        rs.getObject("encounter_id", UUID.class),
                         rs.getObject("facility_id", UUID.class),
                         rs.getObject("queue_date", LocalDate.class), rs.getInt("sequence_no"),
                         WaitingQueueEntryWire.StatusValue.valueOf(rs.getString("status")),
@@ -388,15 +453,23 @@ final class AppointmentService {
 
     private ScheduleSlotWire slot(UUID tenantId, UUID slotId, UUID facilityId) {
         return jdbc.sql("""
-                select schedule_slot_id, organization_id, facility_id, department_id,
-                  visit_type, slot_date, start_time, end_time, total_capacity, booked_count,
-                  status, row_version
-                from schedule_slot where tenant_id = :tenant and schedule_slot_id = :slot
-                  and facility_id = :facility
+                select slot.schedule_slot_id, slot.organization_id, slot.facility_id, slot.department_id,
+                  slot.doctor_user_id, facility.display_name facility_name,
+                  department.display_name department_name, doctor.display_name doctor_display_name,
+                  slot.visit_type, slot.slot_date, slot.start_time, slot.end_time, slot.total_capacity,
+                  slot.booked_count, slot.status, slot.row_version
+                from schedule_slot slot
+                join facility on facility.tenant_id = slot.tenant_id and facility.facility_id = slot.facility_id
+                join clinical_department department on department.tenant_id = slot.tenant_id
+                  and department.facility_id = slot.facility_id and department.department_id = slot.department_id
+                join app_user doctor on doctor.tenant_id = slot.tenant_id and doctor.user_id = slot.doctor_user_id
+                where slot.tenant_id = :tenant and slot.schedule_slot_id = :slot and slot.facility_id = :facility
                 """).param("tenant", tenantId).param("slot", slotId).param("facility", facilityId)
                 .query((rs, row) -> new ScheduleSlotWire(
                         rs.getObject("schedule_slot_id", UUID.class), rs.getObject("organization_id", UUID.class),
                         rs.getObject("facility_id", UUID.class), rs.getObject("department_id", UUID.class),
+                        rs.getObject("doctor_user_id", UUID.class), rs.getString("facility_name"),
+                        rs.getString("department_name"), rs.getString("doctor_display_name"),
                         ScheduleSlotWire.VisitTypeValue.valueOf(rs.getString("visit_type")),
                         rs.getObject("slot_date", LocalDate.class), rs.getObject("start_time", java.sql.Time.class).toString(),
                         rs.getObject("end_time", java.sql.Time.class).toString(), rs.getInt("total_capacity"),
@@ -407,27 +480,77 @@ final class AppointmentService {
 
     private AppointmentWire appointment(UUID tenantId, UUID appointmentId, UUID patientId, UUID facilityId) {
         return jdbc.sql("""
-                select appointment_id, schedule_slot_id, patient_id, organization_id, facility_id,
-                  visit_type, source, status, booked_at, cancelled_at, encounter_id, row_version
-                from appointment where tenant_id = :tenant and appointment_id = :appointment
-                  and patient_id = :patient and facility_id = :facility
+                select appointment.appointment_id, appointment.schedule_slot_id, appointment.patient_id,
+                  patient.display_name as patient_display_name, patient.sex_code as patient_sex_code,
+                  patient.birth_date as patient_birth_date, appointment.organization_id,
+                  appointment.facility_id, facility.display_name facility_name,
+                  coalesce(slot.department_id, fallback_department.department_id) department_id,
+                  coalesce(department.display_name, fallback_department.display_name) department_name,
+                  coalesce(slot.doctor_user_id, fallback_doctor.user_id) doctor_user_id,
+                  coalesce(doctor.display_name, fallback_doctor.display_name) doctor_display_name,
+                  slot.slot_date, slot.start_time, slot.end_time,
+                  appointment.visit_type, appointment.source,
+                  appointment.status, appointment.booked_at, appointment.cancelled_at,
+                  appointment.encounter_id, appointment.row_version
+                from appointment
+                join patient on patient.tenant_id = appointment.tenant_id
+                  and patient.patient_id = appointment.patient_id
+                join facility on facility.tenant_id = appointment.tenant_id
+                  and facility.facility_id = appointment.facility_id
+                join schedule_slot slot on slot.tenant_id = appointment.tenant_id
+                  and slot.schedule_slot_id = appointment.schedule_slot_id
+                left join clinical_department department on department.tenant_id = slot.tenant_id
+                  and department.facility_id = slot.facility_id and department.department_id = slot.department_id
+                left join app_user doctor on doctor.tenant_id = slot.tenant_id and doctor.user_id = slot.doctor_user_id
+                left join lateral (
+                  select configured.department_id, configured.display_name
+                  from clinical_department configured
+                  where configured.tenant_id = slot.tenant_id
+                    and configured.facility_id = slot.facility_id
+                    and configured.status = 'ACTIVE'
+                  order by configured.department_code, configured.department_id
+                  limit 1
+                ) fallback_department on true
+                left join lateral (
+                  select account.user_id, account.display_name
+                  from role_assignment assignment
+                  join app_user account on account.tenant_id = assignment.tenant_id
+                    and account.user_id = assignment.user_id and account.status = 'ACTIVE'
+                  where assignment.tenant_id = slot.tenant_id
+                    and assignment.organization_id = slot.organization_id
+                    and (assignment.facility_id is null or assignment.facility_id = slot.facility_id)
+                    and assignment.status = 'ACTIVE'
+                  order by case when assignment.facility_id = slot.facility_id then 0 else 1 end,
+                    account.user_id
+                  limit 1
+                ) fallback_doctor on true
+                where appointment.tenant_id = :tenant and appointment.appointment_id = :appointment
+                  and appointment.patient_id = :patient and appointment.facility_id = :facility
                 """).param("tenant", tenantId).param("appointment", appointmentId)
                 .param("patient", patientId).param("facility", facilityId)
-                .query((rs, row) -> {
-                    long version = rs.getLong("row_version");
-                    return new AppointmentWire(
-                            rs.getObject("appointment_id", UUID.class), rs.getObject("schedule_slot_id", UUID.class),
-                            rs.getObject("patient_id", UUID.class), rs.getObject("organization_id", UUID.class),
-                            rs.getObject("facility_id", UUID.class),
-                            AppointmentWire.VisitTypeValue.valueOf(rs.getString("visit_type")),
-                            AppointmentWire.SourceValue.valueOf(rs.getString("source")),
-                            AppointmentWire.StatusValue.valueOf(rs.getString("status")),
-                            rs.getObject("booked_at", OffsetDateTime.class).toInstant(),
-                            rs.getObject("cancelled_at", OffsetDateTime.class) == null
-                                    ? null : rs.getObject("cancelled_at", OffsetDateTime.class).toInstant(),
-                            rs.getObject("encounter_id", UUID.class),
-                            version, sha256(appointmentId + "|" + version));
-                }).optional().orElseThrow(() -> contextDenied());
+                .query((rs, row) -> mapAppointment(rs)).optional().orElseThrow(() -> contextDenied());
+    }
+
+    private AppointmentWire mapAppointment(ResultSet rs) throws SQLException {
+        UUID appointmentId = rs.getObject("appointment_id", UUID.class);
+        long version = rs.getLong("row_version");
+        OffsetDateTime cancelledAt = rs.getObject("cancelled_at", OffsetDateTime.class);
+        return new AppointmentWire(
+                appointmentId, rs.getObject("schedule_slot_id", UUID.class),
+                rs.getObject("patient_id", UUID.class), rs.getString("patient_display_name"),
+                rs.getString("patient_sex_code"), rs.getObject("patient_birth_date", LocalDate.class),
+                rs.getObject("organization_id", UUID.class), rs.getObject("facility_id", UUID.class),
+                rs.getString("facility_name"), rs.getObject("department_id", UUID.class),
+                rs.getString("department_name"), rs.getObject("doctor_user_id", UUID.class),
+                rs.getString("doctor_display_name"), rs.getObject("slot_date", LocalDate.class),
+                rs.getObject("start_time", java.sql.Time.class).toString(),
+                rs.getObject("end_time", java.sql.Time.class).toString(),
+                AppointmentWire.VisitTypeValue.valueOf(rs.getString("visit_type")),
+                AppointmentWire.SourceValue.valueOf(rs.getString("source")),
+                AppointmentWire.StatusValue.valueOf(rs.getString("status")),
+                rs.getObject("booked_at", OffsetDateTime.class).toInstant(),
+                cancelledAt == null ? null : cancelledAt.toInstant(), rs.getObject("encounter_id", UUID.class),
+                version, sha256(appointmentId + "|" + version));
     }
 
     private void requireActivePatient(UUID tenantId, UUID patientId) {
@@ -436,6 +559,27 @@ final class AppointmentService {
                   and status in ('ACTIVE', 'PENDING_VERIFICATION')
                 """).param("tenant", tenantId).param("patient", patientId).query(Long.class).single();
         if (count != 1) throw contextDenied();
+    }
+
+    private UUID defaultDepartment(UUID tenantId, UUID facilityId) {
+        return jdbc.sql("""
+                select department_id from clinical_department
+                where tenant_id = :tenant and facility_id = :facility and status = 'ACTIVE'
+                order by department_code limit 1
+                """).param("tenant", tenantId).param("facility", facilityId).query(UUID.class)
+                .optional().orElseThrow(() -> invalid("department_id is required"));
+    }
+
+    private void requireSlotScope(UUID tenantId, UUID facilityId, UUID departmentId, UUID doctorUserId) {
+        long count = jdbc.sql("""
+                select count(*) from clinical_department department
+                join app_user doctor on doctor.tenant_id = department.tenant_id
+                where department.tenant_id = :tenant and department.facility_id = :facility
+                  and department.department_id = :department and department.status = 'ACTIVE'
+                  and doctor.user_id = :doctor and doctor.status = 'ACTIVE'
+                """).param("tenant", tenantId).param("facility", facilityId)
+                .param("department", departmentId).param("doctor", doctorUserId).query(Long.class).single();
+        if (count != 1) throw invalid("department_id and doctor_user_id must reference active configuration");
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {

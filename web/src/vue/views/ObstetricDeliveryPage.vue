@@ -69,7 +69,7 @@ async function createRecord() {
       delivery_method: form.deliveryMethod,
       delivered_at: form.deliveredAt,
       blood_loss_ml: form.bloodLossMl,
-      labor_duration_minutes: form.laborDurationMinutes.trim() === '' ? null : Number(form.laborDurationMinutes),
+      labor_duration_minutes: String(form.laborDurationMinutes).trim() === '' ? null : Number(form.laborDurationMinutes),
       postpartum_hemorrhage: form.postpartumHemorrhage,
     });
     form.neonatePatientId = ''; form.bloodLossMl = 0;
@@ -135,7 +135,7 @@ async function createRecord() {
             </select></label>
             <label><span>分娩时间</span><input v-model="form.deliveredAt" type="datetime-local" required /></label>
             <label><span>失血量（ml）</span><input v-model.number="form.bloodLossMl" type="number" min="0" required /></label>
-            <label><span>产程时长（分）</span><input v-model="form.laborDurationMinutes" type="number" min="0" placeholder="可选" /></label>
+            <label><span>产程时长（分）</span><input v-model.number="form.laborDurationMinutes" type="number" min="0" placeholder="可选" /></label>
             <label><span>新生儿ID</span><input v-model="form.neonatePatientId" placeholder="可选 UUID" /></label>
             <label class="checkbox"><input v-model="form.postpartumHemorrhage" type="checkbox" />产后出血</label>
             <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在创建…' : '创建分娩记录' }}</button>

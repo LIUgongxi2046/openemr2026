@@ -33,8 +33,10 @@ final class AuthorizationAdministrationApiTest {
     private static final UUID ADMIN_ROLE = UUID.fromString("018f0000-0000-7000-8000-00000000aa09");
     private static final UUID REVIEWER = UUID.fromString("018f0000-0000-7000-8000-00000000aa06");
     private static final UUID REVIEWER_ROLE = UUID.fromString("018f0000-0000-7000-8000-00000000c203");
-    private static final UUID PATIENT = UUID.fromString("018f0000-0000-7000-8000-000000000001");
-    private static final UUID ENCOUNTER = UUID.fromString("018f0000-0000-7000-8000-000000000101");
+    // Keep this policy-isolation fixture separate from the canonical UI patient, which may
+    // legitimately hold active dev-synthetic emergency-access records after browser seeding.
+    private static final UUID PATIENT = UUID.fromString("018f0000-0000-7000-8000-000000000005");
+    private static final UUID ENCOUNTER = UUID.fromString("018f0000-0000-7000-8000-000000000105");
     private static final UUID DEPARTMENT = UUID.fromString("018f0000-0000-7000-8000-00000000aa08");
     private static final UUID WARD = UUID.fromString("018f0000-0000-7000-8000-00000000bb01");
 

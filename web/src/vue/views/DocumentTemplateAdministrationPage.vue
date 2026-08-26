@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import type { DocumentTemplateCreateRequestWire, DocumentTemplateWire } from '../../generated/contracts';
 import {
   clinicalContext, createDocumentTemplate, createDocumentTemplateVersion,
   deactivateDocumentTemplate, loadDocumentTemplates, publishDocumentTemplateVersion,
 } from '../../clinical-api';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminDataPager from '../components/AdminDataPager.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type Scope = 'GLOBAL' | 'ORGANIZATION' | 'FACILITY' | 'DEPARTMENT';
@@ -15,7 +16,13 @@ const issue = computed(() => query.error.value ? toClinicalIssue(query.error.val
 const templates = computed(() => query.data.value ?? []);
 const busy = ref('');
 const notice = ref('');
+const batchPreview = ref(false);
+const keyword = ref('');
+const lifecycleFilter = ref('ACTIVE');
+const page = ref(1);
+const pageSize = 10;
 const selected = ref<DocumentTemplateWire | null>(null);
+const showEditor = ref(false);
 const mode = ref<'CREATE' | 'VERSION'>('CREATE');
 const form = reactive({
   code: '', name: '', documentType: '', scope: 'FACILITY' as Scope, departmentId: '',
@@ -26,6 +33,17 @@ const activeCount = computed(() => new Set(templates.value.filter((item) => item
 const publishedCount = computed(() => templates.value.filter((item) => item.version_status === 'PUBLISHED').length);
 const draftCount = computed(() => templates.value.filter((item) => item.version_status === 'DRAFT').length);
 const retiredCount = computed(() => templates.value.filter((item) => item.version_status === 'RETIRED').length);
+const filteredTemplates = computed(() => {
+  const needle = keyword.value.trim().toLocaleLowerCase();
+  return templates.value.filter((item) => {
+    if (lifecycleFilter.value && item.lifecycle_status !== lifecycleFilter.value) return false;
+    return !needle || [item.display_name, item.template_code, item.document_type_code]
+      .some((value) => value.toLocaleLowerCase().includes(needle));
+  });
+});
+const pagedTemplates = computed(() => filteredTemplates.value.slice((page.value - 1) * pageSize, page.value * pageSize));
+const currentTemplate = computed(() => selected.value ?? pagedTemplates.value[0] ?? templates.value[0] ?? null);
+watch([keyword, lifecycleFilter], () => { page.value = 1; });
 
 function splitFields(value: string) { return [...new Set(value.split(',').map((item) => item.trim()).filter(Boolean))]; }
 function formatDate(value: string | null) {
@@ -33,6 +51,9 @@ function formatDate(value: string | null) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return '—';
   return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(parsed);
+}
+function statusLabel(value: string) {
+  return ({ ACTIVE: '有效', INACTIVE: '已停用', DRAFT: '草稿', PUBLISHED: '已发布', RETIRED: '已退役' } as Record<string, string>)[value] ?? '未知状态';
 }
 function scopeLabel(item: DocumentTemplateWire) {
   if (item.department_id) return `科室 …${item.department_id.slice(-8)}`;
@@ -48,10 +69,14 @@ function chooseForVersion(item: DocumentTemplateWire) {
     .sort((left, right) => right.version_no - left.version_no)[0] ?? item;
   selected.value = latest;
   mode.value = 'VERSION';
+  showEditor.value = true;
   form.fields = fieldsOf(latest).join(',');
   form.required = latest.required_fields.join(',');
   form.layout = String(latest.display_rules.layout ?? 'two-column');
   notice.value = `已选择 ${latest.display_name}，将在 v${latest.version_no} 上创建新草案。`;
+}
+function openCreate() {
+  selected.value = null; mode.value = 'CREATE'; showEditor.value = true; notice.value = '';
 }
 function versionPayload() {
   const fields = splitFields(form.fields);
@@ -115,53 +140,14 @@ async function deactivate(item: DocumentTemplateWire) {
 
 <template>
   <section data-page-root class="content admin-content vue-native-page template-admin-page">
-    <div class="page-heading admin-heading">
-      <div><p class="eyebrow">配置中心 / 病历模板</p><h1>病历模板与版本发布</h1><p>同一业务内核按机构、院区和科室解析模板；病历创建时永久绑定版本，必填项直接进入质控与签署门禁。</p></div>
-      <div class="toolbar-actions"><RouterLink class="button secondary" to="/record">病历中心</RouterLink><RouterLink class="button secondary" to="/admin-permissions">权限策略</RouterLink></div>
-    </div>
+    <div class="page-head"><div class="page-title"><h1>模板、编号与输出管理</h1><p>统一管理目录、版本、适用范围、依赖、预览和患者身份安全字段</p></div><div class="head-actions"><button class="btn" type="button" @click="batchPreview = !batchPreview">{{ batchPreview ? '关闭批量预览' : '批量预览' }}</button><button class="btn primary" type="button" @click="openCreate">新建模板/规则</button></div></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在读取模板和不可变版本链" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
     <template v-else>
-      <section class="admin-metrics auth-metrics" aria-label="模板指标">
-        <article><span>有效模板</span><strong>{{ activeCount }}</strong><small>当前可解析</small></article>
-        <article><span>已发布</span><strong>{{ publishedCount }}</strong><small>新建病历可绑定</small></article>
-        <article><span>待独立审批</span><strong>{{ draftCount }}</strong><small>创建人不可自批</small></article>
-        <article><span>历史版本</span><strong>{{ retiredCount }}</strong><small>仅供证据回溯</small></article>
-      </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
-      <div class="template-admin-layout">
-        <section class="admin-panel">
-          <header><div><h2>模板版本台账</h2><p>范围越具体优先级越高；已发布和已退役版本的语义不可修改。</p></div><button class="button secondary" @click="query.refetch()">刷新</button></header>
-          <div class="admin-table-wrap"><table class="admin-table template-table"><thead><tr><th>模板 / 文书类型</th><th>范围</th><th>版本</th><th>字段与必填</th><th>生效证据</th><th>操作</th></tr></thead><tbody>
-            <tr v-for="item in templates" :key="item.template_version_id">
-              <td><strong>{{ item.display_name }}</strong><small><code>{{ item.template_code }}</code></small><small>{{ item.document_type_code }}</small></td>
-              <td>{{ scopeLabel(item) }}<small>{{ item.lifecycle_status }}</small></td>
-              <td><span class="admin-status" :class="item.version_status === 'PUBLISHED' ? 'active' : item.version_status === 'RETIRED' ? 'inactive' : ''">v{{ item.version_no }} · {{ item.version_status }}</span><small>版本行 {{ item.version_row_version }}</small></td>
-              <td>{{ fieldsOf(item).length }} 个字段<small>必填：{{ item.required_fields.join(' / ') || '无' }}</small></td>
-              <td>{{ formatDate(item.effective_from) }}<small>审批人：{{ item.approved_by ? `…${item.approved_by.slice(-8)}` : '待审批' }}</small></td>
-              <td><div class="template-actions"><button :disabled="Boolean(busy) || item.lifecycle_status !== 'ACTIVE'" @click="chooseForVersion(item)">派生新版</button><button :disabled="Boolean(busy) || item.version_status !== 'DRAFT' || item.created_by === clinicalContext.userId" @click="publish(item)">{{ item.created_by === clinicalContext.userId ? '不可自批' : '审批发布' }}</button><button class="danger-text" :disabled="Boolean(busy) || item.lifecycle_status !== 'ACTIVE'" @click="deactivate(item)">停用</button></div></td>
-            </tr>
-            <tr v-if="!templates.length"><td colspan="6" class="mpi-empty">尚无模板，请创建第一个草案。</td></tr>
-          </tbody></table></div>
-        </section>
-        <section class="admin-panel admin-form-panel template-editor">
-          <header><div><h2>{{ mode === 'CREATE' ? '创建模板' : `创建 ${selected?.display_name} 新版本` }}</h2><p>字段逗号分隔；必填项必须是已定义字段。</p></div><button v-if="mode === 'VERSION'" class="task-action" @click="mode = 'CREATE'; selected = null">返回新建</button></header>
-          <form class="admin-form" @submit.prevent="submit">
-            <template v-if="mode === 'CREATE'">
-              <label><span>模板编码</span><input v-model="form.code" required placeholder="OPD-GENERAL-V1" /></label>
-              <label><span>显示名称</span><input v-model="form.name" required placeholder="通用门诊病历" /></label>
-              <label><span>文书类型编码</span><input v-model="form.documentType" required placeholder="WS445.2.OUTPATIENT_RECORD" /></label>
-              <label><span>适用范围</span><select v-model="form.scope"><option value="GLOBAL">租户通用</option><option value="ORGANIZATION">当前机构</option><option value="FACILITY">当前院区</option><option value="DEPARTMENT">指定科室</option></select></label>
-              <label v-if="form.scope === 'DEPARTMENT'"><span>科室 ID</span><input v-model="form.departmentId" required /></label>
-            </template>
-            <label><span>结构化字段</span><textarea v-model="form.fields" rows="4" required /></label>
-            <label><span>阻断签署的必填项</span><textarea v-model="form.required" rows="3" /></label>
-            <label><span>布局规则</span><select v-model="form.layout"><option value="single-column">单列</option><option value="two-column">双列</option><option value="timeline">时间轴</option><option value="specialty">专科分区</option></select></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ mode === 'CREATE' ? '保存 v1 草案' : '保存新版本草案' }}</button>
-            <small class="template-governance-note">发布后只影响新建病历；历史病历不会被静默升级。</small>
-          </form>
-        </section>
-      </div>
+      <section v-if="batchPreview" class="admin-panel admin-form-panel"><header><div><h2>当前页模板批量预览</h2><p>预览使用数据库中的模板版本、字段和适用范围，不改变发布状态。</p></div></header><div class="template-preview-grid"><article v-for="item in pagedTemplates" :key="item.template_version_id" class="paper-mini"><b>江城大学附属医院</b><span>{{ item.display_name }} · v{{ item.version_no }}</span><hr><small>姓名：陈建国 / Jian Guo Chen</small><div>{{ fieldsOf(item).slice(0,3).join('　') || '结构化文书字段' }}</div></article></div></section>
+      <section v-if="showEditor" class="admin-panel admin-form-panel template-editor"><header><div><h2>{{ mode === 'CREATE' ? '创建模板' : `创建 ${selected?.display_name} 新版本` }}</h2><p>保存将真实写入数据库草案，发布仍需独立审批。</p></div><button class="task-action" type="button" @click="showEditor = false">关闭</button></header><form class="admin-form compact-admin-form" @submit.prevent="submit"><template v-if="mode === 'CREATE'"><label><span>模板编码</span><input v-model="form.code" required placeholder="OPD-GENERAL-V1" /></label><label><span>显示名称</span><input v-model="form.name" required placeholder="通用门诊病历" /></label><label><span>文书类型编码</span><input v-model="form.documentType" required /></label><label><span>适用范围</span><select v-model="form.scope"><option value="GLOBAL">租户通用</option><option value="ORGANIZATION">当前机构</option><option value="FACILITY">当前院区</option><option value="DEPARTMENT">指定科室</option></select></label></template><label><span>结构化字段</span><textarea v-model="form.fields" rows="3" required /></label><label><span>必填字段</span><textarea v-model="form.required" rows="3" /></label><label><span>布局规则</span><select v-model="form.layout"><option value="single-column">单列</option><option value="two-column">双列</option><option value="timeline">时间轴</option><option value="specialty">专科分区</option></select></label><button class="button primary" :disabled="Boolean(busy)">{{ mode === 'CREATE' ? '保存 v1 草案' : '保存新版本草案' }}</button></form></section>
+      <div class="grid admin-list-detail"><section class="card"><div class="toolbar"><input v-model="keyword" class="search" placeholder="模板编码、名称或文书类型" /><select v-model="lifecycleFilter" class="select"><option value="">全部模板状态</option><option value="ACTIVE">有效</option><option value="INACTIVE">已停用</option></select></div><div class="admin-table-wrap"><table class="table"><thead><tr><th>编码/名称</th><th>类型</th><th>适用范围</th><th>版本</th><th>状态</th></tr></thead><tbody><tr v-for="item in pagedTemplates" :key="item.template_version_id" :class="{ selected: currentTemplate?.template_version_id === item.template_version_id }" @click="selected = item"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.template_code }}</span></td><td>{{ item.document_type_code }}</td><td>{{ scopeLabel(item) }}</td><td>v{{ item.version_no }}</td><td><span class="status" :class="item.version_status === 'PUBLISHED' ? 'green' : item.version_status === 'DRAFT' ? 'amber' : 'gray'">{{ statusLabel(item.version_status) }}</span></td></tr><tr v-if="!filteredTemplates.length"><td colspan="5" class="mpi-empty">暂无匹配模板。</td></tr></tbody></table><AdminDataPager v-model:page="page" :page-size="pageSize" :total="filteredTemplates.length" /></div></section><aside v-if="currentTemplate" class="card"><div class="card-head">{{ currentTemplate.display_name }} v{{ currentTemplate.version_no }}</div><div class="card-body"><div class="paper-mini"><b>江城大学附属医院</b><span>{{ currentTemplate.display_name }}</span><hr><small>姓名：陈建国 / Jian Guo Chen</small><div>{{ fieldsOf(currentTemplate).slice(0,4).join('　') || '结构化文书字段' }}</div></div><div class="folder-row">模板编码<span>{{ currentTemplate.template_code }}</span></div><div class="folder-row">适用范围<span>{{ scopeLabel(currentTemplate) }}</span></div><div class="folder-row">结构化字段<span>{{ fieldsOf(currentTemplate).length }} 个</span></div><div class="folder-row">必填字段<span>{{ currentTemplate.required_fields.length }} 个</span></div><div class="notice hard"><div class="notice-title">患者身份字段必须最小化输出</div>历史病历继续绑定原模板版本，发布后只影响新建病历。</div><div class="admin-actions vertical"><button class="btn" :disabled="Boolean(busy) || currentTemplate.lifecycle_status !== 'ACTIVE'" @click="chooseForVersion(currentTemplate)">派生新版</button><button class="btn primary" :disabled="Boolean(busy) || currentTemplate.version_status !== 'DRAFT' || currentTemplate.created_by === clinicalContext.userId" @click="publish(currentTemplate)">{{ currentTemplate.created_by === clinicalContext.userId ? '不可自批' : '审批发布' }}</button><button class="btn" :disabled="Boolean(busy) || currentTemplate.lifecycle_status !== 'ACTIVE'" @click="deactivate(currentTemplate)">停用模板</button></div></div></aside></div>
     </template>
   </section>
 </template>

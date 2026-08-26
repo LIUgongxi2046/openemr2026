@@ -1,0 +1,174 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "模型部署管理" [level=1]
+  - paragraph: 登记与停用基座模型部署；所有变更使用版本号、幂等键、审计链与事件出箱，停用不物理删除。
+  - region "模型部署统计":
+    - article:
+      - generic: 模型部署
+      - strong: "4"
+      - generic: 全部登记
+    - article:
+      - generic: 有效部署
+      - strong: "4"
+      - generic: ACTIVE
+  - heading "模型部署台账" [level=2]
+  - paragraph: 模型与提供方编码不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "模型 / 名称 提供方 驻留策略 评估状态 状态 操作":
+        - columnheader "模型 / 名称"
+        - columnheader "提供方"
+        - columnheader "驻留策略"
+        - columnheader "评估状态"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "DeepSeek R1 临床推理路由 DEEPSEEK-R1-REASONING-LOCAL · …0000f002 · v7 DEEPSEEK 仅本地部署 已通过 有效 停用":
+        - cell "DeepSeek R1 临床推理路由 DEEPSEEK-R1-REASONING-LOCAL · …0000f002 · v7":
+          - strong: DeepSeek R1 临床推理路由
+          - code: DEEPSEEK-R1-REASONING-LOCAL
+          - text: · …0000f002 · v7
+        - cell "DEEPSEEK":
+          - code: DEEPSEEK
+        - cell "仅本地部署"
+        - cell "已通过":
+          - generic: 已通过
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "DeepSeek V3 临床本地路由 DEEPSEEK-V3-CLINICAL-LOCAL · …0000f001 · v7 DEEPSEEK 仅本地部署 已通过 有效 停用":
+        - cell "DeepSeek V3 临床本地路由 DEEPSEEK-V3-CLINICAL-LOCAL · …0000f001 · v7":
+          - strong: DeepSeek V3 临床本地路由
+          - code: DEEPSEEK-V3-CLINICAL-LOCAL
+          - text: · …0000f001 · v7
+        - cell "DEEPSEEK":
+          - code: DEEPSEEK
+        - cell "仅本地部署"
+        - cell "已通过":
+          - generic: 已通过
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "确定性临床验收模型 DETERMINISTIC-CLINICAL-FAKE · …0000f004 · v7 OPENEMR2026 本地优先 已通过 有效 停用":
+        - cell "确定性临床验收模型 DETERMINISTIC-CLINICAL-FAKE · …0000f004 · v7":
+          - strong: 确定性临床验收模型
+          - code: DETERMINISTIC-CLINICAL-FAKE
+          - text: · …0000f004 · v7
+        - cell "OPENEMR2026":
+          - code: OPENEMR2026
+        - cell "本地优先"
+        - cell "已通过":
+          - generic: 已通过
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "Qwen3 临床检索向量模型 QWEN3-EMBEDDING-LOCAL · …0000f003 · v7 QWEN 仅本地部署 已通过 有效 停用":
+        - cell "Qwen3 临床检索向量模型 QWEN3-EMBEDDING-LOCAL · …0000f003 · v7":
+          - strong: Qwen3 临床检索向量模型
+          - code: QWEN3-EMBEDDING-LOCAL
+          - text: · …0000f003 · v7
+        - cell "QWEN":
+          - code: QWEN
+        - cell "仅本地部署"
+        - cell "已通过":
+          - generic: 已通过
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记模型部署" [level=2]
+  - paragraph: 模型编码、提供方编码与显示名称为必填。
+  - generic: 模型编码
+  - textbox "模型编码":
+    - /placeholder: 例：DEEPSEEK-V4
+  - generic: 提供方编码
+  - textbox "提供方编码":
+    - /placeholder: 例：DEEPSEEK
+  - generic: 显示名称
+  - textbox "显示名称":
+    - /placeholder: 例：DeepSeek V4 主模型
+  - generic: 驻留策略
+  - combobox "驻留策略":
+    - option "仅本地部署"
+    - option "本地优先" [selected]
+    - option "允许云端"
+  - generic: 端点地址（可选）
+  - textbox "端点地址（可选）":
+    - /placeholder: 例：https://llm.example.com/v1
+  - button "登记并生效"

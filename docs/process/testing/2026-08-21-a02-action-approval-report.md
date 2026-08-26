@@ -2,11 +2,11 @@
 
 日期：2026-08-21  
 状态：`LOCAL_VERIFIED`（A02 整体仍 `IN_PROGRESS`）  
-范围：FR-120–124 / A02 全局 AI 助手·动作审批（顶栏/浮窗 UI 与限频/转任务仍待办）
+范围：FR-120–124 / A02 全局 AI医助小南·动作审批（顶栏/浮窗 UI 与限频/转任务仍待办）
 
 ## 结论
 
-A02 全局 AI 助手域新增动作审批首切：`action_approval` 记录 AI 提议的动作类型（开药/开检/开影像/建文书/其他）、动作摘要、提议人与提议时间，状态机 `PROPOSED→APPROVED/REJECTED`。人机协作安全硬门：审批人必须与提议人不同（`check (decided_by is null or decided_by <> proposed_by)` + 服务端 `ACTION_SELF_APPROVAL_FORBIDDEN`），杜绝 AI 动作自提议自批准；已批准/已拒绝须有审批人与审批时间（状态/时间一致性约束）。提议内容与身份字段不可变，决策走乐观锁。事件、审计与 Outbox 同事务。
+A02 全局 AI医助小南域新增动作审批首切：`action_approval` 记录 AI 提议的动作类型（开药/开检/开影像/建文书/其他）、动作摘要、提议人与提议时间，状态机 `PROPOSED→APPROVED/REJECTED`。人机协作安全硬门：审批人必须与提议人不同（`check (decided_by is null or decided_by <> proposed_by)` + 服务端 `ACTION_SELF_APPROVAL_FORBIDDEN`），杜绝 AI 动作自提议自批准；已批准/已拒绝须有审批人与审批时间（状态/时间一致性约束）。提议内容与身份字段不可变，决策走乐观锁。事件、审计与 Outbox 同事务。
 
 这一结论只适用于本机合成数据。真实执行动作落地、顶栏/浮窗 UI 与限频/转任务未验证，不构成生产发布结论。
 

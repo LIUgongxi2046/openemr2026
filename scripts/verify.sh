@@ -9,6 +9,7 @@ cd "$project_dir"
 npm --prefix contracts test
 npm --prefix contracts run check
 node evals/check-golden.mjs
+node evals/check-medical-agent-composition.mjs
 node security/check-red-team.mjs
 "$script_dir/test-schema.sh"
 "$script_dir/with-java21.sh" ./gradlew test --no-daemon --no-configuration-cache

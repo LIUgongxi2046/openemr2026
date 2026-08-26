@@ -133,7 +133,7 @@ CFG-DES-04,角色职责与数据范围设计器,PROTO-scope-designer,R0-CFG-CONT
 CFG-AGT-01,Agent Skill Tool 组合画布,PROTO-agent-compose,R0-CFG-CONTRACT-01,B4-AGT,HIGH,haonan-s008-coder,VERIFIED
 CFG-AGT-02,Agent 上下文策略,PROTO-agent-context,R0-CFG-CONTRACT-01,B4-AGT,HIGH,haonan-s008-coder,VERIFIED
 CFG-AGT-03,Agent 评估与发布门禁,PROTO-agent-evals,R0-CFG-CONTRACT-01,B4-AGT,HIGH,haonan-s008-coder,VERIFIED
-CFG-AGT-04,临床 AI 助手策略,PROTO-ai-assistant-policy,R0-CFG-CONTRACT-01,B4-AGT,HIGH,haonan-s008-coder,VERIFIED
+CFG-AGT-04,AI医助小南策略,PROTO-ai-assistant-policy,R0-CFG-CONTRACT-01,B4-AGT,HIGH,haonan-s008-coder,VERIFIED
 CFG-LIFE-01,配置差异审批灰度发布,PROTO-config-release,R0-CFG-CONTRACT-01,B4-LIFE,HIGH,haonan-s008-coder,VERIFIED
 CFG-LIFE-02,配置包升级冲突处理,PROTO-config-upgrade,R0-CFG-CONTRACT-01,B4-LIFE,HIGH,haonan-s008-coder,VERIFIED
 CFG-ADM-01,医院主数据管理,PROTO-admin-master-data,R0-CFG-CONTRACT-01,B4-ADM,MEDIUM,haonan-s008-coder,VERIFIED

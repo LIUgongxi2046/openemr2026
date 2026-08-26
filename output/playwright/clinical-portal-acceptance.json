@@ -1,0 +1,155 @@
+{
+  "run_at": "2026-08-25T05:15:30.935Z",
+  "checks": 8,
+  "passed": 8,
+  "failed": 0,
+  "findings": [],
+  "observations": [
+    {
+      "name": "doctor-and-shift-visible",
+      "status": "PASS",
+      "text": "林医生 今日 08:00–17:00"
+    },
+    {
+      "name": "clinical-foundation-menu-trimmed",
+      "status": "PASS",
+      "text": "临床通用 业务门户 预约挂号 入院床位 紧急访问"
+    },
+    {
+      "name": "all-portal-buttons-route-correctly",
+      "status": "PASS",
+      "routes_checked": 26,
+      "inventory": [
+        {
+          "target": "clinical-tasks",
+          "label": "统一任务 9"
+        },
+        {
+          "target": "login-context",
+          "label": "工作设置"
+        },
+        {
+          "target": "outpatient",
+          "label": "进入门诊诊疗 →"
+        },
+        {
+          "target": "appointment-registration",
+          "label": "预约挂号与队列号源、到诊、分诊、叫号、过号"
+        },
+        {
+          "target": "record",
+          "label": "门诊病历与质控主诉、病史、查体、诊断、签署"
+        },
+        {
+          "target": "opd-orders",
+          "label": "医嘱处方与执行药品、检验、检查、治疗、审方"
+        },
+        {
+          "target": "opd-results",
+          "label": "结果与危急值趋势、报告更正、确认与处置"
+        },
+        {
+          "target": "opd-consult",
+          "label": "会诊转诊申请、受理、意见、时限"
+        },
+        {
+          "target": "opd-followup",
+          "label": "随访与终诊教育、复诊、随访、结束就诊"
+        },
+        {
+          "target": "emergency",
+          "label": "进入急诊诊疗 →"
+        },
+        {
+          "target": "er-triage",
+          "label": "预检分诊与分区级别、依据、改区、绿色通道"
+        },
+        {
+          "target": "er-record",
+          "label": "急诊病历与抢救时间轴、抢救记录、医嘱结果"
+        },
+        {
+          "target": "er-nursing",
+          "label": "急诊护理与输液生命体征、执行、异常"
+        },
+        {
+          "target": "er-handoff",
+          "label": "急会诊与交接班时限、责任、未完任务"
+        },
+        {
+          "target": "er-observation",
+          "label": "留观与转住院观察记录、去向、接收"
+        },
+        {
+          "target": "er-record",
+          "label": "时间关键质控双时间、超时、补录原因"
+        },
+        {
+          "target": "inpatient",
+          "label": "进入住院诊疗 →"
+        },
+        {
+          "target": "inpatient",
+          "label": "在院患者与任务床位、医疗组、风险、责任与时限"
+        },
+        {
+          "target": "inpatient-overview",
+          "label": "住院总览诊断、医嘱、体征、结果、护理摘要"
+        },
+        {
+          "target": "inpatient-course",
+          "label": "病历文书与查房入院、首程、病程、三级查房、审签"
+        },
+        {
+          "target": "ip-orders",
+          "label": "医嘱用药与执行长期/临时医嘱、给药、停止与重整"
+        },
+        {
+          "target": "ip-consult",
+          "label": "会诊手术与协同会诊、手术、转科、交班、事件文书"
+        },
+        {
+          "target": "inpatient-discharge",
+          "label": "出院病案闭环出院记录、首页、质控、整改、归档"
+        },
+        {
+          "target": "clinical-tasks",
+          "label": "统一任务与临床路径危急值 · 会诊 · 审签 · 时限 · 路径变异 · 出院整改"
+        },
+        {
+          "target": "archive-assets",
+          "label": "病案资产与 CDA电子文书 · 签字扫描件 · 共享文档 · CA · 无纸化归档"
+        },
+        {
+          "target": "credentials",
+          "label": "专科与资质扩展专科能力包 · 移动查房 PWA · 处方/手术/技术授权"
+        }
+      ]
+    },
+    {
+      "name": "portal-destination-loads-real-data",
+      "status": "PASS",
+      "order_cards": 4
+    },
+    {
+      "name": "appointment-patient-data-and-chinese-status",
+      "status": "PASS",
+      "text_sample": "预约、挂号、分诊、叫号与留观 班次号源 → 预约/现场挂号 → 报到生成就诊 → 候诊叫号 → 接诊推进；退号释放号源，全链路可追踪。 班次号源 预约/现场挂号 返回门诊 预约记录 97 合成患者甲 / Synthetic Patient A 候诊队列 47 当前院区 已报到 37 已进入候诊队列 预约与就诊 报到后进入候诊队列，接诊推进完成就诊。 刷新 患者信息 类型 / 来源 状态 预约时间 操作 合成患者甲 / Synthetic Patient A 女 · 48 岁 · 患者号 …00000001 门诊 预约 已报到 2026年8月25日 13:06 报到接诊退号 合成患者甲 / Synthetic Patient A 女 · 48 岁 · 患者号 …00000001 门诊 预约 已报到 2026年8月25日 13:06 报到接诊退号 合成患者甲 / Synthetic Patient A 女 · 48 岁 · 患者号 …00000001 门诊 预约 已预约 2026年8月25日 13:06 报到接诊退号 合成患者甲 / Synthetic Patient A 女 · 48 岁"
+    },
+    {
+      "name": "appointment-forms-open-on-demand",
+      "status": "PASS"
+    },
+    {
+      "name": "appointment-lists-are-paginated",
+      "status": "PASS",
+      "appointment_rows": 10,
+      "queue_rows": 10
+    },
+    {
+      "name": "emergency-access-labels-are-chinese",
+      "status": "PASS",
+      "text_sample": "紧急访问 只用于患者危急且常规授权无法及时建立的场景。必须填写具体理由、选择短时限、明确确认风险，且不会绕过显式保护规则。 返回门诊 ! 申请最小必要紧急访问 当前范围：患者 …00000001 · 就诊 …00000101 · 临床上下文/病历只读。 提交时必须完成身份提供方的高强度二次认证；认证时间超过 5 分钟会失败关闭。 临床紧急理由 授权时限 5 分钟 15 分钟 30 分钟 60 分钟（上限） 我确认该访问仅用于当前紧急救治，所有查看和使用将永久审计并由独立安全管理员复核。 二次认证并建立紧急访问 本人紧急访问记录 1 条 已到期 2026年8月25日 02:07 → 2026年8月25日 02:22 合成危急患者需立即核对过敏史与最近病历，常规授权无法在抢救时限内建立。 资源 临床上下文 / 病历文书 操作 建立限时授权 / 查看 事后复核 待复核"
+    }
+  ]
+}

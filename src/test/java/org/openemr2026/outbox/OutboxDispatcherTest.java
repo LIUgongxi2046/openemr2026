@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -32,6 +34,27 @@ final class OutboxDispatcherTest {
 
     @Autowired
     private OutboxDispatcher dispatcher;
+
+    @BeforeEach
+    @AfterEach
+    void cleanOutboxTestEvents() {
+        jdbc.sql("""
+                delete from outbox_replay_audit audit using outbox_event event
+                where audit.tenant_id = event.tenant_id and audit.event_id = event.event_id
+                  and event.aggregate_type = 'OUTBOX_TEST'
+                """).update();
+        jdbc.sql("""
+                delete from outbox_consumer_receipt receipt using outbox_event event
+                where receipt.tenant_id = event.tenant_id and receipt.event_id = event.event_id
+                  and event.aggregate_type = 'OUTBOX_TEST'
+                """).update();
+        jdbc.sql("""
+                delete from clinical_event_projection projection using outbox_event event
+                where projection.tenant_id = event.tenant_id and projection.event_id = event.event_id
+                  and event.aggregate_type = 'OUTBOX_TEST'
+                """).update();
+        jdbc.sql("delete from outbox_event where aggregate_type = 'OUTBOX_TEST'").update();
+    }
 
     @Test
     void givenOrderedEvents_whenDispatching_thenProjectionReceiptAndAggregateOrderAreDurable() {
@@ -61,6 +84,9 @@ final class OutboxDispatcherTest {
         assertThat(state(eventId)).isEqualTo("DEAD_LETTER");
         assertThat(projectionCount(eventId)).isEqualTo(1);
         dispatcher.replayDeadLetter(TENANT, eventId, USER, "synthetic retry after verified handler recovery");
+        // Production may legitimately contain more than one batch of older pending events.
+        // Pin this isolated replay fixture to the front instead of depending on global queue depth.
+        makeAvailableNow(eventId);
         dispatcher.dispatchBatch();
 
         assertThat(state(eventId)).isEqualTo("PUBLISHED");

@@ -40,28 +40,28 @@ function formatDate(value: string | null | undefined) {
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-head">
-      <div class="page-title"><h1>Agent 受控运行</h1><p>受控运行快照与事件流（/ai/runs）· 每个动作、审批、版本与停用策略可追溯</p></div>
+      <div class="page-title"><h1>医助任务运行</h1><p>集中查看医助任务的处理进度、医生确认状态、版本和任务记录</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="runsQuery.refetch()">刷新</button></div>
     </div>
 
-    <div v-if="leaseQuery.isPending.value || runsQuery.isPending.value" class="card"><div class="card-body">正在读取 Agent 运行…</div></div>
+    <div v-if="leaseQuery.isPending.value || runsQuery.isPending.value" class="card"><div class="card-body">正在读取医助任务…</div></div>
     <div v-else-if="issue" class="card"><div class="card-body">加载失败：{{ issue.code }} {{ issue.message }}</div></div>
 
     <template v-else>
-      <div class="metric-grid" aria-label="Agent 运行概览">
-        <div class="metric"><div class="name">运行总数</div><div class="value">{{ runs.length }}</div><div class="trend">最近 500 条</div></div>
-        <div class="metric"><div class="name">进行中</div><div class="value">{{ active.length }}</div><div class="trend">非终态运行</div></div>
+      <div class="metric-grid" aria-label="医助任务概览">
+        <div class="metric"><div class="name">任务总数</div><div class="value">{{ runs.length }}</div><div class="trend">最近 500 条</div></div>
+        <div class="metric"><div class="name">处理中</div><div class="value">{{ active.length }}</div><div class="trend">尚未结束的任务</div></div>
         <div class="metric"><div class="name">待审批</div><div class="value">{{ waiting.length }}</div><div class="trend">需人工批准</div></div>
-        <div class="metric"><div class="name">已终态</div><div class="value">{{ terminal.length }}</div><div class="trend">完成/失败/驳回/过期</div></div>
+        <div class="metric"><div class="name">已结束</div><div class="value">{{ terminal.length }}</div><div class="trend">完成、失败、驳回或过期</div></div>
       </div>
 
       <div class="admin-layout">
         <section class="admin-panel">
-          <header><div><h2>运行列表</h2><p>受控运行快照，按创建时间倒序。</p></div></header>
-          <div v-if="runs.length === 0" class="empty-state"><span>A</span><p>暂无 Agent 运行</p><small>通过 AI 助手或 Agent 目录发起运行后在此查看</small></div>
+          <header><div><h2>医助任务列表</h2><p>按任务创建时间倒序展示。</p></div></header>
+          <div v-if="runs.length === 0" class="empty-state"><span>医</span><p>暂无医助任务</p><small>通过AI医助小南或医助团队发起任务后在此查看</small></div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>运行 ID</th><th>状态</th><th>序号</th><th>数据水印</th><th>更新时间</th></tr></thead>
+              <thead><tr><th>任务编号</th><th>状态</th><th>处理序号</th><th>数据版本</th><th>更新时间</th></tr></thead>
               <tbody>
                 <tr v-for="run in runs" :key="run.run_id">
                   <td><code>…{{ run.run_id.slice(-8) }}</code></td>
@@ -76,14 +76,14 @@ function formatDate(value: string | null | undefined) {
         </section>
 
         <aside class="admin-panel">
-          <header><div><h2>运行边界</h2></div></header>
+          <header><div><h2>任务运行保障</h2></div></header>
           <div class="card-body">
-            <div class="folder-row">患者/就诊隔离<span>按上下文租约</span></div>
-            <div class="folder-row">审批<span>有副作用动作需批准</span></div>
-            <div class="folder-row">预算<span>token / 时长硬限额</span></div>
-            <div class="folder-row">证据<span>来源回看 + 审计哈希链</span></div>
-            <RouterLink class="btn" style="width:100%;margin-top:12px" to="/agent-catalog">打开 Agent 目录</RouterLink>
-            <RouterLink class="btn" style="width:100%;margin-top:8px" to="/aiops">运行治理</RouterLink>
+            <div class="folder-row">诊疗范围<span>限定当前患者与就诊</span></div>
+            <div class="folder-row">医生确认<span>临床写入操作需批准</span></div>
+            <div class="folder-row">处理上限<span>生成额度与响应时长</span></div>
+            <div class="folder-row">结果依据<span>来源可回看、操作可追溯</span></div>
+            <RouterLink class="btn" style="width:100%;margin-top:12px" to="/agent-catalog">打开医助团队</RouterLink>
+            <RouterLink class="btn" style="width:100%;margin-top:8px" to="/aiops">运行监测</RouterLink>
           </div>
         </aside>
       </div>

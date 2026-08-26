@@ -1,0 +1,188 @@
+{
+  "buttons": [
+    {
+      "disabled": false,
+      "text": "江城大学附属医院⌄",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "管理与治理工作台⌄",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "搜索",
+      "type": "submit"
+    },
+    {
+      "disabled": false,
+      "text": "AI医助小南",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "3",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "林",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "刷新",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "新建草稿",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "临床安全与时限规则syn-clinical-safety-v1",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "保存新版本",
+      "type": "submit"
+    },
+    {
+      "disabled": false,
+      "text": "执行静态校验",
+      "type": "button"
+    },
+    {
+      "disabled": false,
+      "text": "提交审批",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "职责分离批准",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "发布",
+      "type": "button"
+    },
+    {
+      "disabled": true,
+      "text": "回退上一版本",
+      "type": "button"
+    }
+  ],
+  "document": {
+    "height": 1141,
+    "width": 1265
+  },
+  "fields": [
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "搜索患者、病历、医嘱、任务…",
+      "tag": "INPUT",
+      "type": "search",
+      "value": ""
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "INPUT",
+      "type": null,
+      "value": "临床安全与时限规则"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "pediatric-dose-v1",
+      "tag": "INPUT",
+      "type": null,
+      "value": "syn-clinical-safety-v1"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "覆盖过敏、剂量、危急值、超时与会诊升级规则。"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "年龄<14,药品类型=处方,体重已记录",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "年龄<14,药品类型=处方,体重已记录"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "校验体重剂量,阻断超范围处方",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "校验体重剂量,阻断超范围处方"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "CLINICAL_HARD_GATE",
+      "tag": "INPUT",
+      "type": "text",
+      "value": "CLINICAL_HARD_GATE"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": "6 岁，20kg，阿莫西林克拉维酸处方",
+      "tag": "TEXTAREA",
+      "type": null,
+      "value": "6 岁，20kg，阿莫西林克拉维酸处方"
+    },
+    {
+      "id": "",
+      "label": null,
+      "placeholder": null,
+      "tag": "INPUT",
+      "type": null,
+      "value": "完成配置生命周期操作"
+    }
+  ],
+  "headings": [
+    "规则、时限与提示设计器",
+    "版本台账",
+    "编辑草稿",
+    "命中路径",
+    "校验、审批、发布与回退"
+  ],
+  "route": "rule-center",
+  "tables": [
+    {
+      "headers": [
+        "名称 / 键",
+        "生命周期",
+        "版本",
+        "更新"
+      ],
+      "rows": 1
+    }
+  ],
+  "text": "规则、时限与提示设计器\n\n区分医疗硬规则、机构规则、提醒与 AI 建议\n\n刷新\n新建草稿\n安全契约\n机构规则不能降级数据库医疗硬门。\n版本台账\n\nRULE · 全程审计 + Outbox\n\n1 项\n名称 / 键\t生命周期\t版本\t更新\n\n临床安全与时限规则\nsyn-clinical-safety-v1\n\t草稿\n未校验\n\tv1\t2026/8/25 00:48:18\n编辑草稿\n\n版本化 Schema v1；发布后仅能通过回退恢复\n\nv1\n名称\n唯一键\n说明\n条件组 conditions\n动作 actions\n规则层级 rule_layer\n测试病例 sample_case\n保存新版本\n命中路径\n\n当前草稿的可视化语义预览\n\n结构化预览\n条件组\n年龄<14\n药品类型=处方\n体重已记录\n动作\n校验体重剂量\n阻断超范围处方\n规则层级\nCLINICAL_HARD_GATE\n测试病例\n6 岁，20kg，阿莫西林克拉维酸处方\n校验、审批、发布与回退\n\n每一步都使用幂等键、乐观锁、审计链和 Outbox\n\n操作原因\n状态\n草稿\n校验\n未校验\n审批\n未知状态\n发布\n—\n执行静态校验\n提交审批\n职责分离批准\n发布\n回退上一版本\n\n作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。",
+  "url": "http://127.0.0.1:4178/app/index.html#/rule-center",
+  "viewport": {
+    "dpr": 1,
+    "height": 720,
+    "width": 1280
+  }
+}

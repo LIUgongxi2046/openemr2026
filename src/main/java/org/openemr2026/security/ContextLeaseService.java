@@ -135,7 +135,7 @@ final class ContextLeaseService {
                     select count(*) from encounter
                     where tenant_id = :tenant and encounter_id = :encounter and patient_id = :patient
                       and organization_id = :organization and facility_id = :facility
-                      and status in ('PLANNED', 'IN_PROGRESS', 'FINISHED')
+                      and status in ('PLANNED', 'ARRIVED', 'IN_PROGRESS', 'SUSPENDED', 'FINISHED')
                     """)
                     .param("tenant", identity.tenantId()).param("encounter", encounterId)
                     .param("patient", patientId).param("organization", organizationId)

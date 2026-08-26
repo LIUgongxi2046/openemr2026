@@ -958,7 +958,7 @@
     },
     {
       "route_id": "ai-assistant",
-      "title": "临床 AI 助手",
+      "title": "AI医助小南",
       "primary_domain": "AI",
       "key_regions": [
         "页面标题与业务范围",
@@ -1007,7 +1007,7 @@
     },
     {
       "route_id": "ai-assistant-policy",
-      "title": "AI 助手策略与效果治理",
+      "title": "AI医助小南策略与效果治理",
       "primary_domain": "AI",
       "key_regions": [
         "页面标题与业务范围",

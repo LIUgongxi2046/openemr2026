@@ -12,6 +12,10 @@
 | 4 | [LLD-AGENT](./2026-08-14-openemr2026-lld-agent.md) | 模型切换、Agent/Skill、Hook、Tool、评测和人工批准 |
 | 5 | [LLD-FRONT](./2026-08-14-openemr2026-lld-front.md) | Vue 3 单栈迁移、194 路由、组件拓扑、病历编辑、SSE、弱网、可访问性和前端门禁 |
 
+Agent 优化版增量设计：
+
+- [Medical Agent Harness LLD](./2026-08-25-openemr2026-medical-agent-harness-lld.md)：承接 Agent 优化版 PRD v0.2，参考 DeepSeek Harness 细化主 Agent、诊疗环节子 Agent、Skill、Tool、父子运行、声明式 Composition、追加式轨迹与增量迁移；应在基础 LLD-AGENT 之后阅读。
+
 关联事实源：
 
 - 产品需求：`docs/product/prd/2026-08-11-openemr2026-v1.0-prd.md`（138 FR / 138 AC）。
@@ -31,7 +35,7 @@
 | 全科室适配 | FR-125；BR-127 | `specialty-coverage` + 通用门急住工作域 | HLD ADR-007；DATA/BACK/FRONT | DepartmentSupportAssessment、SpecialtyPackRelease | 每科室只能声明通用可用/基础闭环/待交付/暂不支持；逐科室证据升级 |
 | 数据迁移与恢复 | 历史病历迁移、备份恢复 | `migration`、`backup`、`release-gates` | DATA 主责，BACK 作业，HLD 部署 | SourceSnapshot、MappingVersion、ReconcileRun、RestoreProof | 原始证据、增量追平、对账、回退、隔离恢复演练 |
 | 配置与后台管理 | FR-062–081、108–119 | `workflow`、`admin-*`、`model-*`、`agent-*` | HLD ADR-005；BACK/AGENT/FRONT | ConfigRelease、Policy、ModelRoute、Agent、Skill | 草稿→模拟→审批→灰度→回滚；禁止任意脚本 |
-| AI 助手与病历生成/质控 | FR-070–081、120–124 | 全局 AI FAB、`ai-assistant`、`ai-action-review` | AGENT 主责，DATA 引用，BACK Tool，FRONT 展示 | AIRun、AIProposal、ContextLease、ContextReference、ToolApproval | 错患者/越权/未批准副作用为 0；AI 停机主链可用 |
+| AI医助小南与病历生成/质控 | FR-070–081、120–124 | 全局 AI FAB、`ai-assistant`、`ai-action-review` | AGENT 主责，DATA 引用，BACK Tool，FRONT 展示 | AIRun、AIProposal、ContextLease、ContextReference、ToolApproval | 错患者/越权/未批准副作用为 0；AI 停机主链可用 |
 | 集成与互操作 | LIS/PACS/HIS/CA/设备入口 | `integration-*`、`lis-report`、`pacs-viewer` | HLD integration-hub；BACK/DATA | Connector、ExternalMessage、Mapping、DeadLetter | 原消息留存、幂等、超时、重试、死信、重放、对账 |
 | 科研与统计 | 受治理科研需求 | `research-*`、`cohort-builder` | HLD 读模型；DATA 按需检索/分析存储；BACK 作业 | DatasetRequest、PurposeBinding、DeidentificationJob | 不直查生产库；用途/伦理/脱敏/导出水印与过期 |
 | 安装、发布与开源结果 | 质量门禁和一级结果 | `install`、`opensource`、`operations` | HLD S/M/L；全部 LLD | ReleaseManifest、SBOM、Backup、UpgradePlan | 可安装、升级继承、安全、数据一致性、恢复；有效下载可验证 |

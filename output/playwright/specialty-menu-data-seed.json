@@ -1,0 +1,306 @@
+{
+  "run_at": "2026-08-24T18:13:06.296Z",
+  "routes": 60,
+  "results": [
+    {
+      "route": "obgyn-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-record",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "obgyn-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "obgyn-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "obgyn-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "obgyn-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "obgyn-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "reproductive-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "pediatrics-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "neonatal-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "mental-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ophthalmology-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "ent-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dental-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-care",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "dermatology-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-treatment",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-evidence",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-qc",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-followup",
+      "status": "EXISTING",
+      "rows": 1
+    },
+    {
+      "route": "tcm-care",
+      "status": "EXISTING",
+      "rows": 1
+    }
+  ]
+}

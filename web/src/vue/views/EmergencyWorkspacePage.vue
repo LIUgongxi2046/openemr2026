@@ -126,20 +126,20 @@ async function reload() {
 
       <div class="grid emergency-grid">
         <aside class="card scroll-card">
-          <div class="card-head">急诊队列 <span class="sub">{{ queue.length }} 人</span></div>
-          <div v-if="!queue.length" class="card-body">今日暂无候诊患者。</div>
-          <div v-else>
+          <section class="emergency-queue-section" aria-labelledby="emergency-waiting-title"><div class="card-head" id="emergency-waiting-title">急诊队列 <span class="sub">{{ queue.length }} 人</span></div>
+          <div v-if="!queue.length" class="clinical-empty-state compact"><strong>今日暂无候诊患者</strong><span>急诊签到后，患者会按分诊级别和到达顺序进入此队列。</span><RouterLink to="/appointment-registration">进入签到与挂号</RouterLink></div>
+          <div v-else class="emergency-queue-list">
             <div v-for="entry in queue" :key="entry.waiting_queue_entry_id" class="queue-item">
               <div class="queue-title"><span class="dot green"></span>#{{ entry.sequence_no }}<span class="status green">{{ entry.status }}</span></div>
               <div class="queue-meta"><span>叫号 {{ formatDate(entry.called_at) }}</span></div>
             </div>
-          </div>
-          <div class="card-head">预入院 <span class="sub">先救治后补登</span></div>
-          <div v-if="!preadmissions.data.value?.length" class="card-body">当前院区暂无预入院登记。</div>
+          </div></section>
+          <section class="emergency-queue-section" aria-labelledby="emergency-preadmission-title"><div class="card-head" id="emergency-preadmission-title">预入院 <span class="sub">先救治后补登</span></div>
+          <div v-if="!preadmissions.data.value?.length" class="clinical-empty-state compact"><strong>当前院区暂无预入院登记</strong><span>无法立即确认身份的危重患者可先救治并建立临时标识。</span><RouterLink to="/er-handoff">登记预入院</RouterLink></div>
           <div v-for="p in preadmissions.data.value ?? []" :key="p.preadmission_id" class="queue-item">
             <div class="queue-title"><span class="dot amber"></span>{{ p.temporary_identifier }}<span class="status" :class="p.status === 'UNREGISTERED' ? 'amber' : 'green'">{{ p.status === 'UNREGISTERED' ? '未登记' : '已登记' }}</span></div>
             <div class="queue-meta"><span>{{ p.reason }}</span></div>
-          </div>
+          </div></section>
         </aside>
 
         <section class="card scroll-card">
@@ -175,7 +175,7 @@ async function reload() {
         <aside class="card scroll-card">
           <div class="card-head">抢救、护理与去向</div>
           <div class="card-body">
-            <div class="notice info"><div class="notice-title">当前患者上下文</div>患者 {{ shortId(clinicalContext.patientId) }} · 就诊 {{ shortId(clinicalContext.encounterId) }}</div>
+            <div class="notice info"><div class="notice-title">当前患者上下文</div>患者 {{ shortId(clinicalContext.emergencyPatientId) }} · 就诊 {{ shortId(clinicalContext.emergencyEncounterId) }}</div>
             <div class="notice hard"><div class="notice-title">去向闭环</div>抢救、留观与域切换必须形成去向与接收，未闭环不结束急诊就诊。</div>
             <div class="section-title">急诊域导航</div>
             <div class="folder-row">预检分诊<RouterLink class="text-link" to="/er-triage">进入 →</RouterLink></div>

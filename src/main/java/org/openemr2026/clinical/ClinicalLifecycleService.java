@@ -52,12 +52,13 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
                     left join patient_identifier identifier
                       on identifier.tenant_id = patient.tenant_id and identifier.patient_id = patient.patient_id
                     where patient.tenant_id = :tenant and patient.status = 'ACTIVE'
-                      and (patient.display_name ilike :pattern or identifier.masked_value = :exact)
+                      and (patient.display_name ilike :pattern or identifier.masked_value = :exact
+                        or identifier.identifier_hash = decode(:identifier_hash, 'hex'))
                     order by patient.display_name, patient.patient_id
                     limit :limit
                     """)
                     .param("tenant", identity.tenantId()).param("pattern", "%" + query.trim() + "%")
-                    .param("exact", query.trim()).param("limit", limit)
+                    .param("exact", query.trim()).param("identifier_hash", sha256(query.trim())).param("limit", limit)
                     .query((rs, row) -> new PatientSummaryWire(
                             rs.getObject("patient_id", UUID.class), rs.getString("display_name"),
                             rs.getString("sex_code"), rs.getDate("birth_date").toLocalDate(),
@@ -118,8 +119,14 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
             List<UUID> possibleDuplicates = jdbc.sql("""
                     select patient_id from patient
                     where tenant_id = :tenant and status in ('ACTIVE', 'PENDING_VERIFICATION', 'POSSIBLE_DUPLICATE')
-                      and lower(regexp_replace(display_name, '[[:space:]·•]', '', 'g')) =
-                          lower(regexp_replace(:name, '[[:space:]·•]', '', 'g'))
+                      and lower(regexp_replace(
+                            regexp_replace(display_name,
+                              '[[:space:]]*/[[:space:]]*Synthetic Patient.*$', '', 'i'),
+                            '[[:space:]·•]', '', 'g')) =
+                          lower(regexp_replace(
+                            regexp_replace(:name,
+                              '[[:space:]]*/[[:space:]]*Synthetic Patient.*$', '', 'i'),
+                            '[[:space:]·•]', '', 'g'))
                       and birth_date = :birth and upper(sex_code) = upper(:sex)
                     order by patient_id
                     """).param("tenant", identity.tenantId()).param("name", displayName.trim())

@@ -14,6 +14,7 @@ import { toClinicalIssue } from '../clinical-error';
 
 const route = useRoute();
 const documentId = computed(() => typeof route.query.document_id === 'string' ? route.query.document_id : '');
+const routeId = computed(() => String(route.name ?? 'inpatient-doc-editor'));
 const selectedActorKey = ref<InpatientSyntheticActorKey>(getInpatientSyntheticActor()?.key ?? 'AUTHOR');
 const sections = ref<Record<string, string>>({});
 const baseline = ref('');
@@ -25,12 +26,14 @@ const warningDisposition = ref('');
 const editorQuery = useQuery({
   queryKey: ['clinical', 'inpatient-document-editor', documentId],
   queryFn: async () => {
-    if (!documentId.value) return { kind: 'missing' as const };
     const lease = await issueInpatientLease();
-    const document = await loadInpatientDocument(lease, documentId.value);
-    const [overview, governance] = await Promise.all([
-      loadInpatientOverview(lease), loadInpatientDocumentGovernance(lease, document),
-    ]);
+    const overview = await loadInpatientOverview(lease);
+    const resolvedDocumentId = documentId.value || overview.document_tasks
+      .map((item) => item.working_document_id || item.completed_document_id)
+      .find((item): item is string => Boolean(item)) || '';
+    if (!resolvedDocumentId) return { kind: 'missing' as const, overview };
+    const document = await loadInpatientDocument(lease, resolvedDocumentId);
+    const governance = await loadInpatientDocumentGovernance(lease, document);
     return { kind: 'ready' as const, lease, document, overview, governance };
   },
   retry: false, staleTime: 0, gcTime: 0,
@@ -44,7 +47,8 @@ watch(() => editorQuery.data.value, (data) => {
 
 const issue = computed(() => editorQuery.error.value ? toClinicalIssue(editorQuery.error.value) : null);
 const data = computed(() => editorQuery.data.value?.kind === 'ready' ? editorQuery.data.value : null);
-const task = computed(() => data.value?.overview.document_tasks.find((item) => item.working_document_id === documentId.value));
+const task = computed(() => data.value?.overview.document_tasks.find((item) =>
+  item.working_document_id === data.value?.document.document_id || item.completed_document_id === data.value?.document.document_id));
 const activeActor = computed(() => inpatientSyntheticActors.find((actor) => actor.key === selectedActorKey.value));
 const dirty = computed(() => JSON.stringify(sections.value) !== baseline.value);
 const qualityPassed = computed(() => data.value?.governance.quality_run?.outcome === 'PASSED');
@@ -131,13 +135,13 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
 
 <template>
   <section data-page-root class="content vue-native-page">
-    <div class="page-heading"><div><p class="eyebrow">住院 / 病历创作与分级审签</p><h1>住院病历 · 专注编辑</h1></div><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
-    <section v-if="inpatientSyntheticActors.length" class="inpatient-role-simulator compact" aria-label="开发环境四角色审签身份"><div><strong>当前验收身份</strong><span>仅开发合成环境；生产由 OIDC 与岗位任期决定</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="Boolean(busy)" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section>
+    <div class="page-heading"><div><p class="eyebrow">住院 / 病历创作与分级审签</p><h1>{{ routeId === 'inpatient-doc-qc' ? '住院病历 · 质控与审签' : '住院病历 · 专注编辑' }}</h1></div><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
+    <details v-if="inpatientSyntheticActors.length" class="development-acceptance-tools"><summary>开发角色模拟</summary><section class="inpatient-role-simulator compact" aria-label="开发环境四角色审签身份"><div><strong>四角色审签模拟</strong><span>仅开发合成环境；生产由 OIDC 与岗位任期决定</span></div><div role="group"><button v-for="actor in inpatientSyntheticActors" :key="actor.key" type="button" :class="{ active: actor.key === selectedActorKey }" :disabled="Boolean(busy)" @click="switchActor(actor.key)"><b>{{ actor.roleLabel }}</b><small>{{ actor.displayName }}</small></button></div></section></details>
     <ClinicalPageState v-if="editorQuery.isPending.value" kind="loading" message="正在核验患者、住院任务、文书版本与审签证据" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="editorQuery.refetch()" />
-    <div v-else-if="editorQuery.data.value?.kind === 'missing'" class="record-evidence-empty"><h2>未选择住院文书</h2><p>请从住院工作站的文书任务进入，系统不会猜测患者或文书上下文。</p><RouterLink class="button primary" to="/inpatient">选择文书任务</RouterLink></div>
+    <div v-else-if="editorQuery.data.value?.kind === 'missing'" class="record-evidence-empty"><h2>当前患者尚无可编辑住院文书</h2><p>先从病程与文书中选择任务并建立草稿；建立后本页会自动载入最近一份文书。</p><RouterLink class="button primary" to="/inpatient-course">进入病程与文书</RouterLink></div>
     <template v-else-if="data && task">
-      <section class="patient-strip" aria-label="住院病历上下文"><div class="patient-avatar">合</div><div><strong>{{ data.overview.patient_display_name }}</strong><span>{{ data.document.document_type_code }}</span></div><dl><div><dt>病区床位</dt><dd>{{ data.overview.ward_display_name }} · {{ data.overview.bed_label }}床</dd></div><div><dt>版本状态</dt><dd>v{{ data.document.version_no }} · {{ data.document.status }}</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '住院医师' }}</dd></div></dl><span class="lease-badge">住院号 …{{ task.admission_id.slice(-8) }}</span></section>
+      <section class="patient-strip" aria-label="住院病历上下文"><div class="patient-avatar">{{ data.overview.patient_display_name.slice(0, 1) }}</div><div><strong>{{ data.overview.patient_display_name }}</strong><span>{{ data.document.document_type_code }}</span></div><dl><div><dt>病区床位</dt><dd>{{ data.overview.ward_display_name }} · {{ data.overview.bed_label }}床</dd></div><div><dt>版本状态</dt><dd>v{{ data.document.version_no }} · {{ data.document.status }}</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '住院医师' }}</dd></div></dl><span class="lease-badge">住院号 …{{ task.admission_id.slice(-8) }}</span></section>
       <section class="inpatient-signature-steps" aria-label="四角色审签进度"><article v-for="(stage, index) in stages" :key="stage.key" :class="stageState(stage.key, task)"><span>{{ index + 1 }}</span><div><strong>{{ stage.label }}</strong><small>{{ stageState(stage.key, task) === 'complete' ? '证据已固化' : stageState(stage.key, task) === 'current' ? '当前待办' : stageState(stage.key, task) === 'not-required' ? '本规则不要求' : '等待前序' }}</small></div></article></section>
       <div v-if="notice || commandError" class="legal-action-message" :class="{ error: commandError }" role="status">{{ commandError || notice }}</div>
       <div class="inpatient-document-layout">

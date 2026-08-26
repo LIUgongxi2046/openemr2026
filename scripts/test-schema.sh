@@ -173,6 +173,9 @@ migration_v163="$project_dir/src/main/resources/db/migration/V163__config_item.s
 migration_v164="$project_dir/src/main/resources/db/migration/V164__outpatient_followup.sql"
 migration_v165="$project_dir/src/main/resources/db/migration/V165__metric_snapshot.sql"
 migration_v166="$project_dir/src/main/resources/db/migration/V166__configuration_lifecycle.sql"
+migration_v167="$project_dir/src/main/resources/db/migration/V167__development_user_session.sql"
+migration_v168="$project_dir/src/main/resources/db/migration/V168__appointment_doctor_and_admission_registration.sql"
+migration_v169="$project_dir/src/main/resources/db/migration/V169__medical_agent_harness.sql"
 assertions_v1="$project_dir/src/test/resources/schema/assert-v1.sql"
 assertions_v2="$project_dir/src/test/resources/schema/assert-v2.sql"
 assertions_v3="$project_dir/src/test/resources/schema/assert-v3.sql"
@@ -339,10 +342,18 @@ assertions_v163="$project_dir/src/test/resources/schema/assert-v163.sql"
 assertions_v164="$project_dir/src/test/resources/schema/assert-v164.sql"
 assertions_v165="$project_dir/src/test/resources/schema/assert-v165.sql"
 assertions_v166="$project_dir/src/test/resources/schema/assert-v166.sql"
+assertions_v169="$project_dir/src/test/resources/schema/assert-v169.sql"
 
 for required_file_v166 in "$migration_v166" "$assertions_v166"; do
   if [[ ! -f "$required_file_v166" ]]; then
     echo "Missing schema contract file: $required_file_v166" >&2
+    exit 1
+  fi
+done
+
+for required_file_latest in "$migration_v167" "$migration_v168" "$migration_v169" "$assertions_v169"; do
+  if [[ ! -f "$required_file_latest" ]]; then
+    echo "Missing latest schema contract file: $required_file_latest" >&2
     exit 1
   fi
 done
@@ -524,4 +535,7 @@ done
   -f "$migration_v164" -f "$assertions_v164" \
   -f "$migration_v165" -f "$assertions_v165" \
   -f "$migration_v166" -f "$assertions_v166" \
+  -f "$migration_v167" \
+  -f "$migration_v168" \
+  -f "$migration_v169" -f "$assertions_v169" \
   -c 'rollback'

@@ -1,0 +1,114 @@
+{
+  "run_at": "2026-08-25T03:37:13.531Z",
+  "checks": 19,
+  "passed": 19,
+  "failed": 0,
+  "findings": [],
+  "observations": [
+    {
+      "viewport": "1280x800",
+      "check": "brand-logo-not-distorted",
+      "status": "PASS",
+      "width": 38,
+      "height": 38,
+      "naturalWidth": 1254,
+      "naturalHeight": 1254,
+      "objectFit": "cover"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "brand-link",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "specialty-menu-hidden",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "hospital-selector",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "role-selector",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "global-search",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "assistant-button",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "operation-guide",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "notifications",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "account-login-entry",
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280x800",
+      "check": "topbar-no-overflow",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "brand-logo-not-distorted",
+      "status": "PASS",
+      "width": 38,
+      "height": 38,
+      "naturalWidth": 1254,
+      "naturalHeight": 1254,
+      "objectFit": "cover"
+    },
+    {
+      "viewport": "390x844",
+      "check": "brand-link",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "specialty-menu-hidden",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "assistant-button",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "operation-guide",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "notifications",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "account-login-entry",
+      "status": "PASS"
+    },
+    {
+      "viewport": "390x844",
+      "check": "topbar-no-overflow",
+      "status": "PASS"
+    }
+  ]
+}

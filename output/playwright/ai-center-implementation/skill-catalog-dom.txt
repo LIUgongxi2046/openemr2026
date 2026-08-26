@@ -1,0 +1,253 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+  - text: ⌕
+  - button "打开AI医助小南"
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+- complementary "一级导航":
+  - link:
+    - /url: "#/clinical"
+    - generic: ⌂
+  - link:
+    - /url: "#/outpatient"
+    - generic: ◫
+  - link:
+    - /url: "#/emergency"
+    - generic: ✚
+  - link:
+    - /url: "#/inpatient"
+    - generic: ▥
+  - link:
+    - /url: "#/record"
+    - generic: ▤
+  - link:
+    - /url: "#/quality-center"
+    - generic: ◈
+  - link:
+    - /url: "#/archive-assets"
+    - generic: ▣
+  - link:
+    - /url: "#/care-operations"
+    - generic: ✚
+  - link:
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+  - link:
+    - /url: "#/data-center"
+    - generic: ⌁
+  - link:
+    - /url: "#/ai-center"
+    - generic: ✦
+  - link:
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+  - link:
+    - /url: "#/workflow"
+    - generic: ⌘
+  - link:
+    - /url: "#/admin"
+    - generic: ⚙
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "小南策略":
+    - /url: "#/ai-assistant-policy"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "评估发布":
+    - /url: "#/agent-evals"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Skill 目录" [level=1]
+  - paragraph: 登记与停用可复用 Skill；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - region "Skill 统计":
+    - article:
+      - generic: Skill
+      - strong: "12"
+      - generic: 全部登记
+    - article:
+      - generic: 有效 Skill
+      - strong: "12"
+      - generic: ACTIVE
+  - heading "Skill 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "候选结果边界校验 …0000f10c CANDIDATE_BOUNDARY_VALIDATION 1.0.0 有效 停用":
+        - cell "候选结果边界校验 …0000f10c":
+          - strong: 候选结果边界校验
+          - generic: …0000f10c
+        - cell "CANDIDATE_BOUNDARY_VALIDATION":
+          - code: CANDIDATE_BOUNDARY_VALIDATION
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床文书候选起草 …0000f104 CLINICAL_DOCUMENT_DRAFT 1.0.0 有效 停用":
+        - cell "临床文书候选起草 …0000f104":
+          - strong: 临床文书候选起草
+          - generic: …0000f104
+        - cell "CLINICAL_DOCUMENT_DRAFT":
+          - code: CLINICAL_DOCUMENT_DRAFT
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床事实摘要 …0000f103 CLINICAL_FACT_SUMMARY 1.0.0 有效 停用":
+        - cell "临床事实摘要 …0000f103":
+          - strong: 临床事实摘要
+          - generic: …0000f103
+        - cell "CLINICAL_FACT_SUMMARY":
+          - code: CLINICAL_FACT_SUMMARY
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "会诊资料候选准备 …0000f108 CONSULT_BRIEF_PREPARATION 1.0.0 有效 停用":
+        - cell "会诊资料候选准备 …0000f108":
+          - strong: 会诊资料候选准备
+          - generic: …0000f108
+        - cell "CONSULT_BRIEF_PREPARATION":
+          - code: CONSULT_BRIEF_PREPARATION
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "上下文租约校验 …0000f101 CONTEXT_LEASE_GUARD 1.0.0 有效 停用":
+        - cell "上下文租约校验 …0000f101":
+          - strong: 上下文租约校验
+          - generic: …0000f101
+        - cell "CONTEXT_LEASE_GUARD":
+          - code: CONTEXT_LEASE_GUARD
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "危急值上下文核对 …0000f106 CRITICAL_RESULT_CONTEXT 1.0.0 有效 停用":
+        - cell "危急值上下文核对 …0000f106":
+          - strong: 危急值上下文核对
+          - generic: …0000f106
+        - cell "CRITICAL_RESULT_CONTEXT":
+          - code: CRITICAL_RESULT_CONTEXT
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文书一致性审阅 …0000f105 DOCUMENT_CONSISTENCY_REVIEW 1.0.0 有效 停用":
+        - cell "文书一致性审阅 …0000f105":
+          - strong: 文书一致性审阅
+          - generic: …0000f105
+        - cell "DOCUMENT_CONSISTENCY_REVIEW":
+          - code: DOCUMENT_CONSISTENCY_REVIEW
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "随访任务候选规划 …0000f107 FOLLOWUP_TASK_PLANNING 1.0.0 有效 停用":
+        - cell "随访任务候选规划 …0000f107":
+          - strong: 随访任务候选规划
+          - generic: …0000f107
+        - cell "FOLLOWUP_TASK_PLANNING":
+          - code: FOLLOWUP_TASK_PLANNING
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "用药风险解释 …0000f109 MEDICATION_RISK_EXPLANATION 1.0.0 有效 停用":
+        - cell "用药风险解释 …0000f109":
+          - strong: 用药风险解释
+          - generic: …0000f109
+        - cell "MEDICATION_RISK_EXPLANATION":
+          - code: MEDICATION_RISK_EXPLANATION
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "最小必要数据脱敏 …0000f10a MINIMUM_NECESSARY_REDACTION 1.0.0 有效 停用":
+        - cell "最小必要数据脱敏 …0000f10a":
+          - strong: 最小必要数据脱敏
+          - generic: …0000f10a
+        - cell "MINIMUM_NECESSARY_REDACTION":
+          - code: MINIMUM_NECESSARY_REDACTION
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "患者时间线检索 …0000f102 PATIENT_TIMELINE_RETRIEVAL 1.0.0 有效 停用":
+        - cell "患者时间线检索 …0000f102":
+          - strong: 患者时间线检索
+          - generic: …0000f102
+        - cell "PATIENT_TIMELINE_RETRIEVAL":
+          - code: PATIENT_TIMELINE_RETRIEVAL
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "可定位来源引用 …0000f10b SOURCE_REFERENCE_CITATION 1.0.0 有效 停用":
+        - cell "可定位来源引用 …0000f10b":
+          - strong: 可定位来源引用
+          - generic: …0000f10b
+        - cell "SOURCE_REFERENCE_CITATION":
+          - code: SOURCE_REFERENCE_CITATION
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Skill" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Skill 编码
+  - textbox "Skill 编码":
+    - /placeholder: 例：MEDICAL-NOTE
+  - generic: Skill 名称
+  - textbox "Skill 名称":
+    - /placeholder: 例：病历摘要
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - button "登记并生效"

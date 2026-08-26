@@ -397,13 +397,13 @@ async function useRemoteVersion() {
         <label class="warning-disposition"><span>警告处置说明</span><input v-model="warningDisposition" /></label>
         <button class="button danger full" :disabled="Boolean(busy) || document.status === 'SIGNED' || hasUnsavedChanges" @click="sign">{{ document.status === 'SIGNED' ? '病历已签署' : hasUnsavedChanges ? '请先完成自动保存' : '签署当前版本' }}</button>
         <RouterLink class="record-governance-link" to="/record-qc">查看完整质控与签名证据</RouterLink></section>
-        <section v-if="assistantOpen" class="side-card ai-card"><div class="side-card-title"><h2>随行 AI 助手</h2><span class="ai-state">候选制</span></div>
-          <div v-if="!proposal" class="empty-state ai-empty"><span>✦</span><p>AI 不会直接改写病历</p><small>点击“AI 辅助”生成带来源候选</small></div>
-          <template v-else><div class="ai-warning">候选尚未进入病历，需医生逐项审阅。</div><div class="proposal-copy">{{ String(proposal.payload.notice || '病历段落候选') }}</div>
+        <section v-if="assistantOpen" class="side-card ai-card"><div class="side-card-title"><h2>AI医助小南</h2><span class="ai-state">医生确认</span></div>
+          <div v-if="!proposal" class="empty-state ai-empty"><span>✦</span><p>小南不会直接改写病历</p><small>点击“AI 辅助”生成带来源的病历草稿</small></div>
+          <template v-else><div class="ai-warning">草稿尚未写入病历，请医生逐项审阅。</div><div class="proposal-copy">{{ String(proposal.payload.notice || '病历段落草稿') }}</div>
             <h3>来源证据</h3><div v-for="reference in proposal.references" :key="reference.reference_id" class="reference"><strong>{{ reference.source_type }}</strong><p>{{ reference.excerpt || '结构化字段引用' }}</p><code>{{ reference.field_path }}</code></div>
             <div class="proposal-actions"><button class="button secondary" :disabled="Boolean(busy) || proposal.status !== 'PENDING_REVIEW'" @click="decide('REJECTED')">拒绝</button>
               <button class="button ai" :disabled="Boolean(busy) || proposal.status !== 'PENDING_REVIEW'" @click="decide('ACCEPTED')">接受到编辑区</button></div></template></section></aside>
     </div>
-    <button class="ai-fab" aria-label="打开病历 AI 候选面板" :aria-expanded="assistantOpen" @click="assistantOpen = !assistantOpen"><span>AI</span><small>{{ assistantOpen ? '收起助手' : '随行助手' }}</small></button>
+    <button class="ai-fab" aria-label="打开AI医助小南病历候选面板" :aria-expanded="assistantOpen" @click="assistantOpen = !assistantOpen"><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="32" height="32" /><small>{{ assistantOpen ? '收起小南' : 'AI医助小南' }}</small></button>
   </section>
 </template>

@@ -1,0 +1,677 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Tool 目录" [level=1]
+  - paragraph: 登记与停用可执行 Tool；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - region "Tool 统计":
+    - article:
+      - generic: Tool
+      - strong: "40"
+      - generic: 全部登记
+    - article:
+      - generic: 有效 Tool
+      - strong: "30"
+      - generic: ACTIVE
+  - heading "Tool 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 类型 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "类型"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "工具-检索 …4b90eead TO-08a7eb25 API 1.0.0 有效 停用":
+        - cell "工具-检索 …4b90eead":
+          - strong: 工具-检索
+          - generic: …4b90eead
+        - cell "TO-08a7eb25":
+          - code: TO-08a7eb25
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …909fd239 TO-165c9012 API 1.0.0 有效 停用":
+        - cell "工具-检索 …909fd239":
+          - strong: 工具-检索
+          - generic: …909fd239
+        - cell "TO-165c9012":
+          - code: TO-165c9012
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …f15192fe TO-27226a63 API 1.0.0 有效 停用":
+        - cell "工具-检索 …f15192fe":
+          - strong: 工具-检索
+          - generic: …f15192fe
+        - cell "TO-27226a63":
+          - code: TO-27226a63
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …528df097 TO-35b0ffd7 API 1.0.0 有效 停用":
+        - cell "工具-检索 …528df097":
+          - strong: 工具-检索
+          - generic: …528df097
+        - cell "TO-35b0ffd7":
+          - code: TO-35b0ffd7
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …34e124d2 TO-4876f66e API 1.0.0 有效 停用":
+        - cell "工具-检索 …34e124d2":
+          - strong: 工具-检索
+          - generic: …34e124d2
+        - cell "TO-4876f66e":
+          - code: TO-4876f66e
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …eb036fee TO-4af7ad11 API 1.0.0 有效 停用":
+        - cell "工具-检索 …eb036fee":
+          - strong: 工具-检索
+          - generic: …eb036fee
+        - cell "TO-4af7ad11":
+          - code: TO-4af7ad11
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …6f5bf7d1 TO-61afcbe9 API 1.0.0 有效 停用":
+        - cell "工具-检索 …6f5bf7d1":
+          - strong: 工具-检索
+          - generic: …6f5bf7d1
+        - cell "TO-61afcbe9":
+          - code: TO-61afcbe9
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …4c243291 TO-7b1eb1f4 API 1.0.0 有效 停用":
+        - cell "工具-检索 …4c243291":
+          - strong: 工具-检索
+          - generic: …4c243291
+        - cell "TO-7b1eb1f4":
+          - code: TO-7b1eb1f4
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …b5b9d0a4 TO-ae294b58 API 1.0.0 有效 停用":
+        - cell "工具-检索 …b5b9d0a4":
+          - strong: 工具-检索
+          - generic: …b5b9d0a4
+        - cell "TO-ae294b58":
+          - code: TO-ae294b58
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "工具-检索 …20ccea05 TO-bf0a929f API 1.0.0 有效 停用":
+        - cell "工具-检索 …20ccea05":
+          - strong: 工具-检索
+          - generic: …20ccea05
+        - cell "TO-bf0a929f":
+          - code: TO-bf0a929f
+        - cell "API"
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …10d64065 TOOL-0b2581e9 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …10d64065":
+          - strong: 病历检索工具
+          - generic: …10d64065
+        - cell "TOOL-0b2581e9":
+          - code: TOOL-0b2581e9
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …9c613ea8 TOOL-0bf8fbd5 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …9c613ea8":
+          - strong: 病历检索工具
+          - generic: …9c613ea8
+        - cell "TOOL-0bf8fbd5":
+          - code: TOOL-0bf8fbd5
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …500a1c52 TOOL-120852d3 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …500a1c52":
+          - strong: 病历检索工具
+          - generic: …500a1c52
+        - cell "TOOL-120852d3":
+          - code: TOOL-120852d3
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …87d7e999 TOOL-14534bd4 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …87d7e999":
+          - strong: 病历检索工具
+          - generic: …87d7e999
+        - cell "TOOL-14534bd4":
+          - code: TOOL-14534bd4
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …21447413 TOOL-189d31fa 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …21447413":
+          - strong: 病历检索工具
+          - generic: …21447413
+        - cell "TOOL-189d31fa":
+          - code: TOOL-189d31fa
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …fff18338 TOOL-2028027e 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …fff18338":
+          - strong: 病历检索工具
+          - generic: …fff18338
+        - cell "TOOL-2028027e":
+          - code: TOOL-2028027e
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …6703fe0e TOOL-2f69e1bc 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …6703fe0e":
+          - strong: 病历检索工具
+          - generic: …6703fe0e
+        - cell "TOOL-2f69e1bc":
+          - code: TOOL-2f69e1bc
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …8a9b4710 TOOL-37ffd224 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …8a9b4710":
+          - strong: 病历检索工具
+          - generic: …8a9b4710
+        - cell "TOOL-37ffd224":
+          - code: TOOL-37ffd224
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …e1b22562 TOOL-3ed77e02 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …e1b22562":
+          - strong: 病历检索工具
+          - generic: …e1b22562
+        - cell "TOOL-3ed77e02":
+          - code: TOOL-3ed77e02
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …a9a65c6a TOOL-41a0704b 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …a9a65c6a":
+          - strong: 病历检索工具
+          - generic: …a9a65c6a
+        - cell "TOOL-41a0704b":
+          - code: TOOL-41a0704b
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …89587868 TOOL-437e37be 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …89587868":
+          - strong: 病历检索工具
+          - generic: …89587868
+        - cell "TOOL-437e37be":
+          - code: TOOL-437e37be
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …26210e8d TOOL-53ea6e82 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …26210e8d":
+          - strong: 病历检索工具
+          - generic: …26210e8d
+        - cell "TOOL-53ea6e82":
+          - code: TOOL-53ea6e82
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …90e1a2d4 TOOL-5951a200 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …90e1a2d4":
+          - strong: 病历检索工具
+          - generic: …90e1a2d4
+        - cell "TOOL-5951a200":
+          - code: TOOL-5951a200
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …dcc00a37 TOOL-60a4cfee 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …dcc00a37":
+          - strong: 病历检索工具
+          - generic: …dcc00a37
+        - cell "TOOL-60a4cfee":
+          - code: TOOL-60a4cfee
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …1918dc48 TOOL-75740835 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …1918dc48":
+          - strong: 病历检索工具
+          - generic: …1918dc48
+        - cell "TOOL-75740835":
+          - code: TOOL-75740835
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …46a27461 TOOL-822ac324 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …46a27461":
+          - strong: 病历检索工具
+          - generic: …46a27461
+        - cell "TOOL-822ac324":
+          - code: TOOL-822ac324
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …21cec04d TOOL-88096b6a 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …21cec04d":
+          - strong: 病历检索工具
+          - generic: …21cec04d
+        - cell "TOOL-88096b6a":
+          - code: TOOL-88096b6a
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …ef4c709b TOOL-8e3d4f8f 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …ef4c709b":
+          - strong: 病历检索工具
+          - generic: …ef4c709b
+        - cell "TOOL-8e3d4f8f":
+          - code: TOOL-8e3d4f8f
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …eec37d79 TOOL-a21c8149 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …eec37d79":
+          - strong: 病历检索工具
+          - generic: …eec37d79
+        - cell "TOOL-a21c8149":
+          - code: TOOL-a21c8149
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …1507e3a2 TOOL-c3488666 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …1507e3a2":
+          - strong: 病历检索工具
+          - generic: …1507e3a2
+        - cell "TOOL-c3488666":
+          - code: TOOL-c3488666
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …fb1ef29d TOOL-c3857845 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …fb1ef29d":
+          - strong: 病历检索工具
+          - generic: …fb1ef29d
+        - cell "TOOL-c3857845":
+          - code: TOOL-c3857845
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …6aa9de8e TOOL-cb7537b6 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …6aa9de8e":
+          - strong: 病历检索工具
+          - generic: …6aa9de8e
+        - cell "TOOL-cb7537b6":
+          - code: TOOL-cb7537b6
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …11e280b4 TOOL-cc453213 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …11e280b4":
+          - strong: 病历检索工具
+          - generic: …11e280b4
+        - cell "TOOL-cc453213":
+          - code: TOOL-cc453213
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …dd14008f TOOL-d8085766 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …dd14008f":
+          - strong: 病历检索工具
+          - generic: …dd14008f
+        - cell "TOOL-d8085766":
+          - code: TOOL-d8085766
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …726d767b TOOL-db1e4090 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …726d767b":
+          - strong: 病历检索工具
+          - generic: …726d767b
+        - cell "TOOL-db1e4090":
+          - code: TOOL-db1e4090
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …f34c9460 TOOL-dd0def4c 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …f34c9460":
+          - strong: 病历检索工具
+          - generic: …f34c9460
+        - cell "TOOL-dd0def4c":
+          - code: TOOL-dd0def4c
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …a14f9aac TOOL-e8dc903a 数据库查询 v1 已停用 停用":
+        - cell "病历检索工具 …a14f9aac":
+          - strong: 病历检索工具
+          - generic: …a14f9aac
+        - cell "TOOL-e8dc903a":
+          - code: TOOL-e8dc903a
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "病历检索工具 …f3169b67 TOOL-f9a25a9b 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …f3169b67":
+          - strong: 病历检索工具
+          - generic: …f3169b67
+        - cell "TOOL-f9a25a9b":
+          - code: TOOL-f9a25a9b
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …27d89bd0 TOOL-fabc732a 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …27d89bd0":
+          - strong: 病历检索工具
+          - generic: …27d89bd0
+        - cell "TOOL-fabc732a":
+          - code: TOOL-fabc732a
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历检索工具 …950cd30e TOOL-fc5dc750 数据库查询 v1 有效 停用":
+        - cell "病历检索工具 …950cd30e":
+          - strong: 病历检索工具
+          - generic: …950cd30e
+        - cell "TOOL-fc5dc750":
+          - code: TOOL-fc5dc750
+        - cell "数据库查询"
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Tool" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Tool 编码
+  - textbox "Tool 编码":
+    - /placeholder: 例：DRUG-INTERACTION
+  - generic: Tool 名称
+  - textbox "Tool 名称":
+    - /placeholder: 例：药物相互作用查询
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - generic: 类型
+  - combobox "类型":
+    - option "API" [selected]
+    - option "函数"
+    - option "数据库查询"
+    - option "其他"
+  - button "登记并生效"

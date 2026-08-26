@@ -1,6 +1,33 @@
 // Generated from contracts/openapi.json. Do not edit.
 import { z } from 'zod';
 
+export const sessionLoginRequestWireSchema = z.object({
+  "username": z.string(),
+  "password": z.string(),
+}).strict();
+export type SessionLoginRequestWire = z.infer<typeof sessionLoginRequestWireSchema>;
+
+export const sessionUserWireSchema = z.object({
+  "tenant_id": z.string().uuid(),
+  "user_id": z.string().uuid(),
+  "display_name": z.string(),
+  "organization_id": z.string().uuid(),
+  "organization_name": z.string(),
+  "facility_id": z.string().uuid(),
+  "facility_name": z.string(),
+  "role_assignment_ids": z.array(z.string().uuid()),
+  "role_codes": z.array(z.string()),
+  "shift_display": z.string(),
+  "expires_at": z.string(),
+}).strict();
+export type SessionUserWire = z.infer<typeof sessionUserWireSchema>;
+
+export const sessionLoginResponseWireSchema = z.object({
+  "bearer_token": z.string(),
+  "user": sessionUserWireSchema,
+}).strict();
+export type SessionLoginResponseWire = z.infer<typeof sessionLoginResponseWireSchema>;
+
 export const auditEventWireSchema = z.object({
   "audit_event_id": z.string().uuid(),
   "occurred_at": z.string(),
@@ -86,9 +113,9 @@ export const outpatientFollowupWireSchema = z.object({
   "encounter_id": z.string().uuid(),
   "followup_type": z.enum(["EDUCATION","REVISIT","FOLLOWUP"]),
   "content": z.string().optional(),
-  "outcome": z.string().optional(),
+  "outcome": z.string().nullable().optional(),
   "status": z.enum(["PENDING","COMPLETED"]),
-  "due_at": z.string().optional(),
+  "due_at": z.string().nullable().optional(),
   "completed_at": z.string().nullable().optional(),
   "row_version": z.number().int(),
   "created_at": z.string().optional(),
@@ -1004,7 +1031,11 @@ export const scheduleSlotWireSchema = z.object({
   "schedule_slot_id": z.string().uuid(),
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
-  "department_id": z.string().uuid().nullable().optional(),
+  "department_id": z.string().uuid(),
+  "doctor_user_id": z.string().uuid(),
+  "facility_name": z.string(),
+  "department_name": z.string(),
+  "doctor_display_name": z.string(),
   "visit_type": z.enum(["OUTPATIENT","EMERGENCY"]),
   "slot_date": z.string(),
   "start_time": z.string(),
@@ -1019,7 +1050,8 @@ export type ScheduleSlotWire = z.infer<typeof scheduleSlotWireSchema>;
 export const scheduleSlotCreateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
-  "department_id": z.string().uuid().nullable().optional(),
+  "department_id": z.string().uuid(),
+  "doctor_user_id": z.string().uuid(),
   "visit_type": z.enum(["OUTPATIENT","EMERGENCY"]),
   "slot_date": z.string(),
   "start_time": z.string(),
@@ -1032,8 +1064,19 @@ export const appointmentWireSchema = z.object({
   "appointment_id": z.string().uuid(),
   "schedule_slot_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
+  "patient_display_name": z.string(),
+  "patient_sex_code": z.string(),
+  "patient_birth_date": z.string(),
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
+  "facility_name": z.string(),
+  "department_id": z.string().uuid(),
+  "department_name": z.string(),
+  "doctor_user_id": z.string().uuid(),
+  "doctor_display_name": z.string(),
+  "slot_date": z.string(),
+  "slot_start_time": z.string(),
+  "slot_end_time": z.string(),
   "visit_type": z.enum(["OUTPATIENT","EMERGENCY"]),
   "source": z.enum(["APPOINTMENT","WALK_IN","EMERGENCY"]),
   "status": z.enum(["BOOKED","CHECKED_IN","CANCELLED","NO_SHOW","COMPLETED"]),
@@ -1067,6 +1110,9 @@ export const waitingQueueEntryWireSchema = z.object({
   "waiting_queue_entry_id": z.string().uuid(),
   "appointment_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
+  "patient_display_name": z.string(),
+  "patient_sex_code": z.string(),
+  "patient_birth_date": z.string(),
   "encounter_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
   "queue_date": z.string(),
@@ -3860,6 +3906,20 @@ export const inpatientAdmissionCreateRequestWireSchema = z.object({
   "bed_id": z.string().uuid(),
   "attending_user_id": z.string().uuid(),
   "admitted_at": z.string(),
+  "department_id": z.string().uuid(),
+  "admission_source": z.enum(["OUTPATIENT","EMERGENCY","TRANSFER","OTHER"]),
+  "admission_type": z.enum(["ELECTIVE","URGENT","EMERGENCY"]),
+  "condition_level": z.enum(["GENERAL","SERIOUS","CRITICAL"]),
+  "admitting_diagnosis_code": z.string().nullable().optional(),
+  "admitting_diagnosis_text": z.string(),
+  "payment_method_code": z.string(),
+  "identity_verification_method": z.enum(["RESIDENT_ID","MEDICAL_CARD","OTHER"]),
+  "contact_name": z.string(),
+  "contact_relationship": z.string(),
+  "contact_phone": z.string(),
+  "admission_certificate_no": z.string().nullable().optional(),
+  "transfer_from": z.string().nullable().optional(),
+  "remarks": z.string().nullable().optional(),
 }).strict();
 export type InpatientAdmissionCreateRequestWire = z.infer<typeof inpatientAdmissionCreateRequestWireSchema>;
 
@@ -3872,6 +3932,21 @@ export const inpatientAdmissionWireSchema = z.object({
   "attending_user_id": z.string().uuid(),
   "status": z.enum(["ADMITTED","TRANSFER_PENDING","DISCHARGE_PENDING","DISCHARGED","CANCELLED"]),
   "admitted_at": z.string(),
+  "admission_no": z.string(),
+  "department_id": z.string().uuid(),
+  "admission_source": z.enum(["OUTPATIENT","EMERGENCY","TRANSFER","OTHER"]),
+  "admission_type": z.enum(["ELECTIVE","URGENT","EMERGENCY"]),
+  "condition_level": z.enum(["GENERAL","SERIOUS","CRITICAL"]),
+  "admitting_diagnosis_code": z.string().nullable().optional(),
+  "admitting_diagnosis_text": z.string(),
+  "payment_method_code": z.string(),
+  "identity_verification_method": z.enum(["RESIDENT_ID","MEDICAL_CARD","OTHER"]),
+  "contact_name": z.string(),
+  "contact_relationship": z.string(),
+  "contact_phone": z.string(),
+  "admission_certificate_no": z.string().nullable().optional(),
+  "transfer_from": z.string().nullable().optional(),
+  "remarks": z.string().nullable().optional(),
   "discharged_at": z.string().nullable().optional(),
   "row_version": z.number().int(),
 }).strict();
@@ -4003,7 +4078,12 @@ export type InpatientWorklistItemWire = z.infer<typeof inpatientWorklistItemWire
 export const inpatientBedBoardItemWireSchema = z.object({
   "bed_id": z.string().uuid(),
   "ward_id": z.string().uuid(),
+  "department_id": z.string().uuid(),
   "bed_label": z.string(),
+  "facility_name": z.string(),
+  "department_name": z.string(),
+  "ward_name": z.string(),
+  "display_bed_no": z.string(),
   "bed_status": z.enum(["ACTIVE","INACTIVE"]),
   "occupancy_status": z.enum(["AVAILABLE","OCCUPIED"]),
   "admission_id": z.string().uuid().nullable().optional(),
@@ -4096,6 +4176,94 @@ export const aiRunSnapshotWireSchema = z.object({
   "proposals": z.array(aiProposalWireSchema),
 }).strict();
 export type AIRunSnapshotWire = z.infer<typeof aiRunSnapshotWireSchema>;
+
+export const medicalAgentReleaseWireSchema = z.object({
+  "agent_code": z.string(),
+  "release_version": z.string(),
+  "display_name": z.string(),
+  "agent_level": z.enum(["MAIN","CHILD"]),
+  "parent_agent_code": z.string().nullable().optional(),
+  "stage_code": z.string(),
+  "description": z.string(),
+  "display_role": z.string(),
+  "current_action": z.string(),
+  "contribution_label": z.string(),
+  "output_schema": z.string(),
+  "autonomy_level": z.enum(["A0","A1","A2"]),
+  "max_steps": z.number().int(),
+  "max_tool_calls": z.number().int(),
+  "max_duration_seconds": z.number().int(),
+}).strict();
+export type MedicalAgentReleaseWire = z.infer<typeof medicalAgentReleaseWireSchema>;
+
+export const medicalAgentFamilyWireSchema = z.object({
+  "main_agent": medicalAgentReleaseWireSchema,
+  "child_agents": z.array(medicalAgentReleaseWireSchema),
+}).strict();
+export type MedicalAgentFamilyWire = z.infer<typeof medicalAgentFamilyWireSchema>;
+
+export const medicalAgentRunCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "context_lease_id": z.string().uuid(),
+  "main_agent_code": z.string(),
+  "stage_code": z.string(),
+  "target_type": z.enum(["ENCOUNTER","DOCUMENT","RESULT","TASK","CARE_PLAN"]),
+  "target_id": z.string().uuid(),
+  "objective": z.string(),
+}).strict();
+export type MedicalAgentRunCreateRequestWire = z.infer<typeof medicalAgentRunCreateRequestWireSchema>;
+
+export const medicalAgentChildRunWireSchema = z.object({
+  "child_run_id": z.string().uuid(),
+  "child_agent_code": z.string(),
+  "display_name": z.string(),
+  "display_role": z.string(),
+  "current_action": z.string(),
+  "contribution_label": z.string(),
+  "state": z.enum(["QUEUED","RUNNING","COMPLETED","PARTIAL","BLOCKED","FAILED","CANCELLED","SKIPPED"]),
+  "critical": z.boolean(),
+  "contribution": z.record(z.string(), z.unknown()),
+  "source_references": z.array(z.record(z.string(), z.unknown())),
+  "started_at": z.string().nullable(),
+  "completed_at": z.string().nullable(),
+}).strict();
+export type MedicalAgentChildRunWire = z.infer<typeof medicalAgentChildRunWireSchema>;
+
+export const medicalAgentRunEventWireSchema = z.object({
+  "sequence": z.number().int(),
+  "event_type": z.string(),
+  "child_run_id": z.string().uuid().nullable(),
+  "payload": z.record(z.string(), z.unknown()),
+  "occurred_at": z.string(),
+}).strict();
+export type MedicalAgentRunEventWire = z.infer<typeof medicalAgentRunEventWireSchema>;
+
+export const medicalAgentRunWireSchema = z.object({
+  "run_id": z.string().uuid(),
+  "context_lease_id": z.string().uuid(),
+  "root_agent_code": z.string(),
+  "root_agent_version": z.string(),
+  "composition_code": z.string(),
+  "composition_version": z.string(),
+  "requested_stage": z.string(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "target_type": z.string(),
+  "target_id": z.string().uuid(),
+  "objective": z.string(),
+  "state": z.enum(["QUEUED","RUNNING","WAITING_FOR_REVIEW","COMPLETED","PARTIAL","BLOCKED","FAILED","CANCELLED"]),
+  "sequence": z.number().int(),
+  "output": z.record(z.string(), z.unknown()),
+  "created_at": z.string(),
+  "completed_at": z.string().nullable(),
+  "row_version": z.number().int(),
+  "child_runs": z.array(medicalAgentChildRunWireSchema),
+  "events": z.array(medicalAgentRunEventWireSchema),
+}).strict();
+export type MedicalAgentRunWire = z.infer<typeof medicalAgentRunWireSchema>;
 
 export const aiRunCreateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),

@@ -476,6 +476,7 @@ final class InpatientService {
             requireWardScope(identity, request.facilityId(), request.wardId());
             requireActiveAttending(identity.tenantId(), request.attendingUserId());
             requireInpatientEncounter(identity.tenantId(), request);
+            requireAdmissionRegistration(identity.tenantId(), request);
             Bed bed = lockActiveBed(identity.tenantId(), request.facilityId(), request.wardId(), request.bedId());
             if (bed == null) {
                 throw new InpatientException("BED_NOT_AVAILABLE", 409, "The selected bed is not active in this ward");
@@ -490,20 +491,46 @@ final class InpatientService {
             }
             String requestHash = sha256(request.patientId() + "|" + request.encounterId() + "|"
                     + request.wardId() + "|" + request.bedId() + "|" + request.attendingUserId()
-                    + "|" + request.admittedAt());
+                    + "|" + request.admittedAt() + "|" + request.departmentId() + "|"
+                    + request.admissionSource() + "|" + request.admissionType() + "|"
+                    + request.admittingDiagnosisText() + "|" + request.contactPhone());
             beginCommand(identity, idempotencyKey, requestHash);
             UUID admissionId = UUID.randomUUID();
+            String admissionNo = "IP-" + java.time.LocalDate.now() + "-"
+                    + admissionId.toString().substring(0, 8).toUpperCase();
             jdbc.sql("""
                     insert into inpatient_admission(
                       tenant_id, admission_id, encounter_id, patient_id, facility_id, ward_id,
-                      current_bed_id, attending_user_id, status, admitted_at)
+                      current_bed_id, attending_user_id, status, admitted_at, admission_no, department_id,
+                      admission_source, admission_type, condition_level, admitting_diagnosis_code,
+                      admitting_diagnosis_text, payment_method_code, identity_verification_method,
+                      contact_name, contact_relationship, contact_phone, admission_certificate_no,
+                      transfer_from, remarks)
                     values (:tenant, :admission, :encounter, :patient, :facility, :ward,
-                      :bed, :attending, 'ADMITTED', :admitted_at)
+                      :bed, :attending, 'ADMITTED', :admitted_at, :admission_no, :department,
+                      :admission_source, :admission_type, :condition_level, :diagnosis_code,
+                      :diagnosis_text, :payment_method, :verification_method,
+                      :contact_name, :contact_relationship, :contact_phone, :certificate_no,
+                      :transfer_from, :remarks)
                     """).param("tenant", identity.tenantId()).param("admission", admissionId)
                     .param("encounter", request.encounterId()).param("patient", request.patientId())
                     .param("facility", request.facilityId()).param("ward", request.wardId())
                     .param("bed", request.bedId()).param("attending", request.attendingUserId())
-                    .param("admitted_at", offset(request.admittedAt())).update();
+                    .param("admitted_at", offset(request.admittedAt())).param("admission_no", admissionNo)
+                    .param("department", request.departmentId())
+                    .param("admission_source", request.admissionSource().name())
+                    .param("admission_type", request.admissionType().name())
+                    .param("condition_level", request.conditionLevel().name())
+                    .param("diagnosis_code", clean(request.admittingDiagnosisCode()))
+                    .param("diagnosis_text", request.admittingDiagnosisText().trim())
+                    .param("payment_method", request.paymentMethodCode().trim())
+                    .param("verification_method", request.identityVerificationMethod().name())
+                    .param("contact_name", request.contactName().trim())
+                    .param("contact_relationship", request.contactRelationship().trim())
+                    .param("contact_phone", request.contactPhone().trim())
+                    .param("certificate_no", clean(request.admissionCertificateNo()))
+                    .param("transfer_from", clean(request.transferFrom()))
+                    .param("remarks", clean(request.remarks())).update();
             jdbc.sql("""
                     insert into bed_occupancy(
                       tenant_id, bed_occupancy_id, admission_id, ward_id, bed_id, started_at)
@@ -524,6 +551,12 @@ final class InpatientService {
                 select admission.admission_id, admission.encounter_id, admission.patient_id,
                   admission.facility_id, admission.ward_id, admission.current_bed_id, admission.attending_user_id,
                   admission.status, admission.admitted_at, admission.discharged_at, admission.row_version,
+                  admission.admission_no, admission.department_id, admission.admission_source,
+                  admission.admission_type, admission.condition_level, admission.admitting_diagnosis_code,
+                  admission.admitting_diagnosis_text, admission.payment_method_code,
+                  admission.identity_verification_method, admission.contact_name,
+                  admission.contact_relationship, admission.contact_phone,
+                  admission.admission_certificate_no, admission.transfer_from, admission.remarks,
                   patient.display_name as patient_display_name, ward.display_name as ward_display_name,
                   bed.bed_label
                 from inpatient_admission admission
@@ -542,6 +575,17 @@ final class InpatientService {
                                 rs.getObject("attending_user_id", UUID.class),
                                 InpatientAdmissionWire.StatusValue.valueOf(rs.getString("status")),
                                 rs.getObject("admitted_at", OffsetDateTime.class).toInstant(),
+                                rs.getString("admission_no"), rs.getObject("department_id", UUID.class),
+                                InpatientAdmissionWire.AdmissionSourceValue.valueOf(rs.getString("admission_source")),
+                                InpatientAdmissionWire.AdmissionTypeValue.valueOf(rs.getString("admission_type")),
+                                InpatientAdmissionWire.ConditionLevelValue.valueOf(rs.getString("condition_level")),
+                                rs.getString("admitting_diagnosis_code"), rs.getString("admitting_diagnosis_text"),
+                                rs.getString("payment_method_code"),
+                                InpatientAdmissionWire.IdentityVerificationMethodValue.valueOf(
+                                        rs.getString("identity_verification_method")),
+                                rs.getString("contact_name"), rs.getString("contact_relationship"),
+                                rs.getString("contact_phone"), rs.getString("admission_certificate_no"),
+                                rs.getString("transfer_from"), rs.getString("remarks"),
                                 toInstant(rs.getObject("discharged_at", OffsetDateTime.class)),
                                 rs.getLong("row_version")),
                         rs.getObject("facility_id", UUID.class),
@@ -592,11 +636,17 @@ final class InpatientService {
     List<InpatientBedBoardItemWire> bedBoard(ClinicalIdentity identity, UUID facilityId, UUID wardId) {
         requireWardScope(identity, facilityId, wardId);
         return jdbc.sql("""
-                select bed.bed_id, bed.ward_id, bed.bed_label, bed.status as bed_status,
+                select bed.bed_id, bed.ward_id, ward.department_id, bed.bed_label, bed.status as bed_status,
+                  facility.display_name as facility_name, department.display_name as department_name,
+                  ward.display_name as ward_name,
                   admission.admission_id, admission.encounter_id, admission.patient_id,
                   patient.display_name as patient_display_name, admission.attending_user_id,
                   admission.admitted_at, admission.row_version as admission_row_version
                 from clinical_bed bed
+                join clinical_ward ward on ward.tenant_id = bed.tenant_id and ward.ward_id = bed.ward_id
+                join facility on facility.tenant_id = ward.tenant_id and facility.facility_id = ward.facility_id
+                join clinical_department department on department.tenant_id = ward.tenant_id
+                  and department.facility_id = ward.facility_id and department.department_id = ward.department_id
                 left join bed_occupancy occupancy on occupancy.tenant_id = bed.tenant_id
                   and occupancy.bed_id = bed.bed_id and occupancy.ended_at is null
                 left join inpatient_admission admission on admission.tenant_id = occupancy.tenant_id
@@ -611,7 +661,10 @@ final class InpatientService {
                     UUID admissionId = rs.getObject("admission_id", UUID.class);
                     return new InpatientBedBoardItemWire(
                             rs.getObject("bed_id", UUID.class), rs.getObject("ward_id", UUID.class),
-                            rs.getString("bed_label"),
+                            rs.getObject("department_id", UUID.class),
+                            rs.getString("bed_label"), rs.getString("facility_name"),
+                            rs.getString("department_name"), rs.getString("ward_name"),
+                            rs.getString("department_name") + "-" + rs.getString("bed_label") + "床",
                             InpatientBedBoardItemWire.BedStatusValue.valueOf(rs.getString("bed_status")),
                             admissionId == null
                                     ? InpatientBedBoardItemWire.OccupancyStatusValue.AVAILABLE
@@ -823,6 +876,39 @@ final class InpatientService {
                 .param("facility", request.facilityId()).query(Long.class).single();
         if (count != 1) {
             throw contextDenied();
+        }
+    }
+
+    private void requireAdmissionRegistration(UUID tenantId, InpatientAdmissionCreateRequestWire request) {
+        if (request.departmentId() == null || request.admissionSource() == null
+                || request.admissionType() == null || request.conditionLevel() == null
+                || request.identityVerificationMethod() == null || request.admittedAt() == null
+                || blank(request.admittingDiagnosisText()) || blank(request.paymentMethodCode())
+                || blank(request.contactName()) || blank(request.contactRelationship())
+                || blank(request.contactPhone())) {
+            throw new InpatientException(
+                    "ADMISSION_VALIDATION_FAILED", 400, "入院登记必填信息不完整");
+        }
+        if (!request.contactPhone().trim().matches("[0-9+() -]{6,32}")) {
+            throw new InpatientException(
+                    "ADMISSION_VALIDATION_FAILED", 400, "联系人电话格式不正确");
+        }
+        long scope = jdbc.sql("""
+                select count(*) from clinical_ward ward
+                join clinical_bed bed on bed.tenant_id = ward.tenant_id and bed.ward_id = ward.ward_id
+                where ward.tenant_id = :tenant and ward.facility_id = :facility
+                  and ward.department_id = :department and ward.ward_id = :ward
+                  and bed.bed_id = :bed and ward.status = 'ACTIVE' and bed.status = 'ACTIVE'
+                """).param("tenant", tenantId).param("facility", request.facilityId())
+                .param("department", request.departmentId()).param("ward", request.wardId())
+                .param("bed", request.bedId()).query(Long.class).single();
+        if (scope != 1) {
+            throw new InpatientException(
+                    "ADMISSION_VALIDATION_FAILED", 400, "科室、病区与床位不属于同一有效配置");
+        }
+        if (request.admissionSource().name().equals("TRANSFER") && blank(request.transferFrom())) {
+            throw new InpatientException(
+                    "ADMISSION_VALIDATION_FAILED", 400, "转院入院必须填写转出医疗机构");
         }
     }
 
@@ -1300,6 +1386,12 @@ final class InpatientService {
 
     private static Instant toInstant(OffsetDateTime value) {
         return value == null ? null : value.toInstant();
+    }
+
+    private static boolean blank(String value) { return value == null || value.isBlank(); }
+
+    private static String clean(String value) {
+        return blank(value) ? null : value.trim();
     }
 
     private static String sha256(String value) {

@@ -22,6 +22,14 @@ describe('Vue route registry', () => {
     expect(router.resolve('/route-that-does-not-exist').name).toBe('safe-not-found');
   });
 
+  it('exposes system login as a public standalone layout with a legacy alias', () => {
+    const router = createOpenEmrRouter(createMemoryHistory());
+    const login = router.resolve('/login');
+    expect(login.name).toBe('login-context');
+    expect(login.meta).toMatchObject({ layout: 'SYSTEM_AUTH', publicRoute: true, primaryDomain: 'SYSTEM' });
+    expect(router.resolve('/login-context').name).toBe('login-context');
+  });
+
   it('moves the U01-V2/V3 implemented routes to native Vue without a second route registry', () => {
     for (const routeId of ['outpatient', 'opd-record', 'record', 'record-qc', 'record-sign', 'record-sources', 'inpatient', 'record-versions', 'record-diff', 'archive-assets', 'opd-orders', 'ip-orders', 'opd-diagnosis', 'clinical-tasks', 'opd-results', 'admin-org', 'admin-users', 'admin-permissions', 'admin-templates', 'emergency-access', 'patient-registry', 'patient-merge', 'patient-timeline']) {
       expect(nativeVueRouteIds.has(routeId)).toBe(true);

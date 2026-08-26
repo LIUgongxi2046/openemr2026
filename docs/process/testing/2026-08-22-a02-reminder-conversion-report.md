@@ -2,7 +2,7 @@
 
 > 日期：2026-08-22
 > 切片：`ClinicalReminderConversion`（`clinical_reminder_conversion` + `clinical_task.source_type='REMINDER'`）
-> 范围：A02 全局 AI 助手·提醒转任务/限频首切
+> 范围：A02 全局 AI医助小南·提醒转任务/限频首切
 > 结论：**VERIFIED**（本机全量门禁通过）
 
 ## 1. 结论

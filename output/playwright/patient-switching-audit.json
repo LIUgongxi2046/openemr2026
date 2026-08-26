@@ -1,0 +1,63 @@
+{
+  "run_at": "2026-08-25T06:18:27.205Z",
+  "attempted": 6,
+  "passed": 6,
+  "failed_responses": [],
+  "findings": [],
+  "observations": [
+    {
+      "sequence_no": 101,
+      "patient_name": "王志远",
+      "patient_context": "王王志远患者 …517eed56 · 就诊 …9d2836cd候诊状态候诊中上下文租约…4d1f3e10快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "2型糖尿病，初诊，伴高脂血症风险。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    },
+    {
+      "sequence_no": 102,
+      "patient_name": "李静怡",
+      "patient_context": "李李静怡患者 …d3abcb45 · 就诊 …d45266b6候诊状态已叫号上下文租约…e767fcae快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "原发性高血压2级，高危待进一步分层。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    },
+    {
+      "sequence_no": 103,
+      "patient_name": "陈雨桐",
+      "patient_context": "陈陈雨桐患者 …3fa0fa50 · 就诊 …6b3af89c候诊状态接诊中上下文租约…7d4892c9快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "中度持续性支气管哮喘，控制不佳。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    },
+    {
+      "sequence_no": 104,
+      "patient_name": "刘建国",
+      "patient_context": "刘刘建国患者 …36e33855 · 就诊 …2ec34b9b候诊状态候诊中上下文租约…4cc65729快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "慢性阻塞性肺疾病稳定期，GOLD 2级。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    },
+    {
+      "sequence_no": 105,
+      "patient_name": "赵欣然",
+      "patient_context": "赵赵欣然患者 …c1dedf58 · 就诊 …92e2d079候诊状态已叫号上下文租约…70250fb8快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "无先兆偏头痛，发作频率中等。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    },
+    {
+      "sequence_no": 106,
+      "patient_name": "周明轩",
+      "patient_context": "周周明轩患者 …656581b0 · 就诊 …9d71e765候诊状态接诊中上下文租约…5693dc74快照完整性完整",
+      "document": "WS445.2.OUTPATIENT_RECORD",
+      "diagnosis": "胃食管反流病，无报警症状。",
+      "order_items": "1 个医嘱项目",
+      "results": "1 份报告"
+    }
+  ]
+}

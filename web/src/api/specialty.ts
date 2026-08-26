@@ -76,11 +76,21 @@ function patientOnlyHeaders(lease: ContextLeaseWire) {
   return explicitContextHeaders(lease, clinicalContext.patientId, null);
 }
 
+function normalizeTemporalBody(body: unknown): unknown {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return body;
+  return Object.fromEntries(Object.entries(body as Record<string, unknown>).map(([key, value]) => {
+    if (typeof value !== 'string' || !/(?:_at|_date|_datetime)$/.test(key)) return [key, value];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return [key, new Date(`${value}T00:00:00.000Z`).toISOString()];
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(value)) return [key, new Date(value).toISOString()];
+    return [key, value];
+  }));
+}
+
 function createInit(lease: ContextLeaseWire, body: unknown) {
   return {
     method: 'POST',
     headers: { ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-    body: JSON.stringify(body),
+    body: JSON.stringify(normalizeTemporalBody(body)),
   };
 }
 

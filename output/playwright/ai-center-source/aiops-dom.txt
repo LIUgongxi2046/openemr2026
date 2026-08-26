@@ -1,0 +1,1274 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "AI 运行预算" [level=1]
+  - paragraph: 定义 Agent 运行预算并记录消耗；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - text: 预算
+  - combobox "预算":
+    - option "请选择预算" [disabled]
+    - option "预算（BUD-03c4d089）"
+    - option "预算（BUD-08306964）" [selected]
+    - option "预算（BUD-1707789b）"
+    - option "预算（BUD-1e59f419）"
+    - option "预算（BUD-1e6f57cd）"
+    - option "预算（BUD-223bd55d）"
+    - option "预算（BUD-23acd2db）"
+    - option "预算（BUD-2421b61f）"
+    - option "预算（BUD-2da2fd68）"
+    - option "预算（BUD-39757c87）"
+    - option "预算（BUD-409f2f24）"
+    - option "预算（BUD-424bde86）"
+    - option "预算（BUD-47f60574）"
+    - option "预算（BUD-4a2b9d09）"
+    - option "预算（BUD-4ebb243c）"
+    - option "预算（BUD-55e8765e）"
+    - option "预算（BUD-59952d8d）"
+    - option "预算（BUD-5bd0d773）"
+    - option "预算（BUD-624e9569）"
+    - option "预算（BUD-63edf32c）"
+    - option "预算（BUD-6fac80fe）"
+    - option "预算（BUD-7a2208b2）"
+    - option "预算（BUD-7b3d5d11）"
+    - option "预算（BUD-7ef13598）"
+    - option "预算（BUD-864793b9）"
+    - option "预算（BUD-88309ffc）"
+    - option "预算（BUD-8b656860）"
+    - option "预算（BUD-8c41dd08）"
+    - option "预算（BUD-8ec90bda）"
+    - option "预算（BUD-92ee83f0）"
+    - option "预算（BUD-94963d42）"
+    - option "预算（BUD-993e23e6）"
+    - option "预算（BUD-a1228b85）"
+    - option "预算（BUD-a126278f）"
+    - option "预算（BUD-a545100e）"
+    - option "预算（BUD-aae90bd9）"
+    - option "预算（BUD-b1db90f7）"
+    - option "预算（BUD-b2b3e3ea）"
+    - option "预算（BUD-b3a66ae6）"
+    - option "预算（BUD-b70df320）"
+    - option "预算（BUD-b8649318）"
+    - option "预算（BUD-c059a575）"
+    - option "预算（BUD-c0dc03dd）"
+    - option "预算（BUD-c11a85b3）"
+    - option "预算（BUD-c2f263c0）"
+    - option "预算（BUD-c9af7d2b）"
+    - option "预算（BUD-cba5dad2）"
+    - option "预算（BUD-d8da85f9）"
+    - option "预算（BUD-d98c26ad）"
+    - option "预算（BUD-da9ea435）"
+    - option "预算（BUD-de0ffe47）"
+    - option "预算（BUD-e0b1d173）"
+    - option "预算（BUD-e3f66a9d）"
+    - option "预算（BUD-e594c4c0）"
+    - option "预算（BUD-e62c6e84）"
+    - option "预算（BUD-e8da0e57）"
+    - option "预算（BUD-e98e0983）"
+    - option "预算（BUD-ef8d858a）"
+    - option "预算（BUD-efe53481）"
+    - option "预算（BUD-f0be31d4）"
+    - option "临床助手运行预算（BUDGET-11b6068e）"
+    - option "临床助手运行预算（BUDGET-22486ba2）"
+    - option "临床助手运行预算（BUDGET-25b2454e）"
+    - option "临床助手运行预算（BUDGET-4249c304）"
+    - option "临床助手运行预算（BUDGET-46f9cb5f）"
+    - option "临床助手运行预算（BUDGET-4c946ab3）"
+    - option "临床助手运行预算（BUDGET-5e17693d）"
+    - option "临床助手运行预算（BUDGET-6bcb6594）"
+    - option "临床助手运行预算（BUDGET-71701330）"
+    - option "临床助手运行预算（BUDGET-734a19de）"
+    - option "临床助手运行预算（BUDGET-775614e2）"
+    - option "临床助手运行预算（BUDGET-790efa85）"
+    - option "临床助手运行预算（BUDGET-816359df）"
+    - option "临床助手运行预算（BUDGET-81765be9）"
+    - option "临床助手运行预算（BUDGET-84820409）"
+    - option "临床助手运行预算（BUDGET-89952fbb）"
+    - option "临床助手运行预算（BUDGET-94d13c06）"
+    - option "临床助手运行预算（BUDGET-9a07be94）"
+    - option "临床助手运行预算（BUDGET-9b79611e）"
+    - option "临床助手运行预算（BUDGET-a16d5610）"
+    - option "临床助手运行预算（BUDGET-a71ebca8）"
+    - option "临床助手运行预算（BUDGET-b2b73046）"
+    - option "临床助手运行预算（BUDGET-b8e0fa72）"
+    - option "临床助手运行预算（BUDGET-c83e7a7c）"
+    - option "临床助手运行预算（BUDGET-cd640994）"
+    - option "临床助手运行预算（BUDGET-cf021804）"
+    - option "临床助手运行预算（BUDGET-d5e58dc2）"
+    - option "临床助手运行预算（BUDGET-ec40574c）"
+    - option "临床助手运行预算（BUDGET-f749223f）"
+    - option "临床助手运行预算（BUDGET-f84734e1）"
+  - region "预算统计":
+    - article:
+      - generic: 预算
+      - strong: "90"
+      - generic: 全部定义
+    - article:
+      - generic: 有效预算
+      - strong: "70"
+      - generic: ACTIVE
+  - heading "预算台账" [level=2]
+  - paragraph: 编码不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 / 编码 最大 Token 最大时长 状态 操作":
+        - columnheader "名称 / 编码"
+        - columnheader "最大 Token"
+        - columnheader "最大时长"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "预算 BUD-03c4d089 · …d220c427 100 60 秒 已停用 停用":
+        - cell "预算 BUD-03c4d089 · …d220c427":
+          - strong: 预算
+          - code: BUD-03c4d089
+          - text: · …d220c427
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-08306964 · …9a2c82d0 100 60 秒 有效 停用":
+        - cell "预算 BUD-08306964 · …9a2c82d0":
+          - strong: 预算
+          - code: BUD-08306964
+          - text: · …9a2c82d0
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-1707789b · …397ba7b7 100 60 秒 有效 停用":
+        - cell "预算 BUD-1707789b · …397ba7b7":
+          - strong: 预算
+          - code: BUD-1707789b
+          - text: · …397ba7b7
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-1e59f419 · …91e38ffb 100 60 秒 有效 停用":
+        - cell "预算 BUD-1e59f419 · …91e38ffb":
+          - strong: 预算
+          - code: BUD-1e59f419
+          - text: · …91e38ffb
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-1e6f57cd · …eb7bd647 100 60 秒 有效 停用":
+        - cell "预算 BUD-1e6f57cd · …eb7bd647":
+          - strong: 预算
+          - code: BUD-1e6f57cd
+          - text: · …eb7bd647
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-223bd55d · …637ccbd4 100 60 秒 有效 停用":
+        - cell "预算 BUD-223bd55d · …637ccbd4":
+          - strong: 预算
+          - code: BUD-223bd55d
+          - text: · …637ccbd4
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-23acd2db · …6875a882 100 60 秒 有效 停用":
+        - cell "预算 BUD-23acd2db · …6875a882":
+          - strong: 预算
+          - code: BUD-23acd2db
+          - text: · …6875a882
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-2421b61f · …903f9947 100 60 秒 有效 停用":
+        - cell "预算 BUD-2421b61f · …903f9947":
+          - strong: 预算
+          - code: BUD-2421b61f
+          - text: · …903f9947
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-2da2fd68 · …3ceec35d 100 60 秒 有效 停用":
+        - cell "预算 BUD-2da2fd68 · …3ceec35d":
+          - strong: 预算
+          - code: BUD-2da2fd68
+          - text: · …3ceec35d
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-39757c87 · …1548b0a0 100 60 秒 有效 停用":
+        - cell "预算 BUD-39757c87 · …1548b0a0":
+          - strong: 预算
+          - code: BUD-39757c87
+          - text: · …1548b0a0
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-409f2f24 · …353b42bc 100 60 秒 有效 停用":
+        - cell "预算 BUD-409f2f24 · …353b42bc":
+          - strong: 预算
+          - code: BUD-409f2f24
+          - text: · …353b42bc
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-424bde86 · …f23f5e9d 100 60 秒 有效 停用":
+        - cell "预算 BUD-424bde86 · …f23f5e9d":
+          - strong: 预算
+          - code: BUD-424bde86
+          - text: · …f23f5e9d
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-47f60574 · …e1d17b35 100 60 秒 已停用 停用":
+        - cell "预算 BUD-47f60574 · …e1d17b35":
+          - strong: 预算
+          - code: BUD-47f60574
+          - text: · …e1d17b35
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-4a2b9d09 · …77a3956f 100 60 秒 有效 停用":
+        - cell "预算 BUD-4a2b9d09 · …77a3956f":
+          - strong: 预算
+          - code: BUD-4a2b9d09
+          - text: · …77a3956f
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-4ebb243c · …529356d1 100 60 秒 有效 停用":
+        - cell "预算 BUD-4ebb243c · …529356d1":
+          - strong: 预算
+          - code: BUD-4ebb243c
+          - text: · …529356d1
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-55e8765e · …332c89b4 100 60 秒 有效 停用":
+        - cell "预算 BUD-55e8765e · …332c89b4":
+          - strong: 预算
+          - code: BUD-55e8765e
+          - text: · …332c89b4
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-59952d8d · …486e5129 100 60 秒 已停用 停用":
+        - cell "预算 BUD-59952d8d · …486e5129":
+          - strong: 预算
+          - code: BUD-59952d8d
+          - text: · …486e5129
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-5bd0d773 · …40c502fd 100 60 秒 有效 停用":
+        - cell "预算 BUD-5bd0d773 · …40c502fd":
+          - strong: 预算
+          - code: BUD-5bd0d773
+          - text: · …40c502fd
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-624e9569 · …abb506ba 100 60 秒 有效 停用":
+        - cell "预算 BUD-624e9569 · …abb506ba":
+          - strong: 预算
+          - code: BUD-624e9569
+          - text: · …abb506ba
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-63edf32c · …21b6cda1 100 60 秒 有效 停用":
+        - cell "预算 BUD-63edf32c · …21b6cda1":
+          - strong: 预算
+          - code: BUD-63edf32c
+          - text: · …21b6cda1
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-6fac80fe · …3c0ec609 100 60 秒 有效 停用":
+        - cell "预算 BUD-6fac80fe · …3c0ec609":
+          - strong: 预算
+          - code: BUD-6fac80fe
+          - text: · …3c0ec609
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-7a2208b2 · …294aacdf 100 60 秒 有效 停用":
+        - cell "预算 BUD-7a2208b2 · …294aacdf":
+          - strong: 预算
+          - code: BUD-7a2208b2
+          - text: · …294aacdf
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-7b3d5d11 · …61fa5065 100 60 秒 有效 停用":
+        - cell "预算 BUD-7b3d5d11 · …61fa5065":
+          - strong: 预算
+          - code: BUD-7b3d5d11
+          - text: · …61fa5065
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-7ef13598 · …e341cebb 100 60 秒 有效 停用":
+        - cell "预算 BUD-7ef13598 · …e341cebb":
+          - strong: 预算
+          - code: BUD-7ef13598
+          - text: · …e341cebb
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-864793b9 · …3887183d 100 60 秒 有效 停用":
+        - cell "预算 BUD-864793b9 · …3887183d":
+          - strong: 预算
+          - code: BUD-864793b9
+          - text: · …3887183d
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-88309ffc · …5fa0c065 100 60 秒 已停用 停用":
+        - cell "预算 BUD-88309ffc · …5fa0c065":
+          - strong: 预算
+          - code: BUD-88309ffc
+          - text: · …5fa0c065
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-8b656860 · …9cc752e7 100 60 秒 有效 停用":
+        - cell "预算 BUD-8b656860 · …9cc752e7":
+          - strong: 预算
+          - code: BUD-8b656860
+          - text: · …9cc752e7
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-8c41dd08 · …0735e464 100 60 秒 有效 停用":
+        - cell "预算 BUD-8c41dd08 · …0735e464":
+          - strong: 预算
+          - code: BUD-8c41dd08
+          - text: · …0735e464
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-8ec90bda · …00de0a87 100 60 秒 有效 停用":
+        - cell "预算 BUD-8ec90bda · …00de0a87":
+          - strong: 预算
+          - code: BUD-8ec90bda
+          - text: · …00de0a87
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-92ee83f0 · …c25d7063 100 60 秒 已停用 停用":
+        - cell "预算 BUD-92ee83f0 · …c25d7063":
+          - strong: 预算
+          - code: BUD-92ee83f0
+          - text: · …c25d7063
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-94963d42 · …9fed9f8a 100 60 秒 有效 停用":
+        - cell "预算 BUD-94963d42 · …9fed9f8a":
+          - strong: 预算
+          - code: BUD-94963d42
+          - text: · …9fed9f8a
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-993e23e6 · …a00bf79c 100 60 秒 有效 停用":
+        - cell "预算 BUD-993e23e6 · …a00bf79c":
+          - strong: 预算
+          - code: BUD-993e23e6
+          - text: · …a00bf79c
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-a1228b85 · …7c951cd3 100 60 秒 有效 停用":
+        - cell "预算 BUD-a1228b85 · …7c951cd3":
+          - strong: 预算
+          - code: BUD-a1228b85
+          - text: · …7c951cd3
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-a126278f · …810b3820 100 60 秒 已停用 停用":
+        - cell "预算 BUD-a126278f · …810b3820":
+          - strong: 预算
+          - code: BUD-a126278f
+          - text: · …810b3820
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-a545100e · …d1a22f98 100 60 秒 有效 停用":
+        - cell "预算 BUD-a545100e · …d1a22f98":
+          - strong: 预算
+          - code: BUD-a545100e
+          - text: · …d1a22f98
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-aae90bd9 · …17bf7612 100 60 秒 已停用 停用":
+        - cell "预算 BUD-aae90bd9 · …17bf7612":
+          - strong: 预算
+          - code: BUD-aae90bd9
+          - text: · …17bf7612
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-b1db90f7 · …f4a3b767 100 60 秒 有效 停用":
+        - cell "预算 BUD-b1db90f7 · …f4a3b767":
+          - strong: 预算
+          - code: BUD-b1db90f7
+          - text: · …f4a3b767
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-b2b3e3ea · …0902d2aa 100 60 秒 有效 停用":
+        - cell "预算 BUD-b2b3e3ea · …0902d2aa":
+          - strong: 预算
+          - code: BUD-b2b3e3ea
+          - text: · …0902d2aa
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-b3a66ae6 · …8bc2295e 100 60 秒 有效 停用":
+        - cell "预算 BUD-b3a66ae6 · …8bc2295e":
+          - strong: 预算
+          - code: BUD-b3a66ae6
+          - text: · …8bc2295e
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-b70df320 · …e75adc39 100 60 秒 有效 停用":
+        - cell "预算 BUD-b70df320 · …e75adc39":
+          - strong: 预算
+          - code: BUD-b70df320
+          - text: · …e75adc39
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-b8649318 · …907da357 100 60 秒 已停用 停用":
+        - cell "预算 BUD-b8649318 · …907da357":
+          - strong: 预算
+          - code: BUD-b8649318
+          - text: · …907da357
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-c059a575 · …81e340c0 100 60 秒 有效 停用":
+        - cell "预算 BUD-c059a575 · …81e340c0":
+          - strong: 预算
+          - code: BUD-c059a575
+          - text: · …81e340c0
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-c0dc03dd · …ba890c75 100 60 秒 有效 停用":
+        - cell "预算 BUD-c0dc03dd · …ba890c75":
+          - strong: 预算
+          - code: BUD-c0dc03dd
+          - text: · …ba890c75
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-c11a85b3 · …d510a436 100 60 秒 已停用 停用":
+        - cell "预算 BUD-c11a85b3 · …d510a436":
+          - strong: 预算
+          - code: BUD-c11a85b3
+          - text: · …d510a436
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-c2f263c0 · …f76071e1 100 60 秒 有效 停用":
+        - cell "预算 BUD-c2f263c0 · …f76071e1":
+          - strong: 预算
+          - code: BUD-c2f263c0
+          - text: · …f76071e1
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-c9af7d2b · …2eace5ce 100 60 秒 有效 停用":
+        - cell "预算 BUD-c9af7d2b · …2eace5ce":
+          - strong: 预算
+          - code: BUD-c9af7d2b
+          - text: · …2eace5ce
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-cba5dad2 · …414b4592 100 60 秒 有效 停用":
+        - cell "预算 BUD-cba5dad2 · …414b4592":
+          - strong: 预算
+          - code: BUD-cba5dad2
+          - text: · …414b4592
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-d8da85f9 · …fa1b50d0 100 60 秒 有效 停用":
+        - cell "预算 BUD-d8da85f9 · …fa1b50d0":
+          - strong: 预算
+          - code: BUD-d8da85f9
+          - text: · …fa1b50d0
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-d98c26ad · …42cb9c5a 100 60 秒 有效 停用":
+        - cell "预算 BUD-d98c26ad · …42cb9c5a":
+          - strong: 预算
+          - code: BUD-d98c26ad
+          - text: · …42cb9c5a
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-da9ea435 · …5ff1d614 100 60 秒 有效 停用":
+        - cell "预算 BUD-da9ea435 · …5ff1d614":
+          - strong: 预算
+          - code: BUD-da9ea435
+          - text: · …5ff1d614
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-de0ffe47 · …4f8d99a9 100 60 秒 已停用 停用":
+        - cell "预算 BUD-de0ffe47 · …4f8d99a9":
+          - strong: 预算
+          - code: BUD-de0ffe47
+          - text: · …4f8d99a9
+        - cell "100"
+        - cell "60 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "预算 BUD-e0b1d173 · …73e80a2a 100 60 秒 有效 停用":
+        - cell "预算 BUD-e0b1d173 · …73e80a2a":
+          - strong: 预算
+          - code: BUD-e0b1d173
+          - text: · …73e80a2a
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-e3f66a9d · …0748e07b 100 60 秒 有效 停用":
+        - cell "预算 BUD-e3f66a9d · …0748e07b":
+          - strong: 预算
+          - code: BUD-e3f66a9d
+          - text: · …0748e07b
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-e594c4c0 · …c0ddd9a8 100 60 秒 有效 停用":
+        - cell "预算 BUD-e594c4c0 · …c0ddd9a8":
+          - strong: 预算
+          - code: BUD-e594c4c0
+          - text: · …c0ddd9a8
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-e62c6e84 · …e21d3615 100 60 秒 有效 停用":
+        - cell "预算 BUD-e62c6e84 · …e21d3615":
+          - strong: 预算
+          - code: BUD-e62c6e84
+          - text: · …e21d3615
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-e8da0e57 · …3668cea4 100 60 秒 有效 停用":
+        - cell "预算 BUD-e8da0e57 · …3668cea4":
+          - strong: 预算
+          - code: BUD-e8da0e57
+          - text: · …3668cea4
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-e98e0983 · …5201d9ab 100 60 秒 有效 停用":
+        - cell "预算 BUD-e98e0983 · …5201d9ab":
+          - strong: 预算
+          - code: BUD-e98e0983
+          - text: · …5201d9ab
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-ef8d858a · …7f41b1ed 100 60 秒 有效 停用":
+        - cell "预算 BUD-ef8d858a · …7f41b1ed":
+          - strong: 预算
+          - code: BUD-ef8d858a
+          - text: · …7f41b1ed
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-efe53481 · …b368d82a 100 60 秒 有效 停用":
+        - cell "预算 BUD-efe53481 · …b368d82a":
+          - strong: 预算
+          - code: BUD-efe53481
+          - text: · …b368d82a
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "预算 BUD-f0be31d4 · …4a1ac151 100 60 秒 有效 停用":
+        - cell "预算 BUD-f0be31d4 · …4a1ac151":
+          - strong: 预算
+          - code: BUD-f0be31d4
+          - text: · …4a1ac151
+        - cell "100"
+        - cell "60 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-11b6068e · …03c98265 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-11b6068e · …03c98265":
+          - strong: 临床助手运行预算
+          - code: BUDGET-11b6068e
+          - text: · …03c98265
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-22486ba2 · …76801e32 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-22486ba2 · …76801e32":
+          - strong: 临床助手运行预算
+          - code: BUDGET-22486ba2
+          - text: · …76801e32
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-25b2454e · …444693ab 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-25b2454e · …444693ab":
+          - strong: 临床助手运行预算
+          - code: BUDGET-25b2454e
+          - text: · …444693ab
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-4249c304 · …4876bfe8 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-4249c304 · …4876bfe8":
+          - strong: 临床助手运行预算
+          - code: BUDGET-4249c304
+          - text: · …4876bfe8
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-46f9cb5f · …a884aec0 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-46f9cb5f · …a884aec0":
+          - strong: 临床助手运行预算
+          - code: BUDGET-46f9cb5f
+          - text: · …a884aec0
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-4c946ab3 · …c73c2f53 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-4c946ab3 · …c73c2f53":
+          - strong: 临床助手运行预算
+          - code: BUDGET-4c946ab3
+          - text: · …c73c2f53
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-5e17693d · …45378e40 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-5e17693d · …45378e40":
+          - strong: 临床助手运行预算
+          - code: BUDGET-5e17693d
+          - text: · …45378e40
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-6bcb6594 · …76148cf1 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-6bcb6594 · …76148cf1":
+          - strong: 临床助手运行预算
+          - code: BUDGET-6bcb6594
+          - text: · …76148cf1
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-71701330 · …10b05a1e 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-71701330 · …10b05a1e":
+          - strong: 临床助手运行预算
+          - code: BUDGET-71701330
+          - text: · …10b05a1e
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-734a19de · …6554aa86 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-734a19de · …6554aa86":
+          - strong: 临床助手运行预算
+          - code: BUDGET-734a19de
+          - text: · …6554aa86
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-775614e2 · …8162d390 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-775614e2 · …8162d390":
+          - strong: 临床助手运行预算
+          - code: BUDGET-775614e2
+          - text: · …8162d390
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-790efa85 · …e6d8441c 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-790efa85 · …e6d8441c":
+          - strong: 临床助手运行预算
+          - code: BUDGET-790efa85
+          - text: · …e6d8441c
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-816359df · …d243ba7d 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-816359df · …d243ba7d":
+          - strong: 临床助手运行预算
+          - code: BUDGET-816359df
+          - text: · …d243ba7d
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-81765be9 · …0330fb3f 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-81765be9 · …0330fb3f":
+          - strong: 临床助手运行预算
+          - code: BUDGET-81765be9
+          - text: · …0330fb3f
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-84820409 · …fc4d60df 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-84820409 · …fc4d60df":
+          - strong: 临床助手运行预算
+          - code: BUDGET-84820409
+          - text: · …fc4d60df
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-89952fbb · …52489d34 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-89952fbb · …52489d34":
+          - strong: 临床助手运行预算
+          - code: BUDGET-89952fbb
+          - text: · …52489d34
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-94d13c06 · …c63e1f78 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-94d13c06 · …c63e1f78":
+          - strong: 临床助手运行预算
+          - code: BUDGET-94d13c06
+          - text: · …c63e1f78
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-9a07be94 · …15f74cf1 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-9a07be94 · …15f74cf1":
+          - strong: 临床助手运行预算
+          - code: BUDGET-9a07be94
+          - text: · …15f74cf1
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-9b79611e · …297bf42f 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-9b79611e · …297bf42f":
+          - strong: 临床助手运行预算
+          - code: BUDGET-9b79611e
+          - text: · …297bf42f
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-a16d5610 · …6170945f 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-a16d5610 · …6170945f":
+          - strong: 临床助手运行预算
+          - code: BUDGET-a16d5610
+          - text: · …6170945f
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-a71ebca8 · …a2381db6 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-a71ebca8 · …a2381db6":
+          - strong: 临床助手运行预算
+          - code: BUDGET-a71ebca8
+          - text: · …a2381db6
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-b2b73046 · …cef9dfbb 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-b2b73046 · …cef9dfbb":
+          - strong: 临床助手运行预算
+          - code: BUDGET-b2b73046
+          - text: · …cef9dfbb
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-b8e0fa72 · …de812ce5 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-b8e0fa72 · …de812ce5":
+          - strong: 临床助手运行预算
+          - code: BUDGET-b8e0fa72
+          - text: · …de812ce5
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-c83e7a7c · …120cd307 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-c83e7a7c · …120cd307":
+          - strong: 临床助手运行预算
+          - code: BUDGET-c83e7a7c
+          - text: · …120cd307
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-cd640994 · …87fef4e5 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-cd640994 · …87fef4e5":
+          - strong: 临床助手运行预算
+          - code: BUDGET-cd640994
+          - text: · …87fef4e5
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-cf021804 · …454b54e1 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-cf021804 · …454b54e1":
+          - strong: 临床助手运行预算
+          - code: BUDGET-cf021804
+          - text: · …454b54e1
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-d5e58dc2 · …257f9efb 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-d5e58dc2 · …257f9efb":
+          - strong: 临床助手运行预算
+          - code: BUDGET-d5e58dc2
+          - text: · …257f9efb
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-ec40574c · …d0bfe155 80,000 200 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-ec40574c · …d0bfe155":
+          - strong: 临床助手运行预算
+          - code: BUDGET-ec40574c
+          - text: · …d0bfe155
+        - cell "80,000"
+        - cell "200 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床助手运行预算 BUDGET-f749223f · …c8dd9d28 50,000 120 秒 已停用 停用":
+        - cell "临床助手运行预算 BUDGET-f749223f · …c8dd9d28":
+          - strong: 临床助手运行预算
+          - code: BUDGET-f749223f
+          - text: · …c8dd9d28
+        - cell "50,000"
+        - cell "120 秒"
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床助手运行预算 BUDGET-f84734e1 · …8b58968f 100,000 300 秒 有效 停用":
+        - cell "临床助手运行预算 BUDGET-f84734e1 · …8b58968f":
+          - strong: 临床助手运行预算
+          - code: BUDGET-f84734e1
+          - text: · …8b58968f
+        - cell "100,000"
+        - cell "300 秒"
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "定义运行预算" [level=2]
+  - paragraph: 编码、名称、最大 Token 与最大时长。
+  - generic: 预算编码
+  - textbox "预算编码":
+    - /placeholder: 例：DAILY-STANDARD
+  - generic: 预算名称
+  - textbox "预算名称":
+    - /placeholder: 例：标准日预算
+  - generic: 最大 Token
+  - spinbutton "最大 Token": "1000000"
+  - generic: 最大时长（秒）
+  - spinbutton "最大时长（秒）": "600"
+  - button "定义并生效"
+  - heading "预算消耗总览" [level=2]
+  - paragraph: 当前选中预算的累计消耗与上限对比。
+  - button "刷新"
+  - generic "预算消耗总览":
+    - article:
+      - generic: 已消耗 Token
+      - strong: "20"
+      - generic: 上限 100
+    - article:
+      - generic: 已消耗时长
+      - strong: 10 秒
+      - generic: 上限 60 秒
+  - heading "消耗明细" [level=2]
+  - paragraph: 每次 Agent 运行的 Token 与时长消耗。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "运行 ID Token 时长 记录时间":
+        - columnheader "运行 ID"
+        - columnheader "Token"
+        - columnheader "时长"
+        - columnheader "记录时间"
+    - rowgroup:
+      - row "5884165a-6063-4c6f-84e2-83f3463b4db0 20 10 秒 2026年8月25日 18:32":
+        - cell "5884165a-6063-4c6f-84e2-83f3463b4db0":
+          - code: 5884165a-6063-4c6f-84e2-83f3463b4db0
+        - cell "20"
+        - cell "10 秒"
+        - cell "2026年8月25日 18:32"
+  - heading "记录运行消耗" [level=2]
+  - paragraph: 运行 ID 默认生成，可覆盖为已存在运行。
+  - generic: 运行 ID
+  - textbox "运行 ID":
+    - /placeholder: UUID
+    - text: ccf90c72-2336-4832-b1e9-586c5ece08dc
+  - generic: Token 消耗
+  - spinbutton "Token 消耗": "1000"
+  - generic: 时长（秒）
+  - spinbutton "时长（秒）": "30"
+  - button "记录消耗"

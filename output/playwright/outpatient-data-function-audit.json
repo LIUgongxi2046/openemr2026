@@ -1,0 +1,29 @@
+{
+  "run_at": "2026-08-25T03:33:53.827Z",
+  "checks": 5,
+  "passed": 5,
+  "failed": 0,
+  "findings": [],
+  "observations": [
+    {
+      "name": "outpatient-summary-has-data",
+      "status": "PASS"
+    },
+    {
+      "name": "diagnosis-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "name": "orders-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "name": "results-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "name": "consult-data-and-actions",
+      "status": "PASS"
+    }
+  ]
+}

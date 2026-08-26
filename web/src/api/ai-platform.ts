@@ -201,7 +201,9 @@ export async function recordModelEvaluation(
   return modelEvaluationWireSchema.parse(await request('/model-evaluations', {
     method: 'POST',
     headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
-    body: JSON.stringify(modelEvaluationRecordRequestWireSchema.parse({ ...orgFacility(), ...input })),
+    body: JSON.stringify(modelEvaluationRecordRequestWireSchema.parse({
+      ...orgFacility(), ...input, evaluated_at: new Date(input.evaluated_at).toISOString(),
+    })),
   }));
 }
 

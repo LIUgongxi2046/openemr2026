@@ -17,8 +17,16 @@ export function issueInfectionLease(purpose: string): Promise<ContextLeaseWire> 
   return issueContextLease(clinicalContext.patientId, null, purpose);
 }
 
+export function issueInfectionEncounterLease(purpose: string): Promise<ContextLeaseWire> {
+  return issueContextLease(clinicalContext.patientId, clinicalContext.encounterId, purpose);
+}
+
 function infectionHeaders(lease: ContextLeaseWire) {
   return explicitContextHeaders(lease, clinicalContext.patientId, null);
+}
+
+function infectionEncounterHeaders(lease: ContextLeaseWire) {
+  return explicitContextHeaders(lease, clinicalContext.patientId, clinicalContext.encounterId);
 }
 
 export async function listInfectionMonitoringEvents(lease: ContextLeaseWire): Promise<InfectionMonitoringEventWire[]> {
@@ -34,13 +42,14 @@ export async function reportInfectionMonitoringEvent(
 ): Promise<InfectionMonitoringEventWire> {
   return infectionMonitoringEventWireSchema.parse(await request('/infection-monitoring-events', {
     method: 'POST',
-    headers: { ...infectionHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    headers: { ...infectionEncounterHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify(infectionMonitoringEventReportRequestWireSchema.parse({
       organization_id: clinicalContext.organizationId,
       facility_id: clinicalContext.facilityId,
       patient_id: clinicalContext.patientId,
       encounter_id: clinicalContext.encounterId,
       ...input,
+      reported_at: new Date(input.reported_at).toISOString(),
     })),
   }));
 }
@@ -54,7 +63,7 @@ export async function resolveInfectionMonitoringEvent(
   return infectionMonitoringEventWireSchema.parse(await request(
     `/infection-monitoring-events/${event.infection_event_id}/resolutions`, {
       method: 'POST',
-      headers: { ...infectionHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      headers: { ...infectionEncounterHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(infectionMonitoringEventResolveRequestWireSchema.parse({
         organization_id: clinicalContext.organizationId,
         facility_id: clinicalContext.facilityId,

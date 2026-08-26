@@ -10,6 +10,38 @@
     }
   ],
   "paths": {
+    "/session/login": {
+      "post": {
+        "operationId": "loginSession",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SessionLoginRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "database-backed development session created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SessionLoginResponse" } } }
+          }
+        }
+      }
+    },
+    "/session/current": {
+      "get": {
+        "operationId": "getCurrentSession",
+        "responses": {
+          "200": {
+            "description": "current authenticated user and working context",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SessionUser" } } }
+          }
+        }
+      }
+    },
+    "/session/logout": {
+      "post": {
+        "operationId": "logoutSession",
+        "responses": { "204": { "description": "session revoked" } }
+      }
+    },
     "/system/readiness": {
       "get": {
         "operationId": "getSystemReadiness",
@@ -1164,6 +1196,10 @@
       }
     },
     "/schedule-slots": {
+      "get": {
+        "operationId": "listScheduleSlots",
+        "responses": { "200": { "description": "configured schedule slots", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ScheduleSlot" } } } } } }
+      },
       "post": {
         "operationId": "createScheduleSlot",
         "requestBody": {
@@ -9617,6 +9653,66 @@
         }
       }
     },
+    "/medical-agents/catalog": {
+      "get": {
+        "operationId": "listMedicalAgentCatalog",
+        "responses": {
+          "200": {
+            "description": "five active main-agent families with approved child-agent releases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MedicalAgentFamily" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/medical-agents/runs": {
+      "get": {
+        "operationId": "listMedicalAgentRuns",
+        "parameters": [
+          { "name": "patient_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "encounter_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "medical-agent collaboration runs for one authorized encounter",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentRun" } } } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMedicalAgentRun",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRunCreateRequest" } } }
+        },
+        "responses": {
+          "202": {
+            "description": "approved main-agent composition executed and ready for human review",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
+          }
+        }
+      }
+    },
+    "/medical-agents/runs/{run_id}": {
+      "get": {
+        "operationId": "getMedicalAgentRun",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "root run with visible child contributions and event trajectory",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
+          }
+        }
+      }
+    },
     "/ai/runs": {
       "get": {
         "operationId": "listAiRuns",
@@ -13355,6 +13451,42 @@
   },
   "components": {
     "schemas": {
+      "SessionLoginRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["username", "password"],
+        "properties": {
+          "username": { "type": "string", "minLength": 3, "maxLength": 128 },
+          "password": { "type": "string", "minLength": 8, "maxLength": 256 }
+        }
+      },
+      "SessionUser": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tenant_id", "user_id", "display_name", "organization_id", "organization_name", "facility_id", "facility_name", "role_assignment_ids", "role_codes", "shift_display", "expires_at"],
+        "properties": {
+          "tenant_id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "display_name": { "type": "string" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "organization_name": { "type": "string" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "facility_name": { "type": "string" },
+          "role_assignment_ids": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+          "role_codes": { "type": "array", "items": { "type": "string" } },
+          "shift_display": { "type": "string" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SessionLoginResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["bearer_token", "user"],
+        "properties": {
+          "bearer_token": { "type": "string" },
+          "user": { "$ref": "#/components/schemas/SessionUser" }
+        }
+      },
       "AuditEvent": {
         "type": "object",
         "additionalProperties": false,
@@ -13736,7 +13868,10 @@
             "maxLength": 2000
           },
           "outcome": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 2000
           },
           "status": {
@@ -13747,7 +13882,10 @@
             ]
           },
           "due_at": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "completed_at": {
@@ -17795,6 +17933,11 @@
           "schedule_slot_id",
           "organization_id",
           "facility_id",
+          "department_id",
+          "doctor_user_id",
+          "facility_name",
+          "department_name",
+          "doctor_display_name",
           "visit_type",
           "slot_date",
           "start_time",
@@ -17818,12 +17961,13 @@
             "format": "uuid"
           },
           "department_id": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "format": "uuid"
           },
+          "doctor_user_id": { "type": "string", "format": "uuid" },
+          "facility_name": { "type": "string" },
+          "department_name": { "type": "string" },
+          "doctor_display_name": { "type": "string" },
           "visit_type": {
             "type": "string",
             "enum": [
@@ -17870,6 +18014,8 @@
         "required": [
           "organization_id",
           "facility_id",
+          "department_id",
+          "doctor_user_id",
           "visit_type",
           "slot_date",
           "start_time",
@@ -17886,12 +18032,10 @@
             "format": "uuid"
           },
           "department_id": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "format": "uuid"
           },
+          "doctor_user_id": { "type": "string", "format": "uuid" },
           "visit_type": {
             "type": "string",
             "enum": [
@@ -17922,8 +18066,19 @@
           "appointment_id",
           "schedule_slot_id",
           "patient_id",
+          "patient_display_name",
+          "patient_sex_code",
+          "patient_birth_date",
           "organization_id",
           "facility_id",
+          "facility_name",
+          "department_id",
+          "department_name",
+          "doctor_user_id",
+          "doctor_display_name",
+          "slot_date",
+          "slot_start_time",
+          "slot_end_time",
           "visit_type",
           "source",
           "status",
@@ -17944,6 +18099,20 @@
             "type": "string",
             "format": "uuid"
           },
+          "patient_display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "patient_sex_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "patient_birth_date": {
+            "type": "string",
+            "format": "date"
+          },
           "organization_id": {
             "type": "string",
             "format": "uuid"
@@ -17952,6 +18121,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "facility_name": { "type": "string" },
+          "department_id": { "type": "string", "format": "uuid" },
+          "department_name": { "type": "string" },
+          "doctor_user_id": { "type": "string", "format": "uuid" },
+          "doctor_display_name": { "type": "string" },
+          "slot_date": { "type": "string", "format": "date" },
+          "slot_start_time": { "type": "string" },
+          "slot_end_time": { "type": "string" },
           "visit_type": {
             "type": "string",
             "enum": [
@@ -18083,6 +18260,9 @@
           "waiting_queue_entry_id",
           "appointment_id",
           "patient_id",
+          "patient_display_name",
+          "patient_sex_code",
+          "patient_birth_date",
           "encounter_id",
           "facility_id",
           "queue_date",
@@ -18102,6 +18282,20 @@
           "patient_id": {
             "type": "string",
             "format": "uuid"
+          },
+          "patient_display_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "patient_sex_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "patient_birth_date": {
+            "type": "string",
+            "format": "date"
           },
           "encounter_id": {
             "type": "string",
@@ -30830,7 +31024,17 @@
           "ward_id",
           "bed_id",
           "attending_user_id",
-          "admitted_at"
+          "admitted_at",
+          "department_id",
+          "admission_source",
+          "admission_type",
+          "condition_level",
+          "admitting_diagnosis_text",
+          "payment_method_code",
+          "identity_verification_method",
+          "contact_name",
+          "contact_relationship",
+          "contact_phone"
         ],
         "properties": {
           "organization_id": {
@@ -30864,7 +31068,21 @@
           "admitted_at": {
             "type": "string",
             "format": "date-time"
-          }
+          },
+          "department_id": { "type": "string", "format": "uuid" },
+          "admission_source": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "TRANSFER", "OTHER"] },
+          "admission_type": { "type": "string", "enum": ["ELECTIVE", "URGENT", "EMERGENCY"] },
+          "condition_level": { "type": "string", "enum": ["GENERAL", "SERIOUS", "CRITICAL"] },
+          "admitting_diagnosis_code": { "type": ["string", "null"], "maxLength": 64 },
+          "admitting_diagnosis_text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+          "payment_method_code": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "identity_verification_method": { "type": "string", "enum": ["RESIDENT_ID", "MEDICAL_CARD", "OTHER"] },
+          "contact_name": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "contact_relationship": { "type": "string", "minLength": 1, "maxLength": 64 },
+          "contact_phone": { "type": "string", "minLength": 6, "maxLength": 32 },
+          "admission_certificate_no": { "type": ["string", "null"], "maxLength": 96 },
+          "transfer_from": { "type": ["string", "null"], "maxLength": 256 },
+          "remarks": { "type": ["string", "null"], "maxLength": 1000 }
         }
       },
       "InpatientAdmission": {
@@ -30879,6 +31097,17 @@
           "attending_user_id",
           "status",
           "admitted_at",
+          "admission_no",
+          "department_id",
+          "admission_source",
+          "admission_type",
+          "condition_level",
+          "admitting_diagnosis_text",
+          "payment_method_code",
+          "identity_verification_method",
+          "contact_name",
+          "contact_relationship",
+          "contact_phone",
           "row_version"
         ],
         "properties": {
@@ -30920,6 +31149,21 @@
             "type": "string",
             "format": "date-time"
           },
+          "admission_no": { "type": "string" },
+          "department_id": { "type": "string", "format": "uuid" },
+          "admission_source": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "TRANSFER", "OTHER"] },
+          "admission_type": { "type": "string", "enum": ["ELECTIVE", "URGENT", "EMERGENCY"] },
+          "condition_level": { "type": "string", "enum": ["GENERAL", "SERIOUS", "CRITICAL"] },
+          "admitting_diagnosis_code": { "type": ["string", "null"] },
+          "admitting_diagnosis_text": { "type": "string" },
+          "payment_method_code": { "type": "string" },
+          "identity_verification_method": { "type": "string", "enum": ["RESIDENT_ID", "MEDICAL_CARD", "OTHER"] },
+          "contact_name": { "type": "string" },
+          "contact_relationship": { "type": "string" },
+          "contact_phone": { "type": "string" },
+          "admission_certificate_no": { "type": ["string", "null"] },
+          "transfer_from": { "type": ["string", "null"] },
+          "remarks": { "type": ["string", "null"] },
           "discharged_at": {
             "type": [
               "string",
@@ -31510,7 +31754,12 @@
         "required": [
           "bed_id",
           "ward_id",
+          "department_id",
           "bed_label",
+          "facility_name",
+          "department_name",
+          "ward_name",
+          "display_bed_no",
           "bed_status",
           "occupancy_status"
         ],
@@ -31523,9 +31772,14 @@
             "type": "string",
             "format": "uuid"
           },
+          "department_id": { "type": "string", "format": "uuid" },
           "bed_label": {
             "type": "string"
           },
+          "facility_name": { "type": "string" },
+          "department_name": { "type": "string" },
+          "ward_name": { "type": "string" },
+          "display_bed_no": { "type": "string" },
           "bed_status": {
             "type": "string",
             "enum": [
@@ -31997,6 +32251,112 @@
               "$ref": "#/components/schemas/AIProposal"
             }
           }
+        }
+      },
+      "MedicalAgentRelease": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["agent_code", "release_version", "display_name", "agent_level", "stage_code", "description", "display_role", "current_action", "contribution_label", "output_schema", "autonomy_level", "max_steps", "max_tool_calls", "max_duration_seconds"],
+        "properties": {
+          "agent_code": { "type": "string" },
+          "release_version": { "type": "string" },
+          "display_name": { "type": "string" },
+          "agent_level": { "type": "string", "enum": ["MAIN", "CHILD"] },
+          "parent_agent_code": { "type": ["string", "null"] },
+          "stage_code": { "type": "string" },
+          "description": { "type": "string" },
+          "display_role": { "type": "string" },
+          "current_action": { "type": "string" },
+          "contribution_label": { "type": "string" },
+          "output_schema": { "type": "string" },
+          "autonomy_level": { "type": "string", "enum": ["A0", "A1", "A2"] },
+          "max_steps": { "type": "integer" },
+          "max_tool_calls": { "type": "integer" },
+          "max_duration_seconds": { "type": "integer" }
+        }
+      },
+      "MedicalAgentFamily": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["main_agent", "child_agents"],
+        "properties": {
+          "main_agent": { "$ref": "#/components/schemas/MedicalAgentRelease" },
+          "child_agents": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentRelease" } }
+        }
+      },
+      "MedicalAgentRunCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "context_lease_id", "main_agent_code", "stage_code", "target_type", "target_id", "objective"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "context_lease_id": { "type": "string", "format": "uuid" },
+          "main_agent_code": { "type": "string" },
+          "stage_code": { "type": "string" },
+          "target_type": { "type": "string", "enum": ["ENCOUNTER", "DOCUMENT", "RESULT", "TASK", "CARE_PLAN"] },
+          "target_id": { "type": "string", "format": "uuid" },
+          "objective": { "type": "string", "minLength": 2, "maxLength": 1024 }
+        }
+      },
+      "MedicalAgentChildRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["child_run_id", "child_agent_code", "display_name", "display_role", "current_action", "contribution_label", "state", "critical", "contribution", "source_references", "started_at", "completed_at"],
+        "properties": {
+          "child_run_id": { "type": "string", "format": "uuid" },
+          "child_agent_code": { "type": "string" },
+          "display_name": { "type": "string" },
+          "display_role": { "type": "string" },
+          "current_action": { "type": "string" },
+          "contribution_label": { "type": "string" },
+          "state": { "type": "string", "enum": ["QUEUED", "RUNNING", "COMPLETED", "PARTIAL", "BLOCKED", "FAILED", "CANCELLED", "SKIPPED"] },
+          "critical": { "type": "boolean" },
+          "contribution": { "type": "object", "additionalProperties": true },
+          "source_references": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+          "started_at": { "type": ["string", "null"], "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "MedicalAgentRunEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sequence", "event_type", "child_run_id", "payload", "occurred_at"],
+        "properties": {
+          "sequence": { "type": "integer", "format": "int64" },
+          "event_type": { "type": "string" },
+          "child_run_id": { "type": ["string", "null"], "format": "uuid" },
+          "payload": { "type": "object", "additionalProperties": true },
+          "occurred_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MedicalAgentRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "context_lease_id", "root_agent_code", "root_agent_version", "composition_code", "composition_version", "requested_stage", "patient_id", "encounter_id", "target_type", "target_id", "objective", "state", "sequence", "output", "created_at", "completed_at", "row_version", "child_runs", "events"],
+        "properties": {
+          "run_id": { "type": "string", "format": "uuid" },
+          "context_lease_id": { "type": "string", "format": "uuid" },
+          "root_agent_code": { "type": "string" },
+          "root_agent_version": { "type": "string" },
+          "composition_code": { "type": "string" },
+          "composition_version": { "type": "string" },
+          "requested_stage": { "type": "string" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "target_type": { "type": "string" },
+          "target_id": { "type": "string", "format": "uuid" },
+          "objective": { "type": "string" },
+          "state": { "type": "string", "enum": ["QUEUED", "RUNNING", "WAITING_FOR_REVIEW", "COMPLETED", "PARTIAL", "BLOCKED", "FAILED", "CANCELLED"] },
+          "sequence": { "type": "integer", "format": "int64" },
+          "output": { "type": "object", "additionalProperties": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "row_version": { "type": "integer", "format": "int64" },
+          "child_runs": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentChildRun" } },
+          "events": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentRunEvent" } }
         }
       },
       "AIRunCreateRequest": {

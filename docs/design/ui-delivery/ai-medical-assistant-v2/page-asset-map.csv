@@ -1,0 +1,10 @@
+screen_id,asset_id,usage,required,notes
+"XN-002","XN-VIS-001","安全空上下文或首次任务引导","false","临床高风险状态禁用 IP"
+"XN-004","XN-SCREEN-002","路由确认与数据范围视觉参考","true","精确字段以 workflow-integration.md 为准"
+"XN-005","XN-SCREEN-002","流程内右侧面板视觉母版","true","不得遮挡主业务动作"
+"XN-006","XN-SCREEN-001","执行计划与子任务可见性参考","true","技术详情默认折叠"
+"XN-007","XN-SCREEN-001","完整任务工作台视觉母版","true","8/4 布局"
+"XN-011","XN-STATE-001","失败、阻断、人工接管状态参考","true","不得用通用 Toast 代替"
+"XN-012","XN-STATE-001","部分完成与阻断差异参考","true","部分完成不使用完整成功样式"
+"XN-016","XN-SCREEN-001","文书草拟候选结果模板参考","true","不包含自动签署"
+"XN-020","XN-SCREEN-003","子 Agent 协作角色、接力与贡献追踪视觉母版","true","独立核验必须标记非子 Agent"

@@ -1,0 +1,1302 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助小南":
+    - generic: AI医助小南
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-26
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 4":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "4"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "医疗协同中心 8":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 医疗协同中心
+    - generic: "8"
+  - link "任务与临床路径 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 4":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - link "模拟接口":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: AI 中心
+  - link "AI 总览":
+    - /url: "#/ai-center"
+  - link "AI医助小南":
+    - /url: "#/ai-assistant"
+  - link "模型路由":
+    - /url: "#/models"
+  - link "Agent 设计":
+    - /url: "#/agent-catalog"
+  - link "Skill":
+    - /url: "#/skill-catalog"
+  - link "Tool":
+    - /url: "#/tool-catalog"
+  - link "运行治理":
+    - /url: "#/aiops"
+  - heading "Agent 目录" [level=1]
+  - paragraph: 登记与停用可执行 Agent；所有变更使用幂等键、审计链与事件出箱，停用不物理删除。
+  - region "Agent 统计":
+    - article:
+      - generic: Agent
+      - strong: "96"
+      - generic: 全部登记
+    - article:
+      - generic: 有效 Agent
+      - strong: "86"
+      - generic: ACTIVE
+  - heading "Agent 台账" [level=2]
+  - paragraph: 编码与版本不可变；停用保留历史语义。
+  - button "刷新"
+  - table:
+    - rowgroup:
+      - row "名称 编码 版本 状态 操作":
+        - columnheader "名称"
+        - columnheader "编码"
+        - columnheader "版本"
+        - columnheader "状态"
+        - columnheader "操作"
+    - rowgroup:
+      - row "文档助手 …259ad2ab AG-0284d5e2 1.0.0 有效 停用":
+        - cell "文档助手 …259ad2ab":
+          - strong: 文档助手
+          - generic: …259ad2ab
+        - cell "AG-0284d5e2":
+          - code: AG-0284d5e2
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …0113932c AG-062a54bb 1.0.0 有效 停用":
+        - cell "文档助手 …0113932c":
+          - strong: 文档助手
+          - generic: …0113932c
+        - cell "AG-062a54bb":
+          - code: AG-062a54bb
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …2e3ad94f AG-17cbd7e9 1.0.0 有效 停用":
+        - cell "文档助手 …2e3ad94f":
+          - strong: 文档助手
+          - generic: …2e3ad94f
+        - cell "AG-17cbd7e9":
+          - code: AG-17cbd7e9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …be13aa3d AG-1bb7117f 1.0.0 有效 停用":
+        - cell "文档助手 …be13aa3d":
+          - strong: 文档助手
+          - generic: …be13aa3d
+        - cell "AG-1bb7117f":
+          - code: AG-1bb7117f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …294c51a3 AG-1dc7088a 1.0.0 有效 停用":
+        - cell "文档助手 …294c51a3":
+          - strong: 文档助手
+          - generic: …294c51a3
+        - cell "AG-1dc7088a":
+          - code: AG-1dc7088a
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …aa4d95ca AG-1e0f4023 1.0.0 有效 停用":
+        - cell "文档助手 …aa4d95ca":
+          - strong: 文档助手
+          - generic: …aa4d95ca
+        - cell "AG-1e0f4023":
+          - code: AG-1e0f4023
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …ef3c0443 AG-1e869c3f 1.0.0 有效 停用":
+        - cell "文档助手 …ef3c0443":
+          - strong: 文档助手
+          - generic: …ef3c0443
+        - cell "AG-1e869c3f":
+          - code: AG-1e869c3f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …1c4b8875 AG-212f7ef9 1.0.0 有效 停用":
+        - cell "文档助手 …1c4b8875":
+          - strong: 文档助手
+          - generic: …1c4b8875
+        - cell "AG-212f7ef9":
+          - code: AG-212f7ef9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …227c0ff3 AG-2706a342 1.0.0 有效 停用":
+        - cell "文档助手 …227c0ff3":
+          - strong: 文档助手
+          - generic: …227c0ff3
+        - cell "AG-2706a342":
+          - code: AG-2706a342
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …448cba95 AG-2881ce59 1.0.0 有效 停用":
+        - cell "文档助手 …448cba95":
+          - strong: 文档助手
+          - generic: …448cba95
+        - cell "AG-2881ce59":
+          - code: AG-2881ce59
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …ccdcb433 AG-2cf49525 1.0.0 有效 停用":
+        - cell "文档助手 …ccdcb433":
+          - strong: 文档助手
+          - generic: …ccdcb433
+        - cell "AG-2cf49525":
+          - code: AG-2cf49525
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …103502c2 AG-2ea5c669 1.0.0 有效 停用":
+        - cell "文档助手 …103502c2":
+          - strong: 文档助手
+          - generic: …103502c2
+        - cell "AG-2ea5c669":
+          - code: AG-2ea5c669
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …7ce259b2 AG-32e5346f 1.0.0 有效 停用":
+        - cell "文档助手 …7ce259b2":
+          - strong: 文档助手
+          - generic: …7ce259b2
+        - cell "AG-32e5346f":
+          - code: AG-32e5346f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …f1c17544 AG-421c9495 1.0.0 有效 停用":
+        - cell "文档助手 …f1c17544":
+          - strong: 文档助手
+          - generic: …f1c17544
+        - cell "AG-421c9495":
+          - code: AG-421c9495
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …48b818d2 AG-437eb57b 1.0.0 有效 停用":
+        - cell "文档助手 …48b818d2":
+          - strong: 文档助手
+          - generic: …48b818d2
+        - cell "AG-437eb57b":
+          - code: AG-437eb57b
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …237eb6e0 AG-508a5422 1.0.0 有效 停用":
+        - cell "文档助手 …237eb6e0":
+          - strong: 文档助手
+          - generic: …237eb6e0
+        - cell "AG-508a5422":
+          - code: AG-508a5422
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …7c59ef0c AG-55125704 1.0.0 有效 停用":
+        - cell "文档助手 …7c59ef0c":
+          - strong: 文档助手
+          - generic: …7c59ef0c
+        - cell "AG-55125704":
+          - code: AG-55125704
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …dcefceb5 AG-559a8d47 1.0.0 有效 停用":
+        - cell "文档助手 …dcefceb5":
+          - strong: 文档助手
+          - generic: …dcefceb5
+        - cell "AG-559a8d47":
+          - code: AG-559a8d47
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …d79c60af AG-58b3dea8 1.0.0 有效 停用":
+        - cell "文档助手 …d79c60af":
+          - strong: 文档助手
+          - generic: …d79c60af
+        - cell "AG-58b3dea8":
+          - code: AG-58b3dea8
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …1e0ad55f AG-5aa48c8f 1.0.0 有效 停用":
+        - cell "文档助手 …1e0ad55f":
+          - strong: 文档助手
+          - generic: …1e0ad55f
+        - cell "AG-5aa48c8f":
+          - code: AG-5aa48c8f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …4602e06d AG-5de362d4 1.0.0 有效 停用":
+        - cell "文档助手 …4602e06d":
+          - strong: 文档助手
+          - generic: …4602e06d
+        - cell "AG-5de362d4":
+          - code: AG-5de362d4
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …82bad420 AG-5e283a28 1.0.0 有效 停用":
+        - cell "文档助手 …82bad420":
+          - strong: 文档助手
+          - generic: …82bad420
+        - cell "AG-5e283a28":
+          - code: AG-5e283a28
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …fa927f8d AG-5f68ac55 1.0.0 有效 停用":
+        - cell "文档助手 …fa927f8d":
+          - strong: 文档助手
+          - generic: …fa927f8d
+        - cell "AG-5f68ac55":
+          - code: AG-5f68ac55
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …d5a86c1f AG-616ef0fe 1.0.0 有效 停用":
+        - cell "文档助手 …d5a86c1f":
+          - strong: 文档助手
+          - generic: …d5a86c1f
+        - cell "AG-616ef0fe":
+          - code: AG-616ef0fe
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …8fdaf125 AG-6d80a172 1.0.0 有效 停用":
+        - cell "文档助手 …8fdaf125":
+          - strong: 文档助手
+          - generic: …8fdaf125
+        - cell "AG-6d80a172":
+          - code: AG-6d80a172
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …22e85485 AG-72725912 1.0.0 有效 停用":
+        - cell "文档助手 …22e85485":
+          - strong: 文档助手
+          - generic: …22e85485
+        - cell "AG-72725912":
+          - code: AG-72725912
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …479102e1 AG-7a5c53a5 1.0.0 有效 停用":
+        - cell "文档助手 …479102e1":
+          - strong: 文档助手
+          - generic: …479102e1
+        - cell "AG-7a5c53a5":
+          - code: AG-7a5c53a5
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …7099fe14 AG-7f3e4105 1.0.0 有效 停用":
+        - cell "文档助手 …7099fe14":
+          - strong: 文档助手
+          - generic: …7099fe14
+        - cell "AG-7f3e4105":
+          - code: AG-7f3e4105
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …de463e98 AG-830ee17b 1.0.0 有效 停用":
+        - cell "文档助手 …de463e98":
+          - strong: 文档助手
+          - generic: …de463e98
+        - cell "AG-830ee17b":
+          - code: AG-830ee17b
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …ebde88fd AG-8cd5e0e7 1.0.0 有效 停用":
+        - cell "文档助手 …ebde88fd":
+          - strong: 文档助手
+          - generic: …ebde88fd
+        - cell "AG-8cd5e0e7":
+          - code: AG-8cd5e0e7
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …26beb9a9 AG-92940cbd 1.0.0 有效 停用":
+        - cell "文档助手 …26beb9a9":
+          - strong: 文档助手
+          - generic: …26beb9a9
+        - cell "AG-92940cbd":
+          - code: AG-92940cbd
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …56a7526d AG-943a523c 1.0.0 有效 停用":
+        - cell "文档助手 …56a7526d":
+          - strong: 文档助手
+          - generic: …56a7526d
+        - cell "AG-943a523c":
+          - code: AG-943a523c
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …0378c2ce AG-955207ca 1.0.0 有效 停用":
+        - cell "文档助手 …0378c2ce":
+          - strong: 文档助手
+          - generic: …0378c2ce
+        - cell "AG-955207ca":
+          - code: AG-955207ca
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …e8e6dd16 AG-96be68b9 1.0.0 有效 停用":
+        - cell "文档助手 …e8e6dd16":
+          - strong: 文档助手
+          - generic: …e8e6dd16
+        - cell "AG-96be68b9":
+          - code: AG-96be68b9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …5b8dac45 AG-9b546074 1.0.0 有效 停用":
+        - cell "文档助手 …5b8dac45":
+          - strong: 文档助手
+          - generic: …5b8dac45
+        - cell "AG-9b546074":
+          - code: AG-9b546074
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …7f2e2be5 AG-9fafb8fb 1.0.0 有效 停用":
+        - cell "文档助手 …7f2e2be5":
+          - strong: 文档助手
+          - generic: …7f2e2be5
+        - cell "AG-9fafb8fb":
+          - code: AG-9fafb8fb
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …d284c1db AG-a000549a 1.0.0 有效 停用":
+        - cell "文档助手 …d284c1db":
+          - strong: 文档助手
+          - generic: …d284c1db
+        - cell "AG-a000549a":
+          - code: AG-a000549a
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …4b2535d8 AG-a3771dd2 1.0.0 有效 停用":
+        - cell "文档助手 …4b2535d8":
+          - strong: 文档助手
+          - generic: …4b2535d8
+        - cell "AG-a3771dd2":
+          - code: AG-a3771dd2
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …5f6bdd74 AG-a3942e2f 1.0.0 有效 停用":
+        - cell "文档助手 …5f6bdd74":
+          - strong: 文档助手
+          - generic: …5f6bdd74
+        - cell "AG-a3942e2f":
+          - code: AG-a3942e2f
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …d57c48d3 AG-a5940614 1.0.0 有效 停用":
+        - cell "文档助手 …d57c48d3":
+          - strong: 文档助手
+          - generic: …d57c48d3
+        - cell "AG-a5940614":
+          - code: AG-a5940614
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …2ce32b43 AG-a6473895 1.0.0 有效 停用":
+        - cell "文档助手 …2ce32b43":
+          - strong: 文档助手
+          - generic: …2ce32b43
+        - cell "AG-a6473895":
+          - code: AG-a6473895
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …b810dc46 AG-b3f561f9 1.0.0 有效 停用":
+        - cell "文档助手 …b810dc46":
+          - strong: 文档助手
+          - generic: …b810dc46
+        - cell "AG-b3f561f9":
+          - code: AG-b3f561f9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …1d867227 AG-bb1520b8 1.0.0 有效 停用":
+        - cell "文档助手 …1d867227":
+          - strong: 文档助手
+          - generic: …1d867227
+        - cell "AG-bb1520b8":
+          - code: AG-bb1520b8
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …69d295d4 AG-c173571e 1.0.0 有效 停用":
+        - cell "文档助手 …69d295d4":
+          - strong: 文档助手
+          - generic: …69d295d4
+        - cell "AG-c173571e":
+          - code: AG-c173571e
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …1b5af7aa AG-c1a5d9c9 1.0.0 有效 停用":
+        - cell "文档助手 …1b5af7aa":
+          - strong: 文档助手
+          - generic: …1b5af7aa
+        - cell "AG-c1a5d9c9":
+          - code: AG-c1a5d9c9
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …452ec564 AG-c8869533 1.0.0 有效 停用":
+        - cell "文档助手 …452ec564":
+          - strong: 文档助手
+          - generic: …452ec564
+        - cell "AG-c8869533":
+          - code: AG-c8869533
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …8dc58851 AG-d0b60753 1.0.0 有效 停用":
+        - cell "文档助手 …8dc58851":
+          - strong: 文档助手
+          - generic: …8dc58851
+        - cell "AG-d0b60753":
+          - code: AG-d0b60753
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …81620ef0 AG-d23da14e 1.0.0 有效 停用":
+        - cell "文档助手 …81620ef0":
+          - strong: 文档助手
+          - generic: …81620ef0
+        - cell "AG-d23da14e":
+          - code: AG-d23da14e
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …2e8aff44 AG-d24b2aee 1.0.0 有效 停用":
+        - cell "文档助手 …2e8aff44":
+          - strong: 文档助手
+          - generic: …2e8aff44
+        - cell "AG-d24b2aee":
+          - code: AG-d24b2aee
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …1917221b AG-d3577e7a 1.0.0 有效 停用":
+        - cell "文档助手 …1917221b":
+          - strong: 文档助手
+          - generic: …1917221b
+        - cell "AG-d3577e7a":
+          - code: AG-d3577e7a
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …c5f7506e AG-d92e37b8 1.0.0 有效 停用":
+        - cell "文档助手 …c5f7506e":
+          - strong: 文档助手
+          - generic: …c5f7506e
+        - cell "AG-d92e37b8":
+          - code: AG-d92e37b8
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …e7e7e7ae AG-da113766 1.0.0 有效 停用":
+        - cell "文档助手 …e7e7e7ae":
+          - strong: 文档助手
+          - generic: …e7e7e7ae
+        - cell "AG-da113766":
+          - code: AG-da113766
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …b3d2a00f AG-dcca7eb6 1.0.0 有效 停用":
+        - cell "文档助手 …b3d2a00f":
+          - strong: 文档助手
+          - generic: …b3d2a00f
+        - cell "AG-dcca7eb6":
+          - code: AG-dcca7eb6
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …6bef5323 AG-ddea642b 1.0.0 有效 停用":
+        - cell "文档助手 …6bef5323":
+          - strong: 文档助手
+          - generic: …6bef5323
+        - cell "AG-ddea642b":
+          - code: AG-ddea642b
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …bde22d64 AG-e0721390 1.0.0 有效 停用":
+        - cell "文档助手 …bde22d64":
+          - strong: 文档助手
+          - generic: …bde22d64
+        - cell "AG-e0721390":
+          - code: AG-e0721390
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …a389399b AG-e2a3d12d 1.0.0 有效 停用":
+        - cell "文档助手 …a389399b":
+          - strong: 文档助手
+          - generic: …a389399b
+        - cell "AG-e2a3d12d":
+          - code: AG-e2a3d12d
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …52ea9091 AG-f00f7b01 1.0.0 有效 停用":
+        - cell "文档助手 …52ea9091":
+          - strong: 文档助手
+          - generic: …52ea9091
+        - cell "AG-f00f7b01":
+          - code: AG-f00f7b01
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …bf8d8005 AG-f36e9dec 1.0.0 有效 停用":
+        - cell "文档助手 …bf8d8005":
+          - strong: 文档助手
+          - generic: …bf8d8005
+        - cell "AG-f36e9dec":
+          - code: AG-f36e9dec
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …c593dd06 AG-f4d5af58 1.0.0 有效 停用":
+        - cell "文档助手 …c593dd06":
+          - strong: 文档助手
+          - generic: …c593dd06
+        - cell "AG-f4d5af58":
+          - code: AG-f4d5af58
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "文档助手 …97fae410 AG-f619e62c 1.0.0 有效 停用":
+        - cell "文档助手 …97fae410":
+          - strong: 文档助手
+          - generic: …97fae410
+        - cell "AG-f619e62c":
+          - code: AG-f619e62c
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …779e87c4 AGENT-011c94f1 v1 已停用 停用":
+        - cell "临床摘要助手 …779e87c4":
+          - strong: 临床摘要助手
+          - generic: …779e87c4
+        - cell "AGENT-011c94f1":
+          - code: AGENT-011c94f1
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …062c7e3e AGENT-111076a4 v1 有效 停用":
+        - cell "临床摘要助手 …062c7e3e":
+          - strong: 临床摘要助手
+          - generic: …062c7e3e
+        - cell "AGENT-111076a4":
+          - code: AGENT-111076a4
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …27564195 AGENT-27bf0b37 v1 有效 停用":
+        - cell "临床摘要助手 …27564195":
+          - strong: 临床摘要助手
+          - generic: …27564195
+        - cell "AGENT-27bf0b37":
+          - code: AGENT-27bf0b37
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …0c5054b0 AGENT-45cb5c67 v1 有效 停用":
+        - cell "临床摘要助手 …0c5054b0":
+          - strong: 临床摘要助手
+          - generic: …0c5054b0
+        - cell "AGENT-45cb5c67":
+          - code: AGENT-45cb5c67
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …27a83379 AGENT-4b62d3bb v1 有效 停用":
+        - cell "临床摘要助手 …27a83379":
+          - strong: 临床摘要助手
+          - generic: …27a83379
+        - cell "AGENT-4b62d3bb":
+          - code: AGENT-4b62d3bb
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …f4934269 AGENT-4e784ba3 v1 有效 停用":
+        - cell "临床摘要助手 …f4934269":
+          - strong: 临床摘要助手
+          - generic: …f4934269
+        - cell "AGENT-4e784ba3":
+          - code: AGENT-4e784ba3
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …5a9435f8 AGENT-5d9bbf98 v1 有效 停用":
+        - cell "临床摘要助手 …5a9435f8":
+          - strong: 临床摘要助手
+          - generic: …5a9435f8
+        - cell "AGENT-5d9bbf98":
+          - code: AGENT-5d9bbf98
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …34e457c6 AGENT-5f682597 v1 有效 停用":
+        - cell "临床摘要助手 …34e457c6":
+          - strong: 临床摘要助手
+          - generic: …34e457c6
+        - cell "AGENT-5f682597":
+          - code: AGENT-5f682597
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …4fd1aa78 AGENT-65e31a3e v1 有效 停用":
+        - cell "临床摘要助手 …4fd1aa78":
+          - strong: 临床摘要助手
+          - generic: …4fd1aa78
+        - cell "AGENT-65e31a3e":
+          - code: AGENT-65e31a3e
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …2bc4c2b3 AGENT-7e520bdb v1 有效 停用":
+        - cell "临床摘要助手 …2bc4c2b3":
+          - strong: 临床摘要助手
+          - generic: …2bc4c2b3
+        - cell "AGENT-7e520bdb":
+          - code: AGENT-7e520bdb
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …02987c7b AGENT-81f15e85 v1 有效 停用":
+        - cell "临床摘要助手 …02987c7b":
+          - strong: 临床摘要助手
+          - generic: …02987c7b
+        - cell "AGENT-81f15e85":
+          - code: AGENT-81f15e85
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …7dc95997 AGENT-90fc6c52 v1 有效 停用":
+        - cell "临床摘要助手 …7dc95997":
+          - strong: 临床摘要助手
+          - generic: …7dc95997
+        - cell "AGENT-90fc6c52":
+          - code: AGENT-90fc6c52
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …c99608a1 AGENT-92b4d196 v1 有效 停用":
+        - cell "临床摘要助手 …c99608a1":
+          - strong: 临床摘要助手
+          - generic: …c99608a1
+        - cell "AGENT-92b4d196":
+          - code: AGENT-92b4d196
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …45b2949f AGENT-9d6339d0 v1 有效 停用":
+        - cell "临床摘要助手 …45b2949f":
+          - strong: 临床摘要助手
+          - generic: …45b2949f
+        - cell "AGENT-9d6339d0":
+          - code: AGENT-9d6339d0
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …287d4541 AGENT-9e76291b v1 已停用 停用":
+        - cell "临床摘要助手 …287d4541":
+          - strong: 临床摘要助手
+          - generic: …287d4541
+        - cell "AGENT-9e76291b":
+          - code: AGENT-9e76291b
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …f8b37206 AGENT-ae489d28 v1 已停用 停用":
+        - cell "临床摘要助手 …f8b37206":
+          - strong: 临床摘要助手
+          - generic: …f8b37206
+        - cell "AGENT-ae489d28":
+          - code: AGENT-ae489d28
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …6e4d3751 AGENT-b87a3e17 v1 有效 停用":
+        - cell "临床摘要助手 …6e4d3751":
+          - strong: 临床摘要助手
+          - generic: …6e4d3751
+        - cell "AGENT-b87a3e17":
+          - code: AGENT-b87a3e17
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …89516317 AGENT-b8eeeb61 v1 有效 停用":
+        - cell "临床摘要助手 …89516317":
+          - strong: 临床摘要助手
+          - generic: …89516317
+        - cell "AGENT-b8eeeb61":
+          - code: AGENT-b8eeeb61
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …e8142f65 AGENT-b9cea35e v1 已停用 停用":
+        - cell "临床摘要助手 …e8142f65":
+          - strong: 临床摘要助手
+          - generic: …e8142f65
+        - cell "AGENT-b9cea35e":
+          - code: AGENT-b9cea35e
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …b1583221 AGENT-b9e55188 v1 已停用 停用":
+        - cell "临床摘要助手 …b1583221":
+          - strong: 临床摘要助手
+          - generic: …b1583221
+        - cell "AGENT-b9e55188":
+          - code: AGENT-b9e55188
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …df66fd36 AGENT-bd923cf2 v1 已停用 停用":
+        - cell "临床摘要助手 …df66fd36":
+          - strong: 临床摘要助手
+          - generic: …df66fd36
+        - cell "AGENT-bd923cf2":
+          - code: AGENT-bd923cf2
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …38f4c1c6 AGENT-bdd08afd v1 有效 停用":
+        - cell "临床摘要助手 …38f4c1c6":
+          - strong: 临床摘要助手
+          - generic: …38f4c1c6
+        - cell "AGENT-bdd08afd":
+          - code: AGENT-bdd08afd
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …aa53333c AGENT-bfec8bf8 v1 已停用 停用":
+        - cell "临床摘要助手 …aa53333c":
+          - strong: 临床摘要助手
+          - generic: …aa53333c
+        - cell "AGENT-bfec8bf8":
+          - code: AGENT-bfec8bf8
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …dec62779 AGENT-c400ee46 v1 有效 停用":
+        - cell "临床摘要助手 …dec62779":
+          - strong: 临床摘要助手
+          - generic: …dec62779
+        - cell "AGENT-c400ee46":
+          - code: AGENT-c400ee46
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …3a213795 AGENT-d46be44e v1 已停用 停用":
+        - cell "临床摘要助手 …3a213795":
+          - strong: 临床摘要助手
+          - generic: …3a213795
+        - cell "AGENT-d46be44e":
+          - code: AGENT-d46be44e
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …d124bdf6 AGENT-d4fd9ffa v1 有效 停用":
+        - cell "临床摘要助手 …d124bdf6":
+          - strong: 临床摘要助手
+          - generic: …d124bdf6
+        - cell "AGENT-d4fd9ffa":
+          - code: AGENT-d4fd9ffa
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …0ba1a9b1 AGENT-d967ce3f v1 已停用 停用":
+        - cell "临床摘要助手 …0ba1a9b1":
+          - strong: 临床摘要助手
+          - generic: …0ba1a9b1
+        - cell "AGENT-d967ce3f":
+          - code: AGENT-d967ce3f
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …68b38a56 AGENT-e2170011 v1 已停用 停用":
+        - cell "临床摘要助手 …68b38a56":
+          - strong: 临床摘要助手
+          - generic: …68b38a56
+        - cell "AGENT-e2170011":
+          - code: AGENT-e2170011
+        - cell "v1":
+          - code: v1
+        - cell "已停用":
+          - generic: 已停用
+        - cell "停用":
+          - button "停用" [disabled]
+      - row "临床摘要助手 …caa7ec2f AGENT-e91ca17b v1 有效 停用":
+        - cell "临床摘要助手 …caa7ec2f":
+          - strong: 临床摘要助手
+          - generic: …caa7ec2f
+        - cell "AGENT-e91ca17b":
+          - code: AGENT-e91ca17b
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "临床摘要助手 …aacdaf44 AGENT-facfaa98 v1 有效 停用":
+        - cell "临床摘要助手 …aacdaf44":
+          - strong: 临床摘要助手
+          - generic: …aacdaf44
+        - cell "AGENT-facfaa98":
+          - code: AGENT-facfaa98
+        - cell "v1":
+          - code: v1
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "照护协同 Agent …0000ee06 CARE_COORDINATOR 1.0.0 有效 停用":
+        - cell "照护协同 Agent …0000ee06":
+          - strong: 照护协同 Agent
+          - generic: …0000ee06
+        - cell "CARE_COORDINATOR":
+          - code: CARE_COORDINATOR
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "诊断审阅 Agent …0000ee02 DIAGNOSIS_REVIEW 1.0.0 有效 停用":
+        - cell "诊断审阅 Agent …0000ee02":
+          - strong: 诊断审阅 Agent
+          - generic: …0000ee02
+        - cell "DIAGNOSIS_REVIEW":
+          - code: DIAGNOSIS_REVIEW
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "病历质控 Agent …0000ee05 DOCUMENT_QC 1.0.0 有效 停用":
+        - cell "病历质控 Agent …0000ee05":
+          - strong: 病历质控 Agent
+          - generic: …0000ee05
+        - cell "DOCUMENT_QC":
+          - code: DOCUMENT_QC
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "门诊协同 Agent …0000ee01 OPD_COPILOT 1.0.0 有效 停用":
+        - cell "门诊协同 Agent …0000ee01":
+          - strong: 门诊协同 Agent
+          - generic: …0000ee01
+        - cell "OPD_COPILOT":
+          - code: OPD_COPILOT
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "医嘱安全 Agent …0000ee03 ORDER_SAFETY 1.0.0 有效 停用":
+        - cell "医嘱安全 Agent …0000ee03":
+          - strong: 医嘱安全 Agent
+          - generic: …0000ee03
+        - cell "ORDER_SAFETY":
+          - code: ORDER_SAFETY
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+      - row "结果分诊 Agent …0000ee04 RESULT_TRIAGE 1.0.0 有效 停用":
+        - cell "结果分诊 Agent …0000ee04":
+          - strong: 结果分诊 Agent
+          - generic: …0000ee04
+        - cell "RESULT_TRIAGE":
+          - code: RESULT_TRIAGE
+        - cell "1.0.0":
+          - code: 1.0.0
+        - cell "有效":
+          - generic: 有效
+        - cell "停用":
+          - button "停用"
+  - heading "登记 Agent" [level=2]
+  - paragraph: 编码、名称与版本均为必填。
+  - generic: Agent 编码
+  - textbox "Agent 编码":
+    - /placeholder: 例：TRIAGE-AGENT
+  - generic: Agent 名称
+  - textbox "Agent 名称":
+    - /placeholder: 例：分诊建议 Agent
+  - generic: 版本
+  - textbox "版本":
+    - /placeholder: 例：1.0.0
+  - button "登记并生效"

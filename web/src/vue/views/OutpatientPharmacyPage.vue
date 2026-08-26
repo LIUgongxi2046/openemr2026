@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { PharmacyDispensingWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
-import { issueExecutionPatientLease, listPharmacyDispensings, preparePharmacyDispensing, transitionPharmacyDispensing } from '../../api/execution';
+import { issueExecutionLease, issueExecutionPatientLease, listPharmacyDispensings, preparePharmacyDispensing, transitionPharmacyDispensing } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -15,14 +15,19 @@ const leaseQuery = useQuery({
   queryFn: () => issueExecutionPatientLease('PHARMACY_WORKFLOW'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
+const writeLeaseQuery = useQuery({
+  queryKey: ['execution', 'outpatient-pharmacy', 'write-lease'],
+  queryFn: () => issueExecutionLease('PHARMACY_WORKFLOW'),
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
 const dispensingsQuery = useQuery({
   queryKey: ['execution', 'outpatient-pharmacy', 'dispensings'],
   queryFn: () => listPharmacyDispensings(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? dispensingsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? dispensingsQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value) : null);
 const dispensings = computed(() => dispensingsQuery.data.value ?? []);
 const preparedCount = computed(() => dispensings.value.filter((d) => d.status === 'PREPARED').length);
 const dispensedCount = computed(() => dispensings.value.filter((d) => d.status === 'DISPENSED').length);
@@ -38,7 +43,7 @@ function formatDate(value: string | null | undefined) {
 async function reload() { notice.value = ''; await dispensingsQuery.refetch(); }
 
 async function prepare() {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value || !form.drugCode.trim() || !form.batchNumber.trim() || form.quantity <= 0 || !form.quantityUnit.trim()) return;
   busy.value = 'prepare'; notice.value = '';
   try {
@@ -55,7 +60,7 @@ async function prepare() {
 }
 
 async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' | 'DISPENSE') {
-  const lease = leaseQuery.data.value;
+  const lease = writeLeaseQuery.data.value;
   if (!lease || busy.value) return;
   busy.value = `${action}:${dispensing.dispensing_id}`; notice.value = '';
   try {
@@ -76,7 +81,7 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>门诊发药双人核验</span></div><dl><div><dt>发药前提</dt><dd>第二人核验</dd></div><div><dt>批次</dt><dd>强制填写</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取门诊调剂台账" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取门诊调剂台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>

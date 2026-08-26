@@ -1,0 +1,188 @@
+[
+  {
+    "route": "ai-center",
+    "bodyHeight": 1516,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理",
+      "✦AI医助小南随问随答、主动提醒、来源核验和任务草拟进入 →",
+      "模模型目录与路由模型画像、边界、主备、灰度和回人工进入 →",
+      "AAgent 设计目标、上下文、步骤、预算、停止和审批进入 →"
+    ],
+    "overflowX": false,
+    "title": "AI 中心",
+    "viewportWidth": 390,
+    "bytes": 70685
+  },
+  {
+    "route": "ai-assistant",
+    "bodyHeight": 1516,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理",
+      "✦AI医助小南随问随答、主动提醒、来源核验和任务草拟进入 →",
+      "模模型目录与路由模型画像、边界、主备、灰度和回人工进入 →",
+      "AAgent 设计目标、上下文、步骤、预算、停止和审批进入 →"
+    ],
+    "overflowX": false,
+    "title": "AI 中心",
+    "viewportWidth": 390,
+    "bytes": 33222
+  },
+  {
+    "route": "ai-assistant-policy",
+    "bodyHeight": 972,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "AI医助小南策略",
+    "viewportWidth": 390,
+    "bytes": 23988
+  },
+  {
+    "route": "models",
+    "bodyHeight": 1406,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "模型部署管理",
+    "viewportWidth": 390,
+    "bytes": 63003
+  },
+  {
+    "route": "agent-catalog",
+    "bodyHeight": 4432,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "Agent 设计与编排",
+    "viewportWidth": 390,
+    "bytes": 198503
+  },
+  {
+    "route": "skill-catalog",
+    "bodyHeight": 1713,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "Skill 目录",
+    "viewportWidth": 390,
+    "bytes": 72553
+  },
+  {
+    "route": "tool-catalog",
+    "bodyHeight": 1782,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "Tool 目录",
+    "viewportWidth": 390,
+    "bytes": 73719
+  },
+  {
+    "route": "agent-evals",
+    "bodyHeight": 2660,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "Agent 评估与发布门禁",
+    "viewportWidth": 390,
+    "bytes": 134982
+  },
+  {
+    "route": "aiops",
+    "bodyHeight": 2392,
+    "errors": [],
+    "links": [
+      "AI 总览",
+      "AI医助小南",
+      "小南策略",
+      "模型路由",
+      "Agent 设计",
+      "Skill",
+      "Tool",
+      "评估发布",
+      "运行治理"
+    ],
+    "overflowX": false,
+    "title": "AI 运行预算",
+    "viewportWidth": 390,
+    "bytes": 98516
+  }
+]

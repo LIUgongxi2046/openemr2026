@@ -1,0 +1,64 @@
+{
+  "buttons": [
+    {
+      "disabled": false,
+      "text": "江城大学附属医院⌄"
+    },
+    {
+      "disabled": false,
+      "text": "管理与治理工作台⌄"
+    },
+    {
+      "disabled": false,
+      "text": "搜索"
+    },
+    {
+      "disabled": false,
+      "text": "AI医助小南"
+    },
+    {
+      "disabled": false,
+      "text": ""
+    },
+    {
+      "disabled": false,
+      "text": "3"
+    },
+    {
+      "disabled": false,
+      "text": "林"
+    },
+    {
+      "disabled": false,
+      "text": "刷新"
+    }
+  ],
+  "document": {
+    "height": 834,
+    "width": 1265
+  },
+  "headings": [
+    "专科覆盖度",
+    "专科覆盖台账"
+  ],
+  "route": "specialty-coverage",
+  "tables": [
+    {
+      "headers": [
+        "范围",
+        "支持等级",
+        "覆盖度",
+        "缺失安全门",
+        "证据有效期"
+      ],
+      "rows": 9
+    }
+  ],
+  "text": "专科覆盖度\n\n各专科支持等级与缺失安全门；未验证科室不能升级支持级别。\n\n专科覆盖台账\n\n证据哈希与缺失安全门决定评级。\n\n刷新\n范围\t支持等级\t覆盖度\t缺失安全门\t证据有效期\n\nOBGYN\n…2ce67fc0\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…a6b096ca\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…e1ff56a8\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…7b897924\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…dccf16f2\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…2f45b408\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…c1075be9\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月23日\n\nOBGYN\n…bf86c2e6\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日\n\nOBGYN\n…0b24e2b5\n\t能力包待配\t\n30%\n\tEVIDENCE_EXPIRED\t2026年8月24日",
+  "url": "http://127.0.0.1:4178/app/index.html#/specialty-coverage",
+  "viewport": {
+    "dpr": 1,
+    "height": 720,
+    "width": 1280
+  }
+}
