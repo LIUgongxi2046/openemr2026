@@ -30,6 +30,7 @@ import {
   signatureEvidenceWireSchema,
   signatureRevocationEvidenceWireSchema,
   departmentSupportAssessmentWireSchema,
+  departmentSupportAssessmentPutRequestWireSchema,
   organizationUnitWireSchema,
   workforceIdentityWireSchema,
   authorizationPolicyWireSchema,
@@ -76,6 +77,7 @@ import {
   type SignatureEvidenceWire,
   type SignatureRevocationEvidenceWire,
   type DepartmentSupportAssessmentWire,
+  type DepartmentSupportAssessmentPutRequestWire,
   type OrganizationUnitWire,
   type OrganizationUnitCreateRequestWire,
   type WorkforceIdentityWire,
@@ -385,6 +387,26 @@ export async function loadSpecialtySupportAssessments(lease: ContextLeaseWire): 
     headers: wardHeaders(lease),
   });
   return departmentSupportAssessmentWireSchema.array().parse(payload);
+}
+
+export async function updateSpecialtySupportAssessment(
+  lease: ContextLeaseWire,
+  assessment: DepartmentSupportAssessmentWire,
+  input: Omit<DepartmentSupportAssessmentPutRequestWire, 'organization_id' | 'expected_row_version'>,
+): Promise<DepartmentSupportAssessmentWire> {
+  const body = departmentSupportAssessmentPutRequestWireSchema.parse({
+    ...input,
+    organization_id: clinicalContext.organizationId,
+    expected_row_version: assessment.row_version,
+  });
+  return departmentSupportAssessmentWireSchema.parse(await request(
+    `/specialty-support/${clinicalContext.facilityId}/${assessment.department_id}/${encodeURIComponent(assessment.clinical_scope_code)}`,
+    {
+      method: 'PUT',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(body),
+    },
+  ));
 }
 
 export async function loadArchiveReadiness(lease: ContextLeaseWire): Promise<ArchiveReadinessWire> {

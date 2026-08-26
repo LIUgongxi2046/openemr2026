@@ -25,6 +25,7 @@ final class ConfigurationService {
             Map.entry("FORM_TEMPLATE", List.of("schema_version", "fields", "groups", "terminology_mapping", "print_template")),
             Map.entry("RULE", List.of("schema_version", "conditions", "actions", "rule_layer", "sample_case")),
             Map.entry("SCOPE", List.of("schema_version", "roles", "data_scopes", "separation_of_duties", "temporary_grant_hours")),
+            Map.entry("CAPABILITY_PACK_COMPOSITION", List.of("schema_version", "selected_modules", "dependencies", "scope_overrides", "rating_impact")),
             Map.entry("AGENT_COMPOSITION", List.of("schema_version", "agents", "skills", "tools", "budget_tokens", "stop_conditions", "compensation")),
             Map.entry("AGENT_CONTEXT", List.of("schema_version", "data_sources", "allowed_fields", "time_window_hours", "redaction_policy", "freshness_minutes")),
             Map.entry("AGENT_EVAL", List.of("schema_version", "dataset_version", "case_count", "pass_threshold", "red_team_profile")),
@@ -32,6 +33,7 @@ final class ConfigurationService {
             Map.entry("CONFIG_RELEASE", List.of("schema_version", "diff_summary", "validation_evidence", "rollout_scope", "rollback_plan")),
             Map.entry("CONFIG_UPGRADE", List.of("schema_version", "package_version", "compatibility", "conflicts", "recovery_point")),
             Map.entry("MASTER_DATA", List.of("schema_version", "code_system", "hierarchy", "effective_period", "import_policy")),
+            Map.entry("ROLE_CATALOG", List.of("schema_version", "object_type", "parent_role_code", "permission_summary", "scope", "owner")),
             Map.entry("PARAMETER", List.of("schema_version", "value_type", "scope", "inheritance", "secret_reference", "effective_at")),
             Map.entry("JOB", List.of("schema_version", "schedule", "batch_size", "retry_policy", "reconciliation_rule")),
             Map.entry("BACKUP", List.of("schema_version", "repository", "retention_days", "rpo_minutes", "rto_minutes", "checksum_policy")),
@@ -252,8 +254,111 @@ final class ConfigurationService {
         if (threshold instanceof Number value && (value.doubleValue() < 0 || value.doubleValue() > 1)) {
             errors.add("pass_threshold 必须位于 0 到 1");
         }
+        switch (configType) {
+            case "WORKFLOW" -> validateWorkflow(payload, errors);
+            case "FORM_TEMPLATE" -> validateFormTemplate(payload, errors);
+            case "RULE" -> validateRules(payload, errors);
+            case "SCOPE" -> validateScope(payload, errors);
+            case "CAPABILITY_PACK_COMPOSITION" -> validateCapabilityComposition(payload, errors);
+            default -> { }
+        }
         return List.copyOf(errors);
     }
+
+    private void validateWorkflow(Map<String, Object> payload, List<String> errors) {
+        List<Map<String, Object>> nodes = objectRows(payload.get("nodes"));
+        List<Map<String, Object>> edges = objectRows(payload.get("edges"));
+        if (nodes.isEmpty()) return; // legacy string-list payloads retain their original compatibility contract
+        List<String> ids = nodes.stream().map(node -> text(node.get("id"))).filter(value -> !value.isBlank()).toList();
+        if (ids.size() != nodes.size()) errors.add("每个流程节点都必须配置唯一 id");
+        if (ids.stream().distinct().count() != ids.size()) errors.add("流程节点 id 不能重复");
+        if (nodes.stream().noneMatch(node -> "START".equals(text(node.get("type"))))) errors.add("流程必须包含 START 节点");
+        if (nodes.stream().noneMatch(node -> Boolean.TRUE.equals(node.get("terminal")) || "END".equals(text(node.get("type"))))) {
+            errors.add("流程必须包含至少一个可达终态");
+        }
+        for (Map<String, Object> node : nodes) {
+            if (!"START".equals(text(node.get("type"))) && text(node.get("owner")).isBlank()) {
+                errors.add("节点 " + text(node.get("name")) + " 缺少责任角色");
+            }
+        }
+        for (Map<String, Object> edge : edges) {
+            String from = text(edge.get("from")); String to = text(edge.get("to"));
+            if (!ids.contains(from) || !ids.contains(to)) errors.add("流程连线引用不存在节点：" + from + " -> " + to);
+            if (from.equals(to)) errors.add("流程节点不得自循环：" + from);
+            if (text(edge.get("condition")).isBlank()) errors.add("流程连线必须配置条件：" + from + " -> " + to);
+        }
+        if (nodes.stream().noneMatch(node -> "SIGN".equals(text(node.get("type"))) && Boolean.TRUE.equals(node.get("protected")))) {
+            errors.add("流程必须保留受保护的签署节点");
+        }
+        if (nodes.stream().noneMatch(node -> "AUDIT".equals(text(node.get("type"))) && Boolean.TRUE.equals(node.get("protected")))) {
+            errors.add("流程必须保留受保护的审计节点");
+        }
+    }
+
+    private void validateFormTemplate(Map<String, Object> payload, List<String> errors) {
+        List<Map<String, Object>> fields = objectRows(payload.get("fields"));
+        if (fields.isEmpty()) return;
+        List<String> ids = fields.stream().map(field -> text(field.get("id"))).filter(value -> !value.isBlank()).toList();
+        if (ids.size() != fields.size()) errors.add("每个表单字段都必须配置唯一 id");
+        if (ids.stream().distinct().count() != ids.size()) errors.add("表单字段 id 不能重复");
+        for (Map<String, Object> field : fields) {
+            String label = text(field.get("label"));
+            if (label.isBlank() || text(field.get("group")).isBlank()) errors.add("表单字段必须配置名称和分组：" + text(field.get("id")));
+            if ("CALCULATED".equals(text(field.get("type"))) && text(field.get("calculation")).isBlank()) {
+                errors.add("计算字段缺少表达式：" + label);
+            }
+            if (Boolean.TRUE.equals(field.get("required")) && "NEVER".equals(text(field.get("visibility")))) {
+                errors.add("必填字段不可设置为永不显示：" + label);
+            }
+        }
+    }
+
+    private void validateRules(Map<String, Object> payload, List<String> errors) {
+        for (Map<String, Object> rule : objectRows(payload.get("rules"))) {
+            String layer = text(rule.get("layer")); String name = text(rule.get("name"));
+            if (layer.contains("HARD") && text(rule.get("evidence")).isBlank()) errors.add("硬规则缺少证据来源：" + name);
+            if ("AI_ADVICE".equals(layer) && text(rule.get("action")).contains("阻断")) errors.add("AI 建议不得直接阻断临床动作：" + name);
+            if (text(rule.get("condition")).isBlank() || text(rule.get("action")).isBlank()) errors.add("规则必须配置条件和处置：" + name);
+        }
+    }
+
+    private void validateScope(Map<String, Object> payload, List<String> errors) {
+        for (Map<String, Object> permission : objectRows(payload.get("permissions"))) {
+            String role = text(permission.get("role"));
+            if ("ALLOW".equals(text(permission.get("effect"))) && "全部患者".equals(text(permission.get("scope")))
+                    && number(permission.get("temporary_hours")) <= 0) errors.add("无范围高权限必须设置临时到期：" + role);
+            if (number(permission.get("temporary_hours")) > 24) errors.add("临时授权不能超过 24 小时：" + role);
+            if (text(permission.get("resource")).isBlank() || text(permission.get("action")).isBlank()) errors.add("授权必须配置资源和动作：" + role);
+        }
+    }
+
+    private void validateCapabilityComposition(Map<String, Object> payload, List<String> errors) {
+        List<String> modules = stringRows(payload.get("selected_modules"));
+        for (Map<String, Object> dependency : objectRows(payload.get("dependencies"))) {
+            String module = text(dependency.get("module")); String requires = text(dependency.get("requires"));
+            if (modules.contains(module) && !modules.contains(requires)) errors.add("能力模块依赖缺失：" + module + " 需要 " + requires);
+        }
+        for (Map<String, Object> conflict : objectRows(payload.get("conflicts"))) {
+            String left = text(conflict.get("left")); String right = text(conflict.get("right"));
+            if (modules.contains(left) && modules.contains(right)) errors.add("能力模块互斥：" + left + " 与 " + right);
+        }
+        List<String> protectedModules = stringRows(payload.get("protected_modules"));
+        for (String module : protectedModules) if (!modules.contains(module)) errors.add("受保护能力模块不能停用：" + module);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> objectRows(Object value) {
+        if (!(value instanceof List<?> list) || list.isEmpty() || !(list.getFirst() instanceof Map<?, ?>)) return List.of();
+        return list.stream().filter(Map.class::isInstance).map(item -> (Map<String, Object>) item).toList();
+    }
+
+    private List<String> stringRows(Object value) {
+        if (!(value instanceof List<?> list)) return List.of();
+        return list.stream().filter(Objects::nonNull).map(String::valueOf).toList();
+    }
+
+    private String text(Object value) { return value == null ? "" : String.valueOf(value).trim(); }
+    private long number(Object value) { return value instanceof Number number ? number.longValue() : 0; }
 
     private ConfigState state(UUID tenantId, UUID configId, boolean lock) {
         String sql = """

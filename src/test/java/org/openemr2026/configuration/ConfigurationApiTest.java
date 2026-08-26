@@ -15,9 +15,11 @@ import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev-synthetic")
+@Transactional
 final class ConfigurationApiTest {
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
@@ -109,6 +111,55 @@ final class ConfigurationApiTest {
                 .isInstanceOf(ConfigurationException.class)
                 .satisfies(e -> assertThat(((ConfigurationException) e).code())
                         .isEqualTo("CONFIG_VALIDATION_FAILED"));
+    }
+
+    @Test
+    void givenUnsafeDomainModels_whenValidating_thenProtectedBusinessGatesFailClosed() {
+        ConfigurationItemWire workflow = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("WORKFLOW", "WF-UNSAFE-" + UUID.randomUUID(), "无终态流程",
+                        Map.of("schema_version", 2,
+                                "nodes", List.of(
+                                        Map.of("id", "start", "name", "开始", "type", "START", "owner", "医生"),
+                                        Map.of("id", "task", "name", "无人任务", "type", "TASK", "owner", "")),
+                                "edges", List.of(Map.of("from", "start", "to", "task", "condition", "已提交")),
+                                "protected_nodes", List.of("audit"), "timeout_policy", "30 分钟提醒")));
+        ConfigurationItemWire workflowResult = transition(identity(), workflow,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "验证无终态和保护节点硬门");
+        assertThat(workflowResult.validationErrors()).anyMatch(error -> error.contains("终态"));
+        assertThat(workflowResult.validationErrors()).anyMatch(error -> error.contains("签署"));
+
+        ConfigurationItemWire rule = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("RULE", "RULE-UNSAFE-" + UUID.randomUUID(), "AI 越权规则",
+                        Map.of("schema_version", 2, "conditions", List.of("病情变化"), "actions", List.of("阻断医嘱"),
+                                "rule_layer", "AI_ADVICE", "sample_case", Map.of("case_id", "SYN-1"),
+                                "rules", List.of(Map.of("id", "ai-block", "name", "AI 自动阻断", "layer", "AI_ADVICE",
+                                        "condition", "模型认为高风险", "action", "阻断处方", "evidence", "eval-v1")))));
+        ConfigurationItemWire ruleResult = transition(identity(), rule,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "验证 AI 不得直接阻断临床动作");
+        assertThat(ruleResult.validationErrors()).anyMatch(error -> error.contains("AI 建议不得直接阻断"));
+
+        ConfigurationItemWire scope = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("SCOPE", "SCOPE-UNSAFE-" + UUID.randomUUID(), "无范围高权",
+                        Map.of("schema_version", 2, "roles", List.of("临时医生"), "data_scopes", List.of("全部患者"),
+                                "separation_of_duties", "作者!=审批人", "temporary_grant_hours", 4,
+                                "permissions", List.of(Map.of("role", "临时医生", "resource", "全部病历", "action", "导出",
+                                        "scope", "全部患者", "effect", "ALLOW", "temporary_hours", 0)))));
+        ConfigurationItemWire scopeResult = transition(identity(), scope,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "验证高权限必须绑定范围和到期");
+        assertThat(scopeResult.validationErrors()).anyMatch(error -> error.contains("无范围高权限"));
+    }
+
+    @Test
+    void givenRoleCatalogDefinition_whenValidating_thenRoleAndWorkgroupSchemaIsSupported() {
+        String key = "ROLE-" + UUID.randomUUID().toString().substring(0, 8);
+        ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("ROLE_CATALOG", key, "心内科住院医生",
+                        Map.of("schema_version", 1, "object_type", "ROLE", "parent_role_code", "ROLE-DOCTOR",
+                                "permission_summary", "住院病历查看与书写", "scope", "心内科病区",
+                                "owner", "医务处")));
+        ConfigurationItemWire validated = transition(identity(), draft,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验角色目录结构和职责分离字段");
+        assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
     }
 
     private ConfigurationItemWire transition(

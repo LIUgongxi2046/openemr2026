@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import ConfigurationStudioPage from '../components/ConfigurationStudioPage.vue';
-import { configurationStudio } from '../configuration-studios';
-
-const definition = configurationStudio('workflow');
+import BusinessConfigurationWorkbench from '../components/BusinessConfigurationWorkbench.vue';
 </script>
 
-<template><ConfigurationStudioPage :definition="definition" /></template>
+<template><BusinessConfigurationWorkbench mode="workflow" /></template>
