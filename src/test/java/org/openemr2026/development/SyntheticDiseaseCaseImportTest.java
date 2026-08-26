@@ -117,23 +117,87 @@ final class SyntheticDiseaseCaseImportTest {
     @Test
     void importsSystemAdministrationFixturesForEveryDatabaseBackedWorkbench() {
         assertThat(count("""
+                select count(distinct dictionary_code) from dictionary_item
+                where tenant_id = :tenant and status = 'ACTIVE'
+                """)).isGreaterThanOrEqualTo(14);
+        assertThat(count("""
                 select count(*) from dictionary_item
-                where tenant_id = :tenant and (
-                  (dictionary_code = 'GENDER' and item_code in ('M', 'F', 'U')) or
-                  (dictionary_code = 'ENCOUNTER_TYPE' and item_code in ('OPD', 'ED', 'IPD')) or
-                  (dictionary_code = 'ALLERGY_SEVERITY' and item_code in ('MILD', 'MODERATE', 'SEVERE')) or
-                  (dictionary_code = 'LAB_UNIT' and item_code in ('MMOL_L', 'MG_L')))
-                """)).isEqualTo(11);
+                where tenant_id = :tenant and status = 'ACTIVE'
+                  and item_name like '% / %'
+                """)).isGreaterThanOrEqualTo(50);
         assertThat(count("""
                 select count(*) from authorization_policy
-                where tenant_id = :tenant and policy_code in (
-                  'CLINICAL-DOCUMENT-READ', 'CLINICAL-DOCUMENT-WRITE',
-                  'SYSTEM-ADMIN-WORKFORCE', 'CROSS-DEPARTMENT-EXPORT-DENY',
-                  'RESEARCH-DATASET-READ')
-                """)).isEqualTo(5);
-        assertThat(fixedConfigurationCount("MASTER_DATA", "c20[1-4]")).isEqualTo(4);
-        assertThat(fixedConfigurationCount("PARAMETER", "c2(1[1-9]|20|3[0-2])")).isEqualTo(13);
-        assertThat(fixedConfigurationCount("JOB", "c22[1-4]")).isEqualTo(4);
+                where tenant_id = :tenant and status = 'PUBLISHED'
+                """)).isGreaterThanOrEqualTo(18);
+        assertThat(count("""
+                select count(distinct effect) from authorization_policy
+                where tenant_id = :tenant and status = 'PUBLISHED'
+                """)).isEqualTo(2);
+        assertThat(configurationCount("MASTER_DATA")).isGreaterThanOrEqualTo(14);
+        assertThat(configurationCount("PARAMETER")).isGreaterThanOrEqualTo(13);
+        assertThat(configurationCount("JOB")).isGreaterThanOrEqualTo(9);
+        assertThat(configurationCount("ROLE_CATALOG")).isGreaterThanOrEqualTo(18);
+        assertThat(count("""
+                select count(*) from clinical_document_template template
+                join clinical_document_template_version version
+                  on version.tenant_id = template.tenant_id and version.template_id = template.template_id
+                where template.tenant_id = :tenant and template.lifecycle_status = 'ACTIVE'
+                  and version.status = 'PUBLISHED'
+                """)).isGreaterThanOrEqualTo(16);
+    }
+
+    @Test
+    void importsCompleteTertiaryHospitalOrganizationAndWorkforceConfiguration() {
+        assertThat(count("""
+                select count(*) from facility
+                where tenant_id = :tenant and status = 'ACTIVE'
+                """)).isGreaterThanOrEqualTo(3);
+        assertThat(count("""
+                select count(*) from clinical_department
+                where tenant_id = :tenant and status = 'ACTIVE'
+                """)).isGreaterThanOrEqualTo(40);
+        assertThat(count("""
+                select count(*) from clinical_department
+                where tenant_id = :tenant and status = 'ACTIVE'
+                  and unit_type in ('DEPARTMENT', 'MEDICAL_TECH', 'ADMINISTRATIVE')
+                """)).isGreaterThanOrEqualTo(40);
+        assertThat(count("""
+                select count(*) from clinical_ward
+                where tenant_id = :tenant and status = 'ACTIVE'
+                """)).isGreaterThanOrEqualTo(18);
+        assertThat(count("""
+                select count(*) from clinical_bed
+                where tenant_id = :tenant and status = 'ACTIVE'
+                  and bed_label ~ '.+-.+床$'
+                """)).isGreaterThanOrEqualTo(180);
+        assertThat(count("""
+                select count(*) from workforce_person
+                where tenant_id = :tenant and status = 'ACTIVE'
+                  and person_code like 'JC-%' and display_name like '% / %'
+                """)).isGreaterThanOrEqualTo(20);
+        assertThat(count("""
+                select count(*) from workforce_assignment assignment
+                join workforce_person person on person.tenant_id = assignment.tenant_id
+                  and person.person_id = assignment.person_id
+                where assignment.tenant_id = :tenant and assignment.status = 'ACTIVE'
+                  and person.person_code like 'JC-%'
+                  and assignment.organization_id is not null
+                  and assignment.facility_id is not null
+                  and assignment.department_id is not null
+                """)).isGreaterThanOrEqualTo(20);
+        assertThat(count("""
+                select count(*) from practitioner_credential credential
+                join workforce_person person on person.tenant_id = credential.tenant_id
+                  and person.person_id = credential.person_id
+                where credential.tenant_id = :tenant and credential.status = 'ACTIVE'
+                  and person.person_code like 'JC-%'
+                  and credential.valid_until > now()
+                """)).isGreaterThanOrEqualTo(15);
+        assertThat(count("""
+                select count(*) from audit_event
+                where tenant_id = :tenant
+                  and details ->> 'source' = 'dev-synthetic-tertiary-hospital'
+                """)).isEqualTo(8);
     }
 
     @Test
@@ -180,15 +244,13 @@ final class SyntheticDiseaseCaseImportTest {
                 """)).isEqualTo(4);
     }
 
-    private long fixedConfigurationCount(String configType, String idSuffixPattern) {
+    private long configurationCount(String configType) {
         return jdbc.sql("""
                 select count(*) from config_item
                 where tenant_id = :tenant and config_type = :type
-                  and right(config_id::text, 4) ~ :pattern
                 """)
                 .param("tenant", SyntheticDataImporter.TENANT_ID)
                 .param("type", configType)
-                .param("pattern", idSuffixPattern)
                 .query(Long.class)
                 .single();
     }

@@ -705,7 +705,25 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     '检查>影像>胸部>CT 平扫', '部位与 DICOM 编码冲突进入影像科人工复核'),
                   ('018f0000-0000-7000-8000-00000000c207', 'syn-supply-catalog-v1', '医用耗材主数据',
                     'SPD 耗材、规格、UDI 与供应商资质目录', 'UDI-SPD-SUPPLY',
-                    '耗材>心血管介入>血管支架>药物洗脱支架', 'UDI 唯一；供应商资质过期后禁止新增领用')
+                    '耗材>心血管介入>血管支架>药物洗脱支架', 'UDI 唯一；供应商资质过期后禁止新增领用'),
+                  ('018f0000-0000-7000-8000-00000000c208', 'syn-organization-catalog-v1', '机构科室主数据',
+                    '集团、医院、院区、科室与护理单元目录', 'OPENEMR2026-ORGANIZATION',
+                    '江城大学附属医院>本部院区>呼吸与危重症医学科>一病区', '机构编码全院唯一；被业务引用后仅允许停用'),
+                  ('018f0000-0000-7000-8000-00000000c209', 'syn-diagnosis-catalog-v1', '疾病诊断主数据',
+                    '国家临床版疾病诊断与院内常用词映射', 'ICD-10-CN',
+                    '循环系统疾病>高血压病>原发性高血压', '标准编码保持版本快照；院内别名须经病案室审核'),
+                  ('018f0000-0000-7000-8000-00000000c20a', 'syn-surgery-catalog-v1', '手术操作主数据',
+                    '手术操作、级别、切口和授权范围目录', 'ICD-9-CM-3-CN',
+                    '手术>心血管介入>冠状动脉支架置入术', '手术级别与术者授权联动，停用前检查在途申请'),
+                  ('018f0000-0000-7000-8000-00000000c20b', 'syn-nursing-catalog-v1', '护理项目主数据',
+                    '护理级别、护理操作与评估量表目录', 'OPENEMR2026-NURSING',
+                    '护理>基础护理>生命体征监测>一级护理', '护理项目与执行频次、资质要求联合校验'),
+                  ('018f0000-0000-7000-8000-00000000c20c', 'syn-blood-product-catalog-v1', '血液制品主数据',
+                    '血液成分、血型、储存条件与输注规则目录', 'OPENEMR2026-BLOOD',
+                    '血液制品>红细胞>悬浮红细胞>A型Rh阳性', '血型相容性与有效期硬校验；历史批次不可覆盖'),
+                  ('018f0000-0000-7000-8000-00000000c20d', 'syn-billing-catalog-v1', '医疗服务价格主数据',
+                    '诊疗项目、医保支付类别和价格版本映射', 'NHC-MEDICAL-SERVICE',
+                    '医疗服务>诊查费>主任医师门诊诊查费', '价格按生效日期版本化，结算后禁止追溯覆盖')
                 ) as seed(config_id, config_key, display_name, description, code_system, hierarchy, import_policy)
                 on conflict (tenant_id, config_id) do nothing
                 """).param("tenant", TENANT_ID).param("author", USER_ID).update();
@@ -735,7 +753,19 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     '哈希异常立即隔离并创建安全事件', '校验 186420，通过 186420，异常 0', '站内信,短信,邮件', '病案统计室'),
                   ('018f0000-0000-7000-8000-00000000c224', 'syn-permission-review-v1', '权限季度复核通知',
                     '高权、闲置和离岗授权季度复核', '0 0 9 1 */3 *', 64,
-                    '未送达通知每日重试，最多 3 日', '应复核 64，已送达 64，待关闭 7', '站内信,短信,邮件', '信息安全组')
+                    '未送达通知每日重试，最多 3 日', '应复核 64，已送达 64，待关闭 7', '站内信,短信,邮件', '信息安全组'),
+                  ('018f0000-0000-7000-8000-00000000c225', 'syn-identity-sync-v1', '统一身份增量同步',
+                    '统一身份平台账号、离岗与锁定状态增量同步', '0 */10 * * * *', 500,
+                    '失败账号隔离，下一批仅重试失败项', '拉取数、成功数、隔离数与游标必须闭合', '站内信,Webhook', '信息中心身份组'),
+                  ('018f0000-0000-7000-8000-00000000c226', 'syn-terminology-refresh-v1', '国家术语版本更新检查',
+                    '疾病诊断、手术操作和检验术语新版本检查', '0 0 3 * * 1', 5000,
+                    '差异进入预发布区，不自动覆盖生效版本', '下载、校验、差异和待审批条目总数一致', '站内信,邮件', '数据治理组'),
+                  ('018f0000-0000-7000-8000-00000000c227', 'syn-backup-restore-verify-v1', '备份可恢复性校验',
+                    '每日备份校验和与隔离环境抽样恢复', '0 30 3 * * *', 1,
+                    '恢复失败立即升级，不自动重复覆盖证据', '备份校验、恢复、业务抽检三项均通过', '站内信,短信,电话', '信息中心运维组'),
+                  ('018f0000-0000-7000-8000-00000000c228', 'syn-emergency-access-review-v1', '紧急访问事后复核',
+                    '聚合到期紧急访问并创建医务与安全复核任务', '0 0 8 * * *', 200,
+                    '任务生成失败按访问记录幂等重试', '到期访问数等于已复核、待复核与异常数之和', '站内信,短信,邮件', '医务处与信息安全组')
                 ) as seed(config_id, config_key, display_name, description, schedule, batch_size, retry_policy, reconciliation_rule, notification_channels, channel_owner)
                 on conflict (tenant_id, config_id) do update set payload = excluded.payload,
                   display_name = excluded.display_name, updated_at = now(), row_version = config_item.row_version + 1
@@ -766,7 +796,33 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000c244', 'SYSTEM_ADMIN', '系统管理员', 'ROLE', '—',
                     '发布系统配置、重置账户与管理机构目录', '本机构', '信息中心主任', '高权管理角色，必须季度复核'),
                   ('018f0000-0000-7000-8000-00000000c245', 'GROUP-CV-ONCALL', '心血管会诊值班组', 'WORKGROUP', '—',
-                    '跨科会诊、危急值升级与值班任务分派', '全院', '医务处值班中心', '不直接赋权，仅表达协作分派')
+                    '跨科会诊、危急值升级与值班任务分派', '全院', '医务处值班中心', '不直接赋权，仅表达协作分派'),
+                  ('018f0000-0000-7000-8000-00000000c246', 'ATTENDING_PHYSICIAN', '主治医师', 'ROLE', 'CLINICIAN',
+                    '病历审签、医嘱开立与诊疗计划调整', '本科室患者', '医务处', '临床主治医师岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c247', 'CHIEF_PHYSICIAN', '主任医师', 'ROLE', 'ATTENDING_PHYSICIAN',
+                    '疑难病例决策、重大手术与三级审签', '全院授权患者', '医务处', '高级临床决策岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c248', 'REGISTERED_NURSE', '注册护士', 'ROLE', 'NURSE',
+                    '护理评估、医嘱执行与护理记录', '本病区', '护理部', '临床护理岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c249', 'NURSE_MANAGER', '护士长', 'ROLE', 'REGISTERED_NURSE',
+                    '护理排班、质量审核与病区管理', '本病区', '护理部', '病区护理管理岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c24a', 'PHARMACIST', '药师', 'ROLE', '—',
+                    '处方审核、调剂与用药监护', '全院处方', '药学部', '药学专业岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c24b', 'LAB_TECHNICIAN', '检验技师', 'ROLE', '—',
+                    '检验执行、结果审核与危急值上报', '检验科', '医学检验科', '医学检验专业岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c24c', 'RADIOLOGIST', '影像诊断医师', 'ROLE', 'CLINICIAN',
+                    '影像检查审核、报告签发与危急结果上报', '影像科', '医学影像科', '影像诊断岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c24d', 'REGISTRAR', '挂号入院登记员', 'ROLE', '—',
+                    '患者登记、预约挂号与入院办理', '门诊与住院登记窗口', '门诊部', '非临床登记岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c24e', 'MEDICAL_RECORDS', '病案管理员', 'ROLE', '—',
+                    '病案归档、编码、质控与借阅管理', '全院归档病案', '病案统计室', '病案全生命周期管理角色'),
+                  ('018f0000-0000-7000-8000-00000000c24f', 'CLINICAL_ADMIN', '临床业务管理员', 'ROLE', '—',
+                    '机构科室、临床规则与业务字典维护', '本机构', '医务处', '临床业务配置管理角色'),
+                  ('018f0000-0000-7000-8000-00000000c250', 'SECURITY_AUDITOR', '安全审计员', 'ROLE', '—',
+                    '审计检索、权限复核与安全事件调查', '全院审计数据', '信息安全组', '只读安全审计岗位角色'),
+                  ('018f0000-0000-7000-8000-00000000c251', 'RESEARCHER', '临床研究人员', 'ROLE', '—',
+                    '审批范围内脱敏数据集查看与统计', '已批准研究项目', '科研处', '科研最小必要权限角色'),
+                  ('018f0000-0000-7000-8000-00000000c252', 'GROUP-EMERGENCY-RESPONSE', '全院急救响应组', 'WORKGROUP', '—',
+                    '院内急救、会诊与危急值升级任务协同', '三院区', '医务处总值班', '跨院区急救协作组，不直接赋予数据权限')
                 ) as seed(config_id, config_key, display_name, object_type, parent_role_code,
                   permission_summary, scope, owner, description)
                 on conflict (tenant_id, config_id) do update set payload = excluded.payload,
@@ -792,6 +848,25 @@ final class SyntheticDataImporter implements ApplicationRunner {
     }
 
     private void upsertBusinessConfigurationFixtures() {
+        jdbc.sql("""
+                insert into config_item(
+                  tenant_id, config_id, config_type, config_key, display_name, payload,
+                  status, row_version, schema_version, validation_state, validation_errors,
+                  approval_state, approved_by, published_at, created_by)
+                select source.tenant_id, seed.runtime_id::uuid, source.config_type, seed.runtime_key,
+                  source.display_name || ' · 当前生效', source.payload,
+                  'ACTIVE', 1, source.schema_version, 'VALID', '[]'::jsonb,
+                  'APPROVED', :approver, now() - interval '2 days', :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000c101'::uuid, '018f0000-0000-7000-8000-00000000c321', 'runtime-workflow-consult-v1'),
+                  ('018f0000-0000-7000-8000-00000000c102'::uuid, '018f0000-0000-7000-8000-00000000c322', 'runtime-form-record-v1'),
+                  ('018f0000-0000-7000-8000-00000000c103'::uuid, '018f0000-0000-7000-8000-00000000c323', 'runtime-rule-safety-v1'),
+                  ('018f0000-0000-7000-8000-00000000c104'::uuid, '018f0000-0000-7000-8000-00000000c324', 'runtime-scope-clinical-v1')
+                ) as seed(source_id, runtime_id, runtime_key)
+                join config_item source on source.tenant_id = :tenant and source.config_id = seed.source_id
+                on conflict (tenant_id, config_id) do nothing
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
         jdbc.sql("""
                 insert into capability_pack(
                   tenant_id, capability_pack_id, pack_code, pack_name, inherits_from, status)
@@ -875,7 +950,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     '{"scope":"PEDIATRICS","modules":["weight-dose","growth-chart"]}',
                     '{"core":">=2026.8.0"}')
                 ) as seed(release_id, pack_code, semantic_version, content_hash, manifest, compatibility)
-                on conflict (tenant_id, pack_code, semantic_version) do nothing
+                on conflict (tenant_id, specialty_pack_release_id) do nothing
                 """).param("tenant", TENANT_ID).param("author", USER_ID).update();
         jdbc.sql("""
                 insert into department_support_assessment(
@@ -902,12 +977,187 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     null, null, array['CONSENT_TEMPLATE', 'RESTRICTED_DATA_REVIEW']::text[], null)
                 ) as seed(assessment_id, clinical_scope_code, support_level, pack_release_id,
                   evidence_bundle_hash, missing_safety_gates, expires_at)
-                on conflict (tenant_id, facility_id, department_id, clinical_scope_code) do nothing
+                on conflict (tenant_id, department_support_assessment_id) do nothing
                 """).param("tenant", TENANT_ID).param("facility", FACILITY_ID)
                 .param("department", SYNTHETIC_DEPARTMENT_ID).param("author", USER_ID).update();
+        upsertTertiaryHospitalBusinessConfiguration();
+    }
+
+    private void upsertTertiaryHospitalBusinessConfiguration() {
+        for (TertiaryBusinessConfigurationCatalog.ConfigurationSeed seed
+                : TertiaryBusinessConfigurationCatalog.configurations()) {
+            String payload = writeJson(seed.payload());
+            jdbc.sql("""
+                    update config_item set display_name = :name, payload = cast(:payload as jsonb),
+                      schema_version = 2, updated_at = now(), row_version = row_version + 1
+                    where tenant_id = :tenant and config_id = :config
+                      and (display_name is distinct from :name or payload is distinct from cast(:payload as jsonb))
+                    """).param("name", seed.displayName()).param("payload", payload)
+                    .param("tenant", TENANT_ID).param("config", seed.draftId()).update();
+            jdbc.sql("""
+                    insert into config_item(
+                      tenant_id, config_id, config_type, config_key, display_name, payload,
+                      status, row_version, schema_version, validation_state, validation_errors,
+                      approval_state, approved_by, published_at, created_by)
+                    values (:tenant, :config, :type, :key, :name, cast(:payload as jsonb),
+                      'ACTIVE', 1, 2, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
+                      now() - interval '7 days', :author)
+                    on conflict (tenant_id, config_id) do update set
+                      display_name = excluded.display_name, payload = excluded.payload,
+                      status = 'ACTIVE', schema_version = 2, validation_state = 'VALID',
+                      validation_errors = '[]'::jsonb, approval_state = 'APPROVED',
+                      approved_by = excluded.approved_by,
+                      published_at = coalesce(config_item.published_at, excluded.published_at),
+                      updated_at = now(), row_version = config_item.row_version + 1
+                    where config_item.display_name is distinct from excluded.display_name
+                       or config_item.payload is distinct from excluded.payload
+                       or config_item.status <> 'ACTIVE'
+                    """).param("tenant", TENANT_ID).param("config", seed.runtimeId())
+                    .param("type", seed.configType()).param("key", seed.runtimeKey())
+                    .param("name", seed.displayName() + " · 当前生效").param("payload", payload)
+                    .param("approver", COLLABORATOR_USER_ID).param("author", USER_ID).update();
+        }
+
+        for (TertiaryBusinessConfigurationCatalog.CapabilityPackSeed seed
+                : TertiaryBusinessConfigurationCatalog.capabilityPacks()) {
+            jdbc.sql("""
+                    insert into capability_pack(
+                      tenant_id, capability_pack_id, pack_code, pack_name, inherits_from, status)
+                    values (:tenant, :pack, :code, :name, :inherits, 'ACTIVE')
+                    on conflict (tenant_id, capability_pack_id) do update set
+                      pack_name = excluded.pack_name, inherits_from = excluded.inherits_from,
+                      status = 'ACTIVE', updated_at = now()
+                    where (capability_pack.pack_name, capability_pack.inherits_from, capability_pack.status)
+                      is distinct from (excluded.pack_name, excluded.inherits_from, 'ACTIVE')
+                    """).param("tenant", TENANT_ID).param("pack", seed.packId())
+                    .param("code", seed.packCode()).param("name", seed.packName())
+                    .param("inherits", seed.inheritsFrom()).update();
+            String compositionPayload = writeJson(
+                    TertiaryBusinessConfigurationCatalog.compositionPayload(seed));
+            jdbc.sql("""
+                    insert into config_item(
+                      tenant_id, config_id, config_type, config_key, display_name, payload,
+                      status, row_version, schema_version, validation_state, validation_errors,
+                      approval_state, approved_by, published_at, created_by)
+                    values (:tenant, :config, 'CAPABILITY_PACK_COMPOSITION', :key, :name,
+                      cast(:payload as jsonb), 'ACTIVE', 1, 2, 'VALID', '[]'::jsonb,
+                      'APPROVED', :approver, now() - interval '7 days', :author)
+                    on conflict (tenant_id, config_id) do update set
+                      display_name = excluded.display_name, payload = excluded.payload,
+                      status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                      approval_state = 'APPROVED', approved_by = excluded.approved_by,
+                      published_at = coalesce(config_item.published_at, excluded.published_at),
+                      updated_at = now(), row_version = config_item.row_version + 1
+                    where config_item.display_name is distinct from excluded.display_name
+                       or config_item.payload is distinct from excluded.payload
+                       or config_item.status <> 'ACTIVE'
+                    """).param("tenant", TENANT_ID).param("config", seed.compositionId())
+                    .param("key", "composition-" + seed.packCode().toLowerCase())
+                    .param("name", seed.packName() + " · 能力组合")
+                    .param("payload", compositionPayload).param("approver", COLLABORATOR_USER_ID)
+                    .param("author", USER_ID).update();
+            jdbc.sql("""
+                    insert into capability_pack_release(
+                      tenant_id, release_id, capability_pack_id, release_version, lifecycle_status,
+                      canary_started_at, promoted_at, released_by, released_at, row_version)
+                    select :tenant, :release, :pack, '2026.8.26-tertiary', 'ACTIVE',
+                      now() - interval '30 days', now() - interval '21 days',
+                      :author, now() - interval '45 days', 3
+                    where not exists (
+                      select 1 from capability_pack_release current
+                      where current.tenant_id = :tenant and current.capability_pack_id = :pack
+                        and current.lifecycle_status = 'ACTIVE')
+                    on conflict (tenant_id, release_id) do nothing
+                    """).param("tenant", TENANT_ID).param("release", seed.releaseId())
+                    .param("pack", seed.packId()).param("author", USER_ID).update();
+        }
+
+        for (TertiaryBusinessConfigurationCatalog.SpecialtySeed seed
+                : TertiaryBusinessConfigurationCatalog.specialties()) {
+            String manifest = writeJson(Map.of(
+                    "scope", seed.scopeCode(), "display_name", seed.displayName(),
+                    "modules", seed.modules(), "synthetic_cases", 8,
+                    "release_profile", "tertiary-hospital-closed-loop"));
+            jdbc.sql("""
+                    insert into specialty_pack_release(
+                      tenant_id, specialty_pack_release_id, pack_code, semantic_version,
+                      content_hash, manifest, lifecycle_status, compatibility_range, created_by)
+                    values (:tenant, :release, :code, :version, :hash, cast(:manifest as jsonb),
+                      'ACTIVE', '{"core":">=2026.8.0","evidence":"tertiary-v1"}'::jsonb, :author)
+                    on conflict (tenant_id, specialty_pack_release_id) do update set
+                      pack_code = excluded.pack_code, semantic_version = excluded.semantic_version,
+                      content_hash = excluded.content_hash, manifest = excluded.manifest,
+                      lifecycle_status = 'ACTIVE', compatibility_range = excluded.compatibility_range
+                    where (specialty_pack_release.pack_code, specialty_pack_release.semantic_version,
+                      specialty_pack_release.content_hash, specialty_pack_release.manifest,
+                      specialty_pack_release.lifecycle_status, specialty_pack_release.compatibility_range)
+                      is distinct from (excluded.pack_code, excluded.semantic_version,
+                        excluded.content_hash, excluded.manifest, 'ACTIVE', excluded.compatibility_range)
+                    """).param("tenant", TENANT_ID).param("release", seed.releaseId())
+                    .param("code", seed.packCode()).param("version", seed.semanticVersion())
+                    .param("hash", seed.evidenceHash())
+                    .param("manifest", manifest).param("author", USER_ID).update();
+            jdbc.sql("""
+                    insert into department_support_assessment(
+                      tenant_id, department_support_assessment_id, facility_id, department_id,
+                      clinical_scope_code, support_level, pack_release_id, evidence_bundle_hash,
+                      missing_safety_gates, assessed_by, assessed_at, expires_at, row_version)
+                    values (:tenant, :assessment, :facility, :department, :scope, :level,
+                      :release, :evidence, '{}'::text[], :author, now() - interval '2 days',
+                      now() + interval '365 days', 1)
+                    on conflict (tenant_id, department_support_assessment_id) do update set
+                      facility_id = excluded.facility_id, department_id = excluded.department_id,
+                      clinical_scope_code = excluded.clinical_scope_code,
+                      support_level = excluded.support_level, pack_release_id = excluded.pack_release_id,
+                      evidence_bundle_hash = excluded.evidence_bundle_hash,
+                      missing_safety_gates = '{}'::text[], expires_at = excluded.expires_at,
+                      assessed_at = excluded.assessed_at, row_version = department_support_assessment.row_version + 1
+                    where (department_support_assessment.facility_id,
+                      department_support_assessment.department_id,
+                      department_support_assessment.clinical_scope_code,
+                      department_support_assessment.support_level,
+                      department_support_assessment.pack_release_id,
+                      department_support_assessment.evidence_bundle_hash,
+                      department_support_assessment.missing_safety_gates)
+                      is distinct from (excluded.facility_id, excluded.department_id,
+                        excluded.clinical_scope_code, excluded.support_level,
+                        excluded.pack_release_id, excluded.evidence_bundle_hash, '{}'::text[])
+                    """).param("tenant", TENANT_ID).param("assessment", seed.assessmentId())
+                    .param("facility", FACILITY_ID).param("department", seed.departmentId())
+                    .param("scope", seed.scopeCode()).param("level", seed.supportLevel())
+                    .param("release", seed.releaseId()).param("evidence", seed.evidenceHash())
+                    .param("author", USER_ID).update();
+        }
+
+        jdbc.sql("""
+                insert into config_item_revision(
+                  tenant_id, config_id, revision_no, display_name, payload, schema_version,
+                  status, validation_state, validation_errors, approval_state, changed_by, change_reason)
+                select item.tenant_id, item.config_id, item.row_version, item.display_name, item.payload,
+                  item.schema_version, item.status, item.validation_state, item.validation_errors,
+                  item.approval_state, :author, 'tertiary hospital synthetic configuration baseline'
+                from config_item item
+                where item.tenant_id = :tenant
+                  and (item.config_key like 'runtime-%' or item.config_key like 'composition-syn-%')
+                  and not exists (
+                    select 1 from config_item_revision revision
+                    where revision.tenant_id = item.tenant_id and revision.config_id = item.config_id
+                      and revision.revision_no = item.row_version)
+                """).param("tenant", TENANT_ID).param("author", USER_ID).update();
+    }
+
+    private String writeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception invalidFixture) {
+            throw new IllegalStateException("Unable to serialize tertiary hospital configuration fixture", invalidFixture);
+        }
     }
 
     private void upsertAdministrationFixtures() {
+        upsertAdministrationOrganizationFixtures();
+        upsertTertiaryHospitalOrganizationFixtures();
+        upsertTertiaryHospitalWorkforceFixtures();
         jdbc.sql("""
                 insert into dictionary_item(
                   tenant_id, dictionary_item_id, dictionary_code, item_code, item_name,
@@ -931,12 +1181,12 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 """).param("tenant", TENANT_ID).update();
         jdbc.sql("""
                 insert into authorization_policy(
-                  tenant_id, policy_id, policy_code, version_no, effect, status,
+                  tenant_id, policy_id, policy_code, policy_name, version_no, effect, status,
                   subject_role_code, resource_type, action_code, organization_id, facility_id,
                   patient_relationship_required, relationship_types, resource_statuses,
                   purpose_codes, emergency_override_allowed, priority, valid_from,
                   created_by, approved_by, published_at)
-                select :tenant, seed.policy_id::uuid, seed.policy_code, 1, seed.effect, seed.status,
+                select :tenant, seed.policy_id::uuid, seed.policy_code, seed.policy_name, 1, seed.effect, seed.status,
                   seed.role_code, seed.resource_type, seed.action_code, :organization, :facility,
                   seed.relationship_required, seed.relationship_types::text[], array['ACTIVE'],
                   seed.purpose_codes::text[], true, seed.priority, now() - interval '30 days',
@@ -944,17 +1194,461 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   case when seed.status = 'PUBLISHED' then :approver else null end,
                   case when seed.status = 'PUBLISHED' then now() - interval '7 days' else null end
                 from (values
-                  ('018f0000-0000-7000-8000-00000000d201', 'CLINICAL-DOCUMENT-READ', 'ALLOW', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'READ', true, '{CARE_TEAM}', '{DIRECT_CARE}', 700, '018f0000-0000-7000-8000-00000000aa04'),
-                  ('018f0000-0000-7000-8000-00000000d202', 'CLINICAL-DOCUMENT-WRITE', 'ALLOW', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'WRITE_DRAFT', true, '{CARE_TEAM}', '{DOCUMENT_DRAFT}', 720, '018f0000-0000-7000-8000-00000000aa04'),
-                  ('018f0000-0000-7000-8000-00000000d203', 'SYSTEM-ADMIN-WORKFORCE', 'ALLOW', 'PUBLISHED', 'SYSTEM_ADMIN', 'WORKFORCE_PERSON', 'MANAGE', false, '{}', '{ADMINISTRATION}', 900, '018f0000-0000-7000-8000-00000000aa04'),
-                  ('018f0000-0000-7000-8000-00000000d204', 'CROSS-DEPARTMENT-EXPORT-DENY', 'DENY', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'EXPORT', false, '{}', '{SECONDARY_USE}', 1000, '018f0000-0000-7000-8000-00000000aa04'),
-                  ('018f0000-0000-7000-8000-00000000d205', 'RESEARCH-DATASET-READ', 'ALLOW', 'DRAFT', 'RESEARCHER', 'RESEARCH_DATASET', 'READ', false, '{}', '{RESEARCH}', 500, '018f0000-0000-7000-8000-00000000aa06')
-                ) as seed(policy_id, policy_code, effect, status, role_code, resource_type,
+                  ('018f0000-0000-7000-8000-00000000d201', 'CLINICAL-DOCUMENT-READ', '临床病历查看权限', 'ALLOW', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'READ', true, '{CARE_TEAM}', '{DIRECT_CARE}', 700, '018f0000-0000-7000-8000-00000000aa04'),
+                  ('018f0000-0000-7000-8000-00000000d202', 'CLINICAL-DOCUMENT-WRITE', '临床病历起草权限', 'ALLOW', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'WRITE_DRAFT', true, '{CARE_TEAM}', '{DOCUMENT_DRAFT}', 720, '018f0000-0000-7000-8000-00000000aa04'),
+                  ('018f0000-0000-7000-8000-00000000d203', 'SYSTEM-ADMIN-WORKFORCE', '人员与账户管理权限', 'ALLOW', 'PUBLISHED', 'SYSTEM_ADMIN', 'WORKFORCE_PERSON', 'MANAGE', false, '{}', '{ADMINISTRATION}', 900, '018f0000-0000-7000-8000-00000000aa04'),
+                  ('018f0000-0000-7000-8000-00000000d204', 'CROSS-DEPARTMENT-EXPORT-DENY', '禁止跨科室导出临床病历', 'DENY', 'PUBLISHED', 'CLINICIAN', 'CLINICAL_DOCUMENT', 'EXPORT', false, '{}', '{SECONDARY_USE}', 1000, '018f0000-0000-7000-8000-00000000aa04'),
+                  ('018f0000-0000-7000-8000-00000000d205', 'RESEARCH-DATASET-READ', '科研数据集查看权限', 'ALLOW', 'DRAFT', 'RESEARCHER', 'RESEARCH_DATASET', 'READ', false, '{}', '{RESEARCH}', 500, '018f0000-0000-7000-8000-00000000aa06')
+                ) as seed(policy_id, policy_code, policy_name, effect, status, role_code, resource_type,
                   action_code, relationship_required, relationship_types, purpose_codes,
                   priority, created_by)
                 on conflict (tenant_id, policy_code, version_no) do nothing
                 """).param("tenant", TENANT_ID).param("organization", ORGANIZATION_ID)
                 .param("facility", FACILITY_ID).param("approver", COLLABORATOR_USER_ID).update();
+        upsertTertiaryHospitalDictionaryFixtures();
+        upsertTertiaryHospitalAuthorizationFixtures();
+        upsertTertiaryHospitalAuditFixtures();
+    }
+
+    private void upsertTertiaryHospitalOrganizationFixtures() {
+        UUID riversideFacilityId = syntheticAdministrationId("facility:riverside");
+        UUID northFacilityId = syntheticAdministrationId("facility:north");
+        jdbc.sql("""
+                insert into facility(
+                  tenant_id, organization_id, facility_id, facility_code, display_name, timezone, status)
+                values
+                  (:tenant, :organization, :riverside, 'JC-DXFS-BJ', '江城大学附属医院滨江院区', 'Asia/Shanghai', 'ACTIVE'),
+                  (:tenant, :organization, :north, 'JC-DXFS-BC', '江城大学附属医院北城院区', 'Asia/Shanghai', 'ACTIVE')
+                on conflict (tenant_id, facility_id) do update
+                set organization_id = excluded.organization_id, facility_code = excluded.facility_code,
+                  display_name = excluded.display_name, timezone = excluded.timezone, status = 'ACTIVE',
+                  effective_until = null
+                """).param("tenant", TENANT_ID).param("organization", ORGANIZATION_ID)
+                .param("riverside", riversideFacilityId).param("north", northFacilityId).update();
+
+        List<AdministrationDepartment> departments = List.of(
+                new AdministrationDepartment(FACILITY_ID, "RESPIRATORY", "呼吸与危重症医学科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "GASTROENTEROLOGY", "消化内科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ENDOCRINOLOGY", "内分泌科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "NEPHROLOGY", "肾内科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "HEMATOLOGY", "血液内科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ONCOLOGY", "肿瘤科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "INFECTIOUS", "感染性疾病科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ICU", "重症医学科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ORTHOPEDICS", "骨科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "NEUROSURGERY", "神经外科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "UROLOGY", "泌尿外科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "THORACIC-SURGERY", "胸外科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "OBSTETRICS", "产科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "GYNECOLOGY", "妇科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "OPHTHALMOLOGY", "眼科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ENT", "耳鼻咽喉科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "DERMATOLOGY", "皮肤科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "ANESTHESIOLOGY", "麻醉科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "PATHOLOGY", "病理科", "MEDICAL_TECH"),
+                new AdministrationDepartment(FACILITY_ID, "PHARMACY", "药学部", "MEDICAL_TECH"),
+                new AdministrationDepartment(FACILITY_ID, "TRANSFUSION", "输血科", "MEDICAL_TECH"),
+                new AdministrationDepartment(FACILITY_ID, "REHABILITATION", "康复医学科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "TCM", "中医科", "DEPARTMENT"),
+                new AdministrationDepartment(FACILITY_ID, "MEDICAL-AFFAIRS", "医务处", "ADMINISTRATIVE"),
+                new AdministrationDepartment(FACILITY_ID, "NURSING-ADMIN", "护理部", "ADMINISTRATIVE"),
+                new AdministrationDepartment(FACILITY_ID, "MEDICAL-RECORDS", "病案统计室", "ADMINISTRATIVE"),
+                new AdministrationDepartment(FACILITY_ID, "INFORMATION-CENTER", "信息中心", "ADMINISTRATIVE"),
+                new AdministrationDepartment(FACILITY_ID, "INFECTION-CONTROL", "医院感染管理科", "ADMINISTRATIVE"),
+                new AdministrationDepartment(riversideFacilityId, "BJ-EMERGENCY", "滨江院区急诊医学科", "DEPARTMENT"),
+                new AdministrationDepartment(riversideFacilityId, "BJ-GENERAL-MED", "滨江院区综合内科", "DEPARTMENT"),
+                new AdministrationDepartment(riversideFacilityId, "BJ-GENERAL-SURGERY", "滨江院区综合外科", "DEPARTMENT"),
+                new AdministrationDepartment(riversideFacilityId, "BJ-REHABILITATION", "滨江院区康复医学科", "DEPARTMENT"),
+                new AdministrationDepartment(riversideFacilityId, "BJ-LAB", "滨江院区医学检验科", "MEDICAL_TECH"),
+                new AdministrationDepartment(northFacilityId, "BC-PEDIATRICS", "北城院区儿科", "DEPARTMENT"),
+                new AdministrationDepartment(northFacilityId, "BC-WOMEN", "北城院区妇产科", "DEPARTMENT"),
+                new AdministrationDepartment(northFacilityId, "BC-OUTPATIENT", "北城院区综合门诊部", "DEPARTMENT"),
+                new AdministrationDepartment(northFacilityId, "BC-IMAGING", "北城院区医学影像科", "MEDICAL_TECH"));
+        for (AdministrationDepartment department : departments) {
+            UUID departmentId = syntheticAdministrationId("department:" + department.facilityId() + ":" + department.code());
+            jdbc.sql("""
+                    insert into clinical_department(
+                      tenant_id, facility_id, department_id, department_code, display_name, status, unit_type)
+                    values (:tenant, :facility, :department, :code, :name, 'ACTIVE', :unit_type)
+                    on conflict (tenant_id, facility_id, department_code) do update
+                    set display_name = excluded.display_name,
+                      status = 'ACTIVE', unit_type = excluded.unit_type, effective_until = null
+                    """).param("tenant", TENANT_ID).param("facility", department.facilityId())
+                    .param("department", departmentId).param("code", department.code())
+                    .param("name", department.name()).param("unit_type", department.unitType()).update();
+        }
+
+        List<AdministrationWard> wards = List.of(
+                new AdministrationWard(FACILITY_ID, "RESPIRATORY", "RESP-1", "呼吸与危重症医学科一病区", 12),
+                new AdministrationWard(FACILITY_ID, "GASTROENTEROLOGY", "GI-1", "消化内科一病区", 12),
+                new AdministrationWard(FACILITY_ID, "NEPHROLOGY", "NEPH-1", "肾内科一病区", 10),
+                new AdministrationWard(FACILITY_ID, "ONCOLOGY", "ONC-1", "肿瘤科一病区", 10),
+                new AdministrationWard(FACILITY_ID, "ICU", "ICU-A", "综合重症监护病区", 10),
+                new AdministrationWard(FACILITY_ID, "ORTHOPEDICS", "ORTH-1", "骨科一病区", 12),
+                new AdministrationWard(FACILITY_ID, "NEUROSURGERY", "NS-1", "神经外科一病区", 10),
+                new AdministrationWard(FACILITY_ID, "UROLOGY", "URO-1", "泌尿外科一病区", 10),
+                new AdministrationWard(FACILITY_ID, "OBSTETRICS", "OBS-1", "产科一病区", 12),
+                new AdministrationWard(FACILITY_ID, "GYNECOLOGY", "GYN-1", "妇科一病区", 10),
+                new AdministrationWard(FACILITY_ID, "REHABILITATION", "REHAB-1", "康复医学科一病区", 10),
+                new AdministrationWard(riversideFacilityId, "BJ-GENERAL-MED", "BJ-MED-1", "滨江综合内科病区", 10),
+                new AdministrationWard(riversideFacilityId, "BJ-GENERAL-SURGERY", "BJ-SUR-1", "滨江综合外科病区", 10),
+                new AdministrationWard(northFacilityId, "BC-PEDIATRICS", "BC-PED-1", "北城儿科病区", 10),
+                new AdministrationWard(northFacilityId, "BC-WOMEN", "BC-WOMEN-1", "北城妇产科病区", 10));
+        for (AdministrationWard ward : wards) {
+            UUID departmentId = jdbc.sql("""
+                    select department_id from clinical_department
+                    where tenant_id = :tenant and facility_id = :facility and department_code = :code
+                    """).param("tenant", TENANT_ID).param("facility", ward.facilityId())
+                    .param("code", ward.departmentCode()).query(UUID.class).single();
+            UUID wardId = syntheticAdministrationId("ward:" + ward.code());
+            jdbc.sql("""
+                    insert into clinical_ward(
+                      tenant_id, facility_id, department_id, ward_id, ward_code, display_name, status)
+                    values (:tenant, :facility, :department, :ward, :code, :name, 'ACTIVE')
+                    on conflict (tenant_id, ward_id) do update
+                    set facility_id = excluded.facility_id, department_id = excluded.department_id,
+                      ward_code = excluded.ward_code, display_name = excluded.display_name,
+                      status = 'ACTIVE', effective_until = null
+                    """).param("tenant", TENANT_ID).param("facility", ward.facilityId())
+                    .param("department", departmentId).param("ward", wardId)
+                    .param("code", ward.code()).param("name", ward.name()).update();
+            for (int number = 1; number <= ward.bedCount(); number++) {
+                UUID bedId = syntheticAdministrationId("bed:" + ward.code() + ":" + number);
+                String departmentName = ward.name().replace("一病区", "").replace("病区", "");
+                jdbc.sql("""
+                        insert into clinical_bed(tenant_id, bed_id, ward_id, bed_label, status)
+                        values (:tenant, :bed, :ward, :label, 'ACTIVE')
+                        on conflict (tenant_id, bed_id) do update
+                        set ward_id = excluded.ward_id, bed_label = excluded.bed_label,
+                          status = 'ACTIVE', effective_until = null
+                        """).param("tenant", TENANT_ID).param("bed", bedId).param("ward", wardId)
+                        .param("label", departmentName + "-" + String.format("%02d床", number)).update();
+            }
+        }
+    }
+
+    private void upsertTertiaryHospitalWorkforceFixtures() {
+        List<AdministrationStaff> staff = List.of(
+                new AdministrationStaff("JC-DR-1001", "赵启明 / Qiming Zhao", "qiming.zhao", "CHIEF_PHYSICIAN", "CARDIOLOGY", "主任医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1002", "孙雅宁 / Yaning Sun", "yaning.sun", "ATTENDING_PHYSICIAN", "RESPIRATORY", "主治医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1003", "郭文博 / Wenbo Guo", "wenbo.guo", "ATTENDING_PHYSICIAN", "GASTROENTEROLOGY", "主治医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1004", "何俊杰 / Junjie He", "junjie.he", "SURGEON", "ORTHOPEDICS", "副主任医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1005", "罗思源 / Siyuan Luo", "siyuan.luo", "EMERGENCY_PHYSICIAN", "EMERGENCY", "主治医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1006", "郑雨桐 / Yutong Zheng", "yutong.zheng", "PEDIATRICIAN", "PEDIATRICS", "副主任医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1007", "梁安然 / Anran Liang", "anran.liang", "ICU_PHYSICIAN", "ICU", "主治医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-DR-1008", "谢承宇 / Chengyu Xie", "chengyu.xie", "RADIOLOGIST", "RADIOLOGY", "主治医师", "PHYSICIAN_LICENSE"),
+                new AdministrationStaff("JC-NR-2001", "唐静怡 / Jingyi Tang", "jingyi.tang", "NURSE_MANAGER", "NURSING-ADMIN", "护理部副主任", "NURSE_LICENSE"),
+                new AdministrationStaff("JC-NR-2002", "许佳慧 / Jiahui Xu", "jiahui.xu", "REGISTERED_NURSE", "ICU", "主管护师", "NURSE_LICENSE"),
+                new AdministrationStaff("JC-NR-2003", "韩雪晴 / Xueqing Han", "xueqing.han", "REGISTERED_NURSE", "RESPIRATORY", "护师", "NURSE_LICENSE"),
+                new AdministrationStaff("JC-NR-2004", "冯悦琳 / Yuelin Feng", "yuelin.feng", "REGISTERED_NURSE", "OBSTETRICS", "主管护师", "NURSE_LICENSE"),
+                new AdministrationStaff("JC-PH-3001", "邓清华 / Qinghua Deng", "qinghua.deng", "PHARMACIST", "PHARMACY", "主管药师", "PHARMACIST_LICENSE"),
+                new AdministrationStaff("JC-LT-4001", "曹瑞峰 / Ruifeng Cao", "ruifeng.cao", "LAB_TECHNICIAN", "LABORATORY", "主管技师", "TECHNICIAN_LICENSE"),
+                new AdministrationStaff("JC-RT-4002", "彭晨曦 / Chenxi Peng", "chenxi.peng", "IMAGING_TECHNICIAN", "RADIOLOGY", "主管技师", "TECHNICIAN_LICENSE"),
+                new AdministrationStaff("JC-PA-4003", "曾美琪 / Meiqi Zeng", "meiqi.zeng", "PATHOLOGY_TECHNICIAN", "PATHOLOGY", "病理技师", "TECHNICIAN_LICENSE"),
+                new AdministrationStaff("JC-AD-5001", "肖国强 / Guoqiang Xiao", "guoqiang.xiao", "CLINICAL_ADMIN", "MEDICAL-AFFAIRS", "医务处干事", null),
+                new AdministrationStaff("JC-MR-5002", "田淑兰 / Shulan Tian", "shulan.tian", "MEDICAL_RECORDS", "MEDICAL-RECORDS", "病案编码员", null),
+                new AdministrationStaff("JC-IT-5003", "董子墨 / Zimo Dong", "zimo.dong", "SECURITY_AUDITOR", "INFORMATION-CENTER", "信息安全工程师", null),
+                new AdministrationStaff("JC-RG-5004", "袁梦涵 / Menghan Yuan", "menghan.yuan", "REGISTRAR", "MEDICAL-AFFAIRS", "门诊服务专员", null),
+                new AdministrationStaff("JC-RS-5005", "潘博文 / Bowen Pan", "bowen.pan", "RESEARCHER", "MEDICAL-AFFAIRS", "临床研究协调员", null));
+        int sequence = 1;
+        for (AdministrationStaff member : staff) {
+            UUID personId = syntheticAdministrationId("person:" + member.externalSubject());
+            UUID userId = syntheticAdministrationId("user:" + member.externalSubject());
+            UUID roleId = syntheticAdministrationId("role:" + member.externalSubject());
+            UUID departmentId = jdbc.sql("""
+                    select department_id from clinical_department
+                    where tenant_id = :tenant and facility_id = :facility and department_code = :code
+                    """).param("tenant", TENANT_ID).param("facility", FACILITY_ID)
+                    .param("code", member.departmentCode()).query(UUID.class).single();
+            jdbc.sql("""
+                    insert into workforce_person(
+                      tenant_id, person_id, person_code, display_name, status, effective_from)
+                    values (:tenant, :person, :code, :name, 'ACTIVE', timestamptz '2024-01-01 00:00:00+08')
+                    on conflict (tenant_id, person_id) do update
+                    set person_code = excluded.person_code, display_name = excluded.display_name,
+                      status = 'ACTIVE', effective_until = null
+                    """).param("tenant", TENANT_ID).param("person", personId).param("code", member.personCode())
+                    .param("name", member.displayName()).update();
+            jdbc.sql("""
+                    insert into app_user(
+                      tenant_id, user_id, person_id, external_subject, display_name, status)
+                    values (:tenant, :user, :person, :subject, :name, 'ACTIVE')
+                    on conflict (tenant_id, user_id) do update
+                    set person_id = excluded.person_id, external_subject = excluded.external_subject,
+                      display_name = excluded.display_name, status = 'ACTIVE'
+                    """).param("tenant", TENANT_ID).param("user", userId).param("person", personId)
+                    .param("subject", member.externalSubject()).param("name", member.displayName()).update();
+            jdbc.sql("""
+                    insert into role_assignment(
+                      tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                      facility_id, role_code, valid_from, status)
+                    values (:tenant, :role, :user, :person, :organization,
+                      :facility, :role_code, timestamptz '2024-01-01 00:00:00+08', 'ACTIVE')
+                    on conflict (tenant_id, role_assignment_id) do update
+                    set user_id = excluded.user_id, person_id = excluded.person_id,
+                      organization_id = excluded.organization_id, facility_id = excluded.facility_id,
+                      role_code = excluded.role_code, status = 'ACTIVE', valid_until = null
+                    """).param("tenant", TENANT_ID).param("role", roleId).param("user", userId)
+                    .param("person", personId).param("organization", ORGANIZATION_ID)
+                    .param("facility", FACILITY_ID).param("role_code", member.roleCode()).update();
+            jdbc.sql("""
+                    update workforce_assignment
+                    set department_id = :department, ward_id = null, position_code = :position,
+                      status = 'ACTIVE', valid_until = null
+                    where tenant_id = :tenant and source_role_assignment_id = :role
+                    """).param("department", departmentId).param("position", member.positionName())
+                    .param("tenant", TENANT_ID).param("role", roleId).update();
+            if (member.credentialType() != null) {
+                UUID credentialId = syntheticAdministrationId("credential:" + member.externalSubject());
+                jdbc.sql("""
+                        insert into practitioner_credential(
+                          tenant_id, credential_id, person_id, credential_type, registration_number,
+                          issuing_authority, practice_scope, status, valid_from, valid_until)
+                        values (:tenant, :credential, :person, :type, :registration,
+                          '江城市卫生健康委员会', jsonb_build_object(
+                            'primary_department', :department_code, 'professional_title', :position),
+                          'ACTIVE', timestamptz '2023-01-01 00:00:00+08',
+                          timestamptz '2032-12-31 23:59:59+08')
+                        on conflict (tenant_id, credential_id) do update
+                        set person_id = excluded.person_id, credential_type = excluded.credential_type,
+                          registration_number = excluded.registration_number,
+                          issuing_authority = excluded.issuing_authority,
+                          practice_scope = excluded.practice_scope, status = 'ACTIVE',
+                          valid_from = excluded.valid_from, valid_until = excluded.valid_until
+                        """).param("tenant", TENANT_ID).param("credential", credentialId)
+                        .param("person", personId).param("type", member.credentialType())
+                        .param("registration", "JC2026" + String.format("%05d", sequence))
+                        .param("department_code", member.departmentCode())
+                        .param("position", member.positionName()).update();
+            }
+            sequence++;
+        }
+    }
+
+    private void upsertTertiaryHospitalDictionaryFixtures() {
+        jdbc.sql("""
+                insert into dictionary_item(
+                  tenant_id, dictionary_item_id, dictionary_code, item_code, item_name,
+                  status, effective_from)
+                select :tenant,
+                  md5('tertiary-dictionary:' || seed.dictionary_code || ':' || seed.item_code)::uuid,
+                  seed.dictionary_code, seed.item_code, seed.item_name, 'ACTIVE', date '2026-01-01'
+                from (values
+                  ('BLOOD_TYPE','A','A型 / Type A'), ('BLOOD_TYPE','B','B型 / Type B'),
+                  ('BLOOD_TYPE','AB','AB型 / Type AB'), ('BLOOD_TYPE','O','O型 / Type O'),
+                  ('RH_TYPE','POSITIVE','Rh阳性 / Rh Positive'), ('RH_TYPE','NEGATIVE','Rh阴性 / Rh Negative'),
+                  ('ADMISSION_SOURCE','OUTPATIENT','门诊收入 / From Outpatient'),
+                  ('ADMISSION_SOURCE','EMERGENCY','急诊收入 / From Emergency'),
+                  ('ADMISSION_SOURCE','TRANSFER','其他医疗机构转入 / Transfer In'),
+                  ('ADMISSION_SOURCE','OTHER','其他来源 / Other'),
+                  ('DISCHARGE_DISPOSITION','HOME','医嘱离院 / Home'),
+                  ('DISCHARGE_DISPOSITION','TRANSFER','转院 / Transfer'),
+                  ('DISCHARGE_DISPOSITION','DEATH','死亡 / Deceased'),
+                  ('DISCHARGE_DISPOSITION','AMA','非医嘱离院 / Against Medical Advice'),
+                  ('TRIAGE_LEVEL','LEVEL_1','一级·濒危 / Level 1 Resuscitation'),
+                  ('TRIAGE_LEVEL','LEVEL_2','二级·危重 / Level 2 Emergent'),
+                  ('TRIAGE_LEVEL','LEVEL_3','三级·急症 / Level 3 Urgent'),
+                  ('TRIAGE_LEVEL','LEVEL_4','四级·非急症 / Level 4 Less Urgent'),
+                  ('DOCUMENT_STATUS','DRAFT','草稿 / Draft'), ('DOCUMENT_STATUS','SIGNED','已签署 / Signed'),
+                  ('DOCUMENT_STATUS','ARCHIVED','已归档 / Archived'), ('DOCUMENT_STATUS','VOID','已作废 / Void'),
+                  ('CREDENTIAL_TYPE','PHYSICIAN_LICENSE','医师执业证书 / Physician License'),
+                  ('CREDENTIAL_TYPE','NURSE_LICENSE','护士执业证书 / Nurse License'),
+                  ('CREDENTIAL_TYPE','PHARMACIST_LICENSE','药师资格证书 / Pharmacist License'),
+                  ('CREDENTIAL_TYPE','TECHNICIAN_LICENSE','卫生专业技术资格 / Technician License'),
+                  ('MARITAL_STATUS','UNMARRIED','未婚 / Unmarried'), ('MARITAL_STATUS','MARRIED','已婚 / Married'),
+                  ('MARITAL_STATUS','DIVORCED','离异 / Divorced'), ('MARITAL_STATUS','WIDOWED','丧偶 / Widowed'),
+                  ('PAYMENT_TYPE','UEBMI','城镇职工基本医疗保险 / Employee Insurance'),
+                  ('PAYMENT_TYPE','URRBMI','城乡居民基本医疗保险 / Resident Insurance'),
+                  ('PAYMENT_TYPE','SELF_PAY','全自费 / Self-pay'), ('PAYMENT_TYPE','OTHER','其他支付 / Other'),
+                  ('CONSENT_STATUS','PENDING','待签署 / Pending'), ('CONSENT_STATUS','SIGNED','已签署 / Signed'),
+                  ('CONSENT_STATUS','REFUSED','已拒绝 / Refused'), ('CONSENT_STATUS','REVOKED','已撤回 / Revoked'),
+                  ('BED_CLASS','STANDARD','普通床 / Standard'), ('BED_CLASS','ICU','监护床 / ICU'),
+                  ('BED_CLASS','ISOLATION','隔离床 / Isolation'), ('BED_CLASS','MATERNITY','产科床 / Maternity')
+                ) as seed(dictionary_code, item_code, item_name)
+                on conflict (tenant_id, dictionary_code, item_code) do nothing
+                """).param("tenant", TENANT_ID).update();
+    }
+
+    private void upsertTertiaryHospitalAuthorizationFixtures() {
+        jdbc.sql("""
+                insert into authorization_policy(
+                  tenant_id, policy_id, policy_code, policy_name, version_no, effect, status,
+                  subject_role_code, resource_type, action_code, organization_id, facility_id,
+                  patient_relationship_required, relationship_types, resource_statuses,
+                  purpose_codes, emergency_override_allowed, priority, valid_from,
+                  created_by, approved_by, published_at)
+                select :tenant, md5('tertiary-policy:' || seed.policy_code)::uuid,
+                  seed.policy_code, seed.policy_name, 1, seed.effect, 'PUBLISHED', seed.role_code,
+                  seed.resource_type, seed.action_code, :organization, :facility,
+                  seed.relationship_required, seed.relationship_types::text[], array['ACTIVE'],
+                  seed.purpose_codes::text[], seed.emergency_allowed, seed.priority,
+                  now() - interval '30 days', :creator, :approver, now() - interval '7 days'
+                from (values
+                  ('NURSING-RECORD-WRITE','护理记录书写权限','ALLOW','REGISTERED_NURSE','NURSING_RECORD','WRITE',true,'{CARE_TEAM}','{DIRECT_CARE}',true,760),
+                  ('NURSING-RECORD-REVIEW','护理记录审核权限','ALLOW','NURSE_MANAGER','NURSING_RECORD','REVIEW',true,'{CARE_TEAM}','{DIRECT_CARE}',true,800),
+                  ('MEDICATION-DISPENSE','处方调剂权限','ALLOW','PHARMACIST','MEDICATION_ORDER','DISPENSE',true,'{CARE_TEAM}','{DIRECT_CARE}',true,780),
+                  ('LAB-RESULT-VERIFY','检验结果审核权限','ALLOW','LAB_TECHNICIAN','LAB_RESULT','VERIFY',false,'{}','{DIRECT_CARE}',true,780),
+                  ('IMAGING-RESULT-VERIFY','影像报告审核权限','ALLOW','RADIOLOGIST','IMAGING_RESULT','VERIFY',true,'{CARE_TEAM}','{DIRECT_CARE}',true,780),
+                  ('ADMISSION-REGISTER','入院登记办理权限','ALLOW','REGISTRAR','INPATIENT_ADMISSION','CREATE',true,'{REGISTRATION}','{DIRECT_CARE}',true,730),
+                  ('MEDICAL-RECORDS-ARCHIVE','病案归档权限','ALLOW','MEDICAL_RECORDS','CLINICAL_DOCUMENT','ARCHIVE',false,'{}','{MEDICAL_RECORDS}',false,850),
+                  ('CLINICAL-ADMIN-ORG','机构与科室维护权限','ALLOW','CLINICAL_ADMIN','ORGANIZATION_UNIT','MANAGE',false,'{}','{ADMINISTRATION}',false,900),
+                  ('SECURITY-AUDIT-READ','安全审计查看权限','ALLOW','SECURITY_AUDITOR','AUDIT_EVENT','READ',false,'{}','{AUDIT}',false,920),
+                  ('SYSTEM-CONFIG-PUBLISH','系统配置发布权限','ALLOW','SYSTEM_ADMIN','CONFIG_ITEM','PUBLISH',false,'{}','{ADMINISTRATION}',false,950),
+                  ('RESEARCH-DEIDENTIFIED-READ','科研脱敏数据查看权限','ALLOW','RESEARCHER','RESEARCH_DATASET','READ',false,'{}','{RESEARCH}',false,600),
+                  ('RESEARCH-IDENTIFIED-DENY','禁止科研角色查看患者身份信息','DENY','RESEARCHER','PATIENT_IDENTITY','READ',false,'{}','{RESEARCH}',false,1100),
+                  ('NURSE-PRESCRIBE-DENY','禁止护士开立药品医嘱','DENY','REGISTERED_NURSE','MEDICATION_ORDER','CREATE',false,'{}','{DIRECT_CARE}',false,1100),
+                  ('REGISTRAR-CLINICAL-NOTE-DENY','禁止挂号人员查看病历正文','DENY','REGISTRAR','CLINICAL_DOCUMENT','READ_CONTENT',false,'{}','{REGISTRATION}',false,1100)
+                ) as seed(policy_code, policy_name, effect, role_code, resource_type, action_code,
+                  relationship_required, relationship_types, purpose_codes, emergency_allowed, priority)
+                on conflict (tenant_id, policy_code, version_no) do nothing
+                """).param("tenant", TENANT_ID).param("organization", ORGANIZATION_ID)
+                .param("facility", FACILITY_ID).param("creator", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
+    }
+
+    private void upsertTertiaryHospitalAuditFixtures() {
+        jdbc.sql("""
+                insert into audit_event(
+                  tenant_id, audit_event_id, occurred_at, actor_user_id, action_code,
+                  resource_type, resource_id, trace_id, previous_hash, event_hash, details)
+                select :tenant, md5('tertiary-audit:' || seed.sequence_no)::uuid,
+                  now() - seed.age_hours * interval '1 hour', seed.actor_id::uuid,
+                  seed.action_code, seed.resource_type, seed.resource_id::uuid,
+                  'syn-admin-' || lpad(seed.sequence_no::text, 4, '0'),
+                  case when seed.sequence_no = 1 then null
+                    else md5('tertiary-audit-hash:' || (seed.sequence_no - 1)) || md5('tertiary-audit-hash:' || (seed.sequence_no - 1)) end,
+                  md5('tertiary-audit-hash:' || seed.sequence_no) || md5('tertiary-audit-hash:' || seed.sequence_no),
+                  jsonb_build_object('result', seed.result, 'summary', seed.summary,
+                    'source', 'dev-synthetic-tertiary-hospital')
+                from (values
+                  (1, 168, '018f0000-0000-7000-8000-00000000aa04', 'ORGANIZATION_UNIT_CREATED', 'FACILITY', '018f0000-0000-7000-8000-00000000aa03', '成功', '本部院区组织资料复核通过'),
+                  (2, 144, '018f0000-0000-7000-8000-00000000aa06', 'WORKFORCE_PERSON_ONBOARDED', 'WORKFORCE_PERSON', '018f0000-0000-7000-8000-00000000aa06', '成功', '临床人员身份、账号与岗位绑定完成'),
+                  (3, 120, '018f0000-0000-7000-8000-00000000aa04', 'AUTHORIZATION_POLICY_PUBLISHED', 'AUTHORIZATION_POLICY', '018f0000-0000-7000-8000-00000000d201', '成功', '临床病历查看策略发布'),
+                  (4, 96, '018f0000-0000-7000-8000-00000000aa04', 'DICTIONARY_IMPORT_COMPLETED', 'DICTIONARY_ITEM', '018f0000-0000-7000-8000-00000000d101', '成功', '院级基础字典批量导入并完成冲突检查'),
+                  (5, 72, '018f0000-0000-7000-8000-00000000aa06', 'CONFIGURATION_VALIDATED', 'CONFIG_ITEM', '018f0000-0000-7000-8000-00000000c111', '成功', '三级医院主数据基线验证通过'),
+                  (6, 48, '018f0000-0000-7000-8000-00000000aa04', 'ROLE_ASSIGNMENT_REVIEWED', 'ROLE_ASSIGNMENT', '018f0000-0000-7000-8000-00000000aa09', '成功', '系统管理员高权角色季度复核完成'),
+                  (7, 24, '018f0000-0000-7000-8000-00000000aa06', 'EMERGENCY_ACCESS_REVIEWED', 'EMERGENCY_ACCESS', '018f0000-0000-7000-8000-00000000aa10', '通过', '紧急访问事后复核通过，访问范围符合最小必要原则'),
+                  (8, 6, '018f0000-0000-7000-8000-00000000aa04', 'CONFIGURATION_PUBLISHED', 'CONFIG_ITEM', '018f0000-0000-7000-8000-00000000c113', '成功', '危急值通知对账任务配置发布')
+                ) as seed(sequence_no, age_hours, actor_id, action_code, resource_type, resource_id, result, summary)
+                on conflict (tenant_id, audit_event_id) do nothing
+                """).param("tenant", TENANT_ID).update();
+    }
+
+    private void upsertAdministrationOrganizationFixtures() {
+        jdbc.sql("""
+                insert into clinical_department(
+                  tenant_id, facility_id, department_id, department_code, display_name, status, unit_type)
+                select :tenant, :facility, seed.department_id::uuid, seed.department_code,
+                  seed.display_name, 'ACTIVE', seed.unit_type
+                from (values
+                  ('018f0000-0000-7000-8000-00000000ab01', 'EMERGENCY', '急诊医学科', 'DEPARTMENT'),
+                  ('018f0000-0000-7000-8000-00000000ab02', 'NEUROLOGY', '神经内科', 'DEPARTMENT'),
+                  ('018f0000-0000-7000-8000-00000000ab03', 'GENERAL-SURGERY', '普通外科', 'DEPARTMENT'),
+                  ('018f0000-0000-7000-8000-00000000ab04', 'PEDIATRICS', '儿科', 'DEPARTMENT'),
+                  ('018f0000-0000-7000-8000-00000000ab05', 'LABORATORY', '医学检验科', 'MEDICAL_TECH'),
+                  ('018f0000-0000-7000-8000-00000000ab06', 'RADIOLOGY', '医学影像科', 'MEDICAL_TECH'),
+                  ('018f0000-0000-7000-8000-00000000ab14', 'MENTAL-HEALTH', '精神心理科', 'DEPARTMENT'),
+                  ('018f0000-0000-7000-8000-00000000ab15', 'GENERAL-MEDICINE', '全科医学科', 'DEPARTMENT')
+                ) as seed(department_id, department_code, display_name, unit_type)
+                on conflict (tenant_id, facility_id, department_id) do update
+                set department_code = excluded.department_code, display_name = excluded.display_name,
+                  status = 'ACTIVE', effective_until = null, unit_type = excluded.unit_type,
+                  row_version = clinical_department.row_version + 1, updated_at = now()
+                where (clinical_department.department_code, clinical_department.display_name,
+                  clinical_department.status, clinical_department.effective_until, clinical_department.unit_type)
+                  is distinct from (excluded.department_code, excluded.display_name,
+                    'ACTIVE', null, excluded.unit_type)
+                """).param("tenant", TENANT_ID).param("facility", FACILITY_ID).update();
+        jdbc.sql("""
+                insert into clinical_ward(
+                  tenant_id, facility_id, department_id, ward_id, ward_code, display_name, status)
+                select :tenant, :facility, seed.department_id::uuid, seed.ward_id::uuid,
+                  seed.ward_code, seed.display_name, 'ACTIVE'
+                from (values
+                  ('018f0000-0000-7000-8000-00000000ab01', '018f0000-0000-7000-8000-00000000bc01', 'ED-OBS', '急诊留观病区'),
+                  ('018f0000-0000-7000-8000-00000000ab02', '018f0000-0000-7000-8000-00000000bc02', 'NEURO-1', '神经内科一病区'),
+                  ('018f0000-0000-7000-8000-00000000ab03', '018f0000-0000-7000-8000-00000000bc03', 'GS-1', '普通外科一病区'),
+                  ('018f0000-0000-7000-8000-00000000ab04', '018f0000-0000-7000-8000-00000000bc04', 'PED-1', '儿科一病区')
+                ) as seed(department_id, ward_id, ward_code, display_name)
+                on conflict (tenant_id, ward_id) do update
+                set facility_id = excluded.facility_id, department_id = excluded.department_id,
+                  ward_code = excluded.ward_code, display_name = excluded.display_name,
+                  status = 'ACTIVE', effective_until = null,
+                  row_version = clinical_ward.row_version + 1, updated_at = now()
+                where (clinical_ward.facility_id, clinical_ward.department_id,
+                  clinical_ward.ward_code, clinical_ward.display_name,
+                  clinical_ward.status, clinical_ward.effective_until)
+                  is distinct from (excluded.facility_id, excluded.department_id,
+                    excluded.ward_code, excluded.display_name, 'ACTIVE', null)
+                """).param("tenant", TENANT_ID).param("facility", FACILITY_ID).update();
+        jdbc.sql("""
+                insert into clinical_bed(tenant_id, bed_id, ward_id, bed_label, status)
+                select :tenant, seed.bed_id::uuid, seed.ward_id::uuid, seed.bed_label, 'ACTIVE'
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bd01', '018f0000-0000-7000-8000-00000000bc01', '急诊医学科-留观01床'),
+                  ('018f0000-0000-7000-8000-00000000bd02', '018f0000-0000-7000-8000-00000000bc01', '急诊医学科-留观02床'),
+                  ('018f0000-0000-7000-8000-00000000bd03', '018f0000-0000-7000-8000-00000000bc01', '急诊医学科-留观03床'),
+                  ('018f0000-0000-7000-8000-00000000bd04', '018f0000-0000-7000-8000-00000000bc02', '神经内科-01床'),
+                  ('018f0000-0000-7000-8000-00000000bd05', '018f0000-0000-7000-8000-00000000bc02', '神经内科-02床'),
+                  ('018f0000-0000-7000-8000-00000000bd06', '018f0000-0000-7000-8000-00000000bc02', '神经内科-03床'),
+                  ('018f0000-0000-7000-8000-00000000bd07', '018f0000-0000-7000-8000-00000000bc03', '普通外科-01床'),
+                  ('018f0000-0000-7000-8000-00000000bd08', '018f0000-0000-7000-8000-00000000bc03', '普通外科-02床'),
+                  ('018f0000-0000-7000-8000-00000000bd09', '018f0000-0000-7000-8000-00000000bc03', '普通外科-03床'),
+                  ('018f0000-0000-7000-8000-00000000bd10', '018f0000-0000-7000-8000-00000000bc04', '儿科-01床'),
+                  ('018f0000-0000-7000-8000-00000000bd11', '018f0000-0000-7000-8000-00000000bc04', '儿科-02床'),
+                  ('018f0000-0000-7000-8000-00000000bd12', '018f0000-0000-7000-8000-00000000bc04', '儿科-03床')
+                ) as seed(bed_id, ward_id, bed_label)
+                on conflict (tenant_id, bed_id) do update
+                set ward_id = excluded.ward_id, bed_label = excluded.bed_label,
+                  status = 'ACTIVE', effective_until = null,
+                  row_version = clinical_bed.row_version + 1, updated_at = now()
+                where (clinical_bed.ward_id, clinical_bed.bed_label,
+                  clinical_bed.status, clinical_bed.effective_until)
+                  is distinct from (excluded.ward_id, excluded.bed_label, 'ACTIVE', null)
+                """).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                insert into practitioner_credential(
+                  tenant_id, credential_id, person_id, credential_type,
+                  registration_number, issuing_authority, practice_scope,
+                  status, valid_from, valid_until)
+                select :tenant, seed.credential_id::uuid, seed.person_id::uuid,
+                  'PHYSICIAN_LICENSE', seed.registration_number,
+                  '江城市卫生健康委员会', seed.practice_scope::jsonb,
+                  'ACTIVE', timestamptz '2022-01-01 00:00:00+08',
+                  timestamptz '2031-12-31 23:59:59+08'
+                from (values
+                  ('018f0000-0000-7000-8000-00000000be01', '018f0000-0000-7000-8000-00000000aa04',
+                    '110420000001', '{"primary_department":"CARDIOLOGY","professional_title":"主治医师"}'),
+                  ('018f0000-0000-7000-8000-00000000be02', '018f0000-0000-7000-8000-00000000aa06',
+                    '110420000002', '{"primary_department":"CARDIOLOGY","professional_title":"住院医师"}'),
+                  ('018f0000-0000-7000-8000-00000000be03', '018f0000-0000-7000-8000-00000000aa10',
+                    '110420000003', '{"primary_department":"CARDIOLOGY","professional_title":"副主任医师"}'),
+                  ('018f0000-0000-7000-8000-00000000be04', '018f0000-0000-7000-8000-00000000aa12',
+                    '110420000004', '{"primary_department":"CARDIOLOGY","professional_title":"主任医师"}')
+                ) as seed(credential_id, person_id, registration_number, practice_scope)
+                on conflict (tenant_id, credential_id) do update
+                set person_id = excluded.person_id,
+                  credential_type = excluded.credential_type,
+                  registration_number = excluded.registration_number,
+                  issuing_authority = excluded.issuing_authority,
+                  practice_scope = excluded.practice_scope,
+                  status = 'ACTIVE', valid_from = excluded.valid_from,
+                  valid_until = excluded.valid_until,
+                  row_version = practitioner_credential.row_version + 1,
+                  updated_at = now()
+                where (practitioner_credential.person_id,
+                  practitioner_credential.credential_type,
+                  practitioner_credential.registration_number,
+                  practitioner_credential.issuing_authority,
+                  practitioner_credential.practice_scope,
+                  practitioner_credential.status,
+                  practitioner_credential.valid_from,
+                  practitioner_credential.valid_until)
+                  is distinct from (excluded.person_id, excluded.credential_type,
+                    excluded.registration_number, excluded.issuing_authority,
+                    excluded.practice_scope, 'ACTIVE', excluded.valid_from,
+                    excluded.valid_until)
+                """).param("tenant", TENANT_ID).update();
     }
 
     private void upsertOutpatientClinicalFixture() {
@@ -2105,7 +2799,21 @@ final class SyntheticDataImporter implements ApplicationRunner {
         return value ^ (value >>> 31);
     }
 
+    private static UUID syntheticAdministrationId(String resource) {
+        return UUID.nameUUIDFromBytes(("openemr2026:tertiary-hospital:" + resource)
+                .getBytes(StandardCharsets.UTF_8));
+    }
+
     private record PlaceholderPatient(UUID patientId, String sexCode, LocalDate birthDate) {}
 
     private record SyntheticTemplate(String documentTypeCode, String displayName, JsonNode sections) {}
+
+    private record AdministrationDepartment(UUID facilityId, String code, String name, String unitType) {}
+
+    private record AdministrationWard(
+            UUID facilityId, String departmentCode, String code, String name, int bedCount) {}
+
+    private record AdministrationStaff(
+            String personCode, String displayName, String externalSubject, String roleCode,
+            String departmentCode, String positionName, String credentialType) {}
 }
