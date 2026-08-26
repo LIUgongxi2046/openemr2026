@@ -55,6 +55,10 @@ final class WorkforceAdministrationService {
                 left join workforce_assignment workforce on workforce.tenant_id = role.tenant_id
                   and workforce.source_role_assignment_id = role.role_assignment_id
                 where person.tenant_id = :tenant
+                  and not (
+                    person.person_code like 'MIGRATED-%'
+                    and (person.display_name = '合成上级审签用户' or person.display_name like '归档测试-%')
+                  )
                 order by person.display_name, account.user_id, role.role_assignment_id
                 """).param("tenant", identity.tenantId())
                 .query((rs, row) -> new WorkforceIdentityWire(

@@ -129,9 +129,47 @@ final class SpecialtySupportService {
                     throw versionConflict();
                 }
             }
-            appendAuditAndOutbox(identity, assessmentId, nextVersion, facilityId, departmentId, normalizedScope);
+            appendAuditAndOutbox(identity, assessmentId, nextVersion, facilityId, departmentId, normalizedScope,
+                    "SPECIALTY_SUPPORT_ASSESSED", "DepartmentSupportAssessed");
             completeCommand(identity, idempotencyKey, assessmentId);
             return get(identity, facilityId, departmentId, normalizedScope);
+        });
+    }
+
+    void delete(
+            ClinicalIdentity identity, String idempotencyKey, UUID organizationId,
+            UUID facilityId, UUID departmentId, String scope, long expectedRowVersion) {
+        String normalizedScope = requireCode(scope, "clinical scope");
+        if (expectedRowVersion < 1) throw versionConflict();
+        transactions.executeWithoutResult(status -> {
+            requireActiveDepartment(identity.tenantId(), organizationId, facilityId, departmentId);
+            requireActiveRole(identity, organizationId, facilityId);
+            beginCommand(identity, idempotencyKey,
+                    sha256("DELETE|" + facilityId + "|" + departmentId + "|" + normalizedScope + "|" + expectedRowVersion));
+            Existing current = jdbc.sql("""
+                    select department_support_assessment_id, row_version
+                    from department_support_assessment
+                    where tenant_id = :tenant and facility_id = :facility
+                      and department_id = :department and clinical_scope_code = :scope
+                    for update
+                    """).param("tenant", identity.tenantId()).param("facility", facilityId)
+                    .param("department", departmentId).param("scope", normalizedScope)
+                    .query((rs, row) -> new Existing(
+                            rs.getObject("department_support_assessment_id", UUID.class), rs.getLong("row_version")))
+                    .optional().orElseThrow(() -> new SpecialtySupportException(
+                            "SUPPORT_ASSESSMENT_NOT_FOUND", 404, "No support assessment exists for this department scope"));
+            if (current.rowVersion() != expectedRowVersion) throw versionConflict();
+            appendAuditAndOutbox(identity, current.id(), current.rowVersion() + 1,
+                    facilityId, departmentId, normalizedScope,
+                    "SPECIALTY_SUPPORT_REMOVED", "DepartmentSupportRemoved");
+            int deleted = jdbc.sql("""
+                    delete from department_support_assessment
+                    where tenant_id = :tenant and department_support_assessment_id = :assessment
+                      and row_version = :version
+                    """).param("tenant", identity.tenantId()).param("assessment", current.id())
+                    .param("version", expectedRowVersion).update();
+            if (deleted != 1) throw versionConflict();
+            completeCommand(identity, idempotencyKey, current.id());
         });
     }
 
@@ -237,7 +275,8 @@ final class SpecialtySupportService {
 
     private void appendAuditAndOutbox(
             ClinicalIdentity identity, UUID assessmentId, long version,
-            UUID facilityId, UUID departmentId, String scope) {
+            UUID facilityId, UUID departmentId, String scope,
+            String actionCode, String eventType) {
         jdbc.sql("select tenant_id from tenant where tenant_id = :tenant for update")
                 .param("tenant", identity.tenantId()).query(UUID.class).single();
         String previousHash = jdbc.sql("""
@@ -246,17 +285,18 @@ final class SpecialtySupportService {
                 """).param("tenant", identity.tenantId()).query(String.class).optional().orElse(null);
         UUID auditId = UUID.randomUUID();
         String trace = UUID.randomUUID().toString();
-        String eventHash = sha256(identity.tenantId() + "|" + auditId + "|SPECIALTY_SUPPORT_ASSESSED|"
+        String eventHash = sha256(identity.tenantId() + "|" + auditId + "|" + actionCode + "|"
                 + assessmentId + "|" + trace + "|" + (previousHash == null ? "GENESIS" : previousHash));
         jdbc.sql("""
                 insert into audit_event(
                   tenant_id, audit_event_id, occurred_at, actor_user_id, action_code,
                   resource_type, resource_id, trace_id, previous_hash, event_hash, details)
-                values (:tenant, :audit, now(), :actor, 'SPECIALTY_SUPPORT_ASSESSED',
+                values (:tenant, :audit, now(), :actor, :action,
                   'DEPARTMENT_SUPPORT_ASSESSMENT', :assessment, :trace, :previous, :hash,
                   jsonb_build_object('facility_id', :facility, 'department_id', :department,
                     'clinical_scope_code', :scope, 'row_version', :version))
                 """).param("tenant", identity.tenantId()).param("audit", auditId).param("actor", identity.userId())
+                .param("action", actionCode)
                 .param("assessment", assessmentId).param("trace", trace).param("previous", previousHash)
                 .param("hash", eventHash).param("facility", facilityId).param("department", departmentId)
                 .param("scope", scope).param("version", version).update();
@@ -265,10 +305,11 @@ final class SpecialtySupportService {
                   tenant_id, event_id, aggregate_type, aggregate_id, aggregate_version,
                   event_type, schema_version, payload)
                 values (:tenant, :event, 'DEPARTMENT_SUPPORT_ASSESSMENT', :assessment, :version,
-                  'DepartmentSupportAssessed', 1,
+                  :event_type, 1,
                   jsonb_build_object('facility_id', :facility, 'department_id', :department,
                     'clinical_scope_code', :scope))
                 """).param("tenant", identity.tenantId()).param("event", UUID.randomUUID())
+                .param("event_type", eventType)
                 .param("assessment", assessmentId).param("version", version).param("facility", facilityId)
                 .param("department", departmentId).param("scope", scope).update();
     }

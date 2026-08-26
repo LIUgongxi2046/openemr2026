@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
+import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ final class ModelDeploymentApiTest {
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode,
                         "LOCAL-INFER", "本地推理模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY,
-                        null));
+                        null, null));
         assertThat(registered.status()).isEqualTo(ModelDeploymentWire.StatusValue.ACTIVE);
         assertThat(registered.residencyPolicy()).isEqualTo(ModelDeploymentWire.ResidencyPolicyValue.ON_PREM_ONLY);
 
@@ -66,10 +67,10 @@ final class ModelDeploymentApiTest {
         String modelCode = "MODEL-" + UUID.randomUUID();
         models.register(identity(), "model-" + UUID.randomUUID(), new ModelDeploymentRegisterRequestWire(
                 organization, facility, modelCode, "PROV-A", "模型A",
-                ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null));
+                ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null));
         assertThatThrownBy(() -> models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode, "PROV-B", "模型B",
-                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null)))
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null)))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -78,11 +79,56 @@ final class ModelDeploymentApiTest {
         String modelCode = "MODEL-" + UUID.randomUUID();
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode, "PROV-A", "模型A",
-                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null));
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null));
         assertThatThrownBy(() -> jdbc.sql("""
                 update model_deployment set model_code = 'TAMPERED'
                 where tenant_id = cast(:tenant as uuid) and model_deployment_id = :deployment
                 """).param("tenant", TENANT).param("deployment", registered.modelDeploymentId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenApiConfiguration_whenRegistering_thenOnlyAMaskedCredentialHintIsReturned() {
+        ModelDeploymentWire registered = models.register(identity(), "model-api-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
+                        "DeepSeek 医疗模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
+                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY"));
+
+        assertThat(registered.connectionStatus()).isEqualTo(ModelDeploymentWire.ConnectionStatusValue.READY);
+        assertThat(registered.credentialConfigured()).isTrue();
+        assertThat(registered.credentialHint()).isEqualTo("环境变量 · TEST_DEEPSEEK_API_KEY");
+        assertThat(registered.toString()).doesNotContain("sk-");
+    }
+
+    @Test
+    void givenActiveModel_whenUpdating_thenConfigurationChangesWithoutExposingCredential() {
+        ModelDeploymentWire registered = models.register(identity(), "model-api-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
+                        "DEEPSEEK", "DeepSeek 医疗模型",
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
+                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY"));
+        ModelDeploymentWire updated = models.update(identity(), "model-update-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), new ModelDeploymentUpdateRequestWire(
+                        organization, facility, "DeepSeek 临床模型",
+                        ModelDeploymentUpdateRequestWire.ResidencyPolicyValue.CLOUD_ALLOWED,
+                        "https://api.deepseek.com/v1", null,
+                        ModelDeploymentUpdateRequestWire.CredentialActionValue.KEEP, registered.rowVersion()));
+        assertThat(updated.displayName()).isEqualTo("DeepSeek 临床模型");
+        assertThat(updated.credentialConfigured()).isTrue();
+        assertThat(updated.rowVersion()).isEqualTo(registered.rowVersion() + 1);
+    }
+
+    @Test
+    void givenPlaintextCredentialOrHttpEndpoint_whenRegistering_thenConfigurationIsRejected() {
+        assertThatThrownBy(() -> models.register(identity(), "model-secret-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
+                        "不安全模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
+                        "https://api.deepseek.com/v1", "sk-plaintext")))
+                .isInstanceOf(ModelDeploymentException.class);
+        assertThatThrownBy(() -> models.register(identity(), "model-http-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
+                        "不安全地址", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
+                        "http://api.example.test/v1", "env://TEST_DEEPSEEK_API_KEY")))
+                .isInstanceOf(ModelDeploymentException.class);
     }
 }

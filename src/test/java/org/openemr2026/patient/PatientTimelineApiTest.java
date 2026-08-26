@@ -76,10 +76,10 @@ final class PatientTimelineApiTest {
     void givenPublishedItemDenyPolicy_whenTimelineLoads_thenUnauthorizedBodiesAndCountsAreNotDisclosed()
             throws Exception {
         jdbc.sql("""
-                insert into authorization_policy(tenant_id, policy_id, policy_code, version_no,
+                insert into authorization_policy(tenant_id, policy_id, policy_code, policy_name, version_no,
                   effect, status, resource_type, action_code, purpose_codes, emergency_override_allowed,
                   priority, valid_from, created_by, approved_by, published_at)
-                values (:tenant, :policy, :code, 1, 'DENY', 'PUBLISHED', 'ENCOUNTER', 'READ',
+                values (:tenant, :policy, :code, '患者时间线访问拒绝测试策略', 1, 'DENY', 'PUBLISHED', 'ENCOUNTER', 'READ',
                   array['PATIENT_TIMELINE'], false, 9000, now() - interval '1 minute',
                   :creator, :approver, now())
                 """).param("tenant", TENANT).param("policy", denyPolicy)

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
 import { analyzeRoleGovernance, loadSystemAdministrationSnapshot } from '../../api/system-administration';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import { adminCodeLabel } from '../admin-display';
 import { toClinicalIssue } from '../clinical-error';
 
 const query = useQuery({
@@ -38,7 +39,7 @@ const modules = computed(() => {
     ['用户账户', `${activePeople.value} 人 · ${activeAccounts.value} 个活跃账户`, '人员、账号与任期关联完整', 'admin-users', 'blue'],
     ['角色与工作组', `${new Set((snapshot.value?.workforce ?? []).map((item) => item.role_code).filter(Boolean)).size} 类角色 · ${roleGovernance.value.assignmentCount} 个有效任期`, `${roleGovernance.value.conflicts.length} 项职责冲突`, 'admin-roles', roleGovernance.value.conflicts.length ? 'red' : 'blue'],
     ['权限策略', `${policies.filter((item) => item.status === 'PUBLISHED').length} 条已发布`, `${pendingPolicies.value} 条草稿待审批`, 'admin-permissions', pendingPolicies.value ? 'amber' : 'blue'],
-    ['字典术语', `GENDER 值集 · ${dictionaries.length} 条目`, `${dictionaries.filter((item) => item.status === 'INACTIVE').length} 项已停用`, 'admin-dictionaries', 'blue'],
+    ['字典术语', `性别值集等 · ${dictionaries.length} 个条目`, `${dictionaries.filter((item) => item.status === 'INACTIVE').length} 项已停用`, 'admin-dictionaries', 'blue'],
     ['医院主数据', `${snapshot.value?.masterData.length ?? 0} 个版本化条目`, `${(snapshot.value?.masterData ?? []).filter((item) => item.validation_state === 'INVALID').length} 项校验失败`, 'admin-master-data', 'blue'],
     ['参数与开关', `${snapshot.value?.parameters.length ?? 0} 个版本化参数`, `${(snapshot.value?.parameters ?? []).filter((item) => item.status !== 'ACTIVE').length} 项未发布`, 'admin-parameters', 'amber'],
     ['后台任务', `${snapshot.value?.jobs.length ?? 0} 个任务定义`, `${invalidJobs.value} 项校验失败`, 'admin-jobs', invalidJobs.value ? 'red' : 'blue'],
@@ -49,7 +50,7 @@ const tasks = computed(() => {
   const rows: Array<readonly [string, string, string, string, string, string]> = [];
   for (const conflict of roleGovernance.value.conflicts) rows.push(['职责分离冲突', `${conflict.personDisplayName} / ${conflict.personCode}`, '安全管理员', '立即处理', '阻断', 'red']);
   for (const grant of (snapshot.value?.emergencyAccess ?? []).filter((item) => !item.reviewed_at).slice(0, 2)) rows.push(['紧急访问待复核', `授权 …${grant.emergency_access_grant_id.slice(-8)}`, '安全管理员', formatDateTime(grant.expires_at), '待复核', 'amber']);
-  for (const policy of (snapshot.value?.policies ?? []).filter((item) => item.status === 'DRAFT').slice(0, 2)) rows.push(['权限策略草稿待审批', policy.policy_code, '权限管理员', formatDateTime(policy.valid_from), '草稿', 'amber']);
+  for (const policy of (snapshot.value?.policies ?? []).filter((item) => item.status === 'DRAFT').slice(0, 2)) rows.push(['权限策略草稿待审批', policy.policy_name, '权限管理员', formatDateTime(policy.valid_from), '草稿', 'amber']);
   for (const item of configurations.value.filter((config) => config.status !== 'ACTIVE').slice(0, 3)) rows.push(['配置版本尚未发布', item.display_name, '配置管理员', formatDateTime(item.updated_at), statusLabel(item.status), 'blue']);
   if (!rows.length) rows.push(['当前无高优先级待办', '数据库实时检查完成', '—', '—', '正常', 'green']);
   return rows.slice(0, 6);
@@ -64,18 +65,18 @@ const releases = computed(() => (snapshot.value?.auditEvents ?? [])
 function statusLabel(status: string) { return ({ DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已批准', ACTIVE: '已生效', ARCHIVED: '已归档' } as Record<string, string>)[status] ?? status; }
 function auditActionLabel(action: string) {
   const labels: Record<string, string> = { CONFIGURATION_PUBLISHED: '配置已发布', CONFIGURATION_ROLLED_BACK: '配置已回退', AUTHORIZATION_POLICY_PUBLISHED: '权限策略已发布', DOCUMENT_TEMPLATE_PUBLISHED: '模板已发布', ORGANIZATION_UNIT_DEACTIVATED: '组织单元已停用', WORKFORCE_ACCOUNT_DEACTIVATED: '账户已停用' };
-  return labels[action] ?? action.replaceAll('_', ' ');
+  return labels[action] ?? adminCodeLabel(action, '管理操作');
 }
 function auditObject(event: { resource_type: string; resource_id: string; details?: Record<string, unknown> }) {
   const display = event.details?.display_name ?? event.details?.config_key ?? event.details?.policy_code;
-  return typeof display === 'string' ? display : `${event.resource_type} · …${event.resource_id.slice(-8)}`;
+  return typeof display === 'string' ? display : `${adminCodeLabel(event.resource_type)} · 记录号 …${event.resource_id.slice(-8)}`;
 }
 function formatDateTime(value: string | null | undefined) { return value ? new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '—'; }
 </script>
 
 <template>
   <section data-page-root class="content admin-content vue-native-page admin-overview-page">
-    <div class="page-head"><div class="page-title"><h1>系统管理工作台</h1><p>江城大学附属医院 · 数据实时聚合自系统管理 API 与 PostgreSQL 审计链</p></div><div class="head-actions"><button class="btn" type="button" :disabled="query.isFetching.value" @click="query.refetch()">{{ query.isFetching.value ? '刷新中…' : '刷新数据' }}</button><RouterLink class="btn" to="/admin-audit">管理员审计</RouterLink><RouterLink class="btn primary" to="/config-release">创建管理变更单</RouterLink></div></div>
+    <div class="page-head"><div class="page-title"><h1>系统管理工作台</h1><p>江城大学附属医院 · 数据实时汇总自系统管理接口、业务数据库和防篡改审计链</p></div><div class="head-actions"><button class="btn" type="button" :disabled="query.isFetching.value" @click="query.refetch()">{{ query.isFetching.value ? '刷新中…' : '刷新数据' }}</button><RouterLink class="btn" to="/admin-audit">管理员审计</RouterLink><RouterLink class="btn primary" to="/config-release">创建管理变更单</RouterLink></div></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在聚合系统管理数据" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
     <template v-else>

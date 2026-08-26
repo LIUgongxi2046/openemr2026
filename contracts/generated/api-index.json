@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 438,
+  "operation_count": 443,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -5402,6 +5402,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "publishAgentVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/agent-registry/{agent_registry_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "AgentRegistryVersionRequest",
+      "output_schema": "AgentRegistry",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishAgentVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "publishAuthorizationPolicy",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -5449,6 +5466,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:publishPromptRelease",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "publishSkillVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/skill-registry/{skill_registry_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "SkillRegistryVersionRequest",
+      "output_schema": "SkillRegistry",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishSkillVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "publishToolVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/tool-registry/{tool_registry_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ToolRegistryVersionRequest",
+      "output_schema": "ToolRegistry",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishToolVersion",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7400,6 +7451,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "updateAgentRunBudget",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/agent-run-budgets/{budget_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "AgentRunBudgetUpdateRequest",
+      "output_schema": "AgentRunBudget",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateAgentRunBudget",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "updateConfiguration",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "PUT",
@@ -7413,6 +7481,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:updateConfiguration",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateModelDeployment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/model-deployments/{model_deployment_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ModelDeploymentUpdateRequest",
+      "output_schema": "ModelDeployment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateModelDeployment",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

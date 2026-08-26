@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRunBudgetDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetDefineRequestWire;
+import org.openemr2026.contracts.AgentRunBudgetUpdateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -75,6 +76,17 @@ final class AgentRunBudgetApiTest {
         AgentRunBudgetWire deactivated = budgets.deactivate(identity(), "deact-" + UUID.randomUUID(),
                 defined.budgetId(), new AgentRunBudgetDeactivateRequestWire(organization, facility));
         assertThat(deactivated.status()).isEqualTo(AgentRunBudgetWire.StatusValue.INACTIVE);
+    }
+
+    @Test
+    void givenActiveBudget_whenUpdating_thenNewLimitsAffectItsVersionedDefinition() {
+        AgentRunBudgetWire defined = define("BUDGET-" + UUID.randomUUID().toString().substring(0, 8), 50_000L, 120);
+        AgentRunBudgetWire updated = budgets.update(identity(), "update-" + UUID.randomUUID(),
+                defined.budgetId(), new AgentRunBudgetUpdateRequestWire(
+                        organization, facility, "门诊高峰处理额度", 75_000L, 180, defined.rowVersion()));
+        assertThat(updated.budgetName()).isEqualTo("门诊高峰处理额度");
+        assertThat(updated.maxTokens()).isEqualTo(75_000L);
+        assertThat(updated.rowVersion()).isEqualTo(defined.rowVersion() + 1);
     }
 
     @Test

@@ -117,7 +117,7 @@ final class AuthorizationAdministrationApiTest {
 
         UUID policyId = UUID.randomUUID(); policies.add(policyId);
         HttpResponse<String> draft = post("/api/v1/admin/access-policies", USER, ADMIN_ROLE, key(), """
-                {"policy_id":"%s","policy_code":"C01-LEASE-%s","version_no":1,"effect":"ALLOW",
+                {"policy_id":"%s","policy_code":"C01-LEASE-%s","policy_name":"临床上下文限时授权测试策略","version_no":1,"effect":"ALLOW",
                  "subject_role_code":"CLINICIAN","resource_type":"CLINICAL_CONTEXT","action_code":"LEASE_ISSUE",
                  "organization_id":"%s","facility_id":"%s","patient_relationship_required":true,
                  "relationship_types":["CARE_TEAM"],"resource_statuses":["ACTIVE"],
@@ -126,6 +126,7 @@ final class AuthorizationAdministrationApiTest {
                 """.formatted(policyId, policyId.toString().substring(0, 8), ORGANIZATION, FACILITY,
                 Instant.now().minusSeconds(30)));
         assertThat(draft.statusCode()).isEqualTo(201);
+        assertThat(draft.body()).contains("\"policy_name\":\"临床上下文限时授权测试策略\"");
 
         HttpResponse<String> selfPublish = post("/api/v1/admin/access-policies/" + policyId + "/publish",
                 USER, ADMIN_ROLE, key(), "{\"expected_row_version\":1}");
@@ -194,7 +195,7 @@ final class AuthorizationAdministrationApiTest {
 
         UUID denyPolicyId = UUID.randomUUID(); policies.add(denyPolicyId);
         HttpResponse<String> denyDraft = post("/api/v1/admin/access-policies", USER, ADMIN_ROLE, key(), """
-                {"policy_id":"%s","policy_code":"C01-DENY-%s","version_no":1,"effect":"DENY",
+                {"policy_id":"%s","policy_code":"C01-DENY-%s","policy_name":"临床上下文明确拒绝测试策略","version_no":1,"effect":"DENY",
                  "subject_role_code":"CLINICIAN","resource_type":"CLINICAL_CONTEXT","action_code":"LEASE_ISSUE",
                  "organization_id":"%s","facility_id":"%s","patient_relationship_required":false,
                  "relationship_types":[],"resource_statuses":["ACTIVE"],"purpose_codes":["DOCUMENT_DRAFT"],
@@ -216,7 +217,7 @@ final class AuthorizationAdministrationApiTest {
 
         UUID scopedPolicyId = UUID.randomUUID(); policies.add(scopedPolicyId);
         HttpResponse<String> scopedDraft = post("/api/v1/admin/access-policies", USER, ADMIN_ROLE, key(), """
-                {"policy_id":"%s","policy_code":"C01-SCOPE-%s","version_no":1,"effect":"ALLOW",
+                {"policy_id":"%s","policy_code":"C01-SCOPE-%s","policy_name":"指定科室病历查看测试策略","version_no":1,"effect":"ALLOW",
                  "subject_role_code":"CLINICIAN","resource_type":"DOCUMENT","action_code":"READ",
                  "organization_id":"%s","facility_id":"%s","department_id":"%s","ward_id":"%s",
                  "patient_relationship_required":false,"relationship_types":[],"resource_statuses":["SIGNED"],

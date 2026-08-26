@@ -235,7 +235,13 @@ export function buildContractRoutes(): RouteRecordRaw[] {
 }
 
 function defaultHistory(): RouterHistory {
-  return typeof window === 'undefined' ? createMemoryHistory() : createWebHashHistory();
+  if (typeof window === 'undefined') return createMemoryHistory();
+  // 兼容早期高保真入口的 `#ai-center` 链接，统一转换为 Vue Router 的 `#/ai-center`。
+  if (window.location.hash.length > 1 && !window.location.hash.startsWith('#/')) {
+    const legacyRoute = window.location.hash.slice(1).replace(/^\/+/, '');
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/${legacyRoute}`);
+  }
+  return createWebHashHistory();
 }
 
 export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {

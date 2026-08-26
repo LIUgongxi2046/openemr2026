@@ -86,4 +86,27 @@ describe('AI医助小南品牌契约', () => {
     const source = Object.values({ ...components, ...views }).join('\n');
     for (const name of deprecatedNames) expect(source).not.toContain(name);
   });
+
+  it('shows clickable question examples for Xiaonan, every medical assistant and each selected task', () => {
+    const dialog = components['./components/GlobalAiAssistantDialog.vue'];
+    const workspace = views['./views/AiAssistantPage.vue'];
+    const catalog = views['./views/AgentCatalogPage.vue'];
+
+    expect(dialog).toContain('查看每位医助的示例');
+    expect(dialog).toContain('child.question_examples');
+    expect(workspace).toContain('医生提问示例');
+    expect(workspace).toContain('selectedChild.question_examples');
+    expect(catalog).toContain('医生可以这样问');
+    expect(catalog).toContain('child.question_examples');
+  });
+
+  it('provides a safe model API configuration entry in AI center model services', () => {
+    const models = views['./views/ModelDeploymentPage.vue'];
+
+    expect(models).toContain('模型服务与 API 配置');
+    expect(models).toContain('AI 中心 → 模型服务 → 登记模型 API');
+    expect(models).toContain('API 密钥引用');
+    expect(models).toContain('env://DEEPSEEK_API_KEY');
+    expect(models).toContain('页面不保存明文密钥');
+  });
 });

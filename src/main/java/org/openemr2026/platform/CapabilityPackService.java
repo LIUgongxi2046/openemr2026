@@ -33,8 +33,9 @@ final class CapabilityPackService {
             throw invalid("a capability pack cannot inherit from itself");
         }
         return transactions.execute(status -> {
+            validateInheritance(identity.tenantId(), null, packCode, inherits);
             beginCommand(identity, "CAPABILITY_PACK_DEFINE", idempotencyKey,
-                    sha256(packCode + "|" + inherits));
+                    sha256(packCode + "|" + packName + "|" + inherits));
             UUID packId = UUID.randomUUID();
             jdbc.sql("""
                     insert into capability_pack(
@@ -44,6 +45,36 @@ final class CapabilityPackService {
                     .param("code", packCode).param("name", packName).param("inherits", inherits).update();
             appendEvidence(identity, packId, "CAPABILITY_PACK_DEFINED", "CapabilityPackDefined");
             completeCommand(identity, "CAPABILITY_PACK_DEFINE", idempotencyKey, packId);
+            return pack(identity.tenantId(), packId);
+        });
+    }
+
+    CapabilityPackWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID packId,
+            CapabilityPackDefineRequestWire request) {
+        String packCode = requireText(request.packCode(), 2, "pack_code");
+        String packName = requireText(request.packName(), 2, "pack_name");
+        String inherits = blankToNull(request.inheritsFrom());
+        return transactions.execute(status -> {
+            CapabilityPackWire current = pack(identity.tenantId(), packId);
+            if (current.status() != CapabilityPackWire.StatusValue.ACTIVE) {
+                throw new CapabilityPackException(
+                        "CAPABILITY_PACK_STATE_INVALID", 409, "Only an active pack can be edited");
+            }
+            if (!current.packCode().equals(packCode)) {
+                throw new CapabilityPackException(
+                        "CAPABILITY_PACK_CODE_IMMUTABLE", 409, "The capability pack code cannot be changed");
+            }
+            validateInheritance(identity.tenantId(), packId, packCode, inherits);
+            beginCommand(identity, "CAPABILITY_PACK_UPDATE", idempotencyKey,
+                    sha256(packId + "|" + packName + "|" + inherits));
+            jdbc.sql("""
+                    update capability_pack set pack_name = :name, inherits_from = :inherits, updated_at = now()
+                    where tenant_id = :tenant and capability_pack_id = :pack and status = 'ACTIVE'
+                    """).param("name", packName).param("inherits", inherits)
+                    .param("tenant", identity.tenantId()).param("pack", packId).update();
+            appendEvidence(identity, packId, "CAPABILITY_PACK_UPDATED", "CapabilityPackUpdated");
+            completeCommand(identity, "CAPABILITY_PACK_UPDATE", idempotencyKey, packId);
             return pack(identity.tenantId(), packId);
         });
     }
@@ -96,6 +127,30 @@ final class CapabilityPackService {
                         rs.getString("pack_name"), rs.getString("inherits_from"),
                         CapabilityPackWire.StatusValue.valueOf(rs.getString("status"))))
                 .optional().orElseThrow(CapabilityPackService::contextDenied);
+    }
+
+    private void validateInheritance(UUID tenantId, UUID currentPackId, String packCode, String inherits) {
+        if (inherits == null) return;
+        if (inherits.equals(packCode)) throw invalid("a capability pack cannot inherit from itself");
+        UUID parentId = jdbc.sql("""
+                select capability_pack_id from capability_pack
+                where tenant_id = :tenant and pack_code = :code and status = 'ACTIVE'
+                """).param("tenant", tenantId).param("code", inherits).query(UUID.class).optional()
+                .orElseThrow(() -> invalid("inherits_from must reference an active capability pack"));
+        if (currentPackId == null) return;
+        long cycle = jdbc.sql("""
+                with recursive lineage as (
+                  select capability_pack_id, inherits_from from capability_pack
+                  where tenant_id = :tenant and capability_pack_id = :parent
+                  union all
+                  select candidate.capability_pack_id, candidate.inherits_from
+                  from capability_pack candidate join lineage on candidate.pack_code = lineage.inherits_from
+                  where candidate.tenant_id = :tenant
+                )
+                select count(*) from lineage where capability_pack_id = :current
+                """).param("tenant", tenantId).param("parent", parentId).param("current", currentPackId)
+                .query(Long.class).single();
+        if (cycle > 0) throw invalid("capability pack inheritance cannot contain a cycle");
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {

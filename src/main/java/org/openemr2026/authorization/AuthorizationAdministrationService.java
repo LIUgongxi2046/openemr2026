@@ -38,7 +38,7 @@ final class AuthorizationAdministrationService {
     List<AuthorizationPolicyWire> listPolicies(ClinicalIdentity identity) {
         requireAdministrator(identity);
         return jdbc.sql("""
-                select policy_id, policy_code, version_no, effect, status, subject_role_code,
+                select policy_id, policy_code, policy_name, version_no, effect, status, subject_role_code,
                   resource_type, action_code, organization_id, facility_id, department_id, ward_id,
                   patient_relationship_required, relationship_types, resource_statuses, purpose_codes,
                   emergency_override_allowed, priority, valid_from, valid_until, created_by, approved_by,
@@ -58,18 +58,19 @@ final class AuthorizationAdministrationService {
             try {
                 jdbc.sql("""
                         insert into authorization_policy(
-                          tenant_id, policy_id, policy_code, version_no, effect, status,
+                          tenant_id, policy_id, policy_code, policy_name, version_no, effect, status,
                           subject_role_code, resource_type, action_code, organization_id, facility_id,
                           department_id, ward_id, patient_relationship_required, relationship_types,
                           resource_statuses, purpose_codes, emergency_override_allowed, priority,
                           valid_from, valid_until, created_by)
-                        values (:tenant, :policy, :code, :version, :effect, 'DRAFT', :role,
+                        values (:tenant, :policy, :code, :name, :version, :effect, 'DRAFT', :role,
                           :resource, :action, :organization, :facility, :department, :ward,
                           :relationship_required, cast(:relationship_types as text[]),
                           cast(:resource_statuses as text[]), cast(:purpose_codes as text[]),
                           :emergency_override, :priority, :valid_from, :valid_until, :actor)
                         """).param("tenant", identity.tenantId()).param("policy", policyId)
                         .param("code", request.policyCode().trim()).param("version", request.versionNo())
+                        .param("name", request.policyName().trim())
                         .param("effect", request.effect().trim().toUpperCase()).param("role", blankToNull(request.subjectRoleCode()))
                         .param("resource", request.resourceType().trim().toUpperCase())
                         .param("action", request.actionCode().trim().toUpperCase())
@@ -220,6 +221,8 @@ final class AuthorizationAdministrationService {
 
     private void validatePolicy(PolicyCreateRequest request) {
         if (request == null || request.policyCode() == null || request.policyCode().isBlank()
+                || request.policyName() == null || request.policyName().trim().length() < 2
+                || request.policyName().trim().length() > 256
                 || request.versionNo() < 1 || request.effect() == null
                 || !Set.of("ALLOW", "DENY").contains(request.effect().toUpperCase())
                 || request.resourceType() == null || request.resourceType().isBlank()
@@ -227,7 +230,7 @@ final class AuthorizationAdministrationService {
                 || request.validFrom() == null || request.priority() < 0 || request.priority() > 10000
                 || (request.validUntil() != null && !request.validUntil().isAfter(request.validFrom()))
                 || (request.patientRelationshipRequired() && safe(request.relationshipTypes()).isEmpty())) {
-            throw invalid("A valid policy code, effect, resource, action, conditions and effective period are required");
+            throw invalid("A Chinese policy name, valid policy code, effect, resource, action, conditions and effective period are required");
         }
     }
 
@@ -244,7 +247,7 @@ final class AuthorizationAdministrationService {
 
     private AuthorizationPolicyWire findPolicy(UUID tenantId, UUID policyId) {
         return jdbc.sql("""
-                select policy_id, policy_code, version_no, effect, status, subject_role_code,
+                select policy_id, policy_code, policy_name, version_no, effect, status, subject_role_code,
                   resource_type, action_code, organization_id, facility_id, department_id, ward_id,
                   patient_relationship_required, relationship_types, resource_statuses, purpose_codes,
                   emergency_override_allowed, priority, valid_from, valid_until, created_by, approved_by,
@@ -255,6 +258,7 @@ final class AuthorizationAdministrationService {
 
     private AuthorizationPolicyWire policy(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new AuthorizationPolicyWire(rs.getObject("policy_id", UUID.class), rs.getString("policy_code"),
+                rs.getString("policy_name"),
                 rs.getInt("version_no"), rs.getString("effect"), rs.getString("status"),
                 rs.getString("subject_role_code"), rs.getString("resource_type"), rs.getString("action_code"),
                 rs.getObject("organization_id", UUID.class), rs.getObject("facility_id", UUID.class),
@@ -371,7 +375,7 @@ final class AuthorizationAdministrationService {
         catch (NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
-    record PolicyCreateRequest(UUID policyId, String policyCode, int versionNo, String effect, String subjectRoleCode,
+    record PolicyCreateRequest(UUID policyId, String policyCode, String policyName, int versionNo, String effect, String subjectRoleCode,
             String resourceType, String actionCode, UUID organizationId, UUID facilityId, UUID departmentId,
             UUID wardId, boolean patientRelationshipRequired, List<String> relationshipTypes,
             List<String> resourceStatuses, List<String> purposeCodes, boolean emergencyOverrideAllowed,
@@ -388,7 +392,7 @@ final class AuthorizationAdministrationService {
             List<String> resourceTypes, List<String> actionCodes, String reason, int durationMinutes,
             boolean riskAcknowledged) {}
     record EmergencyReviewRequest(long expectedRowVersion, String outcome, String note) {}
-    record AuthorizationPolicyWire(UUID policyId, String policyCode, int versionNo, String effect, String status,
+    record AuthorizationPolicyWire(UUID policyId, String policyCode, String policyName, int versionNo, String effect, String status,
             String subjectRoleCode, String resourceType, String actionCode, UUID organizationId, UUID facilityId,
             UUID departmentId, UUID wardId, boolean patientRelationshipRequired, List<String> relationshipTypes,
             List<String> resourceStatuses, List<String> purposeCodes, boolean emergencyOverrideAllowed,

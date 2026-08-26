@@ -10,6 +10,8 @@ import {
   listMedicalAgentCatalog,
 } from '../../api/medical-agents';
 import type { MedicalAgentChildRunWire, MedicalAgentRunWire } from '../../generated/contracts';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 
@@ -28,6 +30,8 @@ const busy = ref(false);
 const notice = ref('');
 const collaborationNotice = ref('');
 const collaborationBusy = ref(false);
+const taskDialogOpen = ref(false);
+const clearConversationOpen = ref(false);
 const collaborationContext = ref<'OUTPATIENT' | 'EMERGENCY' | 'INPATIENT'>('OUTPATIENT');
 const selectedMainAgentCode = ref('');
 const selectedStageCode = ref('');
@@ -64,6 +68,7 @@ const selectedFamily = computed(() => families.value.find(
   (family) => family.main_agent.agent_code === selectedMainAgentCode.value,
 ));
 const availableStages = computed(() => selectedFamily.value?.child_agents ?? []);
+const selectedChild = computed(() => availableStages.value.find((child) => child.stage_code === selectedStageCode.value));
 
 watch(families, (next) => {
   if (!next.length) return;
@@ -115,6 +120,7 @@ async function runCollaboration() {
       stageCode: selectedStageCode.value,
       objective: objective.value,
     });
+    taskDialogOpen.value = false;
   } catch (error) {
     const next = toClinicalIssue(error);
     collaborationNotice.value = `${next.code}：${next.message}`;
@@ -160,13 +166,33 @@ function childFacts(child: MedicalAgentChildRunWire): string[] {
     ? child.contribution.facts.filter((value): value is string => typeof value === 'string')
     : [];
 }
+
+function useChatExample(example: string) {
+  draft.value = doctorFacingAiText(example);
+}
+
+function useMainAgentExample(example: string) {
+  objective.value = doctorFacingAiText(example);
+  taskDialogOpen.value = true;
+}
+
+function useChildAgentExample(example: string) {
+  objective.value = doctorFacingAiText(example);
+  taskDialogOpen.value = true;
+}
+
+function clearConversation() {
+  messages.value = [];
+  notice.value = '';
+  clearConversationOpen.value = false;
+}
 </script>
 
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title xiaonan-page-title"><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="58" height="58" /><div><h1>AI医助小南</h1><p>围绕当前诊疗场景持续协助，支持任务分工、进度汇总和结果回看</p></div></div>
-      <div class="head-actions"><button class="btn" type="button" @click="messages = []">清空对话</button></div>
+      <div class="head-actions"><button class="btn" type="button" :disabled="messages.length === 0" @click="clearConversationOpen = true">清空对话</button></div>
     </div>
 
     <div v-if="leaseQuery.isPending.value" class="card"><div class="card-body">正在连接当前工作场景…</div></div>
@@ -189,6 +215,12 @@ function childFacts(child: MedicalAgentChildRunWire): string[] {
           <div v-if="messages.length === 0" class="ai-message assistant">
             <b>AI医助小南已就绪</b>
             <p>直接输入问题或任务，小南会结合当前工作场景给出清晰、可继续处理的结果。</p>
+            <div class="xiaonan-starter-examples" aria-label="小南提问示例">
+              <span>可以这样问</span>
+              <button type="button" @click="useChatExample('请总结当前患者本次就诊的关键问题和待确认事项。')">总结本次就诊</button>
+              <button type="button" @click="useChatExample('请根据当前已确认信息起草病历草稿，缺失内容单独列出。')">起草病历草稿</button>
+              <button type="button" @click="useChatExample('请检查当前病历是否存在前后矛盾、关键缺项或时间顺序问题。')">检查病历缺项</button>
+            </div>
           </div>
           <div v-for="(message, index) in messages" :key="index" class="ai-message" :class="message.role">
             <p>{{ message.text }}</p>
@@ -206,33 +238,23 @@ function childFacts(child: MedicalAgentChildRunWire): string[] {
     </div>
 
     <section class="card medical-agent-collaboration">
-      <div class="card-head">小南医助团队 <span class="status blue">医助进度实时可见</span></div>
+      <div class="card-head"><div>小南医助团队 <span class="status blue">医助进度实时可见</span></div><button class="btn primary" type="button" :disabled="catalogQuery.isPending.value || runLeaseQuery.isPending.value" @click="taskDialogOpen = true">新建医助任务</button></div>
       <div class="card-body">
         <div v-if="catalogQuery.isPending.value || runLeaseQuery.isPending.value" class="notice info">正在连接协作团队和当前就诊…</div>
         <div v-else-if="catalogQuery.error.value || runLeaseQuery.error.value" class="notice error">当前协作信息暂时不可用，请确认已选择患者和就诊。</div>
         <template v-else>
-          <div class="medical-agent-command-grid">
-            <label>诊疗场景
-              <select v-model="collaborationContext">
-                <option v-for="item in collaborationContexts" :key="item.code" :value="item.code">{{ item.label }}</option>
-              </select>
-            </label>
-            <label>医助团队
-              <select v-model="selectedMainAgentCode">
-                <option v-for="family in families" :key="family.main_agent.agent_code" :value="family.main_agent.agent_code">{{ clinicianAgentName(family.main_agent.display_name) }}</option>
-              </select>
-            </label>
-            <label>协作任务
-              <select v-model="selectedStageCode">
-                <option v-for="child in availableStages" :key="child.agent_code" :value="child.stage_code">{{ doctorFacingAiText(child.display_name) }}</option>
-              </select>
-            </label>
-            <label class="medical-agent-objective">希望完成什么
-              <input v-model="objective" maxlength="1024" />
-            </label>
-            <button class="btn primary" type="button" :disabled="collaborationBusy || objective.trim().length < 2" @click="runCollaboration">{{ collaborationBusy ? '医助正在处理…' : '开始协作' }}</button>
-          </div>
           <p v-if="selectedFamily" class="medical-agent-boundary"><b>{{ clinicianAgentName(selectedFamily.main_agent.display_name) }}医助团队</b>包含 {{ selectedFamily.child_agents.length }} 位医助，小南将持续汇总进度和结果。</p>
+          <section v-if="selectedFamily" class="medical-agent-question-examples" aria-labelledby="medical-agent-example-title">
+            <div><b id="medical-agent-example-title">医生提问示例</b><span>点击示例即可填入“希望完成什么”，仍可继续修改。</span></div>
+            <article>
+              <strong>{{ clinicianAgentName(selectedFamily.main_agent.display_name) }}医助团队</strong>
+              <button v-for="example in selectedFamily.main_agent.question_examples" :key="example" type="button" @click="useMainAgentExample(example)">{{ doctorFacingAiText(example) }}</button>
+            </article>
+            <article v-if="selectedChild">
+              <strong>{{ doctorFacingAiText(selectedChild.display_name) }}</strong>
+              <button v-for="example in selectedChild.question_examples" :key="example" type="button" @click="useChildAgentExample(example)">{{ doctorFacingAiText(example) }}</button>
+            </article>
+          </section>
           <p v-if="collaborationNotice" class="inline-notice error" role="status">{{ collaborationNotice }}</p>
         </template>
 
@@ -259,6 +281,18 @@ function childFacts(child: MedicalAgentChildRunWire): string[] {
         </div>
       </div>
     </section>
+
+    <AdminActionDialog v-model:open="taskDialogOpen" title="新建医助任务" description="选择当前诊疗场景和专业医助，小南会协调子医助并实时汇总进度。" size="large" :busy="collaborationBusy">
+      <form class="admin-form ai-center-dialog-form" @submit.prevent="runCollaboration">
+        <label><span>诊疗场景</span><select v-model="collaborationContext"><option v-for="item in collaborationContexts" :key="item.code" :value="item.code">{{ item.label }}</option></select></label>
+        <label><span>医助团队</span><select v-model="selectedMainAgentCode"><option v-for="family in families" :key="family.main_agent.agent_code" :value="family.main_agent.agent_code">{{ clinicianAgentName(family.main_agent.display_name) }}</option></select></label>
+        <label><span>诊疗环节医助</span><select v-model="selectedStageCode"><option v-for="child in availableStages" :key="child.agent_code" :value="child.stage_code">{{ doctorFacingAiText(child.display_name) }}</option></select></label>
+        <label class="medical-agent-objective"><span>希望完成什么</span><textarea v-model="objective" maxlength="1024" rows="4" required /></label>
+        <p v-if="collaborationNotice" class="inline-notice error" role="status">{{ collaborationNotice }}</p>
+        <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="collaborationBusy" @click="taskDialogOpen = false">取消</button><button class="button primary" :disabled="collaborationBusy || objective.trim().length < 2">{{ collaborationBusy ? '医助正在处理…' : '开始协作' }}</button></div>
+      </form>
+    </AdminActionDialog>
+    <AdminConfirmDialog :open="clearConversationOpen" title="清空当前对话" description="清空后，本页当前展示的对话将被移除；已经发起的医助任务和运行记录不受影响。" confirm-label="确认清空" @update:open="clearConversationOpen = $event" @confirm="clearConversation"><div class="admin-impact-grid"><div><span>对话消息</span><b>{{ messages.length }} 条</b></div><div><span>医助任务</span><b>继续保留</b></div></div></AdminConfirmDialog>
   </section>
 </template>
 
@@ -268,6 +302,15 @@ function childFacts(child: MedicalAgentChildRunWire): string[] {
 .medical-agent-command-grid label { display: grid; gap: 6px; color: var(--muted, #526579); font-size: 13px; }
 .medical-agent-command-grid select, .medical-agent-command-grid input { min-height: 40px; border: 1px solid var(--line, #d8e0e8); border-radius: 8px; padding: 0 10px; background: #fff; }
 .medical-agent-boundary { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; background: #f4f8fb; }
+.xiaonan-starter-examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.xiaonan-starter-examples span { flex-basis: 100%; color: #087c75; font-size: 12px; font-weight: 700; }
+.xiaonan-starter-examples button, .medical-agent-question-examples button { padding: 7px 10px; text-align: left; color: #175f72; border: 1px solid #bcded9; border-radius: 999px; background: #f3fbfa; cursor: pointer; }
+.xiaonan-starter-examples button:hover, .medical-agent-question-examples button:hover { border-color: #15988d; background: #e8f7f4; }
+.medical-agent-question-examples { display: grid; gap: 10px; margin-top: 12px; padding: 14px; border: 1px solid #d8e7e4; border-radius: 10px; background: #fbfefd; }
+.medical-agent-question-examples > div { display: flex; justify-content: space-between; gap: 12px; }
+.medical-agent-question-examples > div span { color: #66798b; font-size: 12px; }
+.medical-agent-question-examples article { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.medical-agent-question-examples article strong { min-width: 170px; color: #31465a; font-size: 13px; }
 .medical-agent-run-result { margin-top: 18px; border-top: 1px solid var(--line, #d8e0e8); padding-top: 16px; }
 .medical-agent-run-result > header div { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .medical-agent-run-result > header small { color: var(--muted, #526579); }

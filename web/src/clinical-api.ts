@@ -424,6 +424,40 @@ export async function updateSpecialtySupportAssessment(
   ));
 }
 
+export async function createSpecialtySupportAssessment(
+  lease: ContextLeaseWire,
+  departmentId: string,
+  clinicalScopeCode: string,
+  input: Omit<DepartmentSupportAssessmentPutRequestWire, 'organization_id' | 'expected_row_version'>,
+): Promise<DepartmentSupportAssessmentWire> {
+  const body = departmentSupportAssessmentPutRequestWireSchema.parse({
+    ...input,
+    organization_id: clinicalContext.organizationId,
+    expected_row_version: 0,
+  });
+  return departmentSupportAssessmentWireSchema.parse(await request(
+    `/specialty-support/${clinicalContext.facilityId}/${departmentId}/${encodeURIComponent(clinicalScopeCode)}`,
+    {
+      method: 'PUT',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(body),
+    },
+  ));
+}
+
+export async function deleteSpecialtySupportAssessment(
+  lease: ContextLeaseWire,
+  assessment: DepartmentSupportAssessmentWire,
+): Promise<void> {
+  await request(
+    `/specialty-support/${clinicalContext.facilityId}/${assessment.department_id}/${encodeURIComponent(assessment.clinical_scope_code)}?expected_row_version=${assessment.row_version}`,
+    {
+      method: 'DELETE',
+      headers: { ...wardHeaders(lease), 'Idempotency-Key': crypto.randomUUID() },
+    },
+  );
+}
+
 export async function loadArchiveReadiness(lease: ContextLeaseWire): Promise<ArchiveReadinessWire> {
   return archiveReadinessWireSchema.parse(await request(
     `/archive/readiness?encounter_id=${clinicalContext.encounterId}`,

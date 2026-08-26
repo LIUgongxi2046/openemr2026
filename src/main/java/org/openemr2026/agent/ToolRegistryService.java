@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ToolRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.ToolRegistryRegisterRequestWire;
+import org.openemr2026.contracts.ToolRegistryVersionRequestWire;
 import org.openemr2026.contracts.ToolRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -70,6 +71,50 @@ final class ToolRegistryService {
             appendEvidence(identity, registryId, "TOOL_REGISTRY_DEACTIVATED", "ToolRegistryDeactivated");
             completeCommand(identity, "TOOL_REGISTRY_DEACTIVATE", idempotencyKey, registryId);
             return registry(identity.tenantId(), registryId);
+        });
+    }
+
+    ToolRegistryWire publishVersion(
+            ClinicalIdentity identity, String idempotencyKey, UUID currentRegistryId,
+            ToolRegistryVersionRequestWire request) {
+        String toolName = requireText(request.toolName(), 2, "tool_name");
+        String toolVersion = requireText(request.toolVersion(), 1, "tool_version");
+        if (request.toolType() == null) throw invalid("tool_type is required");
+        return transactions.execute(status -> {
+            beginCommand(identity, "TOOL_REGISTRY_PUBLISH_VERSION", idempotencyKey,
+                    sha256(currentRegistryId + "|" + toolName + "|" + toolVersion + "|" + request.toolType()));
+            RegistryHead current = jdbc.sql("""
+                    select tool_code, tool_version, status from tool_registry
+                    where tenant_id = :tenant and tool_registry_id = :registry for update
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId)
+                    .query((rs, row) -> new RegistryHead(
+                            rs.getString("tool_code"), rs.getString("tool_version"), rs.getString("status")))
+                    .optional().orElseThrow(ToolRegistryService::contextDenied);
+            if (!"ACTIVE".equals(current.status())) {
+                throw new ToolRegistryException(
+                        "TOOL_REGISTRY_STATE_INVALID", 409, "Only an active tool can publish a new version");
+            }
+            if (current.version().equals(toolVersion)) {
+                throw invalid("tool_version must change when publishing a new version");
+            }
+            jdbc.sql("""
+                    update tool_registry set status = 'INACTIVE', updated_at = now()
+                    where tenant_id = :tenant and tool_registry_id = :registry
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId).update();
+            UUID nextRegistryId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into tool_registry(
+                      tenant_id, tool_registry_id, tool_code, tool_name, tool_version, tool_type, status)
+                    values (:tenant, :registry, :code, :name, :version, :type, 'ACTIVE')
+                    """).param("tenant", identity.tenantId()).param("registry", nextRegistryId)
+                    .param("code", current.code()).param("name", toolName).param("version", toolVersion)
+                    .param("type", request.toolType().name()).update();
+            appendEvidence(identity, currentRegistryId,
+                    "TOOL_REGISTRY_SUPERSEDED", "ToolRegistrySuperseded");
+            appendEvidence(identity, nextRegistryId,
+                    "TOOL_REGISTRY_VERSION_PUBLISHED", "ToolRegistryVersionPublished");
+            completeCommand(identity, "TOOL_REGISTRY_PUBLISH_VERSION", idempotencyKey, nextRegistryId);
+            return registry(identity.tenantId(), nextRegistryId);
         });
     }
 
@@ -180,4 +225,6 @@ final class ToolRegistryService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record RegistryHead(String code, String version, String status) {}
 }

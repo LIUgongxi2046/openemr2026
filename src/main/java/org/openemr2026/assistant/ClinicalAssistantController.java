@@ -34,6 +34,6 @@ final class ClinicalAssistantController {
             @RequestHeader(value = "X-Encounter-Context", required = false) UUID encounterId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(assistant.stream(message));
+                .body(assistant.stream(identity, message));
     }
 }

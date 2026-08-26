@@ -11,7 +11,10 @@ import {
   updateConfiguration,
 } from '../../api/config';
 import type { ConfigurationFieldDefinition, ConfigurationStudioDefinition } from '../configuration-studios';
+import { adminCodeLabel, adminValueLabel } from '../admin-display';
 import { toClinicalIssue } from '../clinical-error';
+import AdminEditorSurface from './AdminEditorSurface.vue';
+import AdminConfirmDialog from './AdminConfirmDialog.vue';
 
 const props = defineProps<{ definition: ConfigurationStudioDefinition }>();
 const leaseQuery = useQuery({
@@ -63,10 +66,13 @@ const reason = ref('完成配置生命周期操作');
 const busy = ref('');
 const notice = ref('');
 const showEditor = ref(false);
+const archiveConfirmOpen = ref(false);
 const showAdministrationAnalysis = ref(false);
 const administrationAnalysisMode = ref<'PRIMARY' | 'CHANNELS'>('PRIMARY');
 const isAdministrationView = computed(() => ['admin-master-data', 'admin-parameters', 'admin-jobs'].includes(props.definition.routeId));
 const isMedicalAiView = computed(() => ['agent-compose', 'agent-context', 'agent-evals', 'ai-assistant-policy'].includes(props.definition.routeId));
+const isAiCenterConfiguration = computed(() => ['agent-evals', 'ai-assistant-policy'].includes(props.definition.routeId));
+const isModalEditor = computed(() => isAdministrationView.value || isAiCenterConfiguration.value);
 const adminVariant = computed(() => props.definition.routeId.replace('admin-', ''));
 const currentItem = computed(() => selected.value && displayItems.value.some((item) => item.config_id === selected.value?.config_id)
   ? selected.value : displayItems.value[0] ?? null);
@@ -83,8 +89,8 @@ const administrationAnalysisTitle = computed(() => administrationAnalysisMode.va
 const administrationAnalysisRows = computed(() => displayItems.value.map((item) => ({
   key: item.config_key,
   name: item.display_name,
-  left: administrationAnalysisMode.value === 'CHANNELS' ? payloadText(item, 'notification_channels', '未配置') : adminVariant.value === 'master-data' ? payloadText(item, 'authoritative_source', payloadText(item, 'code_system')) : adminVariant.value === 'parameters' ? payloadText(item, 'scope') : payloadText(item, 'schedule'),
-  right: administrationAnalysisMode.value === 'CHANNELS' ? payloadText(item, 'channel_owner', '未指定责任人') : adminVariant.value === 'master-data' ? validationLabel[item.validation_state] : adminVariant.value === 'parameters' ? payloadText(item, 'inheritance') : payloadText(item, 'retry_policy'),
+  left: administrationAnalysisMode.value === 'CHANNELS' ? payloadDisplay(item, 'notification_channels', '未配置') : adminVariant.value === 'master-data' ? payloadDisplay(item, 'authoritative_source', payloadDisplay(item, 'code_system')) : adminVariant.value === 'parameters' ? payloadDisplay(item, 'scope') : payloadDisplay(item, 'schedule'),
+  right: administrationAnalysisMode.value === 'CHANNELS' ? payloadDisplay(item, 'channel_owner', '未指定责任人') : adminVariant.value === 'master-data' ? validationLabel[item.validation_state] : adminVariant.value === 'parameters' ? payloadDisplay(item, 'inheritance') : payloadDisplay(item, 'retry_policy'),
   state: item.validation_state === 'INVALID' ? '需处理' : item.status === 'ACTIVE' ? '已生效' : statusLabel[item.status],
 })));
 const administrationAnalysisHeaders = computed(() => administrationAnalysisMode.value === 'CHANNELS'
@@ -103,7 +109,7 @@ const approvalLabel: Readonly<Record<string, string>> = Object.freeze({
 });
 const lifecycleActionLabel: Readonly<Record<string, string>> = Object.freeze({
   VALIDATE: '静态校验', SUBMIT: '提交审批', APPROVE: '职责分离批准',
-  PUBLISH: '发布', ROLLBACK: '回退',
+  PUBLISH: '发布', ROLLBACK: '回退', ARCHIVE: '归档停用',
 });
 
 const previewEntries = computed(() => props.definition.fields.map((field) => ({
@@ -119,9 +125,9 @@ function parseValue(field: ConfigurationFieldDefinition, raw: string): unknown {
 }
 
 function previewValues(field: ConfigurationFieldDefinition, value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
+  if (Array.isArray(value)) return value.map(adminValueLabel);
   if (field.kind === 'textarea') return String(value ?? '').split(/[;；\n]+/).map((item) => item.trim()).filter(Boolean);
-  return [String(value ?? '—')];
+  return [adminValueLabel(value)];
 }
 
 function payload(): Record<string, unknown> {
@@ -142,6 +148,16 @@ function selectItem(item: ConfigurationItemWire) {
     values[field.key] = Array.isArray(value) ? value.join(', ') : String(value ?? field.defaultValue);
   }
   notice.value = '';
+}
+
+function openItemEditor(item: ConfigurationItemWire) {
+  selectItem(item);
+  showEditor.value = true;
+}
+
+function requestArchive(item: ConfigurationItemWire) {
+  selectItem(item);
+  archiveConfirmOpen.value = true;
 }
 
 watch(displayItems, (nextItems) => {
@@ -168,6 +184,11 @@ function payloadText(item: ConfigurationItemWire, key: string, fallback = '—')
   if (Array.isArray(value)) return value.join('、');
   if (typeof value === 'boolean') return value ? '是' : '否';
   return value == null || value === '' ? fallback : String(value);
+}
+
+function payloadDisplay(item: ConfigurationItemWire, key: string, fallback = '—') {
+  const value = item.payload?.[key];
+  return value == null || value === '' || (Array.isArray(value) && !value.length) ? fallback : adminValueLabel(value);
 }
 
 function parameterRisk(item: ConfigurationItemWire) {
@@ -200,12 +221,14 @@ async function save() {
     selectItem(result);
     notice.value = selected.value?.row_version === 1 ? '已创建版本化草稿。' : '草稿已保存，校验状态已重置。';
     await itemsQuery.refetch();
+    if (isModalEditor.value) showEditor.value = false;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
 
-async function lifecycle(action: ConfigurationLifecycleRequestWire['action']) {
+async function lifecycle(action: ConfigurationLifecycleRequestWire['action'], confirmed = false) {
+  if (action === 'ARCHIVE' && !confirmed) { archiveConfirmOpen.value = true; return; }
   const lease = leaseQuery.data.value;
   const item = selected.value;
   if (!lease || !item || busy.value) return;
@@ -216,6 +239,7 @@ async function lifecycle(action: ConfigurationLifecycleRequestWire['action']) {
     });
     selectItem(result);
     notice.value = `${lifecycleActionLabel[action] ?? action}已完成，当前版本 v${result.row_version}。`;
+    if (action === 'ARCHIVE') archiveConfirmOpen.value = false;
     await itemsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -263,7 +287,7 @@ function downloadJobDifference() {
       </div>
     </div>
 
-    <div v-if="!isAdministrationView || showEditor" class="inline-notice config-safety" role="note">
+    <div v-if="!isModalEditor || showEditor" class="inline-notice config-safety" role="note">
       <strong>{{ isMedicalAiView ? '发布校验' : '安全契约' }}</strong><span>{{ definition.safetyNote }}</span>
     </div>
     <div v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" class="card"><div class="card-body">正在读取配置版本…</div></div>
@@ -271,6 +295,11 @@ function downloadJobDifference() {
     <template v-else>
       <div v-if="notice" class="inline-notice" role="status">{{ notice }}</div>
       <section v-if="isAdministrationView && showAdministrationAnalysis" class="admin-panel admin-analysis-panel"><header><div><h2>{{ administrationAnalysisTitle }}</h2><p>结果从当前数据库配置版本、作用域、校验状态和调度字段实时解析。</p></div><button class="task-action" type="button" @click="showAdministrationAnalysis = false">关闭</button></header><div class="admin-table-wrap"><table class="table"><thead><tr><th>配置</th><th>{{ administrationAnalysisHeaders[0] }}</th><th>{{ administrationAnalysisHeaders[1] }}</th><th>结论</th></tr></thead><tbody><tr v-for="row in administrationAnalysisRows" :key="row.key"><td><b>{{ row.name }}</b><br><span class="meta">{{ row.key }}</span></td><td>{{ row.left }}</td><td>{{ row.right }}</td><td><span class="status" :class="row.state === '已生效' ? 'green' : row.state === '需处理' ? 'red' : 'amber'">{{ row.state }}</span></td></tr></tbody></table></div></section>
+      <section v-if="isAiCenterConfiguration" class="card ai-center-config-ledger">
+        <div class="card-head"><div><h2>版本台账</h2><p>{{ definition.title }} · 配置变更会直接影响后续医助任务</p></div><span class="status">{{ displayItems.length }} 项</span></div>
+        <div v-if="displayItems.length === 0" class="empty-state"><span>配</span><p>暂无配置草稿</p><small>点击“新建草稿”开始配置</small></div>
+        <div v-else class="table-wrap"><table class="table"><thead><tr><th>名称 / 编码</th><th>生命周期</th><th>版本</th><th>最后更新</th><th>操作</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id"><td><strong>{{ item.display_name }}</strong><br><code>{{ item.config_key }}</code></td><td><span class="status" :class="item.status === 'ACTIVE' ? 'ok' : item.validation_state === 'INVALID' ? 'critical' : ''">{{ statusLabel[item.status] }}</span><small>{{ validationLabel[item.validation_state] }}</small></td><td>v{{ item.row_version }}</td><td>{{ formatDate(item.updated_at) }}</td><td><div class="admin-row-actions"><button class="task-action" type="button" @click="openItemEditor(item)">编辑 / 版本管理</button><button class="task-action danger" type="button" :disabled="item.status === 'ARCHIVED' || Boolean(busy)" @click="requestArchive(item)">删除</button></div></td></tr></tbody></table></div>
+      </section>
       <template v-if="isAdministrationView && !showEditor">
         <template v-if="adminVariant === 'master-data'">
           <div class="admin-domain-grid"><button v-for="item in masterDataDomains" :key="item.config_id" class="domain-data-card" type="button" @click="selectItem(item)"><b>{{ item.display_name }}</b><strong>v{{ item.row_version }}</strong><span>权威方：{{ payloadText(item, 'authoritative_source', payloadText(item, 'code_system', '机构数据库')) }}</span><div><em>{{ validationLabel[item.validation_state] }}</em><i class="status" :class="item.validation_state === 'INVALID' ? 'red' : item.status === 'ACTIVE' ? 'green' : 'amber'">{{ statusLabel[item.status] }}</i></div></button></div>
@@ -279,7 +308,7 @@ function downloadJobDifference() {
         <div v-else class="grid" :class="adminVariant === 'parameters' ? 'parameter-layout' : 'jobs-layout'">
           <section class="card">
             <div class="toolbar">
-              <input v-model="adminKeyword" class="search" :placeholder="adminVariant === 'parameters' ? '参数 Key 或名称' : '任务编码或名称'" />
+              <input v-model="adminKeyword" class="search" :placeholder="adminVariant === 'parameters' ? '参数编码或名称' : '任务编码或名称'" />
               <select v-model="adminScopeStatus" class="select">
                 <option value="ALL">{{ adminVariant === 'parameters' ? '全部作用域' : '全部状态' }}</option>
                 <template v-if="adminVariant === 'parameters'"><option value="GLOBAL">全局</option><option value="ORGANIZATION">机构</option><option value="FACILITY">院区</option></template>
@@ -287,15 +316,16 @@ function downloadJobDifference() {
               </select>
               <select v-model="adminSort" class="select"><option value="RISK">风险优先</option><option value="RECENT">最近更新</option><option value="NAME">名称排序</option></select>
             </div>
-            <table v-if="adminVariant === 'parameters'" class="table"><thead><tr><th>参数</th><th>类型</th><th>最终值</th><th>来源</th><th>风险</th><th>状态</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.config_key }}</span></td><td>{{ payloadText(item, 'value_type') }}</td><td>{{ payloadText(item, 'configured_value', payloadText(item, 'scope')) }}</td><td>{{ payloadText(item, 'scope') }}</td><td>{{ parameterRisk(item) }}</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td></tr></tbody></table>
+            <table v-if="adminVariant === 'parameters'" class="table"><thead><tr><th>参数</th><th>数据类型</th><th>当前生效值</th><th>适用范围</th><th>风险</th><th>状态</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">技术编码：{{ item.config_key }}</span></td><td>{{ payloadDisplay(item, 'value_type') }}</td><td>{{ payloadDisplay(item, 'configured_value', payloadDisplay(item, 'scope')) }}</td><td>{{ payloadDisplay(item, 'scope') }}</td><td>{{ parameterRisk(item) }}</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td></tr></tbody></table>
             <table v-else class="table"><thead><tr><th>任务</th><th>进度/批次</th><th>状态</th><th>结果/异常</th><th>责任人</th></tr></thead><tbody><tr v-for="item in displayItems" :key="item.config_id" :class="{ selected: currentItem?.config_id === item.config_id }" @click="selectItem(item)"><td><b>{{ item.display_name }}</b><br><span class="meta">{{ item.config_key }}</span></td><td>{{ payloadText(item, 'batch_size') }} 条/批</td><td><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.validation_state === 'INVALID' ? 'red' : 'amber'">{{ statusLabel[item.status] }}</span></td><td>{{ payloadText(item, 'reconciliation_rule') }}</td><td>{{ payloadText(item, 'channel_owner', '未指定') }}</td></tr></tbody></table>
           </section>
-          <aside v-if="currentItem" class="card"><div class="card-head">{{ currentItem.display_name }} · 生效解析</div><div class="card-body"><div class="inherit-chain"><div v-for="field in definition.fields" :key="field.key"><span>{{ field.label }}</span><b>{{ payloadText(currentItem, field.key) }}</b><em class="status blue">→</em></div></div><div class="notice rule"><div class="notice-title">{{ validationLabel[currentItem.validation_state] }}</div>{{ definition.safetyNote }}</div><button v-if="adminVariant === 'parameters'" class="btn" type="button" style="width:100%" :disabled="currentItem.status !== 'ACTIVE' || Boolean(busy)" @click="lifecycle('ROLLBACK')">回滚到上一已发布版本</button><button v-else class="btn primary" type="button" style="width:100%" @click="downloadJobDifference">下载差异并修正</button><button class="btn primary" type="button" style="width:100%" @click="showEditor = true">打开版本与生命周期</button></div></aside>
+          <aside v-if="currentItem" class="card"><div class="card-head">{{ currentItem.display_name }} · 生效解析</div><div class="card-body"><div class="inherit-chain"><div v-for="field in definition.fields" :key="field.key"><span>{{ field.label }}</span><b>{{ payloadDisplay(currentItem, field.key) }}</b><em class="status blue">→</em></div></div><div class="notice rule"><div class="notice-title">{{ validationLabel[currentItem.validation_state] }}</div>{{ definition.safetyNote }}</div><button v-if="adminVariant === 'parameters'" class="btn" type="button" style="width:100%" :disabled="currentItem.status !== 'ACTIVE' || Boolean(busy)" @click="lifecycle('ROLLBACK')">回滚到上一已发布版本</button><button v-else class="btn primary" type="button" style="width:100%" @click="downloadJobDifference">下载差异与修正清单</button><button class="btn primary" type="button" style="width:100%" @click="showEditor = true">打开版本与生命周期</button></div></aside>
         </div>
       </template>
-      <div v-if="!isAdministrationView || showEditor" class="config-studio-layout">
-        <section class="card config-list-panel">
-          <div class="card-head"><div><h2>版本台账</h2><p>{{ isMedicalAiView ? `${definition.title} · 版本留痕与操作记录` : `${definition.configType} · 全程审计 + Outbox` }}</p></div><span class="status">{{ displayItems.length }} 项</span></div>
+      <AdminEditorSurface :modal="isModalEditor" :open="!isModalEditor || showEditor" :title="selected ? `编辑${selected.display_name}` : (isAdministrationView ? adminCreateLabel : '新建配置草稿')" description="配置保存为版本化草案，通过校验、独立审批和发布后才影响业务流程。" :busy="Boolean(busy)" @update:open="showEditor = $event">
+      <div class="config-studio-layout" :class="{ 'admin-modal-layout': isModalEditor }">
+        <section v-if="!isModalEditor" class="card config-list-panel">
+          <div class="card-head"><div><h2>版本台账</h2><p>{{ isMedicalAiView ? `${definition.title} · 版本留痕与操作记录` : `${adminCodeLabel(definition.configType)} · 全程审计与事务事件记录` }}</p></div><span class="status">{{ displayItems.length }} 项</span></div>
           <div v-if="displayItems.length === 0" class="empty-state"><span>配</span><p>暂无配置草稿</p><small>从右侧结构化编辑器创建</small></div>
           <div v-else class="table-wrap">
             <table class="table">
@@ -312,16 +342,16 @@ function downloadJobDifference() {
         </section>
 
         <section class="card config-editor-panel">
-          <div class="card-head"><div><h2>{{ selected ? '编辑草稿' : '创建配置' }}</h2><p>{{ isMedicalAiView ? '结构版本 v1；发布后可通过版本回退恢复' : '版本化 Schema v1；发布后仅能通过回退恢复' }}</p></div><span v-if="selected" class="status">v{{ selected.row_version }}</span></div>
+          <div class="card-head"><div><h2>{{ selected ? '编辑草稿' : '创建配置' }}</h2><p>{{ isMedicalAiView ? '数据结构版本 v1；发布后可通过版本回退恢复' : '版本化数据结构 v1；发布后仅能通过回退恢复' }}</p></div><span v-if="selected" class="status">v{{ selected.row_version }}</span></div>
           <form class="config-form" @submit.prevent="save">
             <div class="config-core-fields">
-              <label><span>名称</span><input v-model="form.name" required :disabled="Boolean(selected && selected.status !== 'DRAFT')" /></label>
-              <label><span>唯一键</span><input v-model="form.key" required :placeholder="definition.keyPlaceholder" :disabled="Boolean(selected)" /></label>
+              <label><span>显示名称</span><input v-model="form.name" required :disabled="Boolean(selected && selected.status !== 'DRAFT')" /></label>
+              <label><span>配置编码（系统唯一）</span><input v-model="form.key" required :placeholder="definition.keyPlaceholder" :disabled="Boolean(selected)" /></label>
             </div>
             <label><span>说明</span><textarea v-model="form.description" rows="2" :disabled="Boolean(selected && selected.status !== 'DRAFT')" /></label>
             <div class="config-field-grid">
               <label v-for="field in definition.fields" :key="field.key">
-                <span>{{ field.label }} <code>{{ field.key }}</code></span>
+                <span>{{ field.label }} <code>技术字段：{{ field.key }}</code></span>
                 <select v-if="field.kind === 'boolean'" v-model="values[field.key]" :disabled="Boolean(selected && selected.status !== 'DRAFT')"><option value="true">是</option><option value="false">否</option></select>
                 <textarea v-else-if="field.kind === 'textarea' || field.kind === 'list'" v-model="values[field.key]" rows="3" :placeholder="field.placeholder" :disabled="Boolean(selected && selected.status !== 'DRAFT')" />
                 <input v-else v-model="values[field.key]" :type="field.kind === 'number' ? 'number' : 'text'" :min="field.minimum" :max="field.maximum" :placeholder="field.placeholder" :disabled="Boolean(selected && selected.status !== 'DRAFT')" />
@@ -332,7 +362,7 @@ function downloadJobDifference() {
         </section>
       </div>
 
-      <div v-if="!isAdministrationView || showEditor" class="config-studio-lower">
+      <div class="config-studio-lower">
         <section class="card config-preview">
           <div class="card-head"><div><h2>{{ definition.previewTitle }}</h2><p>当前草稿的可视化语义预览</p></div><span class="status">结构化预览</span></div>
           <div class="config-preview-board">
@@ -341,7 +371,7 @@ function downloadJobDifference() {
         </section>
 
         <section class="card config-lifecycle">
-          <div class="card-head"><div><h2>校验、审批、发布与回退</h2><p>每一步都使用幂等键、乐观锁、审计链和 Outbox</p></div></div>
+          <div class="card-head"><div><h2>校验、审批、发布与回退</h2><p>每一步都使用重复提交保护、版本冲突检查、审计链和事务事件记录</p></div></div>
           <label><span>操作原因</span><input v-model="reason" minlength="8" maxlength="500" /></label>
           <div v-if="selected" class="lifecycle-summary">
             <span>状态 <strong>{{ statusLabel[selected.status] }}</strong></span>
@@ -356,14 +386,17 @@ function downloadJobDifference() {
             <button class="button secondary" type="button" :disabled="!selected || selected.status !== 'PENDING_APPROVAL' || Boolean(busy)" @click="lifecycle('APPROVE')">职责分离批准</button>
             <button class="button primary" type="button" :disabled="!selected || selected.status !== 'APPROVED' || Boolean(busy)" @click="lifecycle('PUBLISH')">发布</button>
             <button class="button danger" type="button" :disabled="!selected || selected.status !== 'ACTIVE' || Boolean(busy)" @click="lifecycle('ROLLBACK')">回退上一版本</button>
+            <button class="button danger" type="button" :disabled="!selected || selected.status === 'ARCHIVED' || Boolean(busy)" @click="lifecycle('ARCHIVE')">归档停用</button>
           </div>
           <p class="lifecycle-footnote">作者不能批准自己的配置；开发合成身份如只有一人，批准会安全失败关闭。</p>
         </section>
       </div>
+      </AdminEditorSurface>
+      <AdminConfirmDialog :open="archiveConfirmOpen" :title="`归档停用${selected?.display_name ?? '配置'}`" description="归档后该版本不再进入新业务流程，历史审批、发布和业务引用继续保留。" confirm-label="确认归档停用" :busy="Boolean(busy)" @update:open="archiveConfirmOpen = $event" @confirm="lifecycle('ARCHIVE', true)"><div v-if="selected" class="admin-impact-grid"><div><span>配置编码</span><b>{{ selected.config_key }}</b></div><div><span>当前版本</span><b>v{{ selected.row_version }}</b></div><div><span>当前状态</span><b>{{ statusLabel[selected.status] }}</b></div><div><span>影响方式</span><b>停止新流程选用</b></div></div></AdminConfirmDialog>
     </template>
   </section>
 </template>
 
 <style scoped>
-.config-safety{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}.config-safety span{line-height:1.55}.config-studio-layout{display:grid;grid-template-columns:minmax(420px,.85fr) minmax(520px,1.15fr);gap:16px}.config-list-panel,.config-editor-panel,.config-preview,.config-lifecycle{min-width:0}.config-row-button{display:grid;gap:4px;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer}.config-row-button code{font-size:11px;color:var(--muted)}.table tbody tr{cursor:pointer}.table tbody tr.selected{background:color-mix(in srgb,var(--blue) 8%,white)}.table td small{display:block;margin-top:4px;color:var(--muted)}.config-form,.config-lifecycle{display:grid;gap:14px;padding:16px}.config-form label,.config-lifecycle label{display:grid;gap:6px;font-size:13px}.config-form label>span,.config-lifecycle label>span{font-weight:700}.config-form code{font-weight:400;color:var(--muted)}.config-core-fields,.config-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.config-field-grid label:has(textarea){grid-column:auto}.config-studio-lower{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.config-preview-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px}.config-preview-board article{border:1px solid var(--border);border-radius:var(--r);padding:12px;background:var(--card)}.config-preview-board article>div{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.config-preview-board span{border:1px solid color-mix(in srgb,var(--blue) 25%,var(--border));background:color-mix(in srgb,var(--blue) 7%,white);border-radius:999px;padding:4px 8px;font-size:12px}.lifecycle-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.lifecycle-summary span{display:grid;gap:4px;border:1px solid var(--border);border-radius:var(--r);padding:10px;color:var(--muted)}.lifecycle-summary strong{color:var(--text)}.lifecycle-actions{flex-wrap:wrap}.validation-errors{margin:0;padding:12px 12px 12px 32px;border:1px solid var(--red);border-radius:var(--r);color:var(--red)}.lifecycle-footnote{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.button.danger{border-color:var(--red);color:var(--red);background:white}@media(max-width:1100px){.config-studio-layout,.config-studio-lower{grid-template-columns:1fr}}@media(max-width:700px){.config-core-fields,.config-field-grid,.config-preview-board,.lifecycle-summary{grid-template-columns:1fr}}
+.config-safety{display:flex;gap:12px;align-items:flex-start;margin-bottom:16px}.config-safety span{line-height:1.55}.config-studio-layout{display:grid;grid-template-columns:minmax(420px,.85fr) minmax(520px,1.15fr);gap:16px}.config-studio-layout.admin-modal-layout{grid-template-columns:minmax(0,1fr)}.config-list-panel,.config-editor-panel,.config-preview,.config-lifecycle{min-width:0}.config-row-button{display:grid;gap:4px;border:0;background:none;padding:0;text-align:left;color:inherit;cursor:pointer}.config-row-button code{font-size:11px;color:var(--muted)}.table tbody tr{cursor:pointer}.table tbody tr.selected{background:color-mix(in srgb,var(--blue) 8%,white)}.table td small{display:block;margin-top:4px;color:var(--muted)}.config-form,.config-lifecycle{display:grid;gap:14px;padding:16px}.config-form label,.config-lifecycle label{display:grid;gap:6px;font-size:13px}.config-form label>span,.config-lifecycle label>span{font-weight:700}.config-form code{font-weight:400;color:var(--muted)}.config-core-fields,.config-field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.config-field-grid label:has(textarea){grid-column:auto}.config-studio-lower{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}.config-preview-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px}.config-preview-board article{border:1px solid var(--border);border-radius:var(--r);padding:12px;background:var(--card)}.config-preview-board article>div{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.config-preview-board span{border:1px solid color-mix(in srgb,var(--blue) 25%,var(--border));background:color-mix(in srgb,var(--blue) 7%,white);border-radius:999px;padding:4px 8px;font-size:12px}.lifecycle-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.lifecycle-summary span{display:grid;gap:4px;border:1px solid var(--border);border-radius:var(--r);padding:10px;color:var(--muted)}.lifecycle-summary strong{color:var(--text)}.lifecycle-actions{flex-wrap:wrap}.validation-errors{margin:0;padding:12px 12px 12px 32px;border:1px solid var(--red);border-radius:var(--r);color:var(--red)}.lifecycle-footnote{margin:0;color:var(--muted);font-size:12px;line-height:1.6}.button.danger{border-color:var(--red);color:var(--red);background:white}@media(max-width:1100px){.config-studio-layout,.config-studio-lower{grid-template-columns:1fr}}@media(max-width:700px){.config-core-fields,.config-field-grid,.config-preview-board,.lifecycle-summary{grid-template-columns:1fr}}
 </style>

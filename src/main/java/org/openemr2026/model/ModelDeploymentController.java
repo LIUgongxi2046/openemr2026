@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
+import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,5 +61,17 @@ final class ModelDeploymentController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.deactivate(identity, idempotencyKey, deploymentId, command));
+    }
+
+    @PutMapping("/model-deployments/{model_deployment_id}")
+    ResponseEntity<ModelDeploymentWire> update(
+            HttpServletRequest request,
+            @PathVariable("model_deployment_id") UUID deploymentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(models.update(identity, idempotencyKey, deploymentId, command));
     }
 }

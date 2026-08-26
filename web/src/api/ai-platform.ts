@@ -7,41 +7,51 @@ import {
 import {
   agentRegistryDeactivateRequestWireSchema,
   agentRegistryRegisterRequestWireSchema,
+  agentRegistryVersionRequestWireSchema,
   agentRegistryWireSchema,
   agentRunBudgetConsumptionRecordRequestWireSchema,
   agentRunBudgetConsumptionWireSchema,
   agentRunBudgetDeactivateRequestWireSchema,
   agentRunBudgetDefineRequestWireSchema,
+  agentRunBudgetUpdateRequestWireSchema,
   agentRunBudgetSummaryWireSchema,
   agentRunBudgetWireSchema,
   aiRunSnapshotWireSchema,
   modelDeploymentDeactivateRequestWireSchema,
   modelDeploymentRegisterRequestWireSchema,
+  modelDeploymentUpdateRequestWireSchema,
   modelDeploymentWireSchema,
   modelEvaluationRecordRequestWireSchema,
   modelEvaluationWireSchema,
   skillRegistryDeactivateRequestWireSchema,
   skillRegistryRegisterRequestWireSchema,
+  skillRegistryVersionRequestWireSchema,
   skillRegistryWireSchema,
   toolRegistryDeactivateRequestWireSchema,
   toolRegistryRegisterRequestWireSchema,
+  toolRegistryVersionRequestWireSchema,
   toolRegistryWireSchema,
   type AgentRegistryRegisterRequestWire,
+  type AgentRegistryVersionRequestWire,
   type AgentRegistryWire,
   type AgentRunBudgetConsumptionRecordRequestWire,
   type AgentRunBudgetConsumptionWire,
   type AgentRunBudgetDefineRequestWire,
+  type AgentRunBudgetUpdateRequestWire,
   type AgentRunBudgetSummaryWire,
   type AgentRunBudgetWire,
   type AIRunSnapshotWire,
   type ContextLeaseWire,
   type ModelDeploymentRegisterRequestWire,
+  type ModelDeploymentUpdateRequestWire,
   type ModelDeploymentWire,
   type ModelEvaluationRecordRequestWire,
   type ModelEvaluationWire,
   type SkillRegistryRegisterRequestWire,
+  type SkillRegistryVersionRequestWire,
   type SkillRegistryWire,
   type ToolRegistryRegisterRequestWire,
+  type ToolRegistryVersionRequestWire,
   type ToolRegistryWire,
 } from '../generated/contracts';
 
@@ -93,6 +103,20 @@ export async function deactivateModelDeployment(
   ));
 }
 
+export async function updateModelDeployment(
+  lease: ContextLeaseWire,
+  model: ModelDeploymentWire,
+  input: Omit<ModelDeploymentUpdateRequestWire, 'organization_id' | 'facility_id' | 'expected_row_version'>,
+): Promise<ModelDeploymentWire> {
+  return modelDeploymentWireSchema.parse(await request(`/model-deployments/${model.model_deployment_id}`, {
+    method: 'PUT',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(modelDeploymentUpdateRequestWireSchema.parse({
+      ...orgFacility(), ...input, expected_row_version: model.row_version,
+    })),
+  }));
+}
+
 // ── Agent 目录（Agent Registry） ─────────────────────────────
 export async function listAgents(lease: ContextLeaseWire, status?: string): Promise<AgentRegistryWire[]> {
   const q = status ? `?status=${encodeURIComponent(status)}` : '';
@@ -121,6 +145,18 @@ export async function deactivateAgent(
       body: JSON.stringify(agentRegistryDeactivateRequestWireSchema.parse({ ...orgFacility() })),
     },
   ));
+}
+
+export async function publishAgentVersion(
+  lease: ContextLeaseWire,
+  agent: AgentRegistryWire,
+  input: Omit<AgentRegistryVersionRequestWire, 'organization_id' | 'facility_id'>,
+): Promise<AgentRegistryWire> {
+  return agentRegistryWireSchema.parse(await request(`/agent-registry/${agent.agent_registry_id}/versions`, {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(agentRegistryVersionRequestWireSchema.parse({ ...orgFacility(), ...input })),
+  }));
 }
 
 // ── Skill 目录（Skill Registry） ─────────────────────────────
@@ -153,6 +189,18 @@ export async function deactivateSkill(
   ));
 }
 
+export async function publishSkillVersion(
+  lease: ContextLeaseWire,
+  skill: SkillRegistryWire,
+  input: Omit<SkillRegistryVersionRequestWire, 'organization_id' | 'facility_id'>,
+): Promise<SkillRegistryWire> {
+  return skillRegistryWireSchema.parse(await request(`/skill-registry/${skill.skill_registry_id}/versions`, {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(skillRegistryVersionRequestWireSchema.parse({ ...orgFacility(), ...input })),
+  }));
+}
+
 // ── Tool 目录（Tool Registry） ───────────────────────────────
 export async function listTools(lease: ContextLeaseWire, status?: string): Promise<ToolRegistryWire[]> {
   const q = status ? `?status=${encodeURIComponent(status)}` : '';
@@ -181,6 +229,18 @@ export async function deactivateTool(
       body: JSON.stringify(toolRegistryDeactivateRequestWireSchema.parse({ ...orgFacility() })),
     },
   ));
+}
+
+export async function publishToolVersion(
+  lease: ContextLeaseWire,
+  tool: ToolRegistryWire,
+  input: Omit<ToolRegistryVersionRequestWire, 'organization_id' | 'facility_id'>,
+): Promise<ToolRegistryWire> {
+  return toolRegistryWireSchema.parse(await request(`/tool-registry/${tool.tool_registry_id}/versions`, {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(toolRegistryVersionRequestWireSchema.parse({ ...orgFacility(), ...input })),
+  }));
 }
 
 // ── 模型评估（Model Evaluations） ────────────────────────────
@@ -235,6 +295,20 @@ export async function deactivateAgentRunBudget(
       body: JSON.stringify(agentRunBudgetDeactivateRequestWireSchema.parse({ ...orgFacility() })),
     },
   ));
+}
+
+export async function updateAgentRunBudget(
+  lease: ContextLeaseWire,
+  budget: AgentRunBudgetWire,
+  input: Omit<AgentRunBudgetUpdateRequestWire, 'organization_id' | 'facility_id' | 'expected_row_version'>,
+): Promise<AgentRunBudgetWire> {
+  return agentRunBudgetWireSchema.parse(await request(`/agent-run-budgets/${budget.budget_id}`, {
+    method: 'PUT',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(agentRunBudgetUpdateRequestWireSchema.parse({
+      ...orgFacility(), ...input, expected_row_version: budget.row_version,
+    })),
+  }));
 }
 
 export async function getAgentRunBudgetSummary(

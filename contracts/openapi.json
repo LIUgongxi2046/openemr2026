@@ -2391,6 +2391,44 @@
         }
       }
     },
+    "/model-deployments/{model_deployment_id}": {
+      "put": {
+        "operationId": "updateModelDeployment",
+        "parameters": [
+          {
+            "name": "model_deployment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDeploymentUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "model deployment connection and display settings updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDeployment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/research-dataset-requests": {
       "get": {
         "operationId": "listResearchDatasetRequests",
@@ -5760,6 +5798,44 @@
         }
       }
     },
+    "/agent-registry/{agent_registry_id}/versions": {
+      "post": {
+        "operationId": "publishAgentVersion",
+        "parameters": [
+          {
+            "name": "agent_registry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRegistryVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "new agent version published and previous version deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRegistry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/agent-dependencies": {
       "get": {
         "operationId": "listAgentDependencies",
@@ -6675,6 +6751,44 @@
         }
       }
     },
+    "/skill-registry/{skill_registry_id}/versions": {
+      "post": {
+        "operationId": "publishSkillVersion",
+        "parameters": [
+          {
+            "name": "skill_registry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SkillRegistryVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "new skill version published and previous version deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SkillRegistry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tool-registry": {
       "get": {
         "operationId": "listToolRegistry",
@@ -6761,6 +6875,44 @@
         "responses": {
           "200": {
             "description": "tool deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolRegistry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tool-registry/{tool_registry_id}/versions": {
+      "post": {
+        "operationId": "publishToolVersion",
+        "parameters": [
+          {
+            "name": "tool_registry_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolRegistryVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "new tool version published and previous version deactivated",
             "content": {
               "application/json": {
                 "schema": {
@@ -7054,6 +7206,44 @@
         "responses": {
           "200": {
             "description": "agent run budget deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunBudget"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-run-budgets/{budget_id}": {
+      "put": {
+        "operationId": "updateAgentRunBudget",
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRunBudgetUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "agent run budget updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -13816,7 +14006,8 @@
               "SUBMIT",
               "APPROVE",
               "PUBLISH",
-              "ROLLBACK"
+              "ROLLBACK",
+              "ARCHIVE"
             ]
           },
           "expected_version": {
@@ -20198,6 +20389,9 @@
           "residency_policy",
           "status",
           "evaluation_status",
+          "credential_configured",
+          "credential_hint",
+          "connection_status",
           "row_version"
         ],
         "properties": {
@@ -20245,6 +20439,23 @@
               "EVALUATING",
               "APPROVED",
               "REJECTED"
+            ]
+          },
+          "credential_configured": {
+            "type": "boolean"
+          },
+          "credential_hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "connection_status": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "READY"
             ]
           },
           "row_version": {
@@ -20300,6 +20511,77 @@
               "null"
             ],
             "maxLength": 512
+          },
+          "api_key_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512,
+            "pattern": "^(env://[A-Z][A-Z0-9_]{2,127}|file:///[^\\s]+)$"
+          }
+        }
+      },
+      "ModelDeploymentUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "display_name",
+          "residency_policy",
+          "credential_action",
+          "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "residency_policy": {
+            "type": "string",
+            "enum": [
+              "ON_PREM_ONLY",
+              "LOCAL_PREFERRED",
+              "CLOUD_ALLOWED"
+            ]
+          },
+          "endpoint_url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512
+          },
+          "api_key_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 512,
+            "pattern": "^(env://[A-Z][A-Z0-9_]{2,127}|file:///[^\\s]+)$"
+          },
+          "credential_action": {
+            "type": "string",
+            "enum": [
+              "KEEP",
+              "REPLACE",
+              "CLEAR"
+            ]
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       },
@@ -27019,6 +27301,36 @@
           }
         }
       },
+      "AgentRegistryVersionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "agent_name",
+          "agent_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "agent_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
       "AgentRegistryDeactivateRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -28065,6 +28377,36 @@
           }
         }
       },
+      "SkillRegistryVersionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "skill_name",
+          "skill_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "skill_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "skill_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
       "SkillRegistryDeactivateRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -28156,6 +28498,46 @@
             "type": "string",
             "minLength": 2,
             "maxLength": 128
+          },
+          "tool_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "tool_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "tool_type": {
+            "type": "string",
+            "enum": [
+              "API",
+              "FUNCTION",
+              "DATABASE_QUERY",
+              "OTHER"
+            ]
+          }
+        }
+      },
+      "ToolRegistryVersionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "tool_name",
+          "tool_version",
+          "tool_type"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
           },
           "tool_name": {
             "type": "string",
@@ -28504,7 +28886,8 @@
           "budget_name",
           "max_tokens",
           "max_duration_seconds",
-          "status"
+          "status",
+          "row_version"
         ],
         "properties": {
           "budget_id": {
@@ -28536,6 +28919,11 @@
               "ACTIVE",
               "INACTIVE"
             ]
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       },
@@ -28595,6 +28983,47 @@
           "facility_id": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "AgentRunBudgetUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "budget_name",
+          "max_tokens",
+          "max_duration_seconds",
+          "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "budget_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "max_tokens": {
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": 0
+          },
+          "max_duration_seconds": {
+            "type": "integer",
+            "exclusiveMinimum": 0
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       },
@@ -32256,7 +32685,7 @@
       "MedicalAgentRelease": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["agent_code", "release_version", "display_name", "agent_level", "stage_code", "description", "display_role", "current_action", "contribution_label", "output_schema", "autonomy_level", "max_steps", "max_tool_calls", "max_duration_seconds"],
+        "required": ["agent_code", "release_version", "display_name", "agent_level", "stage_code", "description", "display_role", "current_action", "contribution_label", "question_examples", "output_schema", "autonomy_level", "max_steps", "max_tool_calls", "max_duration_seconds"],
         "properties": {
           "agent_code": { "type": "string" },
           "release_version": { "type": "string" },
@@ -32268,6 +32697,11 @@
           "display_role": { "type": "string" },
           "current_action": { "type": "string" },
           "contribution_label": { "type": "string" },
+          "question_examples": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 4, "maxLength": 512 }
+          },
           "output_schema": { "type": "string" },
           "autonomy_level": { "type": "string", "enum": ["A0", "A1", "A2"] },
           "max_steps": { "type": "integer" },
@@ -33327,6 +33761,7 @@
         "required": [
           "policy_id",
           "policy_code",
+          "policy_name",
           "version_no",
           "effect",
           "status",
@@ -33357,6 +33792,12 @@
           },
           "policy_code": {
             "type": "string"
+          },
+          "policy_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256,
+            "description": "面向管理员显示的中文策略名称"
           },
           "version_no": {
             "type": "integer"
@@ -33483,6 +33924,7 @@
         "additionalProperties": false,
         "required": [
           "policy_code",
+          "policy_name",
           "version_no",
           "effect",
           "resource_type",
@@ -33502,6 +33944,12 @@
           },
           "policy_code": {
             "type": "string"
+          },
+          "policy_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256,
+            "description": "面向管理员显示的中文策略名称"
           },
           "version_no": {
             "type": "integer"

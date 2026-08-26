@@ -74,16 +74,16 @@ export const configurationStudios: Readonly<Record<string, ConfigurationStudioDe
     fields: [field('package_version', '配置包版本', 'text', '2026.08.1'), field('compatibility', '兼容结论', 'textarea', '兼容 V166；不允许删除已引用字段'), field('conflicts', '冲突决议', 'list', '保留本地科室范围,接受产品新规则'), field('recovery_point', '恢复点', 'text', 'config-checkpoint-before-2026.08.1')],
   },
   'admin-master-data': {
-    routeId: 'admin-master-data', configType: 'MASTER_DATA', title: '医院主数据管理', subtitle: '药品、耗材、项目、检验检查、设备和床位使用专用业务 schema 与权威来源', keyPlaceholder: 'department-codes-v1', previewTitle: '主数据树', safetyNote: '已被临床事实引用的值只能停用，不得物理删除。',
+    routeId: 'admin-master-data', configType: 'MASTER_DATA', title: '医院主数据管理', subtitle: '药品、耗材、项目、检验检查、设备和床位使用专用数据结构与权威来源', keyPlaceholder: 'department-codes-v1', previewTitle: '主数据树', safetyNote: '已被临床事实引用的值只能停用，不得物理删除。',
     fields: [field('code_system', '编码体系', 'text', 'OPENEMR2026-DEPARTMENT'), field('hierarchy', '层级', 'list', '医院>院区>科室>病区'), field('effective_period', '有效期', 'text', '2026-01-01/2099-12-31'), field('import_policy', '导入策略', 'textarea', '重复编码阻断；逐项回传结果；已引用值仅停用')],
   },
   'admin-parameters': {
-    routeId: 'admin-parameters', configType: 'PARAMETER', title: '系统参数与功能开关', subtitle: '带类型、范围、继承、依赖、风险和版本的受控配置，不允许自由键值覆盖', keyPlaceholder: 'clinical-ai-enabled-v1', previewTitle: '参数继承', safetyNote: '秘密只允许 env:// 或 file:// 引用，高风险参数需双人审批。',
-    fields: [field('value_type', '值类型', 'text', 'BOOLEAN'), field('scope', '作用域', 'text', 'FACILITY'), field('inheritance', '继承', 'textarea', 'FACILITY -> ORGANIZATION -> GLOBAL'), field('secret_reference', '秘密引用', 'text', 'env://OPENEMR2026_MODEL_API_KEY'), field('effective_at', '生效时间', 'text', '2026-08-25T00:00:00+08:00')],
+    routeId: 'admin-parameters', configType: 'PARAMETER', title: '系统参数与功能开关', subtitle: '带数据类型、适用范围、继承关系、依赖、风险和版本的受控配置，不允许随意覆盖', keyPlaceholder: 'clinical-ai-enabled-v1', previewTitle: '参数继承', safetyNote: '密码、密钥等敏感值只能引用受保护的环境变量或配置文件，高风险参数需双人审批。',
+    fields: [field('value_type', '数据类型', 'text', 'BOOLEAN'), field('scope', '适用范围', 'text', 'FACILITY'), field('inheritance', '范围继承顺序', 'textarea', 'FACILITY -> ORGANIZATION -> GLOBAL'), field('secret_reference', '受保护配置来源', 'text', 'env://OPENEMR2026_MODEL_API_KEY'), field('effective_at', '计划生效时间', 'text', '2026-08-25T00:00:00+08:00')],
   },
   'admin-jobs': {
-    routeId: 'admin-jobs', configType: 'JOB', title: '通知、调度与批量任务', subtitle: '后台任务逐项结果、幂等重试、取消和业务对账；部分成功不伪装完成', keyPlaceholder: 'notification-reconcile-v1', previewTitle: '批次执行图', safetyNote: '成功项不重复，只重试失败项，每项保留 Outbox 证据。',
-    fields: [field('schedule', '调度策略', 'text', '0 */5 * * * *'), field('batch_size', '批次数', 'number', '1650', '1-10000', { minimum: 1, maximum: 10000 }), field('retry_policy', '重试策略', 'textarea', '只重试隔离失败项；1m/5m/15m；最多 3 次'), field('reconciliation_rule', '业务对账', 'textarea', '成功 1642，隔离 8，总数必须为 1650'), field('notification_channels', '通知渠道', 'list', '站内信,短信,邮件'), field('channel_owner', '渠道责任人', 'text', '信息中心运维组')],
+    routeId: 'admin-jobs', configType: 'JOB', title: '通知调度与批量任务', subtitle: '后台任务逐项结果、重复提交保护、取消和业务对账；部分成功不伪装成全部完成', keyPlaceholder: 'notification-reconcile-v1', previewTitle: '批次执行图', safetyNote: '成功项不重复，只重试失败项，每项保留事务事件记录。',
+    fields: [field('schedule', '执行时间', 'text', '0 */5 * * * *'), field('batch_size', '每批处理数量', 'number', '1650', '1-10000', { minimum: 1, maximum: 10000 }), field('retry_policy', '失败重试规则', 'textarea', '只重试隔离失败项；1m/5m/15m；最多 3 次'), field('reconciliation_rule', '业务对账规则', 'textarea', '成功 1642，隔离 8，总数必须为 1650'), field('notification_channels', '结果通知渠道', 'list', '站内信,短信,邮件'), field('channel_owner', '通知责任人', 'text', '信息中心运维组')],
   },
   backup: {
     routeId: 'backup', configType: 'BACKUP', title: '备份恢复与完整性报告', subtitle: '备份台账、checksum、恢复演练、RPO/RTO 与保留', keyPlaceholder: 'synthetic-backup-v1', previewTitle: '恢复演练', safetyNote: '仅针对合成库执行，报告必须包含版本和 checksum。',

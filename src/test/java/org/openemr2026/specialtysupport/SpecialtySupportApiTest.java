@@ -96,6 +96,23 @@ final class SpecialtySupportApiTest {
         MvcResult expired = send("GET", path, null, lease, null);
         assertThat(expired.getResponse().getStatus()).isEqualTo(200);
         assertThat(expired.getResponse().getContentAsString()).contains("PACK_PENDING", "EVIDENCE_EXPIRED");
+
+        MvcResult deleted = send("DELETE", path + "?expected_row_version=1", null,
+                lease, UUID.randomUUID().toString());
+        assertThat(deleted.getResponse().getStatus()).isEqualTo(204);
+        assertThat(jdbc.sql("""
+                select count(*) from department_support_assessment
+                where tenant_id = cast(:tenant as uuid)
+                  and department_support_assessment_id = cast(:assessment as uuid)
+                """).param("tenant", TENANT).param("assessment", assessmentId).query(Long.class).single()).isZero();
+        assertThat(jdbc.sql("""
+                select count(*) from audit_event where tenant_id = cast(:tenant as uuid)
+                  and resource_id = cast(:assessment as uuid) and action_code = 'SPECIALTY_SUPPORT_REMOVED'
+                """).param("tenant", TENANT).param("assessment", assessmentId).query(Long.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("""
+                select count(*) from outbox_event where tenant_id = cast(:tenant as uuid)
+                  and aggregate_id = cast(:assessment as uuid) and event_type = 'DepartmentSupportRemoved'
+                """).param("tenant", TENANT).param("assessment", assessmentId).query(Long.class).single()).isEqualTo(1);
     }
 
     @Test

@@ -284,9 +284,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000ee04', 'RESULT_FOLLOWUP_COORDINATOR', '结果闭环医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee05', 'CARE_COORDINATOR', '诊疗协同医助团队')
                 ) as seed(agent_registry_id, agent_code, agent_name)
-                on conflict (tenant_id, agent_registry_id) do update
-                set status = 'ACTIVE', updated_at = now()
-                where agent_registry.status is distinct from 'ACTIVE'
+                on conflict (tenant_id, agent_registry_id) do nothing
                 """).param("tenant", TENANT_ID).update();
     }
 
@@ -303,16 +301,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f002', 'DEEPSEEK-R1-REASONING-LOCAL', 'DEEPSEEK',
                    'DeepSeek R1 临床推理路由', 'ON_PREM_ONLY', null),
                   ('018f0000-0000-7000-8000-00000000f003', 'QWEN3-EMBEDDING-LOCAL', 'QWEN',
-                   'Qwen3 临床检索向量模型', 'ON_PREM_ONLY', null),
-                  ('018f0000-0000-7000-8000-00000000f004', 'DETERMINISTIC-CLINICAL-FAKE', 'OPENEMR2026',
-                   '确定性临床验收模型', 'LOCAL_PREFERRED', null)
+                   'Qwen3 临床检索向量模型', 'ON_PREM_ONLY', null)
                 ) as seed(model_deployment_id, model_code, provider_code, display_name, residency_policy, endpoint_url)
-                on conflict (tenant_id, model_code) do update
-                set display_name = excluded.display_name, status = 'ACTIVE', evaluation_status = 'APPROVED',
-                    updated_at = now(), row_version = model_deployment.row_version + 1
-                where model_deployment.display_name is distinct from excluded.display_name
-                   or model_deployment.status is distinct from 'ACTIVE'
-                   or model_deployment.evaluation_status is distinct from 'APPROVED'
+                on conflict (tenant_id, model_code) do nothing
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""
@@ -334,9 +325,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f10b', 'SOURCE_REFERENCE_CITATION', '可定位来源引用'),
                   ('018f0000-0000-7000-8000-00000000f10c', 'CANDIDATE_BOUNDARY_VALIDATION', '候选结果边界校验')
                 ) as seed(skill_registry_id, skill_code, skill_name)
-                on conflict (tenant_id, skill_code) do update
-                set status = 'ACTIVE', updated_at = now()
-                where skill_registry.status is distinct from 'ACTIVE'
+                on conflict (tenant_id, skill_code, skill_version) do nothing
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""
@@ -358,9 +347,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f20b', 'CLINICAL_RULE_EVALUATE', '临床硬规则只读评估', 'FUNCTION'),
                   ('018f0000-0000-7000-8000-00000000f20c', 'AGENT_EVIDENCE_APPEND', '医助证据链追加工具', 'FUNCTION')
                 ) as seed(tool_registry_id, tool_code, tool_name, tool_type)
-                on conflict (tenant_id, tool_code) do update
-                set status = 'ACTIVE', updated_at = now()
-                where tool_registry.status is distinct from 'ACTIVE'
+                on conflict (tenant_id, tool_code, tool_version) do nothing
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""
@@ -376,10 +363,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f304', 'BUDGET_RESULT_FOLLOWUP', '结果闭环医助单次处理上限', 24000::bigint, 120),
                   ('018f0000-0000-7000-8000-00000000f305', 'BUDGET_CARE_COORDINATOR', '诊疗协同医助单次处理上限', 22000::bigint, 120)
                 ) as seed(budget_id, budget_code, budget_name, max_tokens, max_duration_seconds)
-                on conflict (tenant_id, budget_code) do update
-                set budget_name = excluded.budget_name, status = 'ACTIVE', updated_at = now()
-                where agent_run_budget.budget_name is distinct from excluded.budget_name
-                   or agent_run_budget.status is distinct from 'ACTIVE'
+                on conflict (tenant_id, budget_code) do nothing
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""
@@ -393,8 +377,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 from (values
                   ('018f0000-0000-7000-8000-00000000f401', '018f0000-0000-7000-8000-00000000f001', '临床事实一致性与拒答门禁', 0.9730::numeric, 0.9500::numeric, 3),
                   ('018f0000-0000-7000-8000-00000000f402', '018f0000-0000-7000-8000-00000000f002', '复杂推理可追溯性门禁', 0.9620::numeric, 0.9500::numeric, 2),
-                  ('018f0000-0000-7000-8000-00000000f403', '018f0000-0000-7000-8000-00000000f003', '医疗语义检索召回率门禁', 0.9810::numeric, 0.9600::numeric, 1),
-                  ('018f0000-0000-7000-8000-00000000f404', '018f0000-0000-7000-8000-00000000f004', '确定性验收回归集', 1.0000::numeric, 1.0000::numeric, 0)
+                  ('018f0000-0000-7000-8000-00000000f403', '018f0000-0000-7000-8000-00000000f003', '医疗语义检索召回率门禁', 0.9810::numeric, 0.9600::numeric, 1)
                 ) as seed(model_evaluation_id, model_deployment_id, eval_name, score, threshold, age_days)
                 on conflict (tenant_id, model_evaluation_id) do nothing
                 """).param("tenant", TENANT_ID).param("actor", USER_ID).update();
@@ -429,7 +412,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 from (values
                   ('018f0000-0000-7000-8000-00000000f601', '018f0000-0000-7000-8000-00000000f301', '018f0000-0000-7000-8000-00000000f701', 4280::bigint, 18::bigint, 8),
                   ('018f0000-0000-7000-8000-00000000f602', '018f0000-0000-7000-8000-00000000f302', '018f0000-0000-7000-8000-00000000f702', 7350::bigint, 34::bigint, 6),
-                  ('018f0000-0000-7000-8000-00000000f603', '018f0000-0000-7000-8000-00000000f304', '018f0000-0000-7000-8000-00000000f703', 5190::bigint, 22::bigint, 3)
+                  ('018f0000-0000-7000-8000-00000000f603', '018f0000-0000-7000-8000-00000000f304', '018f0000-0000-7000-8000-00000000f703', 5190::bigint, 22::bigint, 3),
+                  ('018f0000-0000-7000-8000-00000000f604', '018f0000-0000-7000-8000-00000000f303', '018f0000-0000-7000-8000-00000000f704', 3860::bigint, 16::bigint, 2),
+                  ('018f0000-0000-7000-8000-00000000f605', '018f0000-0000-7000-8000-00000000f305', '018f0000-0000-7000-8000-00000000f705', 6120::bigint, 27::bigint, 1)
                 ) as seed(consumption_id, budget_id, run_id, tokens_consumed, duration_seconds, age_hours)
                 on conflict (tenant_id, consumption_id) do nothing
                 """).param("tenant", TENANT_ID).param("actor", USER_ID).update();
@@ -437,20 +422,33 @@ final class SyntheticDataImporter implements ApplicationRunner {
 
     private void upsertAiAgentConfigurationFixtures() {
         jdbc.sql("""
-                update config_item
-                set payload = payload || jsonb_build_object(
+                insert into config_item(
+                  tenant_id, config_id, config_type, config_key, display_name, payload,
+                  status, row_version, schema_version, validation_state, validation_errors,
+                  approval_state, approved_by, published_at, created_by)
+                values (:tenant, '018f0000-0000-7000-8000-00000000c108'::uuid,
+                  'AI_ASSISTANT_POLICY', 'xiaonan-clinical-policy-v1', 'AI医助小南·三级甲等医院临床工作策略',
+                  jsonb_build_object(
+                  'schema_version', 1,
+                  'description', '覆盖门诊、急诊与住院场景的统一小南工作策略。',
                   'proactive_level', 'REMIND_ONLY',
                   'allowed_sources', jsonb_build_array('DOCUMENT_VERSION', 'OBSERVATION', 'ORDER', 'RESULT', 'RULE'),
-                  'model_policy', 'DEEPSEEK_LOCAL_FIRST_WITH_DETERMINISTIC_FALLBACK',
+                  'model_policy', 'TENANT_ACTIVE_MODEL_WITH_LOCAL_FALLBACK',
                   'rate_limit', 10,
                   'approval_required', true,
                   'main_agent_count', 5,
-                  'child_agent_count', 33),
-                  updated_at = now()
-                where tenant_id = :tenant and config_type = 'AI_ASSISTANT_POLICY'
-                  and config_key = 'syn-xiaonan-policy-v1'
-                  and not jsonb_exists(payload, 'main_agent_count')
-                """).param("tenant", TENANT_ID).update();
+                  'child_agent_count', 33,
+                  'environment', 'dev-synthetic'),
+                  'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver, now(), :author)
+                on conflict (tenant_id, config_id) do update
+                set config_key = excluded.config_key,
+                    display_name = excluded.display_name,
+                    payload = excluded.payload || config_item.payload,
+                    status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                    approval_state = 'APPROVED', approved_by = excluded.approved_by,
+                    published_at = coalesce(config_item.published_at, now()), updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
         jdbc.sql("""
                 update config_item
                 set payload = payload || jsonb_build_object(
@@ -471,7 +469,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 insert into config_item(
                   tenant_id, config_id, config_type, config_key, display_name, payload,
                   status, row_version, schema_version, validation_state, validation_errors,
-                  approval_state, created_by)
+                  approval_state, approved_by, published_at, created_by)
                 select :tenant, seed.config_id::uuid, 'AGENT_EVAL', seed.config_key, seed.display_name,
                   jsonb_build_object(
                     'schema_version', 1,
@@ -484,7 +482,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     'measured_score', seed.measured_score,
                     'release_gate', case when seed.measured_score >= seed.pass_threshold then 'PASSED' else 'BLOCKED' end,
                     'environment', 'dev-synthetic'),
-                  'DRAFT', 1, 1, 'VALID', '[]'::jsonb, 'DRAFT', :author
+                  'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver, now(), :author
                 from (values
                   ('018f0000-0000-7000-8000-00000000f801', 'eval-encounter-summarizer-v1', '就诊摘要医助发布审核', 'ENCOUNTER_SUMMARIZER', '核验事实一致性、时线完整性和来源覆盖。', 'agent-encounter-golden-v1', 120, 0.9500::numeric, 0.9780::numeric),
                   ('018f0000-0000-7000-8000-00000000f802', 'eval-document-drafter-v1', '文书起草医助发布审核', 'DOCUMENT_DRAFTER', '核验模板完整性、来源对齐和未确认项标注。', 'agent-document-golden-v1', 160, 0.9600::numeric, 0.9720::numeric),
@@ -493,8 +491,14 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f805', 'eval-care-coordinator-v1', '诊疗协同医助发布审核', 'CARE_COORDINATOR', '核验职责范围、任务去重、责任人与截止时间完整性。', 'agent-care-golden-v1', 130, 0.9500::numeric, 0.9710::numeric)
                 ) as seed(config_id, config_key, display_name, target_agent, description,
                   dataset_version, case_count, pass_threshold, measured_score)
-                on conflict (tenant_id, config_id) do nothing
-                """).param("tenant", TENANT_ID).param("author", USER_ID).update();
+                on conflict (tenant_id, config_id) do update
+                set display_name = excluded.display_name,
+                    payload = excluded.payload,
+                    status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                    approval_state = 'APPROVED', approved_by = excluded.approved_by,
+                    published_at = coalesce(config_item.published_at, now()), updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
     }
 
     private void upsertConfigurationFixtures() {
@@ -593,8 +597,6 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000c104', 'SCOPE', 'syn-role-scope-v1', '院科患者关系数据范围', '按机构、岗位、患者关系和临时授权组合控制。'),
                   ('018f0000-0000-7000-8000-00000000c105', 'AGENT_COMPOSITION', 'syn-agent-team-v1', 'AI医助小南团队编排', '六类医助按诊疗场景协同处理，临床写入均需医生确认。'),
                   ('018f0000-0000-7000-8000-00000000c106', 'AGENT_CONTEXT', 'syn-agent-context-v1', '最小必要临床上下文', '绑定患者、就诊、任务、来源和有效期，切换后立即失效。'),
-                  ('018f0000-0000-7000-8000-00000000c107', 'AGENT_EVAL', 'syn-agent-eval-v1', '临床医助发布评测集', '包含事实一致性、引用覆盖、拒答和对抗测试样本。'),
-                  ('018f0000-0000-7000-8000-00000000c108', 'AI_ASSISTANT_POLICY', 'syn-xiaonan-policy-v1', 'AI医助小南候选策略', '限定数据源、模型、主动级别、限频和动作审批。'),
                   ('018f0000-0000-7000-8000-00000000c109', 'CONFIG_RELEASE', 'syn-config-release-v1', '配置灰度发布批次', '包含差异、验证证据、灰度范围、停止条件和回退点。'),
                   ('018f0000-0000-7000-8000-00000000c110', 'CONFIG_UPGRADE', 'syn-config-upgrade-v1', '配置包升级预演', '覆盖兼容性检查、冲突决议、迁移预演与恢复校验。'),
                   ('018f0000-0000-7000-8000-00000000c111', 'MASTER_DATA', 'hospital-master-data-v1', '医院主数据基线', '包含机构、科室、病区、床位、术语和值集的有效期。'),

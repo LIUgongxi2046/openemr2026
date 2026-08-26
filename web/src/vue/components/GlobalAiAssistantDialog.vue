@@ -122,6 +122,11 @@ async function send(
 
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedAgentCode.value = agent.main_agent.agent_code; }
 
+function useQuestionExample(example: string, agent: MedicalAgentFamilyWire) {
+  selectedAgentCode.value = agent.main_agent.agent_code;
+  draft.value = doctorFacingAiText(example);
+}
+
 async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) {
   selectedAgentCode.value = agent.main_agent.agent_code;
   if (!props.patientId || !props.encounterId) {
@@ -198,6 +203,11 @@ async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentR
         <form class="global-ai-composer" @submit.prevent="send()">
           <p v-if="notice" role="status" class="inline-notice error">{{ notice }}</p>
           <div class="global-ai-composer-context"><label for="global-ai-agent-select">医助团队</label><select id="global-ai-agent-select" v-model="selectedAgentCode"><option value="">小南综合协助</option><option v-for="agent in agents" :key="agent.main_agent.agent_code" :value="agent.main_agent.agent_code">{{ clinicianAgentName(agent.main_agent.display_name) }}</option></select></div>
+          <details v-if="selectedAgent" class="global-ai-question-examples">
+            <summary>不会提问？查看每位医助的示例</summary>
+            <div><strong>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队</strong><button v-for="example in selectedAgent.main_agent.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
+            <div v-for="child in selectedAgent.child_agents" :key="child.agent_code"><strong>{{ doctorFacingAiText(child.display_name) }}</strong><button v-for="example in child.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
+          </details>
           <label for="global-ai-draft">告诉小南需要协助什么</label>
           <textarea id="global-ai-draft" v-model="draft" :disabled="busy || !leaseQuery.data.value" rows="3" placeholder="例如：整理当前患者的会诊要点…" @keydown.enter.exact.prevent="send()" />
           <div class="global-ai-composer-actions"><RouterLink class="btn" to="/ai-assistant" @click="requestClose">打开小南工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !leaseQuery.data.value">{{ busy ? '小南正在处理…' : '开始协助' }}</button></div>
@@ -241,6 +251,11 @@ async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentR
         <form class="global-ai-composer" @submit.prevent="send()">
           <p v-if="notice" role="status" class="inline-notice error">{{ notice }}</p>
           <div class="global-ai-composer-context"><label for="global-ai-side-agent-select">医助团队</label><select id="global-ai-side-agent-select" v-model="selectedAgentCode"><option value="">小南综合协助</option><option v-for="agent in agents" :key="agent.main_agent.agent_code" :value="agent.main_agent.agent_code">{{ clinicianAgentName(agent.main_agent.display_name) }}</option></select></div>
+          <details v-if="selectedAgent" class="global-ai-question-examples">
+            <summary>不会提问？查看每位医助的示例</summary>
+            <div><strong>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队</strong><button v-for="example in selectedAgent.main_agent.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
+            <div v-for="child in selectedAgent.child_agents" :key="child.agent_code"><strong>{{ doctorFacingAiText(child.display_name) }}</strong><button v-for="example in child.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
+          </details>
           <label for="global-ai-side-draft">告诉小南需要协助什么</label>
           <textarea id="global-ai-side-draft" v-model="draft" :disabled="busy || !leaseQuery.data.value" rows="3" placeholder="例如：整理当前患者的会诊要点…" @keydown.enter.exact.prevent="send()" />
           <div class="global-ai-composer-actions"><RouterLink class="btn" to="/ai-assistant" @click="requestClose">打开小南工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !leaseQuery.data.value">{{ busy ? '小南正在处理…' : '开始协助' }}</button></div>

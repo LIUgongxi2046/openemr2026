@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRunBudgetDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetDefineRequestWire;
+import org.openemr2026.contracts.AgentRunBudgetUpdateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,5 +64,17 @@ final class AgentRunBudgetController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(budgets.deactivate(identity, idempotencyKey, budgetId, command));
+    }
+
+    @PutMapping("/agent-run-budgets/{budget_id}")
+    ResponseEntity<AgentRunBudgetWire> update(
+            HttpServletRequest request,
+            @PathVariable("budget_id") UUID budgetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody AgentRunBudgetUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(budgets.update(identity, idempotencyKey, budgetId, command));
     }
 }

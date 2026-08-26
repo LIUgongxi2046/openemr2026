@@ -61,6 +61,26 @@ using cleanup_capability_pack target
 where pack.tenant_id = target.tenant_id
   and pack.capability_pack_id = target.capability_pack_id;
 
+create temporary table cleanup_config_item on commit drop as
+select tenant_id, config_id
+from config_item
+where tenant_id = '018f0000-0000-7000-8000-00000000aa01'::uuid
+  and config_type in ('WORKFLOW', 'FORM_TEMPLATE', 'RULE', 'SCOPE', 'CAPABILITY_PACK_COMPOSITION')
+  and (
+    config_key ~* '(^|[-_])(test|demo|tmp|invalid)([-_]|$)'
+    or display_name ~ '(测试数据|无效数据|临时数据|仅供测试)'
+  );
+
+delete from config_item_revision revision
+using cleanup_config_item target
+where revision.tenant_id = target.tenant_id
+  and revision.config_id = target.config_id;
+
+delete from config_item item
+using cleanup_config_item target
+where item.tenant_id = target.tenant_id
+  and item.config_id = target.config_id;
+
 create temporary table cleanup_specialty_department on commit drop as
 select tenant_id, facility_id, department_id
 from clinical_department

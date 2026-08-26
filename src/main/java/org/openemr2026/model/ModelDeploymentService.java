@@ -1,13 +1,16 @@
 package org.openemr2026.model;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
+import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -16,6 +19,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 final class ModelDeploymentService {
+    private static final Pattern SECRET_REFERENCE = Pattern.compile(
+            "^(env://[A-Z][A-Z0-9_]{2,127}|file:///\\S+)$");
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
 
@@ -31,6 +36,12 @@ final class ModelDeploymentService {
                 || request.residencyPolicy() == null) {
             throw invalid("model_code, provider_code, display_name and residency_policy are required");
         }
+        String endpointUrl = normalizeEndpoint(request.endpointUrl());
+        String apiKeyRef = normalizeSecretReference(request.apiKeyRef());
+        if (apiKeyRef != null && endpointUrl == null) {
+            throw invalid("endpoint_url is required when api_key_ref is configured");
+        }
+        String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "READY";
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_DEPLOYMENT_REGISTER", idempotencyKey,
                     sha256(request.modelCode() + "|" + request.providerCode() + "|" + request.residencyPolicy()));
@@ -38,14 +49,15 @@ final class ModelDeploymentService {
             jdbc.sql("""
                     insert into model_deployment(
                       tenant_id, model_deployment_id, model_code, provider_code, display_name,
-                      residency_policy, endpoint_url, status, evaluation_status)
+                      residency_policy, endpoint_url, api_key_ref, connection_status, status, evaluation_status)
                     values (:tenant, :deployment, :model_code, :provider_code, :display_name,
-                      :residency_policy, :endpoint_url, 'ACTIVE', 'EVALUATING')
+                      :residency_policy, :endpoint_url, :api_key_ref, :connection_status, 'ACTIVE', 'EVALUATING')
                     """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
                     .param("model_code", request.modelCode()).param("provider_code", request.providerCode())
                     .param("display_name", request.displayName().trim())
                     .param("residency_policy", request.residencyPolicy().name())
-                    .param("endpoint_url", request.endpointUrl()).update();
+                    .param("endpoint_url", endpointUrl).param("api_key_ref", apiKeyRef)
+                    .param("connection_status", connectionStatus).update();
             appendEvidence(identity, deploymentId, 1, "MODEL_DEPLOYMENT_REGISTERED", "ModelDeploymentRegistered");
             completeCommand(identity, "MODEL_DEPLOYMENT_REGISTER", idempotencyKey, deploymentId);
             return deployment(identity.tenantId(), deploymentId);
@@ -82,6 +94,66 @@ final class ModelDeploymentService {
         });
     }
 
+    ModelDeploymentWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID deploymentId,
+            ModelDeploymentUpdateRequestWire request) {
+        if (request.displayName() == null || request.displayName().trim().length() < 2
+                || request.residencyPolicy() == null || request.credentialAction() == null
+                || request.expectedRowVersion() == null) {
+            throw invalid("display_name, residency_policy, credential_action and expected_row_version are required");
+        }
+        String endpointUrl = normalizeEndpoint(request.endpointUrl());
+        String requestedApiKeyRef = normalizeSecretReference(request.apiKeyRef());
+        if (request.credentialAction() == ModelDeploymentUpdateRequestWire.CredentialActionValue.REPLACE
+                && requestedApiKeyRef == null) {
+            throw invalid("api_key_ref is required when credential_action is REPLACE");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "MODEL_DEPLOYMENT_UPDATE", idempotencyKey,
+                    sha256(deploymentId + "|" + request.displayName() + "|" + request.residencyPolicy()
+                            + "|" + endpointUrl + "|" + request.credentialAction() + "|"
+                            + requestedApiKeyRef + "|" + request.expectedRowVersion()));
+            DeploymentConfigHead current = jdbc.sql("""
+                    select status, row_version, api_key_ref from model_deployment
+                    where tenant_id = :tenant and model_deployment_id = :deployment for update
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .query((rs, row) -> new DeploymentConfigHead(
+                            rs.getString("status"), rs.getLong("row_version"), rs.getString("api_key_ref")))
+                    .optional().orElseThrow(ModelDeploymentService::contextDenied);
+            if (current.rowVersion() != request.expectedRowVersion()) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409,
+                        "The model deployment changed; reload before retrying");
+            }
+            if (!"ACTIVE".equals(current.status())) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
+                        "Only an active model can be updated");
+            }
+            String apiKeyRef = switch (request.credentialAction()) {
+                case KEEP -> current.apiKeyRef();
+                case REPLACE -> requestedApiKeyRef;
+                case CLEAR -> null;
+            };
+            if (apiKeyRef != null && endpointUrl == null) {
+                throw invalid("endpoint_url is required when api_key_ref is configured");
+            }
+            String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "READY";
+            jdbc.sql("""
+                    update model_deployment set display_name = :name, residency_policy = :residency,
+                      endpoint_url = :endpoint, api_key_ref = :api_key_ref,
+                      connection_status = :connection_status, row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and model_deployment_id = :deployment and row_version = :expected
+                    """).param("name", request.displayName().trim())
+                    .param("residency", request.residencyPolicy().name()).param("endpoint", endpointUrl)
+                    .param("api_key_ref", apiKeyRef).param("connection_status", connectionStatus)
+                    .param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .param("expected", request.expectedRowVersion()).update();
+            appendEvidence(identity, deploymentId, current.rowVersion() + 1,
+                    "MODEL_DEPLOYMENT_UPDATED", "ModelDeploymentUpdated");
+            completeCommand(identity, "MODEL_DEPLOYMENT_UPDATE", idempotencyKey, deploymentId);
+            return deployment(identity.tenantId(), deploymentId);
+        });
+    }
+
     List<ModelDeploymentWire> list(ClinicalIdentity identity) {
         return jdbc.sql("""
                 select model_deployment_id from model_deployment
@@ -93,7 +165,7 @@ final class ModelDeploymentService {
     private ModelDeploymentWire deployment(UUID tenantId, UUID deploymentId) {
         return jdbc.sql("""
                 select model_deployment_id, model_code, provider_code, display_name, residency_policy,
-                  endpoint_url, status, evaluation_status, row_version
+                  endpoint_url, status, evaluation_status, api_key_ref, connection_status, row_version
                 from model_deployment where tenant_id = :tenant and model_deployment_id = :deployment
                 """).param("tenant", tenantId).param("deployment", deploymentId)
                 .query((rs, row) -> new ModelDeploymentWire(
@@ -103,6 +175,8 @@ final class ModelDeploymentService {
                         rs.getString("endpoint_url"),
                         ModelDeploymentWire.StatusValue.valueOf(rs.getString("status")),
                         ModelDeploymentWire.EvaluationStatusValue.valueOf(rs.getString("evaluation_status")),
+                        rs.getString("api_key_ref") != null, credentialHint(rs.getString("api_key_ref")),
+                        ModelDeploymentWire.ConnectionStatusValue.valueOf(rs.getString("connection_status")),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(() -> contextDenied());
     }
@@ -166,6 +240,35 @@ final class ModelDeploymentService {
         return new ModelDeploymentException("MODEL_DEPLOYMENT_REQUEST_INVALID", 400, message);
     }
 
+    private static String normalizeEndpoint(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim().replaceAll("/+$", "");
+        try {
+            URI uri = URI.create(normalized);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getHost().isBlank()) {
+                throw invalid("endpoint_url must be an HTTPS address");
+            }
+            return normalized;
+        } catch (IllegalArgumentException invalidUri) {
+            throw invalid("endpoint_url must be an HTTPS address");
+        }
+    }
+
+    private static String normalizeSecretReference(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim();
+        if (!SECRET_REFERENCE.matcher(normalized).matches()) {
+            throw invalid("api_key_ref must use env://ENV_NAME or file:///absolute/path");
+        }
+        return normalized;
+    }
+
+    private static String credentialHint(String reference) {
+        if (reference == null) return null;
+        if (reference.startsWith("env://")) return "环境变量 · " + reference.substring("env://".length());
+        return "密钥文件 · …/" + reference.substring(reference.lastIndexOf('/') + 1);
+    }
+
     static ModelDeploymentException contextDenied() {
         return new ModelDeploymentException("CONTEXT_NOT_PERMITTED", 403, "The requested model context is not permitted");
     }
@@ -180,4 +283,5 @@ final class ModelDeploymentService {
     }
 
     private record DeploymentHead(String status, long rowVersion) {}
+    private record DeploymentConfigHead(String status, long rowVersion, String apiKeyRef) {}
 }

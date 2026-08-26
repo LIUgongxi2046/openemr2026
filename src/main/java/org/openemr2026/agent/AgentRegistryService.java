@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRegistryRegisterRequestWire;
+import org.openemr2026.contracts.AgentRegistryVersionRequestWire;
 import org.openemr2026.contracts.AgentRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -66,6 +67,64 @@ final class AgentRegistryService {
             appendEvidence(identity, registryId, "AGENT_REGISTRY_DEACTIVATED", "AgentRegistryDeactivated");
             completeCommand(identity, "AGENT_REGISTRY_DEACTIVATE", idempotencyKey, registryId);
             return registry(identity.tenantId(), registryId);
+        });
+    }
+
+    AgentRegistryWire publishVersion(
+            ClinicalIdentity identity, String idempotencyKey, UUID currentRegistryId,
+            AgentRegistryVersionRequestWire request) {
+        String agentName = requireText(request.agentName(), 2, "agent_name");
+        String agentVersion = requireText(request.agentVersion(), 1, "agent_version");
+        return transactions.execute(status -> {
+            beginCommand(identity, "AGENT_REGISTRY_PUBLISH_VERSION", idempotencyKey,
+                    sha256(currentRegistryId + "|" + agentName + "|" + agentVersion));
+            RegistryHead current = jdbc.sql("""
+                    select agent_code, agent_version, status from agent_registry
+                    where tenant_id = :tenant and agent_registry_id = :registry for update
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId)
+                    .query((rs, row) -> new RegistryHead(
+                            rs.getString("agent_code"), rs.getString("agent_version"), rs.getString("status")))
+                    .optional().orElseThrow(AgentRegistryService::contextDenied);
+            if (!"ACTIVE".equals(current.status())) {
+                throw new AgentRegistryException(
+                        "AGENT_REGISTRY_STATE_INVALID", 409, "Only an active agent can publish a new version");
+            }
+            if (current.version().equals(agentVersion)) {
+                throw invalid("agent_version must change when publishing a new version");
+            }
+            List<DependencyRow> dependencies = jdbc.sql("""
+                    select dependency_type, dependency_code from agent_dependency
+                    where tenant_id = :tenant and agent_registry_id = :registry
+                    order by dependency_type, dependency_code
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId)
+                    .query((rs, row) -> new DependencyRow(
+                            rs.getString("dependency_type"), rs.getString("dependency_code"))).list();
+            jdbc.sql("""
+                    update agent_registry set status = 'INACTIVE', updated_at = now()
+                    where tenant_id = :tenant and agent_registry_id = :registry
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId).update();
+            UUID nextRegistryId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into agent_registry(
+                      tenant_id, agent_registry_id, agent_code, agent_name, agent_version, status)
+                    values (:tenant, :registry, :code, :name, :version, 'ACTIVE')
+                    """).param("tenant", identity.tenantId()).param("registry", nextRegistryId)
+                    .param("code", current.code()).param("name", agentName).param("version", agentVersion).update();
+            for (DependencyRow dependency : dependencies) {
+                jdbc.sql("""
+                        insert into agent_dependency(
+                          tenant_id, agent_dependency_id, agent_registry_id, dependency_type, dependency_code)
+                        values (:tenant, :dependency, :registry, :type, :code)
+                        """).param("tenant", identity.tenantId()).param("dependency", UUID.randomUUID())
+                        .param("registry", nextRegistryId).param("type", dependency.type())
+                        .param("code", dependency.code()).update();
+            }
+            appendEvidence(identity, currentRegistryId,
+                    "AGENT_REGISTRY_SUPERSEDED", "AgentRegistrySuperseded");
+            appendEvidence(identity, nextRegistryId,
+                    "AGENT_REGISTRY_VERSION_PUBLISHED", "AgentRegistryVersionPublished");
+            completeCommand(identity, "AGENT_REGISTRY_PUBLISH_VERSION", idempotencyKey, nextRegistryId);
+            return registry(identity.tenantId(), nextRegistryId);
         });
     }
 
@@ -175,4 +234,7 @@ final class AgentRegistryService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record RegistryHead(String code, String version, String status) {}
+    private record DependencyRow(String type, String code) {}
 }

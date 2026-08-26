@@ -106,6 +106,23 @@ export async function defineCapabilityPack(
   }));
 }
 
+export async function updateCapabilityPack(
+  lease: ContextLeaseWire,
+  pack: CapabilityPackWire,
+  input: { pack_name: string; inherits_from?: string | null },
+): Promise<CapabilityPackWire> {
+  return capabilityPackWireSchema.parse(await request(`/capability-packs/${pack.capability_pack_id}`, {
+    method: 'PUT',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(capabilityPackDefineRequestWireSchema.parse({
+      ...orgFacility(),
+      pack_code: pack.pack_code,
+      pack_name: input.pack_name,
+      inherits_from: input.inherits_from || null,
+    })),
+  }));
+}
+
 export async function deactivateCapabilityPack(lease: ContextLeaseWire, pack: CapabilityPackWire): Promise<CapabilityPackWire> {
   return capabilityPackWireSchema.parse(await request(
     `/capability-packs/${pack.capability_pack_id}/deactivations`, {

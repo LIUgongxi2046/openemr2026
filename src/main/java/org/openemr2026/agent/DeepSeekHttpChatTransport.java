@@ -27,10 +27,16 @@ final class DeepSeekHttpChatTransport implements DeepSeekChatTransport {
             @Value("${openemr2026.production.ai.base-uri}") String baseUri,
             @Value("${openemr2026.production.ai.api-key-ref}") String apiKeyReference,
             ObjectMapper objectMapper) {
+        this(baseUri, apiKeyReference, objectMapper, HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5)).build());
+    }
+
+    DeepSeekHttpChatTransport(
+            String baseUri, String apiKeyReference, ObjectMapper objectMapper, HttpClient http) {
         this.endpoint = endpoint(baseUri);
         this.apiKeyReference = apiKeyReference;
         this.objectMapper = objectMapper;
-        this.http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        this.http = http;
         this.secrets = new SecretReferenceResolver();
     }
 

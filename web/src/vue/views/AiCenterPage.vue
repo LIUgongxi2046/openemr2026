@@ -6,7 +6,7 @@
     <div class="hub-hero"><div><span>智慧医疗协同平台</span><h2>让AI医助真正融入中国医院诊疗流程</h2><p>从随处可用的AI医助小南，到各诊疗环节的专科医助，任务、来源、医生确认和处理结果全程留痕。</p></div><div class="hub-score ai-center-score"><b>医生确认</b><span>诊疗结果写入前</span></div></div>
     <div class="hub-module-grid">
       <RouterLink class="hub-module" to="/ai-assistant"><span>✦</span><b>AI医助小南</b><p>随问随答、主动提醒、来源核验和任务草拟</p><i>进入 →</i></RouterLink>
-      <RouterLink class="hub-module" to="/models"><span>模</span><b>模型服务</b><p>模型能力、适用场景、主备切换和人工接管</p><i>进入 →</i></RouterLink>
+      <RouterLink class="hub-module" to="/models"><span>模</span><b>模型服务</b><p>配置模型提供方、API 地址、模型标识和密钥引用</p><i>进入 →</i></RouterLink>
       <RouterLink class="hub-module" to="/agent-catalog"><span>医</span><b>医助团队编排</b><p>按诊疗环节配置医助分工、处理步骤和医生确认</p><i>进入 →</i></RouterLink>
       <RouterLink class="hub-module" to="/skill-catalog"><span>能</span><b>医助能力库</b><p>管理病历整理、证据核验、风险提示等标准能力</p><i>进入 →</i></RouterLink>
       <RouterLink class="hub-module" to="/tool-catalog"><span>工</span><b>医助工具库</b><p>管理院内系统查询、权限、审批和异常处置</p><i>进入 →</i></RouterLink>

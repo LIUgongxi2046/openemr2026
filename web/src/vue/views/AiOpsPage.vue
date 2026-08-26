@@ -9,8 +9,10 @@ import {
   issueAiLease,
   listAgentRunBudgetConsumptions,
   listAgentRunBudgets,
-  recordAgentRunBudgetConsumption,
+  updateAgentRunBudget,
 } from '../../api/ai-platform';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText } from '../medical-ai-terminology';
@@ -55,7 +57,9 @@ const consumptions = computed(() => consumptionsQuery.data.value ?? []);
 const activeCount = computed(() => budgets.value.filter((budget) => budget.status === 'ACTIVE').length);
 
 const defineForm = reactive({ budgetCode: '', budgetName: '', maxTokens: 1_000_000, maxDurationSeconds: 600 });
-const recordForm = reactive({ runId: crypto.randomUUID(), tokensConsumed: 1000, durationSeconds: 30 });
+const editingBudget = ref<AgentRunBudgetWire | null>(null);
+const editorOpen = ref(false);
+const deactivateTarget = ref<AgentRunBudgetWire | null>(null);
 const busy = ref('');
 const notice = ref('');
 
@@ -76,18 +80,44 @@ async function defineBudget() {
   if (!lease || busy.value || !defineForm.budgetCode.trim() || !defineForm.budgetName.trim()) return;
   busy.value = 'create'; notice.value = '';
   try {
-    await defineAgentRunBudget(lease, {
-      budget_code: defineForm.budgetCode.trim(),
-      budget_name: defineForm.budgetName.trim(),
-      max_tokens: Math.floor(defineForm.maxTokens),
-      max_duration_seconds: Math.floor(defineForm.maxDurationSeconds),
-    });
-    defineForm.budgetCode = ''; defineForm.budgetName = '';
-    notice.value = '医助处理额度已定义，版本记录和操作留痕已同步更新。';
+    if (editingBudget.value) {
+      await updateAgentRunBudget(lease, editingBudget.value, {
+        budget_name: defineForm.budgetName.trim(), max_tokens: Math.floor(defineForm.maxTokens),
+        max_duration_seconds: Math.floor(defineForm.maxDurationSeconds),
+      });
+      notice.value = '医助处理额度已更新，后续任务立即按新上限执行。';
+    } else {
+      await defineAgentRunBudget(lease, {
+        budget_code: defineForm.budgetCode.trim(), budget_name: defineForm.budgetName.trim(),
+        max_tokens: Math.floor(defineForm.maxTokens), max_duration_seconds: Math.floor(defineForm.maxDurationSeconds),
+      });
+      notice.value = '医助处理额度已定义，版本记录和操作留痕已同步更新。';
+    }
+    resetBudgetForm();
+    editorOpen.value = false;
     await budgetsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
+}
+
+function editBudget(budget: AgentRunBudgetWire) {
+  editingBudget.value = budget;
+  defineForm.budgetCode = budget.budget_code; defineForm.budgetName = doctorFacingAiText(budget.budget_name);
+  defineForm.maxTokens = budget.max_tokens; defineForm.maxDurationSeconds = budget.max_duration_seconds;
+  notice.value = '';
+  editorOpen.value = true;
+}
+
+function openCreate() {
+  resetBudgetForm();
+  editorOpen.value = true;
+}
+
+function resetBudgetForm() {
+  editingBudget.value = null;
+  defineForm.budgetCode = ''; defineForm.budgetName = '';
+  defineForm.maxTokens = 1_000_000; defineForm.maxDurationSeconds = 600;
 }
 
 async function deactivate(budget: AgentRunBudgetWire) {
@@ -98,30 +128,12 @@ async function deactivate(budget: AgentRunBudgetWire) {
     await deactivateAgentRunBudget(lease, budget);
     notice.value = `医助处理额度“${doctorFacingAiText(budget.budget_name)}”已停用。`;
     await budgetsQuery.refetch();
+    deactivateTarget.value = null;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
 
-async function recordConsumption() {
-  const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !selectedBudgetId.value || !recordForm.runId.trim()) return;
-  busy.value = 'record'; notice.value = '';
-  try {
-    await recordAgentRunBudgetConsumption(lease, {
-      budget_id: selectedBudgetId.value,
-      run_id: recordForm.runId.trim(),
-      tokens_consumed: Math.floor(recordForm.tokensConsumed),
-      duration_seconds: Math.floor(recordForm.durationSeconds),
-      recorded_at: new Date().toISOString(),
-    });
-    recordForm.runId = crypto.randomUUID();
-    notice.value = '任务用量已记录，操作留痕已同步更新。';
-    await Promise.all([summaryQuery.refetch(), consumptionsQuery.refetch()]);
-  } catch (error) {
-    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
-  } finally { busy.value = ''; }
-}
 </script>
 
 <template>
@@ -152,13 +164,13 @@ async function recordConsumption() {
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
+      <div>
         <section class="admin-panel">
           <header>
             <div><h2>处理额度台账</h2><p>编码不可变；停用后保留历史记录。</p></div>
-            <button class="button secondary" @click="budgetsQuery.refetch()">刷新</button>
+            <div class="admin-row-actions"><button class="button secondary" @click="budgetsQuery.refetch()">刷新</button><button class="button primary" @click="openCreate">新建处理额度</button></div>
           </header>
-          <div v-if="budgets.length === 0" class="admin-empty" role="status">暂无处理额度方案，可在右侧定义。</div>
+          <div v-if="budgets.length === 0" class="admin-empty" role="status">暂无处理额度方案，请点击“新建处理额度”。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>名称 / 编码</th><th>最大生成额度</th><th>最长处理时间</th><th>状态</th><th>操作</th></tr></thead>
@@ -168,24 +180,25 @@ async function recordConsumption() {
                   <td>{{ formatInt(budget.max_tokens) }}</td>
                   <td>{{ formatInt(budget.max_duration_seconds) }} 秒</td>
                   <td><span class="admin-status" :class="budget.status.toLowerCase()">{{ budget.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><button class="task-action" :disabled="budget.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(budget)">{{ busy === budget.budget_id ? '处理中…' : '停用' }}</button></td>
+                  <td><div class="admin-row-actions"><button class="task-action" :disabled="budget.status !== 'ACTIVE' || Boolean(busy)" @click="editBudget(budget)">编辑</button><button class="task-action danger" :disabled="budget.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = budget">删除</button></div></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>定义处理额度</h2><p>设置方案编码、名称、最大生成额度和最长处理时间。</p></div></header>
-          <form class="admin-form" @submit.prevent="defineBudget">
-            <label><span>方案编码</span><input v-model="defineForm.budgetCode" maxlength="128" required placeholder="例：DAILY-STANDARD" /></label>
+      </div>
+
+      <AdminActionDialog v-model:open="editorOpen" :title="editingBudget ? '编辑处理额度' : '新建处理额度'" description="额度变更会直接约束后续医助任务，已完成任务用量不受影响。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetBudgetForm()">
+          <form class="admin-form ai-center-dialog-form" @submit.prevent="defineBudget">
+            <label><span>方案编码</span><input v-model="defineForm.budgetCode" maxlength="128" required :disabled="Boolean(editingBudget)" placeholder="例：DAILY-STANDARD" /></label>
             <label><span>方案名称</span><input v-model="defineForm.budgetName" maxlength="256" required placeholder="例：门诊标准额度" /></label>
             <label><span>最大生成额度</span><input v-model.number="defineForm.maxTokens" type="number" min="0" step="1" required /></label>
             <label><span>最长处理时间（秒）</span><input v-model.number="defineForm.maxDurationSeconds" type="number" min="0" step="1" required /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在定义…' : '定义并生效' }}</button>
+            <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在保存…' : editingBudget ? '保存额度变更' : '定义并生效' }}</button></div>
           </form>
-        </section>
-      </div>
+      </AdminActionDialog>
+      <AdminConfirmDialog :open="Boolean(deactivateTarget)" :title="`删除处理额度 ${doctorFacingAiText(deactivateTarget?.budget_name ?? '')}`" description="删除将以安全停用方式执行；该额度不再约束新任务，历史用量和审计记录继续保留。" confirm-label="确认删除并停用" :busy="Boolean(busy)" @update:open="!$event && (deactivateTarget = null)" @confirm="deactivateTarget && deactivate(deactivateTarget)"><div v-if="deactivateTarget" class="admin-impact-grid"><div><span>方案编码</span><b>{{ deactivateTarget.budget_code }}</b></div><div><span>最大生成额度</span><b>{{ formatInt(deactivateTarget.max_tokens) }}</b></div><div><span>最长处理时间</span><b>{{ deactivateTarget.max_duration_seconds }} 秒</b></div><div><span>流程影响</span><b>停止新任务引用</b></div></div></AdminConfirmDialog>
 
       <div class="admin-layout">
         <section class="admin-panel">
@@ -209,7 +222,7 @@ async function recordConsumption() {
             <button class="button secondary" :disabled="!selectedBudgetId" @click="consumptionsQuery.refetch()">刷新</button>
           </header>
           <div v-if="!selectedBudgetId" class="admin-empty" role="status">请先选择处理额度方案。</div>
-          <div v-else-if="consumptions.length === 0" class="admin-empty" role="status">该方案暂无任务用量记录，可在右侧记录。</div>
+          <div v-else-if="consumptions.length === 0" class="admin-empty" role="status">该方案暂无实际任务用量；医助任务完成后会自动记录。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>任务编号</th><th>生成额度</th><th>处理时间</th><th>记录时间</th></tr></thead>
@@ -225,15 +238,7 @@ async function recordConsumption() {
           </div>
         </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>记录任务用量</h2><p>任务编号默认生成，也可填写已有任务编号。</p></div></header>
-          <form class="admin-form" @submit.prevent="recordConsumption">
-            <label><span>任务编号</span><input v-model="recordForm.runId" maxlength="36" required placeholder="系统任务编号" /></label>
-            <label><span>生成额度用量</span><input v-model.number="recordForm.tokensConsumed" type="number" min="0" step="1" required /></label>
-            <label><span>处理时间（秒）</span><input v-model.number="recordForm.durationSeconds" type="number" min="0" step="1" required /></label>
-            <button class="button primary full" :disabled="Boolean(busy) || !selectedBudgetId">{{ busy === 'record' ? '正在记录…' : '记录任务用量' }}</button>
-          </form>
-        </section>
+        <aside class="admin-panel aiops-flow-note"><header><div><h2>自动用量采集</h2><p>每次医助任务完成后，系统按实际运行记录任务编号、生成额度和处理时间，无需人工补录。</p></div><span class="admin-status active">已联动</span></header></aside>
       </div>
     </template>
   </section>

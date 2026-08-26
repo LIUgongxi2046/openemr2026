@@ -188,13 +188,40 @@
 .table-pager > div { display: flex; gap: 8px; }
 .global-ai-dialog { width: min(780px, calc(100vw - 32px)); max-width: none; max-height: min(860px, calc(100dvh - 32px)); padding: 0; overflow: hidden; border: 1px solid #b9cbea; border-radius: 16px; color: var(--ink-default); background: #fff; box-shadow: 0 24px 80px rgba(23,34,53,.35); }
 .global-ai-dialog::backdrop { background: rgba(16,28,43,.48); backdrop-filter: blur(2px); }
+.admin-action-dialog { width:min(680px,calc(100vw - 32px)); max-width:none; max-height:min(860px,calc(100dvh - 32px)); padding:0; overflow:hidden; color:var(--text); border:1px solid #bdcce0; border-radius:16px; background:#fff; box-shadow:0 24px 80px rgba(23,34,53,.35); }
+.admin-action-dialog.is-large { width:min(940px,calc(100vw - 32px)); }
+.admin-action-dialog::backdrop { background:rgba(16,28,43,.52); backdrop-filter:blur(2px); }
+.admin-action-dialog-shell { display:grid; grid-template-rows:auto minmax(0,1fr) auto; max-height:min(860px,calc(100dvh - 32px)); }
+.admin-action-dialog-shell > header { display:flex; align-items:flex-start; gap:16px; padding:18px 20px; color:#fff; background:linear-gradient(135deg,var(--nav,#102a43),#1769e0); }
+.admin-action-dialog.is-danger .admin-action-dialog-shell > header { background:linear-gradient(135deg,#7f1d1d,#c24141); }
+.admin-action-dialog-shell > header > div { min-width:0; }
+.admin-action-dialog-shell > header span { color:#c7dcf5; font-size:10px; font-weight:800; letter-spacing:.9px; }
+.admin-action-dialog.is-danger .admin-action-dialog-shell > header span { color:#fee2e2; }
+.admin-action-dialog-shell > header h2 { margin:4px 0; color:#fff; font-size:20px; }
+.admin-action-dialog-shell > header p { margin:0; color:#d9e8f7; font-size:12px; line-height:1.55; }
+.admin-action-dialog.is-danger .admin-action-dialog-shell > header p { color:#fee2e2; }
+.admin-action-dialog-shell > header button { flex:0 0 auto; min-height:34px; margin-left:auto; padding:0 12px; color:#fff; border:1px solid rgba(255,255,255,.24); border-radius:8px; background:rgba(255,255,255,.1); cursor:pointer; }
+.admin-action-dialog-shell > header button:hover { background:rgba(255,255,255,.2); }
+.admin-action-dialog-body { min-width:0; padding:20px; overflow:auto; }
+.admin-action-dialog-body > .admin-form { padding:0; }
+.admin-action-dialog-body .admin-form > .button:last-child { justify-self:end; min-width:132px; }
+.admin-action-dialog-footer { display:flex; justify-content:flex-end; align-items:center; gap:10px; padding:14px 20px; border-top:1px solid var(--border); background:#f8fafc; }
+.admin-confirm-impact { display:grid; gap:7px; padding:14px; color:#7f1d1d; border:1px solid #fecaca; border-radius:10px; background:#fff7f7; }
+.admin-confirm-impact p { margin:0; color:#815154; line-height:1.65; }
+.admin-action-dialog .admin-impact-grid { margin-top:14px; }
+.admin-editor-dialog-content { display:grid; gap:16px; }
+.admin-editor-dialog-content .config-studio-layout,.admin-editor-dialog-content .config-studio-lower { margin:0; }
+.admin-editor-dialog-content .config-studio-layout { grid-template-columns:minmax(0,1fr); }
 :root { --assistant-side-width: clamp(420px, 36vw, 520px); }
 .shell { transition: width .22s ease; }
 .shell.assistant-side-open { width: calc(100% - var(--assistant-side-width, 460px)); }
+.shell.assistant-side-open .ai-workspace-layout,
+.shell.assistant-side-open .medical-agent-command-grid { grid-template-columns: minmax(0,1fr); }
+.shell.assistant-side-open .ai-workspace-layout > * { min-width: 0; }
 .global-ai-side-panel { position: fixed; z-index: 220; inset: 0 0 0 auto; width: var(--assistant-side-width); height: 100dvh; overflow: hidden; color: var(--ink-default); border: 0; border-left: 1px solid #b9cbea; background: #fff; box-shadow: -18px 0 48px rgba(23,34,53,.2); }
 .global-ai-side-panel .global-ai-dialog-shell { width: 100%; height: 100dvh; max-height: none; grid-template-rows: auto minmax(180px,1.15fr) minmax(110px,.55fr) auto; }
-.global-ai-side-panel .global-ai-agent-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.global-ai-side-panel .global-ai-child-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.global-ai-side-panel .global-ai-agent-grid { grid-template-columns: minmax(0,1fr); }
+.global-ai-side-panel .global-ai-child-strip { grid-template-columns: minmax(0,1fr); }
 .global-ai-side-panel .global-ai-thread { min-height: 0; }
 .global-ai-dialog-shell { display: grid; grid-template-rows: auto minmax(210px,1.35fr) minmax(105px,.65fr) auto; width: 100%; height: min(860px, calc(100dvh - 32px)); max-height: min(860px, calc(100dvh - 32px)); box-sizing: border-box; }
 .global-ai-dialog-shell > * { min-width: 0; box-sizing: border-box; }
@@ -271,8 +298,17 @@
 .global-ai-composer-context { display: grid; grid-template-columns: auto minmax(180px,260px); align-items: center; justify-content: end; gap: 8px; margin-bottom: 7px; }
 .global-ai-composer-context label { color: var(--muted); font-size: 9px; font-weight: 700; }
 .global-ai-composer-context select { min-width: 0; height: 30px; padding: 0 7px; color: #30475f; border: 1px solid #cbd7e5; border-radius: 7px; background: #fff; font-size: 10px; }
-.global-ai-composer textarea { width: 100%; padding: 9px 10px; resize: vertical; border: 1px solid #cbd7e5; border-radius: 8px; font: inherit; line-height: 1.5; }
-.global-ai-composer-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.global-ai-question-examples { margin: 0 0 8px; padding: 7px 9px; border: 1px solid #cfe2df; border-radius: 8px; background: #f8fcfb; }
+.global-ai-question-examples summary { color: #087c75; font-size: 10px; font-weight: 750; cursor: pointer; }
+.global-ai-question-examples[open] { max-height: 96px; overflow-y: auto; }
+.global-ai-question-examples > div { display: grid; grid-template-columns: minmax(110px,.7fr) minmax(0,2fr); gap: 5px 8px; align-items: start; margin-top: 7px; }
+.global-ai-question-examples strong { color: #40586e; font-size: 9px; }
+.global-ai-question-examples button { padding: 5px 7px; text-align: left; color: #175f72; border: 1px solid #bddbd7; border-radius: 6px; background: #fff; font-size: 9px; line-height: 1.4; cursor: pointer; }
+.global-ai-question-examples button:hover { border-color: #15988d; background: #eaf8f6; }
+.global-ai-side-panel .global-ai-question-examples > div { grid-template-columns: minmax(0,1fr); }
+.global-ai-side-panel .global-ai-question-examples button { width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.global-ai-composer textarea { width: 100%; min-height: 52px; max-height: 72px; padding: 9px 10px; resize: none; border: 1px solid #cbd7e5; border-radius: 8px; font: inherit; line-height: 1.5; }
+.global-ai-composer-actions { position: sticky; bottom: -1px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 4px; background: #fff; }
 .global-ai-side-panel .global-ai-composer { padding: 10px 12px max(10px, env(safe-area-inset-bottom)); }
 .global-ai-side-panel .global-ai-composer textarea { resize: none; }
 .global-ai-side-panel .global-ai-composer-actions > * { flex: 1 1 150px; min-width: 0; text-align: center; }
@@ -346,7 +382,8 @@
 .clinical-filter-bar input, .clinical-filter-bar select { width: 100%; min-width: 0; height: 34px; padding: 0 9px; color: var(--ink-default); border: 1px solid #bdcce0; border-radius: 7px; background: #fff; font: inherit; font-size: 11px; }
 .clinical-filter-bar b { align-self: center; min-width: 54px; padding: 7px 9px; color: #1559a8; border-radius: 999px; background: #e7f1ff; text-align: center; font-size: 10px; }
 .admin-notice { padding: 10px 14px; margin: 0 0 14px; color: var(--blue-hover); border: 1px solid #b6d2f4; border-radius: 8px; background: #eaf3ff; font-size: 12px; }
-.admin-layout { display: grid; grid-template-columns: minmax(680px,1fr) 330px; gap: 14px; align-items: start; }
+.admin-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px,330px); gap: 18px; align-items: start; }
+.admin-layout > .admin-panel + .admin-panel { margin-top: 0; }
 .admin-panel { overflow: hidden; border: 1px solid #cedbea; border-radius: 10px; background: #fff; box-shadow: 0 4px 14px rgba(34,64,94,.06); }
 .admin-panel > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 14px 16px; border-bottom: 1px solid #e2e9f1; background: #f8fbff; }
 .admin-panel > header p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
@@ -359,6 +396,20 @@
 .admin-form-panel { position: sticky; top: 72px; }.admin-form { display: grid; gap: 12px; padding: 16px; }
 .admin-form label { display: grid; gap: 5px; color: #40556c; font-size: 11px; font-weight: 650; }
 .admin-form input, .admin-form select { width: 100%; min-height: 36px; padding: 0 9px; border: 1px solid #cbd7e5; border-radius: 7px; color: #20364e; background: #fff; }
+.admin-form textarea { width: 100%; min-height: 92px; padding: 9px; border: 1px solid #cbd7e5; border-radius: 7px; color: #20364e; background: #fff; resize: vertical; }
+.ai-center-dialog-form { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.ai-center-dialog-form > .medical-agent-objective,
+.ai-center-dialog-form > .inline-notice,
+.ai-center-dialog-form > .admin-form-actions { grid-column: 1 / -1; }
+.admin-row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: max-content; }
+.admin-row-actions .task-action { margin: 0; }
+.admin-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 2px; }
+.admin-form-actions > .button { flex: 1 1 132px; min-width: 0; }
+.admin-form-actions > .button.full { flex-basis: 100%; }
+@media (max-width: 700px) { .ai-center-dialog-form { grid-template-columns: minmax(0,1fr); } }
+.task-action.danger { color: #98212c; border-color: #e2b7bc; background: #fff7f7; }
+.task-action.danger:hover:not(:disabled) { border-color: #c66b75; background: #fff0f1; }
+.aiops-flow-note { min-height: 112px; }
 .admin-actions { display: grid; gap: 7px; justify-items: start; }.danger-text { color: #a32632; }.workforce-table { min-width: 980px; }
 .auth-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .auth-layout { display: grid; grid-template-columns: minmax(680px,1fr) 340px; gap: 14px; align-items: start; }
@@ -517,6 +568,15 @@
 }
 
 /* 系统管理：原型清单/详情骨架与按需编辑器。 */
+.admin-domain-content .page-head { min-height: 76px; height: auto; padding-block: 12px; }
+.admin-domain-content .head-actions { flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+.admin-domain-content .toolbar { flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+.admin-domain-content .grid { gap: 16px; }
+.admin-domain-content .card-body { display: grid; gap: 12px; }
+.admin-domain-content .table td .task-action { display: inline-flex; margin-left: 10px; }
+.admin-domain-content .template-actions { gap: 8px; }
+.admin-domain-content .admin-actions { gap: 10px; }
+.admin-domain-content .config-lifecycle .button-row { gap: 10px; }
 .admin-domain-content .compact-admin-form { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px 12px; align-items: end; padding: 14px 16px; }
 .admin-domain-content .compact-admin-form label { display: grid; gap: 6px; min-width: 0; }
 .admin-domain-content .compact-admin-form textarea { padding-block: 8px; line-height: 1.45; }
@@ -580,6 +640,9 @@
   .admin-domain-content .admin-impact-grid, .admin-domain-content .template-preview-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 600px) {
+  .admin-action-dialog,.admin-action-dialog.is-large { width:calc(100vw - 16px); max-height:calc(100dvh - 16px); }
+  .admin-action-dialog-shell { max-height:calc(100dvh - 16px); }
+  .admin-action-dialog-shell > header,.admin-action-dialog-body,.admin-action-dialog-footer { padding-left:14px; padding-right:14px; }
   .admin-domain-content .compact-admin-form, .admin-domain-content .admin-domain-grid { grid-template-columns: minmax(0,1fr); }
   .admin-domain-content .import-admin-form, .admin-domain-content .admin-impact-grid, .admin-domain-content .template-preview-grid { grid-template-columns: minmax(0,1fr); }
   .admin-domain-content .parameter-layout .table,

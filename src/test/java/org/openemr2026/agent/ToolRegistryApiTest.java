@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ToolRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.ToolRegistryRegisterRequestWire;
+import org.openemr2026.contracts.ToolRegistryVersionRequestWire;
 import org.openemr2026.contracts.ToolRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,20 @@ final class ToolRegistryApiTest {
         ToolRegistryWire deactivated = tools.deactivate(identity(), "deact-" + UUID.randomUUID(),
                 registered.toolRegistryId(), new ToolRegistryDeactivateRequestWire(organization, facility));
         assertThat(deactivated.status()).isEqualTo(ToolRegistryWire.StatusValue.INACTIVE);
+    }
+
+    @Test
+    void givenActiveTool_whenPublishingVersion_thenTypeAndVersionAreUpdatedAtomically() {
+        ToolRegistryWire registered = register("TOOL-" + UUID.randomUUID().toString().substring(0, 8));
+        ToolRegistryWire published = tools.publishVersion(identity(), "version-" + UUID.randomUUID(),
+                registered.toolRegistryId(), new ToolRegistryVersionRequestWire(
+                        organization, facility, "病历检索工具 v2", "v2",
+                        ToolRegistryVersionRequestWire.ToolTypeValue.API));
+        assertThat(published.toolCode()).isEqualTo(registered.toolCode());
+        assertThat(published.toolVersion()).isEqualTo("v2");
+        assertThat(published.toolType()).isEqualTo(ToolRegistryWire.ToolTypeValue.API);
+        assertThat(tools.listTools(identity(), "ACTIVE")).extracting(ToolRegistryWire::toolRegistryId)
+                .contains(published.toolRegistryId()).doesNotContain(registered.toolRegistryId());
     }
 
     @Test

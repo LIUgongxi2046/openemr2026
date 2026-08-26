@@ -2,7 +2,9 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { SkillRegistryWire } from '../../generated/contracts';
-import { deactivateSkill, issueAiLease, listSkills, registerSkill } from '../../api/ai-platform';
+import { deactivateSkill, issueAiLease, listSkills, publishSkillVersion, registerSkill } from '../../api/ai-platform';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -23,6 +25,9 @@ const skills = computed(() => skillsQuery.data.value ?? []);
 const activeCount = computed(() => skills.value.filter((skill) => skill.status === 'ACTIVE').length);
 
 const form = reactive({ skillCode: '', skillName: '', skillVersion: '' });
+const editingSkill = ref<SkillRegistryWire | null>(null);
+const editorOpen = ref(false);
+const deactivateTarget = ref<SkillRegistryWire | null>(null);
 const busy = ref('');
 const notice = ref('');
 
@@ -31,18 +36,46 @@ async function reload() {
   await skillsQuery.refetch();
 }
 
+function nextVersion(version: string) {
+  const match = version.match(/^(?:v)?(\d+)\.(\d+)\.(\d+)$/);
+  return match ? `${match[1]}.${match[2]}.${Number(match[3]) + 1}` : `${version}-next`;
+}
+
+function resetForm() {
+  editingSkill.value = null;
+  form.skillCode = ''; form.skillName = ''; form.skillVersion = '';
+}
+
+function openCreate() {
+  resetForm();
+  editorOpen.value = true;
+}
+
+function editSkill(skill: SkillRegistryWire) {
+  editingSkill.value = skill;
+  form.skillCode = skill.skill_code; form.skillName = skill.skill_name;
+  form.skillVersion = nextVersion(skill.skill_version); notice.value = '';
+  editorOpen.value = true;
+}
+
 async function register() {
   const lease = leaseQuery.data.value;
   if (!lease || busy.value || !form.skillCode.trim() || !form.skillName.trim() || !form.skillVersion.trim()) return;
   busy.value = 'create'; notice.value = '';
   try {
-    await registerSkill(lease, {
-      skill_code: form.skillCode.trim(),
-      skill_name: form.skillName.trim(),
-      skill_version: form.skillVersion.trim(),
-    });
-    form.skillCode = ''; form.skillName = ''; form.skillVersion = '';
-    notice.value = '医助能力已登记，版本记录和操作留痕已同步更新。';
+    if (editingSkill.value) {
+      await publishSkillVersion(lease, editingSkill.value, {
+        skill_name: form.skillName.trim(), skill_version: form.skillVersion.trim(),
+      });
+      notice.value = '新能力版本已发布，旧版本已自动停用；依赖该能力的后续任务将使用新版本。';
+    } else {
+      await registerSkill(lease, {
+        skill_code: form.skillCode.trim(), skill_name: form.skillName.trim(), skill_version: form.skillVersion.trim(),
+      });
+      notice.value = '医助能力已登记，版本记录和操作留痕已同步更新。';
+    }
+    resetForm();
+    editorOpen.value = false;
     await skillsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -57,6 +90,7 @@ async function deactivate(skill: SkillRegistryWire) {
     await deactivateSkill(lease, skill);
     notice.value = `医助能力“${skill.skill_name}”已停用。`;
     await skillsQuery.refetch();
+    deactivateTarget.value = null;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
@@ -83,13 +117,13 @@ async function deactivate(skill: SkillRegistryWire) {
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
+      <div>
         <section class="admin-panel">
           <header>
             <div><h2>医助能力版本台账</h2><p>编码与版本不可变；停用后保留历史记录。</p></div>
-            <button class="button secondary" @click="skillsQuery.refetch()">刷新</button>
+            <div class="admin-row-actions"><button class="button secondary" @click="skillsQuery.refetch()">刷新</button><button class="button primary" @click="openCreate">新建医助能力</button></div>
           </header>
-          <div v-if="skills.length === 0" class="admin-empty" role="status">暂无医助能力，可在右侧登记。</div>
+          <div v-if="skills.length === 0" class="admin-empty" role="status">暂无医助能力，请点击“新建医助能力”。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>名称</th><th>编码</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
@@ -99,23 +133,24 @@ async function deactivate(skill: SkillRegistryWire) {
                   <td><code>{{ skill.skill_code }}</code></td>
                   <td><code>{{ skill.skill_version }}</code></td>
                   <td><span class="admin-status" :class="skill.status.toLowerCase()">{{ skill.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><button class="task-action" :disabled="skill.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(skill)">{{ busy === skill.skill_registry_id ? '处理中…' : '停用' }}</button></td>
+                  <td><div class="admin-row-actions"><button class="task-action" :disabled="skill.status !== 'ACTIVE' || Boolean(busy)" @click="editSkill(skill)">编辑</button><button class="task-action danger" :disabled="skill.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = skill">删除</button></div></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>登记医助能力</h2><p>编码、名称与版本均为必填。</p></div></header>
-          <form class="admin-form" @submit.prevent="register">
-            <label><span>能力编码</span><input v-model="form.skillCode" maxlength="128" required placeholder="例：MEDICAL-NOTE" /></label>
+      </div>
+
+      <AdminActionDialog v-model:open="editorOpen" :title="editingSkill ? '编辑并发布能力新版本' : '新建医助能力'" :description="editingSkill ? '编码保持不变；新版本生效后，旧版本保留在历史任务中。' : '登记后可供医助团队编排和调用。'" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
+          <form class="admin-form ai-center-dialog-form" @submit.prevent="register">
+            <label><span>能力编码</span><input v-model="form.skillCode" maxlength="128" required :disabled="Boolean(editingSkill)" placeholder="例：MEDICAL-NOTE" /></label>
             <label><span>能力名称</span><input v-model="form.skillName" maxlength="256" required placeholder="例：门诊病历摘要" /></label>
             <label><span>版本</span><input v-model="form.skillVersion" maxlength="64" required placeholder="例：1.0.0" /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在登记…' : '登记并生效' }}</button>
+            <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在保存…' : editingSkill ? '发布新版本' : '登记并生效' }}</button></div>
           </form>
-        </section>
-      </div>
+      </AdminActionDialog>
+      <AdminConfirmDialog :open="Boolean(deactivateTarget)" :title="`删除医助能力 ${deactivateTarget?.skill_name ?? ''}`" description="删除将以安全停用方式执行；新任务不再使用该能力，历史任务和审计记录继续保留。" confirm-label="确认删除并停用" :busy="Boolean(busy)" @update:open="!$event && (deactivateTarget = null)" @confirm="deactivateTarget && deactivate(deactivateTarget)"><div v-if="deactivateTarget" class="admin-impact-grid"><div><span>能力编码</span><b>{{ deactivateTarget.skill_code }}</b></div><div><span>当前版本</span><b>{{ deactivateTarget.skill_version }}</b></div><div><span>当前状态</span><b>有效</b></div><div><span>流程影响</span><b>退出新任务能力编排</b></div></div></AdminConfirmDialog>
     </template>
   </section>
 </template>

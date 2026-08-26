@@ -114,6 +114,27 @@ final class ConfigurationApiTest {
     }
 
     @Test
+    void givenActiveConfiguration_whenArchiving_thenItIsRemovedFromTheEffectiveFlow() {
+        String key = "WF-ARCHIVE-" + UUID.randomUUID().toString().substring(0, 8);
+        ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("WORKFLOW", key, "待归档流程", workflowPayload("复核")));
+        ConfigurationItemWire validated = transition(identity(), draft,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "归档前完成流程静态校验");
+        ConfigurationItemWire pending = transition(identity(), validated,
+                ConfigurationLifecycleRequestWire.ActionValue.SUBMIT, "归档前提交独立审批流程");
+        ConfigurationItemWire approved = transition(approver(), pending,
+                ConfigurationLifecycleRequestWire.ActionValue.APPROVE, "独立审批人完成发布前核对");
+        ConfigurationItemWire active = transition(approver(), approved,
+                ConfigurationLifecycleRequestWire.ActionValue.PUBLISH, "发布后验证安全归档停用能力");
+        ConfigurationItemWire archived = transition(approver(), active,
+                ConfigurationLifecycleRequestWire.ActionValue.ARCHIVE, "业务停用并保留完整版本和审计记录");
+        assertThat(archived.status()).isEqualTo(ConfigurationItemWire.StatusValue.ARCHIVED);
+        assertThat(archived.publishedAt()).isNull();
+        assertThat(configurations.list(identity(), "WORKFLOW"))
+                .extracting(ConfigurationItemWire::configId).doesNotContain(archived.configId());
+    }
+
+    @Test
     void givenUnsafeDomainModels_whenValidating_thenProtectedBusinessGatesFailClosed() {
         ConfigurationItemWire workflow = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
                 new ConfigurationItemDefineRequestWire("WORKFLOW", "WF-UNSAFE-" + UUID.randomUUID(), "无终态流程",

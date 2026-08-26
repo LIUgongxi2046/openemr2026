@@ -3,41 +3,58 @@ package org.openemr2026.agent;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
 @Profile("prod")
-@ConditionalOnProperty(name = "openemr2026.production.ai.enabled", havingValue = "true")
 final class DeepSeekClinicalModelProvider implements ClinicalModelProvider {
 
-    private final String modelId;
-    private final DeepSeekChatTransport transport;
+    private final JdbcClient jdbc;
+    private final String fallbackModelId;
+    private final String fallbackBaseUri;
+    private final String fallbackApiKeyReference;
+    private final DeepSeekChatTransport testTransport;
     private final ObjectMapper objectMapper;
 
     DeepSeekClinicalModelProvider(
-            @Value("${openemr2026.production.ai.model-id}") String modelId,
-            DeepSeekChatTransport transport,
+            JdbcClient jdbc,
+            @Value("${openemr2026.production.ai.model-id:}") String modelId,
+            @Value("${openemr2026.production.ai.base-uri:}") String baseUri,
+            @Value("${openemr2026.production.ai.api-key-ref:}") String apiKeyReference,
             ObjectMapper objectMapper) {
-        this.modelId = modelId;
-        this.transport = transport;
+        this.jdbc = jdbc;
+        this.fallbackModelId = modelId;
+        this.fallbackBaseUri = baseUri;
+        this.fallbackApiKeyReference = apiKeyReference;
+        this.testTransport = null;
+        this.objectMapper = objectMapper;
+    }
+
+    DeepSeekClinicalModelProvider(String modelId, DeepSeekChatTransport transport, ObjectMapper objectMapper) {
+        this.jdbc = null;
+        this.fallbackModelId = modelId;
+        this.fallbackBaseUri = "";
+        this.fallbackApiKeyReference = "";
+        this.testTransport = transport;
         this.objectMapper = objectMapper;
     }
 
     @Override
     public boolean supports(String providerCode) {
-        return "DEEPSEEK".equals(providerCode) || "DEEPSEEK_OPENAI_COMPATIBLE".equals(providerCode);
+        return providerCode != null && !providerCode.isBlank() && !"DETERMINISTIC_FAKE".equals(providerCode);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> generate(DraftPrompt prompt) {
         try {
+            Connection connection = connection(prompt);
             String currentSections = objectMapper.writeValueAsString(prompt.currentSections());
             Map<String, Object> request = Map.of(
-                    "model", modelId,
+                    "model", connection.modelId(),
                     "messages", List.of(
                             Map.of("role", "system", "content", """
                                     你是AI医助小南的医疗文书草稿 Agent。只返回 JSON object，根字段必须且只能包含 sections。
@@ -48,7 +65,7 @@ final class DeepSeekClinicalModelProvider implements ClinicalModelProvider {
                     "response_format", Map.of("type", "json_object"),
                     "max_tokens", prompt.maxOutputTokens(),
                     "stream", false);
-            Map<String, Object> response = transport.complete(request);
+            Map<String, Object> response = connection.transport().complete(request);
             Object choicesValue = response.get("choices");
             if (!(choicesValue instanceof List<?> choices) || choices.isEmpty()
                     || !(choices.getFirst() instanceof Map<?, ?> choice)
@@ -71,4 +88,35 @@ final class DeepSeekClinicalModelProvider implements ClinicalModelProvider {
             throw new ModelProviderUnavailableException("MODEL_PROVIDER_RESPONSE_INVALID");
         }
     }
+
+    private Connection connection(DraftPrompt prompt) {
+        if (testTransport != null) return new Connection(fallbackModelId, testTransport);
+        if (jdbc != null && prompt.tenantId() != null && prompt.providerCode() != null && prompt.modelCode() != null) {
+            ConnectionSettings settings = jdbc.sql("""
+                    select model_code, endpoint_url, api_key_ref
+                    from model_deployment
+                    where tenant_id = :tenant and provider_code = :provider and model_code = :model
+                      and status = 'ACTIVE' and connection_status = 'READY'
+                    order by updated_at desc, model_deployment_id desc limit 1
+                    """).param("tenant", prompt.tenantId()).param("provider", prompt.providerCode())
+                    .param("model", prompt.modelCode())
+                    .query((rs, row) -> new ConnectionSettings(rs.getString("model_code"),
+                            rs.getString("endpoint_url"), rs.getString("api_key_ref")))
+                    .optional().orElse(null);
+            if (settings != null) {
+                return new Connection(settings.modelId(), new DeepSeekHttpChatTransport(
+                        settings.baseUri(), settings.apiKeyReference(), objectMapper,
+                        java.net.http.HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(5)).build()));
+            }
+        }
+        if (!fallbackModelId.isBlank() && !fallbackBaseUri.isBlank() && !fallbackApiKeyReference.isBlank()) {
+            return new Connection(fallbackModelId, new DeepSeekHttpChatTransport(
+                    fallbackBaseUri, fallbackApiKeyReference, objectMapper,
+                    java.net.http.HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(5)).build()));
+        }
+        throw new ModelProviderUnavailableException("MODEL_PROVIDER_CONFIGURATION_MISSING");
+    }
+
+    private record Connection(String modelId, DeepSeekChatTransport transport) {}
+    private record ConnectionSettings(String modelId, String baseUri, String apiKeyReference) {}
 }

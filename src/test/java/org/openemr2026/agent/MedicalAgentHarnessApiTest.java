@@ -76,6 +76,10 @@ final class MedicalAgentHarnessApiTest {
         int children = 0;
         for (JsonNode family : catalog) {
             assertThat(family.path("main_agent").path("agent_level").stringValue()).isEqualTo("MAIN");
+            assertThat(family.path("main_agent").path("question_examples").size()).isGreaterThanOrEqualTo(1);
+            for (JsonNode child : family.path("child_agents")) {
+                assertThat(child.path("question_examples").size()).isGreaterThanOrEqualTo(1);
+            }
             children += family.path("child_agents").size();
         }
         assertThat(children).isEqualTo(33);
@@ -120,6 +124,11 @@ final class MedicalAgentHarnessApiTest {
         assertThat(jdbc.sql("""
                 select count(*) from outbox_event where tenant_id = :tenant
                   and aggregate_type = 'MEDICAL_AGENT_RUN' and aggregate_id = :run
+                """).param("tenant", UUID.fromString(TENANT)).param("run", runId)
+                .query(Long.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("""
+                select count(*) from agent_run_budget_consumption
+                where tenant_id = :tenant and run_id = :run
                 """).param("tenant", UUID.fromString(TENANT)).param("run", runId)
                 .query(Long.class).single()).isEqualTo(1);
 

@@ -101,7 +101,7 @@ final class MedicalAgentHarnessController {
         return new MedicalAgentReleaseWire(release.agentCode(), release.releaseVersion(), release.displayName(),
                 MedicalAgentReleaseWire.AgentLevelValue.valueOf(release.agentLevel()), release.parentAgentCode(),
                 release.stageCode(), release.description(), release.displayRole(), release.currentAction(),
-                release.contributionLabel(), release.outputSchema(),
+                release.contributionLabel(), release.questionExamples(), release.outputSchema(),
                 MedicalAgentReleaseWire.AutonomyLevelValue.valueOf(release.autonomyLevel()), release.maxSteps(),
                 release.maxToolCalls(), release.maxDurationSeconds());
     }

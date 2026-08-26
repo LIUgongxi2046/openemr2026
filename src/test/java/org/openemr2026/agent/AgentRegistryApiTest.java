@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRegistryRegisterRequestWire;
+import org.openemr2026.contracts.AgentRegistryVersionRequestWire;
 import org.openemr2026.contracts.AgentRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,18 @@ final class AgentRegistryApiTest {
         AgentRegistryWire deactivated = agents.deactivate(identity(), "deact-" + UUID.randomUUID(),
                 registered.agentRegistryId(), new AgentRegistryDeactivateRequestWire(organization, facility));
         assertThat(deactivated.status()).isEqualTo(AgentRegistryWire.StatusValue.INACTIVE);
+    }
+
+    @Test
+    void givenActiveAgent_whenPublishingVersion_thenOldVersionIsSafelyReplaced() {
+        AgentRegistryWire registered = register("AGENT-" + UUID.randomUUID().toString().substring(0, 8));
+        AgentRegistryWire published = agents.publishVersion(identity(), "version-" + UUID.randomUUID(),
+                registered.agentRegistryId(), new AgentRegistryVersionRequestWire(
+                        organization, facility, "临床摘要医助", "v2"));
+        assertThat(published.agentCode()).isEqualTo(registered.agentCode());
+        assertThat(published.agentVersion()).isEqualTo("v2");
+        assertThat(agents.listAgents(identity(), "ACTIVE")).extracting(AgentRegistryWire::agentRegistryId)
+                .contains(published.agentRegistryId()).doesNotContain(registered.agentRegistryId());
     }
 
     @Test

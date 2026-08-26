@@ -82,6 +82,21 @@ final class CapabilityPackApiTest {
     }
 
     @Test
+    void givenActivePack_whenEditing_thenNameAndInheritanceArePersisted() {
+        String base = "PACK-" + UUID.randomUUID().toString().substring(0, 8);
+        CapabilityPackWire parent = define(base, null);
+        String childCode = "PACK-" + UUID.randomUUID().toString().substring(0, 8);
+        CapabilityPackWire child = define(childCode, null);
+
+        CapabilityPackWire updated = packs.update(identity(), "edit-" + UUID.randomUUID(),
+                child.capabilityPackId(), new CapabilityPackDefineRequestWire(
+                        organization, facility, childCode, "急诊闭环能力包", parent.packCode()));
+
+        assertThat(updated.packName()).isEqualTo("急诊闭环能力包");
+        assertThat(updated.inheritsFrom()).isEqualTo(parent.packCode());
+    }
+
+    @Test
     void givenPackIdentity_whenTampered_thenDatabaseRejectsMutation() {
         String code = "PACK-" + UUID.randomUUID().toString().substring(0, 8);
         CapabilityPackWire defined = define(code, null);

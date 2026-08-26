@@ -169,10 +169,17 @@
     "src/main/resources/db/migration/V166__configuration_lifecycle.sql",
     "src/main/resources/db/migration/V167__development_user_session.sql",
     "src/main/resources/db/migration/V168__appointment_doctor_and_admission_registration.sql",
-    "src/main/resources/db/migration/V169__medical_agent_harness.sql"
+    "src/main/resources/db/migration/V169__medical_agent_harness.sql",
+    "src/main/resources/db/migration/V170__medical_agent_question_examples.sql",
+    "src/main/resources/db/migration/V171__model_deployment_api_configuration.sql",
+    "src/main/resources/db/migration/V172__authorization_policy_chinese_name.sql",
+    "src/main/resources/db/migration/V173__ai_center_crud_and_flow_data.sql",
+    "src/main/resources/db/migration/V174__remove_invalid_ai_validation_model.sql",
+    "src/main/resources/db/migration/V175__capability_pack_editable_inheritance.sql",
+    "src/main/resources/db/migration/V176__tertiary_hospital_ai_center_simulation.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
-  "field_count": 2744,
+  "field_count": 2748,
   "fields": [
     {
       "entity": "tenant",
@@ -35844,6 +35851,58 @@
       "source": "V169__medical_agent_harness.sql",
       "lineage": "V169__medical_agent_harness.sql:medical_agent_run_event.occurred_at",
       "validation": "not null default now()",
+      "retention": "ENTITY_LIFECYCLE"
+    },
+    {
+      "entity": "medical_agent_question_example",
+      "field": "agent_code",
+      "physical_type": "varchar(128)",
+      "nullable": false,
+      "identifier": false,
+      "uniqueness": "NOT_DECLARED_INLINE",
+      "classification": "INTERNAL",
+      "source": "V170__medical_agent_question_examples.sql",
+      "lineage": "V170__medical_agent_question_examples.sql:medical_agent_question_example.agent_code",
+      "validation": "not null",
+      "retention": "ENTITY_LIFECYCLE"
+    },
+    {
+      "entity": "medical_agent_question_example",
+      "field": "release_version",
+      "physical_type": "varchar(64)",
+      "nullable": false,
+      "identifier": false,
+      "uniqueness": "NOT_DECLARED_INLINE",
+      "classification": "INTERNAL",
+      "source": "V170__medical_agent_question_examples.sql",
+      "lineage": "V170__medical_agent_question_examples.sql:medical_agent_question_example.release_version",
+      "validation": "not null",
+      "retention": "ENTITY_LIFECYCLE"
+    },
+    {
+      "entity": "medical_agent_question_example",
+      "field": "example_order",
+      "physical_type": "integer",
+      "nullable": false,
+      "identifier": false,
+      "uniqueness": "NOT_DECLARED_INLINE",
+      "classification": "SENSITIVE",
+      "source": "V170__medical_agent_question_examples.sql",
+      "lineage": "V170__medical_agent_question_examples.sql:medical_agent_question_example.example_order",
+      "validation": "not null check (example_order > 0)",
+      "retention": "ENTITY_LIFECYCLE"
+    },
+    {
+      "entity": "medical_agent_question_example",
+      "field": "question_text",
+      "physical_type": "varchar(512)",
+      "nullable": false,
+      "identifier": false,
+      "uniqueness": "NOT_DECLARED_INLINE",
+      "classification": "INTERNAL",
+      "source": "V170__medical_agent_question_examples.sql",
+      "lineage": "V170__medical_agent_question_examples.sql:medical_agent_question_example.question_text",
+      "validation": "not null check (length(trim(question_text)) between 4 and 512)",
       "retention": "ENTITY_LIFECYCLE"
     }
   ]

@@ -101,7 +101,7 @@ export const configurationItemUpdateRequestWireSchema = z.object({
 export type ConfigurationItemUpdateRequestWire = z.infer<typeof configurationItemUpdateRequestWireSchema>;
 
 export const configurationLifecycleRequestWireSchema = z.object({
-  "action": z.enum(["VALIDATE","SUBMIT","APPROVE","PUBLISH","ROLLBACK"]),
+  "action": z.enum(["VALIDATE","SUBMIT","APPROVE","PUBLISH","ROLLBACK","ARCHIVE"]),
   "expected_version": z.number().int(),
   "reason": z.string(),
 }).strict();
@@ -1534,6 +1534,9 @@ export const modelDeploymentWireSchema = z.object({
   "endpoint_url": z.string().nullable().optional(),
   "status": z.enum(["ACTIVE","INACTIVE"]),
   "evaluation_status": z.enum(["EVALUATING","APPROVED","REJECTED"]),
+  "credential_configured": z.boolean(),
+  "credential_hint": z.string().nullable(),
+  "connection_status": z.enum(["NOT_CONFIGURED","READY"]),
   "row_version": z.number().int(),
 }).strict();
 export type ModelDeploymentWire = z.infer<typeof modelDeploymentWireSchema>;
@@ -1546,8 +1549,21 @@ export const modelDeploymentRegisterRequestWireSchema = z.object({
   "display_name": z.string(),
   "residency_policy": z.enum(["ON_PREM_ONLY","LOCAL_PREFERRED","CLOUD_ALLOWED"]),
   "endpoint_url": z.string().nullable().optional(),
+  "api_key_ref": z.string().nullable().optional(),
 }).strict();
 export type ModelDeploymentRegisterRequestWire = z.infer<typeof modelDeploymentRegisterRequestWireSchema>;
+
+export const modelDeploymentUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "display_name": z.string(),
+  "residency_policy": z.enum(["ON_PREM_ONLY","LOCAL_PREFERRED","CLOUD_ALLOWED"]),
+  "endpoint_url": z.string().nullable().optional(),
+  "api_key_ref": z.string().nullable().optional(),
+  "credential_action": z.enum(["KEEP","REPLACE","CLEAR"]),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type ModelDeploymentUpdateRequestWire = z.infer<typeof modelDeploymentUpdateRequestWireSchema>;
 
 export const modelDeploymentDeactivateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
@@ -2980,6 +2996,14 @@ export const agentRegistryRegisterRequestWireSchema = z.object({
 }).strict();
 export type AgentRegistryRegisterRequestWire = z.infer<typeof agentRegistryRegisterRequestWireSchema>;
 
+export const agentRegistryVersionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "agent_name": z.string(),
+  "agent_version": z.string(),
+}).strict();
+export type AgentRegistryVersionRequestWire = z.infer<typeof agentRegistryVersionRequestWireSchema>;
+
 export const agentRegistryDeactivateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
@@ -3231,6 +3255,14 @@ export const skillRegistryRegisterRequestWireSchema = z.object({
 }).strict();
 export type SkillRegistryRegisterRequestWire = z.infer<typeof skillRegistryRegisterRequestWireSchema>;
 
+export const skillRegistryVersionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "skill_name": z.string(),
+  "skill_version": z.string(),
+}).strict();
+export type SkillRegistryVersionRequestWire = z.infer<typeof skillRegistryVersionRequestWireSchema>;
+
 export const skillRegistryDeactivateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
@@ -3256,6 +3288,15 @@ export const toolRegistryRegisterRequestWireSchema = z.object({
   "tool_type": z.enum(["API","FUNCTION","DATABASE_QUERY","OTHER"]),
 }).strict();
 export type ToolRegistryRegisterRequestWire = z.infer<typeof toolRegistryRegisterRequestWireSchema>;
+
+export const toolRegistryVersionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "tool_name": z.string(),
+  "tool_version": z.string(),
+  "tool_type": z.enum(["API","FUNCTION","DATABASE_QUERY","OTHER"]),
+}).strict();
+export type ToolRegistryVersionRequestWire = z.infer<typeof toolRegistryVersionRequestWireSchema>;
 
 export const toolRegistryDeactivateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
@@ -3343,6 +3384,7 @@ export const agentRunBudgetWireSchema = z.object({
   "max_tokens": z.number().int(),
   "max_duration_seconds": z.number().int(),
   "status": z.enum(["ACTIVE","INACTIVE"]),
+  "row_version": z.number().int(),
 }).strict();
 export type AgentRunBudgetWire = z.infer<typeof agentRunBudgetWireSchema>;
 
@@ -3361,6 +3403,16 @@ export const agentRunBudgetDeactivateRequestWireSchema = z.object({
   "facility_id": z.string().uuid(),
 }).strict();
 export type AgentRunBudgetDeactivateRequestWire = z.infer<typeof agentRunBudgetDeactivateRequestWireSchema>;
+
+export const agentRunBudgetUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "budget_name": z.string(),
+  "max_tokens": z.number().int(),
+  "max_duration_seconds": z.number().int(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type AgentRunBudgetUpdateRequestWire = z.infer<typeof agentRunBudgetUpdateRequestWireSchema>;
 
 export const emergencyNursingNoteWireSchema = z.object({
   "note_id": z.string().uuid(),
@@ -4188,6 +4240,7 @@ export const medicalAgentReleaseWireSchema = z.object({
   "display_role": z.string(),
   "current_action": z.string(),
   "contribution_label": z.string(),
+  "question_examples": z.array(z.string()).min(1),
   "output_schema": z.string(),
   "autonomy_level": z.enum(["A0","A1","A2"]),
   "max_steps": z.number().int(),
@@ -4491,6 +4544,7 @@ export type RoleEndRequestWire = z.infer<typeof roleEndRequestWireSchema>;
 export const authorizationPolicyWireSchema = z.object({
   "policy_id": z.string().uuid(),
   "policy_code": z.string(),
+  "policy_name": z.string(),
   "version_no": z.number().int(),
   "effect": z.enum(["ALLOW","DENY"]),
   "status": z.enum(["DRAFT","PUBLISHED","RETIRED"]),
@@ -4519,6 +4573,7 @@ export type AuthorizationPolicyWire = z.infer<typeof authorizationPolicyWireSche
 export const authorizationPolicyCreateRequestWireSchema = z.object({
   "policy_id": z.string().uuid().optional(),
   "policy_code": z.string(),
+  "policy_name": z.string(),
   "version_no": z.number().int(),
   "effect": z.enum(["ALLOW","DENY"]),
   "subject_role_code": z.string().optional(),

@@ -56,7 +56,7 @@ final class ConfigurationService {
                 select config_id, config_type, config_key, display_name, payload::text, status,
                        schema_version, validation_state, validation_errors::text, approval_state,
                        approved_by, published_at, row_version, created_at, updated_at
-                from config_item where tenant_id = :tenant
+                from config_item where tenant_id = :tenant and status <> 'ARCHIVED'
                 """);
         if (configType != null && !configType.isBlank()) sql.append(" and config_type = :type");
         sql.append(" order by updated_at desc, config_id desc limit 500");
@@ -148,6 +148,7 @@ final class ConfigurationService {
                 case APPROVE -> approveTransition(identity, current);
                 case PUBLISH -> publishTransition(identity, current);
                 case ROLLBACK -> rollbackTransition(identity, current);
+                case ARCHIVE -> archiveTransition(identity, current);
             }
             ConfigurationItemWire result = item(identity.tenantId(), configId);
             appendEvidence(identity, "CONFIG_" + action, current.configType(), configId, result.rowVersion());
@@ -225,6 +226,18 @@ final class ConfigurationService {
                 """).param("name", previous.displayName()).param("payload", json(previous.payload()))
                 .param("schema_version", previous.schemaVersion()).param("tenant", identity.tenantId())
                 .param("config", current.configId()).param("version", current.rowVersion()).update();
+    }
+
+    private void archiveTransition(ClinicalIdentity identity, ConfigState current) {
+        if ("ARCHIVED".equals(current.status())) {
+            throw new ConfigurationException("CONFIG_STATE_INVALID", 409, "配置已经归档停用");
+        }
+        jdbc.sql("""
+                update config_item set status = 'ARCHIVED', published_at = null,
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_id = :config and row_version = :version
+                """).param("tenant", identity.tenantId()).param("config", current.configId())
+                .param("version", current.rowVersion()).update();
     }
 
     private List<String> validate(String configType, Map<String, Object> payload) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRegistryRegisterRequestWire;
+import org.openemr2026.contracts.AgentRegistryVersionRequestWire;
 import org.openemr2026.contracts.AgentRegistryWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -62,5 +63,17 @@ final class AgentRegistryController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(agents.deactivate(identity, idempotencyKey, agentRegistryId, command));
+    }
+
+    @PostMapping("/agent-registry/{agent_registry_id}/versions")
+    ResponseEntity<AgentRegistryWire> publishVersion(
+            HttpServletRequest request,
+            @PathVariable("agent_registry_id") UUID agentRegistryId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody AgentRegistryVersionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(agents.publishVersion(identity, idempotencyKey, agentRegistryId, command));
     }
 }

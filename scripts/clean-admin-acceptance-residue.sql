@@ -53,7 +53,9 @@ set status = 'INACTIVE', effective_until = coalesce(effective_until, now()),
     row_version = row_version + 1, updated_at = now()
 where tenant_id = '018f0000-0000-7000-8000-00000000aa01'
   and status = 'ACTIVE'
-  and exists (
+  and (
+    bed_label ~ '^(ACC-|B-[0-9a-f]{8}$|SYN-|TEST-)'
+    or exists (
     select 1 from clinical_ward ward
     join clinical_department department
       on department.tenant_id = ward.tenant_id
@@ -61,6 +63,7 @@ where tenant_id = '018f0000-0000-7000-8000-00000000aa01'
      and department.department_id = ward.department_id
     where ward.tenant_id = bed.tenant_id and ward.ward_id = bed.ward_id
       and (ward.display_name ~ '(合成|测试|验收)' or department.display_name ~ '(合成|测试|验收)')
+    )
   );
 
 update clinical_ward

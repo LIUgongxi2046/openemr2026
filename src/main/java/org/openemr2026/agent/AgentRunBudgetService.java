@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.AgentRunBudgetDeactivateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetDefineRequestWire;
+import org.openemr2026.contracts.AgentRunBudgetUpdateRequestWire;
 import org.openemr2026.contracts.AgentRunBudgetWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -67,11 +68,57 @@ final class AgentRunBudgetService {
                         "AGENT_RUN_BUDGET_STATE_INVALID", 409, "Only an active budget can be deactivated");
             }
             jdbc.sql("""
-                    update agent_run_budget set status = 'INACTIVE', updated_at = now()
+                    update agent_run_budget set status = 'INACTIVE', row_version = row_version + 1, updated_at = now()
                     where tenant_id = :tenant and budget_id = :budget
                     """).param("tenant", identity.tenantId()).param("budget", budgetId).update();
             appendEvidence(identity, budgetId, "AGENT_RUN_BUDGET_DEACTIVATED", "AgentRunBudgetDeactivated");
             completeCommand(identity, "AGENT_RUN_BUDGET_DEACTIVATE", idempotencyKey, budgetId);
+            return budget(identity.tenantId(), budgetId);
+        });
+    }
+
+    AgentRunBudgetWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID budgetId,
+            AgentRunBudgetUpdateRequestWire request) {
+        String budgetName = requireText(request.budgetName(), 2, "budget_name");
+        if (request.maxTokens() == null || request.maxTokens() <= 0) {
+            throw invalid("max_tokens must be positive");
+        }
+        if (request.maxDurationSeconds() == null || request.maxDurationSeconds() <= 0) {
+            throw invalid("max_duration_seconds must be positive");
+        }
+        if (request.expectedRowVersion() == null || request.expectedRowVersion() <= 0) {
+            throw invalid("expected_row_version must be positive");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "AGENT_RUN_BUDGET_UPDATE", idempotencyKey,
+                    sha256(budgetId + "|" + budgetName + "|" + request.maxTokens() + "|"
+                            + request.maxDurationSeconds() + "|" + request.expectedRowVersion()));
+            BudgetHead current = jdbc.sql("""
+                    select status, row_version from agent_run_budget
+                    where tenant_id = :tenant and budget_id = :budget for update
+                    """).param("tenant", identity.tenantId()).param("budget", budgetId)
+                    .query((rs, row) -> new BudgetHead(rs.getString("status"), rs.getLong("row_version")))
+                    .optional().orElseThrow(AgentRunBudgetService::contextDenied);
+            if (!"ACTIVE".equals(current.status())) {
+                throw new AgentRunBudgetException(
+                        "AGENT_RUN_BUDGET_STATE_INVALID", 409, "Only an active budget can be updated");
+            }
+            if (current.rowVersion() != request.expectedRowVersion()) {
+                throw new AgentRunBudgetException(
+                        "AGENT_RUN_BUDGET_VERSION_CONFLICT", 409, "The budget changed; reload before retrying");
+            }
+            jdbc.sql("select set_config('openemr2026.budget_update_authorized', 'true', true)")
+                    .query(String.class).single();
+            jdbc.sql("""
+                    update agent_run_budget set budget_name = :name, max_tokens = :tokens,
+                      max_duration_seconds = :duration, row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and budget_id = :budget and row_version = :expected
+                    """).param("name", budgetName).param("tokens", request.maxTokens())
+                    .param("duration", request.maxDurationSeconds()).param("tenant", identity.tenantId())
+                    .param("budget", budgetId).param("expected", request.expectedRowVersion()).update();
+            appendEvidence(identity, budgetId, "AGENT_RUN_BUDGET_UPDATED", "AgentRunBudgetUpdated");
+            completeCommand(identity, "AGENT_RUN_BUDGET_UPDATE", idempotencyKey, budgetId);
             return budget(identity.tenantId(), budgetId);
         });
     }
@@ -92,14 +139,15 @@ final class AgentRunBudgetService {
 
     private AgentRunBudgetWire budget(UUID tenantId, UUID budgetId) {
         return jdbc.sql("""
-                select budget_id, budget_code, budget_name, max_tokens, max_duration_seconds, status
+                select budget_id, budget_code, budget_name, max_tokens, max_duration_seconds, status, row_version
                 from agent_run_budget where tenant_id = :tenant and budget_id = :budget
                 """).param("tenant", tenantId).param("budget", budgetId)
                 .query((rs, row) -> new AgentRunBudgetWire(
                         rs.getObject("budget_id", UUID.class), rs.getString("budget_code"),
                         rs.getString("budget_name"), rs.getLong("max_tokens"),
                         rs.getInt("max_duration_seconds"),
-                        AgentRunBudgetWire.StatusValue.valueOf(rs.getString("status"))))
+                        AgentRunBudgetWire.StatusValue.valueOf(rs.getString("status")),
+                        rs.getLong("row_version")))
                 .optional().orElseThrow(AgentRunBudgetService::contextDenied);
     }
 
@@ -183,4 +231,6 @@ final class AgentRunBudgetService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record BudgetHead(String status, long rowVersion) {}
 }

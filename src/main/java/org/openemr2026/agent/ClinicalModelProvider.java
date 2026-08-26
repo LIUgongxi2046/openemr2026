@@ -1,6 +1,7 @@
 package org.openemr2026.agent;
 
 import java.util.Map;
+import java.util.UUID;
 
 interface ClinicalModelProvider {
 
@@ -8,5 +9,10 @@ interface ClinicalModelProvider {
 
     Map<String, Object> generate(DraftPrompt prompt);
 
-    record DraftPrompt(Map<String, Object> currentSections, int maxOutputTokens) {}
+    record DraftPrompt(UUID tenantId, String providerCode, String modelCode,
+            Map<String, Object> currentSections, int maxOutputTokens) {
+        DraftPrompt(Map<String, Object> currentSections, int maxOutputTokens) {
+            this(null, null, null, currentSections, maxOutputTokens);
+        }
+    }
 }

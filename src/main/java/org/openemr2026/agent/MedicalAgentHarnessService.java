@@ -35,18 +35,30 @@ final class MedicalAgentHarnessService {
 
     List<AgentFamilyView> catalog() {
         List<AgentReleaseRow> rows = jdbc.sql("""
-                select agent_code, release_version, display_name, agent_level, parent_agent_code,
-                  stage_code, description, display_role, current_action, contribution_label,
-                  output_schema, autonomy_level, max_steps, max_tool_calls, max_duration_seconds
-                from medical_agent_release where status = 'ACTIVE'
-                order by case when agent_level = 'MAIN' then 0 else 1 end, parent_agent_code, stage_code, agent_code
+                select release.agent_code, release.release_version, release.display_name, release.agent_level,
+                  release.parent_agent_code, release.stage_code, release.description, release.display_role,
+                  release.current_action, release.contribution_label, release.output_schema,
+                  release.autonomy_level, release.max_steps, release.max_tool_calls, release.max_duration_seconds,
+                  coalesce(jsonb_agg(example.question_text order by example.example_order)
+                    filter (where example.question_text is not null), '[]'::jsonb)::text as question_examples
+                from medical_agent_release release
+                left join medical_agent_question_example example
+                  on example.agent_code = release.agent_code
+                 and example.release_version = release.release_version
+                where release.status = 'ACTIVE'
+                group by release.agent_code, release.release_version, release.display_name, release.agent_level,
+                  release.parent_agent_code, release.stage_code, release.description, release.display_role,
+                  release.current_action, release.contribution_label, release.output_schema,
+                  release.autonomy_level, release.max_steps, release.max_tool_calls, release.max_duration_seconds
+                order by case when release.agent_level = 'MAIN' then 0 else 1 end,
+                  release.parent_agent_code, release.stage_code, release.agent_code
                 """).query((rs, row) -> new AgentReleaseRow(
                         rs.getString("agent_code"), rs.getString("release_version"), rs.getString("display_name"),
                         rs.getString("agent_level"), rs.getString("parent_agent_code"), rs.getString("stage_code"),
                         rs.getString("description"), rs.getString("display_role"), rs.getString("current_action"),
                         rs.getString("contribution_label"), rs.getString("output_schema"),
                         rs.getString("autonomy_level"), rs.getInt("max_steps"), rs.getInt("max_tool_calls"),
-                        rs.getInt("max_duration_seconds"))).list();
+                        rs.getInt("max_duration_seconds"), listOfStrings(rs.getString("question_examples")))).list();
         Map<String, List<AgentReleaseView>> children = new LinkedHashMap<>();
         rows.stream().filter(row -> "CHILD".equals(row.level())).forEach(row ->
                 children.computeIfAbsent(row.parentCode(), ignored -> new ArrayList<>()).add(view(row)));
@@ -60,6 +72,7 @@ final class MedicalAgentHarnessService {
         UUID runId = transactions.execute(status -> {
             LeaseRow lease = lease(identity, command);
             MainReleaseRow main = main(command.mainAgentCode());
+            ActiveBudget budget = ensureGovernanceReady(identity.tenantId(), main.agentCode());
             List<NodeRow> nodes = nodes(main.compositionCode(), command.stageCode());
             if (nodes.isEmpty()) {
                 throw new AgentRunException("AGENT_STAGE_UNSUPPORTED", 409,
@@ -144,6 +157,23 @@ final class MedicalAgentHarnessService {
                     .param("tenant", identity.tenantId()).param("run", id).query(Long.class).single();
             insertEventAtCurrentSequence(identity.tenantId(), id, "RunReadyForReview", Map.of(
                     "state", finalState, "child_count", contributions.size(), "candidate_only", true));
+            long tokensConsumed = Math.min(budget.maxTokens(),
+                    1_200L + contributions.size() * 900L + facts.documentCount() * 120L
+                            + facts.resultCount() * 80L);
+            int durationSeconds = (int) Math.min(budget.maxDurationSeconds(),
+                    Math.max(1L, contributions.size() * 3L + facts.documentCount()));
+            jdbc.sql("""
+                    insert into agent_run_budget_consumption(
+                      tenant_id, consumption_id, budget_id, run_id, tokens_consumed,
+                      duration_seconds, recorded_by, recorded_at)
+                    values (:tenant, :consumption, :budget, :run, :tokens, :duration, :actor, now())
+                    on conflict (tenant_id, budget_id, run_id) do nothing
+                    """).param("tenant", identity.tenantId()).param("consumption", UUID.randomUUID())
+                    .param("budget", budget.budgetId()).param("run", id).param("tokens", tokensConsumed)
+                    .param("duration", durationSeconds).param("actor", identity.userId()).update();
+            appendEvent(identity.tenantId(), id, null, "BudgetConsumptionRecorded", Map.of(
+                    "budget_code", budget.budgetCode(), "tokens_consumed", tokensConsumed,
+                    "duration_seconds", durationSeconds));
             appendEvidence(identity, id, main.agentCode(), finalState);
             completeCommand(identity, idempotencyKey, id);
             return id;
@@ -206,6 +236,61 @@ final class MedicalAgentHarnessService {
                 order by created_at desc, run_id desc limit 100
                 """).param("tenant", tenantId).param("encounter", encounterId).query(UUID.class).list();
         return ids.stream().map(id -> run(tenantId, id)).toList();
+    }
+
+    private ActiveBudget ensureGovernanceReady(UUID tenantId, String mainAgentCode) {
+        UUID registryId = jdbc.sql("""
+                select agent_registry_id from agent_registry
+                where tenant_id = :tenant and agent_code = :code and status = 'ACTIVE'
+                order by updated_at desc limit 1
+                """).param("tenant", tenantId).param("code", mainAgentCode)
+                .query(UUID.class).optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_DISABLED", 409, "The selected medical assistant team is not active"));
+        List<DependencyRow> dependencies = jdbc.sql("""
+                select dependency_type, dependency_code from agent_dependency
+                where tenant_id = :tenant and agent_registry_id = :registry
+                order by dependency_type, dependency_code
+                """).param("tenant", tenantId).param("registry", registryId)
+                .query((rs, row) -> new DependencyRow(
+                        rs.getString("dependency_type"), rs.getString("dependency_code"))).list();
+        for (DependencyRow dependency : dependencies) {
+            String table = "SKILL".equals(dependency.type()) ? "skill_registry" : "tool_registry";
+            String codeColumn = "SKILL".equals(dependency.type()) ? "skill_code" : "tool_code";
+            long active = jdbc.sql("select count(*) from " + table
+                            + " where tenant_id = :tenant and " + codeColumn + " = :code and status = 'ACTIVE'")
+                    .param("tenant", tenantId).param("code", dependency.code()).query(Long.class).single();
+            if (active == 0) {
+                throw new AgentRunException("MEDICAL_AGENT_DEPENDENCY_DISABLED", 409,
+                        "A required medical assistant capability or tool is inactive: " + dependency.code());
+            }
+        }
+        long passedEvaluation = jdbc.sql("""
+                select count(*) from config_item
+                where tenant_id = :tenant and config_type = 'AGENT_EVAL' and status = 'ACTIVE'
+                  and payload ->> 'target_agent' = :agent
+                  and coalesce((payload ->> 'measured_score')::numeric, 0)
+                      >= coalesce((payload ->> 'pass_threshold')::numeric, 1)
+                  and payload ->> 'release_gate' = 'PASSED'
+                """).param("tenant", tenantId).param("agent", mainAgentCode).query(Long.class).single();
+        if (passedEvaluation == 0) {
+            throw new AgentRunException("MEDICAL_AGENT_EVALUATION_BLOCKED", 409,
+                    "The selected medical assistant team has no active passed release evaluation");
+        }
+        String budgetCode = switch (mainAgentCode) {
+            case "RESULT_FOLLOWUP_COORDINATOR" -> "BUDGET_RESULT_FOLLOWUP";
+            default -> "BUDGET_" + mainAgentCode;
+        };
+        return jdbc.sql("""
+                select budget_id, budget_code, max_tokens, max_duration_seconds from agent_run_budget
+                where tenant_id = :tenant and budget_code = :budget and status = 'ACTIVE'
+                order by updated_at desc limit 1
+                """).param("tenant", tenantId).param("budget", budgetCode)
+                .query((rs, row) -> new ActiveBudget(
+                        rs.getObject("budget_id", UUID.class), rs.getString("budget_code"),
+                        rs.getLong("max_tokens"), rs.getInt("max_duration_seconds")))
+                .optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_BUDGET_DISABLED", 409,
+                        "The selected medical assistant team has no active processing quota"));
     }
 
     RunContext context(UUID tenantId, UUID runId) {
@@ -441,7 +526,8 @@ final class MedicalAgentHarnessService {
     private AgentReleaseView view(AgentReleaseRow row) {
         return new AgentReleaseView(row.code(), row.version(), row.displayName(), row.level(), row.parentCode(),
                 row.stageCode(), row.description(), row.displayRole(), row.currentAction(), row.contributionLabel(),
-                row.outputSchema(), row.autonomyLevel(), row.maxSteps(), row.maxToolCalls(), row.maxDurationSeconds());
+                row.questionExamples(), row.outputSchema(), row.autonomyLevel(), row.maxSteps(), row.maxToolCalls(),
+                row.maxDurationSeconds());
     }
 
     @SuppressWarnings("unchecked")
@@ -459,6 +545,15 @@ final class MedicalAgentHarnessService {
             return objectMapper.convertValue(objectMapper.readTree(json), List.class);
         } catch (Exception invalid) {
             throw new IllegalStateException("Stored medical-agent JSON list is invalid", invalid);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> listOfStrings(String json) {
+        try {
+            return objectMapper.convertValue(objectMapper.readTree(json), List.class);
+        } catch (Exception invalid) {
+            throw new IllegalStateException("Stored medical-agent question examples are invalid", invalid);
         }
     }
 
@@ -496,7 +591,8 @@ final class MedicalAgentHarnessService {
 
     record AgentReleaseView(String agentCode, String releaseVersion, String displayName, String agentLevel,
             String parentAgentCode, String stageCode, String description, String displayRole,
-            String currentAction, String contributionLabel, String outputSchema, String autonomyLevel,
+            String currentAction, String contributionLabel, List<String> questionExamples,
+            String outputSchema, String autonomyLevel,
             int maxSteps, int maxToolCalls, int maxDurationSeconds) {}
 
     record RunView(UUID runId, UUID contextLeaseId, String rootAgentCode, String rootAgentVersion,
@@ -514,11 +610,13 @@ final class MedicalAgentHarnessService {
             OffsetDateTime occurredAt) {}
 
     record RunContext(UUID organizationId, UUID facilityId, UUID patientId, UUID encounterId) {}
+    private record DependencyRow(String type, String code) {}
+    private record ActiveBudget(UUID budgetId, String budgetCode, long maxTokens, int maxDurationSeconds) {}
 
     private record AgentReleaseRow(String code, String version, String displayName, String level,
             String parentCode, String stageCode, String description, String displayRole, String currentAction,
             String contributionLabel, String outputSchema, String autonomyLevel, int maxSteps,
-            int maxToolCalls, int maxDurationSeconds) {}
+            int maxToolCalls, int maxDurationSeconds, List<String> questionExamples) {}
     private record MainReleaseRow(String agentCode, String agentVersion, String compositionCode,
             String compositionVersion) {}
     private record NodeRow(String agentCode, String agentVersion, String displayName, String displayRole,

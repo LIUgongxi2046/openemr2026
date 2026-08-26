@@ -36,22 +36,27 @@ final class OrganizationAdministrationService {
                   parent_organization_id as parent_unit_id, organization_code as unit_code,
                   display_name, status, effective_from, effective_until, row_version
                 from organization where tenant_id = :tenant
+                  and organization_code not like 'ACC-%'
                 union all
                 select 'FACILITY', facility_id, organization_id, facility_code,
                   display_name, status, effective_from, effective_until, row_version
                 from facility where tenant_id = :tenant
+                  and facility_code not like 'ACC-%'
                 union all
                 select 'DEPARTMENT', department_id, coalesce(parent_department_id, facility_id),
                   department_code, display_name, status, effective_from, effective_until, row_version
                 from clinical_department where tenant_id = :tenant
+                  and department_code !~ '^(ACC-|DEP-|WARD-FROM-DEPT-|WARD-TO-DEPT-)'
                 union all
                 select 'WARD', ward_id, department_id, ward_code,
                   display_name, status, effective_from, effective_until, row_version
                 from clinical_ward where tenant_id = :tenant
+                  and ward_code !~ '^(ACC-|WARD-[0-9a-f]{8}$|WARD-FROM-|WARD-TO-)'
                 union all
                 select 'BED', bed_id, ward_id, bed_label,
                   bed_label, status, effective_from, effective_until, row_version
                 from clinical_bed where tenant_id = :tenant
+                  and bed_label !~ '^(ACC-|B-[0-9a-f]{8}$|SYN-|TEST-)'
                 order by unit_type, display_name, unit_id
                 """).param("tenant", identity.tenantId())
                 .query((rs, row) -> new OrganizationUnitWire(

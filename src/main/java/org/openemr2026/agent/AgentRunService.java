@@ -305,7 +305,8 @@ final class AgentRunService {
             Map<String, Object> payload;
             try {
                 payload = provider.generate(
-                        new ClinicalModelProvider.DraftPrompt(parse(source.sectionsJson()), run.maxOutputTokens()));
+                        new ClinicalModelProvider.DraftPrompt(tenantId, run.providerCode(), run.modelCode(),
+                                parse(source.sectionsJson()), run.maxOutputTokens()));
             } catch (ModelProviderUnavailableException unavailable) {
                 jdbc.sql("update ai_run set error_code = :code where tenant_id = :tenant and run_id = :run")
                         .param("code", unavailable.code()).param("tenant", tenantId).param("run", runId).update();
@@ -378,7 +379,7 @@ final class AgentRunService {
     private RunRow queryRun(UUID tenantId, UUID runId, boolean lock) {
         String sql = """
                 select run_id, context_lease_id, document_id, document_version_id, state, sequence,
-                  data_watermark, provider_code, max_output_tokens, deadline_at, created_at, updated_at
+                  data_watermark, provider_code, model_code, max_output_tokens, deadline_at, created_at, updated_at
                 from ai_run where tenant_id = :tenant and run_id = :run
                 """ + (lock ? " for update" : "");
         return jdbc.sql(sql).param("tenant", tenantId).param("run", runId)
@@ -386,7 +387,7 @@ final class AgentRunService {
                         rs.getObject("run_id", UUID.class), rs.getObject("context_lease_id", UUID.class),
                         rs.getObject("document_id", UUID.class), rs.getObject("document_version_id", UUID.class),
                         rs.getString("state"), rs.getLong("sequence"), rs.getString("data_watermark"),
-                        rs.getString("provider_code"), rs.getInt("max_output_tokens"),
+                        rs.getString("provider_code"), rs.getString("model_code"), rs.getInt("max_output_tokens"),
                         rs.getObject("deadline_at", OffsetDateTime.class),
                         rs.getObject("created_at", OffsetDateTime.class), rs.getObject("updated_at", OffsetDateTime.class)))
                 .optional().orElseThrow(AgentRunService::contextDenied);
@@ -526,6 +527,7 @@ final class AgentRunService {
             long sequence,
             String dataWatermark,
             String providerCode,
+            String modelCode,
             int maxOutputTokens,
             OffsetDateTime deadlineAt,
             OffsetDateTime createdAt,

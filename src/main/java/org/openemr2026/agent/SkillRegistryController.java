@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.SkillRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.SkillRegistryRegisterRequestWire;
+import org.openemr2026.contracts.SkillRegistryVersionRequestWire;
 import org.openemr2026.contracts.SkillRegistryWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -62,5 +63,17 @@ final class SkillRegistryController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(skills.deactivate(identity, idempotencyKey, skillRegistryId, command));
+    }
+
+    @PostMapping("/skill-registry/{skill_registry_id}/versions")
+    ResponseEntity<SkillRegistryWire> publishVersion(
+            HttpServletRequest request,
+            @PathVariable("skill_registry_id") UUID skillRegistryId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody SkillRegistryVersionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(skills.publishVersion(identity, idempotencyKey, skillRegistryId, command));
     }
 }

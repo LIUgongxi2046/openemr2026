@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ToolRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.ToolRegistryRegisterRequestWire;
+import org.openemr2026.contracts.ToolRegistryVersionRequestWire;
 import org.openemr2026.contracts.ToolRegistryWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -62,5 +63,17 @@ final class ToolRegistryController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(tools.deactivate(identity, idempotencyKey, toolRegistryId, command));
+    }
+
+    @PostMapping("/tool-registry/{tool_registry_id}/versions")
+    ResponseEntity<ToolRegistryWire> publishVersion(
+            HttpServletRequest request,
+            @PathVariable("tool_registry_id") UUID toolRegistryId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ToolRegistryVersionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(tools.publishVersion(identity, idempotencyKey, toolRegistryId, command));
     }
 }

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.SkillRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.SkillRegistryRegisterRequestWire;
+import org.openemr2026.contracts.SkillRegistryVersionRequestWire;
 import org.openemr2026.contracts.SkillRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,18 @@ final class SkillRegistryApiTest {
         SkillRegistryWire deactivated = skills.deactivate(identity(), "deact-" + UUID.randomUUID(),
                 registered.skillRegistryId(), new SkillRegistryDeactivateRequestWire(organization, facility));
         assertThat(deactivated.status()).isEqualTo(SkillRegistryWire.StatusValue.INACTIVE);
+    }
+
+    @Test
+    void givenActiveSkill_whenPublishingVersion_thenOnlyNewVersionRemainsActive() {
+        SkillRegistryWire registered = register("SKILL-" + UUID.randomUUID().toString().substring(0, 8));
+        SkillRegistryWire published = skills.publishVersion(identity(), "version-" + UUID.randomUUID(),
+                registered.skillRegistryId(), new SkillRegistryVersionRequestWire(
+                        organization, facility, "临床摘要能力", "v2"));
+        assertThat(published.skillCode()).isEqualTo(registered.skillCode());
+        assertThat(published.skillVersion()).isEqualTo("v2");
+        assertThat(skills.listSkills(identity(), "ACTIVE")).extracting(SkillRegistryWire::skillRegistryId)
+                .contains(published.skillRegistryId()).doesNotContain(registered.skillRegistryId());
     }
 
     @Test

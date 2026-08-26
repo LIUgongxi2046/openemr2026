@@ -2,7 +2,9 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ToolRegistryWire } from '../../generated/contracts';
-import { deactivateTool, issueAiLease, listTools, registerTool } from '../../api/ai-platform';
+import { deactivateTool, issueAiLease, listTools, publishToolVersion, registerTool } from '../../api/ai-platform';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -36,6 +38,9 @@ const form = reactive({
   toolVersion: '',
   toolType: 'API' as ToolType,
 });
+const editingTool = ref<ToolRegistryWire | null>(null);
+const editorOpen = ref(false);
+const deactivateTarget = ref<ToolRegistryWire | null>(null);
 const busy = ref('');
 const notice = ref('');
 
@@ -44,19 +49,47 @@ async function reload() {
   await toolsQuery.refetch();
 }
 
+function nextVersion(version: string) {
+  const match = version.match(/^(?:v)?(\d+)\.(\d+)\.(\d+)$/);
+  return match ? `${match[1]}.${match[2]}.${Number(match[3]) + 1}` : `${version}-next`;
+}
+
+function resetForm() {
+  editingTool.value = null;
+  form.toolCode = ''; form.toolName = ''; form.toolVersion = ''; form.toolType = 'API';
+}
+
+function openCreate() {
+  resetForm();
+  editorOpen.value = true;
+}
+
+function editTool(tool: ToolRegistryWire) {
+  editingTool.value = tool;
+  form.toolCode = tool.tool_code; form.toolName = tool.tool_name;
+  form.toolVersion = nextVersion(tool.tool_version); form.toolType = tool.tool_type; notice.value = '';
+  editorOpen.value = true;
+}
+
 async function register() {
   const lease = leaseQuery.data.value;
   if (!lease || busy.value || !form.toolCode.trim() || !form.toolName.trim() || !form.toolVersion.trim()) return;
   busy.value = 'create'; notice.value = '';
   try {
-    await registerTool(lease, {
-      tool_code: form.toolCode.trim(),
-      tool_name: form.toolName.trim(),
-      tool_version: form.toolVersion.trim(),
-      tool_type: form.toolType,
-    });
-    form.toolCode = ''; form.toolName = ''; form.toolVersion = '';
-    notice.value = '医助工具已登记，版本记录和操作留痕已同步更新。';
+    if (editingTool.value) {
+      await publishToolVersion(lease, editingTool.value, {
+        tool_name: form.toolName.trim(), tool_version: form.toolVersion.trim(), tool_type: form.toolType,
+      });
+      notice.value = '新工具版本已发布，旧版本已自动停用；后续医助任务将使用新版本。';
+    } else {
+      await registerTool(lease, {
+        tool_code: form.toolCode.trim(), tool_name: form.toolName.trim(),
+        tool_version: form.toolVersion.trim(), tool_type: form.toolType,
+      });
+      notice.value = '医助工具已登记，版本记录和操作留痕已同步更新。';
+    }
+    resetForm();
+    editorOpen.value = false;
     await toolsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -71,6 +104,7 @@ async function deactivate(tool: ToolRegistryWire) {
     await deactivateTool(lease, tool);
     notice.value = `医助工具“${tool.tool_name}”已停用。`;
     await toolsQuery.refetch();
+    deactivateTarget.value = null;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
@@ -97,13 +131,13 @@ async function deactivate(tool: ToolRegistryWire) {
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
+      <div>
         <section class="admin-panel">
           <header>
             <div><h2>医助工具版本台账</h2><p>编码与版本不可变；停用后保留历史记录。</p></div>
-            <button class="button secondary" @click="toolsQuery.refetch()">刷新</button>
+            <div class="admin-row-actions"><button class="button secondary" @click="toolsQuery.refetch()">刷新</button><button class="button primary" @click="openCreate">新建医助工具</button></div>
           </header>
-          <div v-if="tools.length === 0" class="admin-empty" role="status">暂无医助工具，可在右侧登记。</div>
+          <div v-if="tools.length === 0" class="admin-empty" role="status">暂无医助工具，请点击“新建医助工具”。</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>名称</th><th>编码</th><th>类型</th><th>版本</th><th>状态</th><th>操作</th></tr></thead>
@@ -114,24 +148,25 @@ async function deactivate(tool: ToolRegistryWire) {
                   <td>{{ toolTypeLabels[tool.tool_type] }}</td>
                   <td><code>{{ tool.tool_version }}</code></td>
                   <td><span class="admin-status" :class="tool.status.toLowerCase()">{{ tool.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><button class="task-action" :disabled="tool.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(tool)">{{ busy === tool.tool_registry_id ? '处理中…' : '停用' }}</button></td>
+                  <td><div class="admin-row-actions"><button class="task-action" :disabled="tool.status !== 'ACTIVE' || Boolean(busy)" @click="editTool(tool)">编辑</button><button class="task-action danger" :disabled="tool.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = tool">删除</button></div></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>登记医助工具</h2><p>编码、名称与版本均为必填。</p></div></header>
-          <form class="admin-form" @submit.prevent="register">
-            <label><span>工具编码</span><input v-model="form.toolCode" maxlength="128" required placeholder="例：DRUG-INTERACTION" /></label>
+      </div>
+
+      <AdminActionDialog v-model:open="editorOpen" :title="editingTool ? '编辑并发布工具新版本' : '新建医助工具'" :description="editingTool ? '编码保持不变；新版本可调整名称、版本和工具类型。' : '登记后可供授权医助团队调用。'" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
+          <form class="admin-form ai-center-dialog-form" @submit.prevent="register">
+            <label><span>工具编码</span><input v-model="form.toolCode" maxlength="128" required :disabled="Boolean(editingTool)" placeholder="例：DRUG-INTERACTION" /></label>
             <label><span>工具名称</span><input v-model="form.toolName" maxlength="256" required placeholder="例：药物相互作用查询" /></label>
             <label><span>版本</span><input v-model="form.toolVersion" maxlength="64" required placeholder="例：1.0.0" /></label>
             <label><span>类型</span><select v-model="form.toolType"><option v-for="(name, type) in toolTypeLabels" :key="type" :value="type">{{ name }}</option></select></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在登记…' : '登记并生效' }}</button>
+            <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在保存…' : editingTool ? '发布新版本' : '登记并生效' }}</button></div>
           </form>
-        </section>
-      </div>
+      </AdminActionDialog>
+      <AdminConfirmDialog :open="Boolean(deactivateTarget)" :title="`删除医助工具 ${deactivateTarget?.tool_name ?? ''}`" description="删除将以安全停用方式执行；新任务不再调用该工具，历史任务和审计记录继续保留。" confirm-label="确认删除并停用" :busy="Boolean(busy)" @update:open="!$event && (deactivateTarget = null)" @confirm="deactivateTarget && deactivate(deactivateTarget)"><div v-if="deactivateTarget" class="admin-impact-grid"><div><span>工具编码</span><b>{{ deactivateTarget.tool_code }}</b></div><div><span>当前版本</span><b>{{ deactivateTarget.tool_version }}</b></div><div><span>工具类型</span><b>{{ toolTypeLabels[deactivateTarget.tool_type] }}</b></div><div><span>流程影响</span><b>停止新任务调用</b></div></div></AdminConfirmDialog>
     </template>
   </section>
 </template>

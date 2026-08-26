@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.SkillRegistryDeactivateRequestWire;
 import org.openemr2026.contracts.SkillRegistryRegisterRequestWire;
+import org.openemr2026.contracts.SkillRegistryVersionRequestWire;
 import org.openemr2026.contracts.SkillRegistryWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -66,6 +67,48 @@ final class SkillRegistryService {
             appendEvidence(identity, registryId, "SKILL_REGISTRY_DEACTIVATED", "SkillRegistryDeactivated");
             completeCommand(identity, "SKILL_REGISTRY_DEACTIVATE", idempotencyKey, registryId);
             return registry(identity.tenantId(), registryId);
+        });
+    }
+
+    SkillRegistryWire publishVersion(
+            ClinicalIdentity identity, String idempotencyKey, UUID currentRegistryId,
+            SkillRegistryVersionRequestWire request) {
+        String skillName = requireText(request.skillName(), 2, "skill_name");
+        String skillVersion = requireText(request.skillVersion(), 1, "skill_version");
+        return transactions.execute(status -> {
+            beginCommand(identity, "SKILL_REGISTRY_PUBLISH_VERSION", idempotencyKey,
+                    sha256(currentRegistryId + "|" + skillName + "|" + skillVersion));
+            RegistryHead current = jdbc.sql("""
+                    select skill_code, skill_version, status from skill_registry
+                    where tenant_id = :tenant and skill_registry_id = :registry for update
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId)
+                    .query((rs, row) -> new RegistryHead(
+                            rs.getString("skill_code"), rs.getString("skill_version"), rs.getString("status")))
+                    .optional().orElseThrow(SkillRegistryService::contextDenied);
+            if (!"ACTIVE".equals(current.status())) {
+                throw new SkillRegistryException(
+                        "SKILL_REGISTRY_STATE_INVALID", 409, "Only an active skill can publish a new version");
+            }
+            if (current.version().equals(skillVersion)) {
+                throw invalid("skill_version must change when publishing a new version");
+            }
+            jdbc.sql("""
+                    update skill_registry set status = 'INACTIVE', updated_at = now()
+                    where tenant_id = :tenant and skill_registry_id = :registry
+                    """).param("tenant", identity.tenantId()).param("registry", currentRegistryId).update();
+            UUID nextRegistryId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into skill_registry(
+                      tenant_id, skill_registry_id, skill_code, skill_name, skill_version, status)
+                    values (:tenant, :registry, :code, :name, :version, 'ACTIVE')
+                    """).param("tenant", identity.tenantId()).param("registry", nextRegistryId)
+                    .param("code", current.code()).param("name", skillName).param("version", skillVersion).update();
+            appendEvidence(identity, currentRegistryId,
+                    "SKILL_REGISTRY_SUPERSEDED", "SkillRegistrySuperseded");
+            appendEvidence(identity, nextRegistryId,
+                    "SKILL_REGISTRY_VERSION_PUBLISHED", "SkillRegistryVersionPublished");
+            completeCommand(identity, "SKILL_REGISTRY_PUBLISH_VERSION", idempotencyKey, nextRegistryId);
+            return registry(identity.tenantId(), nextRegistryId);
         });
     }
 
@@ -175,4 +218,6 @@ final class SkillRegistryService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record RegistryHead(String code, String version, String status) {}
 }

@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,5 +63,17 @@ final class CapabilityPackController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(packs.deactivate(identity, idempotencyKey, capabilityPackId, command));
+    }
+
+    @PutMapping("/capability-packs/{capability_pack_id}")
+    ResponseEntity<CapabilityPackWire> update(
+            HttpServletRequest request,
+            @PathVariable("capability_pack_id") UUID capabilityPackId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody CapabilityPackDefineRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(packs.update(identity, idempotencyKey, capabilityPackId, command));
     }
 }
