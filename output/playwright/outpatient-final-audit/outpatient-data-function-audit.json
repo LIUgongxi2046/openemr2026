@@ -1,0 +1,211 @@
+{
+  "run_at": "2026-08-28T11:31:10.978Z",
+  "routes": [
+    "outpatient",
+    "opd-record",
+    "opd-diagnosis",
+    "opd-orders",
+    "opd-results",
+    "opd-consult",
+    "opd-followup"
+  ],
+  "checks": 33,
+  "passed": 33,
+  "failed": 0,
+  "findings": [],
+  "observations": [
+    {
+      "route": "outpatient",
+      "name": "seven-secondary-navigation-items",
+      "status": "PASS"
+    },
+    {
+      "route": "outpatient",
+      "name": "outpatient-summary-has-realistic-workflow-data",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-record",
+      "name": "record-editor-and-workflow-actions",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "diagnosis-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "diagnosis-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "diagnosis-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "diagnosis-delete-lifecycle-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-orders",
+      "name": "orders-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-orders",
+      "name": "orders-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-orders",
+      "name": "orders-delete-lifecycle-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-results",
+      "name": "results-data-and-filter",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-results",
+      "name": "results-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-results",
+      "name": "results-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-consult",
+      "name": "consult-data-and-actions",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-consult",
+      "name": "consult-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-consult",
+      "name": "consult-delete-lifecycle-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-followup",
+      "name": "followup-data-and-actions",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-followup",
+      "name": "followup-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-followup",
+      "name": "followup-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "outpatient",
+      "name": "outpatient-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-record",
+      "name": "opd-record-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "opd-diagnosis-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-orders",
+      "name": "opd-orders-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-results",
+      "name": "opd-results-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-consult",
+      "name": "opd-consult-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-followup",
+      "name": "opd-followup-desktop-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "outpatient",
+      "name": "outpatient-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-record",
+      "name": "opd-record-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-diagnosis",
+      "name": "opd-diagnosis-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-orders",
+      "name": "opd-orders-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-results",
+      "name": "opd-results-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-consult",
+      "name": "opd-consult-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    },
+    {
+      "route": "opd-followup",
+      "name": "opd-followup-mobile-layout",
+      "status": "PASS",
+      "pageOverflow": 0,
+      "overlaps": []
+    }
+  ]
+}

@@ -519,7 +519,16 @@ final class InpatientAdmissionApiTest {
         assertThat(workspace.statusCode()).isEqualTo(200);
         JsonNode catalog = objectMapper.readTree(workspace.body()).path("catalog");
         assertThat(catalog.size()).isGreaterThan(0);
-        String pathwayVersionId = catalog.get(0).path("pathway_version_id").stringValue();
+        JsonNode selectedPathway = null;
+        for (JsonNode candidate : catalog) {
+            if ("HF-INPATIENT".equals(candidate.path("pathway_code").stringValue())) {
+                selectedPathway = candidate;
+                break;
+            }
+        }
+        assertThat(selectedPathway).isNotNull();
+        String pathwayVersionId = selectedPathway.path("pathway_version_id").stringValue();
+        int pathwayVersionNo = selectedPathway.path("version_no").intValue();
 
         HttpResponse<String> enrolledResponse = send(
                 "POST", "/api/v1/inpatient/admissions/" + admissionId + "/pathways", """
@@ -531,7 +540,7 @@ final class InpatientAdmissionApiTest {
         assertThat(enrolledResponse.statusCode()).isEqualTo(201);
         JsonNode instance = objectMapper.readTree(enrolledResponse.body());
         String instanceId = instance.path("pathway_instance_id").stringValue();
-        assertThat(instance.path("version_no").intValue()).isEqualTo(1);
+        assertThat(instance.path("version_no").intValue()).isEqualTo(pathwayVersionNo);
         assertThat(instance.path("current_stage_code").stringValue()).isEqualTo("ADMISSION_ASSESSMENT");
         assertThat(instance.path("row_version").longValue()).isEqualTo(1);
         assertThat(instance.path("data_watermark").stringValue()).hasSize(64);

@@ -193,7 +193,9 @@ final class TertiaryOperationalDataImportTest {
                     where row.tenant_id = :tenant and
                       (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :inpatient)) bedside_notes,
                   (select count(*) from shift_handover_patient where tenant_id = :tenant
-                    and handover_id in (select md5('tertiary-operational-v1:handover:' || n)::uuid
+                    and handover_id in (select overlay(overlay(
+                      md5('tertiary-operational-v1:handover:' || n)
+                      placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid
                       from generate_series(1, 8) n)) handover_patients,
                   (select count(*) from outpatient_followup row join encounter e
                     on e.tenant_id = row.tenant_id and e.encounter_id = row.encounter_id

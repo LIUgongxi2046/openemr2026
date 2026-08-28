@@ -1241,8 +1241,10 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   published_at = case when config_item.status = 'ARCHIVED' then null
                     else coalesce(config_item.published_at, excluded.published_at) end,
                   updated_at = now(), row_version = config_item.row_version + 1
-                where config_item.display_name is distinct from excluded.display_name
-                   or config_item.payload is distinct from excluded.payload
+                where (config_item.display_name is distinct from excluded.display_name
+                   or config_item.payload is distinct from excluded.payload)
+                  and coalesce(config_item.payload->>'fixture_source', '')
+                    <> 'tertiary-data-center-business-v2'
                 """).param("tenant", TENANT_ID).param("approver", COLLABORATOR_USER_ID)
                 .param("author", USER_ID).update();
 
@@ -1462,7 +1464,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                       approved_by = excluded.approved_by,
                       published_at = excluded.published_at,
                       updated_at = now()
-                    where config_item.payload->>'fixture_source' = 'tertiary-data-center-v1'
+                    where config_item.payload->>'fixture_source' in (
+                      'tertiary-data-center-v1', 'tertiary-business-generator-v2')
                     """).param("tenant", TENANT_ID)
                     .param("id", required(row, "id")).param("type", required(row, "config_type"))
                     .param("key", required(row, "config_key")).param("name", required(row, "display_name"))

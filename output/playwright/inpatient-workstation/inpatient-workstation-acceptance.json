@@ -1,0 +1,28 @@
+{
+  "run_at": "2026-08-28T11:18:07.016Z",
+  "base_url": "http://127.0.0.1:4178",
+  "passed": 3,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "nine-inpatient-routes-and-data",
+      "status": "PASS",
+      "detail": "9/9 路由标题、二级导航、真实数据标识与宽屏布局通过"
+    },
+    {
+      "name": "all-create-and-control-entry-points-use-dialogs",
+      "status": "PASS",
+      "detail": "8 个可变更子菜单入口均打开唯一可关闭弹窗"
+    },
+    {
+      "name": "mobile-nine-route-layout",
+      "status": "PASS",
+      "detail": "9/9 路由在 390px 无页面横向溢出，弹窗不越界"
+    }
+  ],
+  "api_response_count": 47,
+  "api_statuses": [
+    200
+  ],
+  "failures": []
+}

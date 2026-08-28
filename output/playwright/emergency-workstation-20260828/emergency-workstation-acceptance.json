@@ -1,0 +1,55 @@
+{
+  "run_at": "2026-08-28T15:12:02.186Z",
+  "base_url": "http://127.0.0.1:4177",
+  "prototype_url": "http://127.0.0.1:4180",
+  "passed": 5,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "desktop-six-routes-live-data-and-layout",
+      "status": "PASS",
+      "detail": "6/6 路由、实时数据区、导航与宽屏布局通过"
+    },
+    {
+      "name": "all-primary-create-dialogs",
+      "status": "PASS",
+      "detail": [
+        "新建分诊 弹窗可打开、可关闭、不越界",
+        "新建抢救记录 因当前流程占用被正确禁用",
+        "新建留观 因当前流程占用被正确禁用",
+        "新建护理记录 弹窗可打开、可关闭、不越界",
+        "新建交接班 弹窗可打开、可关闭、不越界",
+        "记录域切换 弹窗可打开、可关闭、不越界"
+      ]
+    },
+    {
+      "name": "existing-row-edit-delete-dialogs",
+      "status": "PASS",
+      "detail": [
+        "编辑/复评 弹窗可打开、可关闭、不越界",
+        "删除 弹窗可打开、可关闭、不越界",
+        "删除 弹窗可打开、可关闭、不越界",
+        "编辑去向 弹窗可打开、可关闭、不越界",
+        "删除 弹窗可打开、可关闭、不越界",
+        "编辑/更正 弹窗可打开、可关闭、不越界",
+        "删除 弹窗可打开、可关闭、不越界",
+        "删除 弹窗可打开、可关闭、不越界"
+      ]
+    },
+    {
+      "name": "mobile-six-routes-and-dialog-layout",
+      "status": "PASS",
+      "detail": "6/6 路由在 390px 无页面溢出，业务弹窗不越界"
+    },
+    {
+      "name": "prototype-reference-captured",
+      "status": "PASS",
+      "detail": "已保存 4180 原型急诊工作台对照证据"
+    }
+  ],
+  "api_response_count": 28,
+  "api_statuses": [
+    200
+  ],
+  "failures": []
+}

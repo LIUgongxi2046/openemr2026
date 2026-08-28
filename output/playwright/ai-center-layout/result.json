@@ -1,0 +1,263 @@
+{
+  "checkedRoutes": 9,
+  "checkedViewports": 3,
+  "failures": [],
+  "observations": [
+    {
+      "route": "ai-center",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant-policy",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "models",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "agent-catalog",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "skill-catalog",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "tool-catalog",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "agent-evals",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "aiops",
+      "viewport": "desktop",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1176,
+      "escaped": []
+    },
+    {
+      "route": "ai-center",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant-policy",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "models",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "agent-catalog",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "skill-catalog",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "tool-catalog",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "agent-evals",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "aiops",
+      "viewport": "compact",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 1016,
+      "escaped": []
+    },
+    {
+      "route": "ai-center",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant-policy",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "models",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "agent-catalog",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "skill-catalog",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "tool-catalog",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "agent-evals",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "aiops",
+      "viewport": "mobile",
+      "documentOverflow": false,
+      "bodyOverflow": false,
+      "pageWidth": 366,
+      "escaped": []
+    },
+    {
+      "route": "ai-assistant-controls",
+      "viewport": "desktop",
+      "contextOptionCount": 5,
+      "authorizationOptionCount": 3,
+      "modelOptionCount": 6,
+      "patientResultCount": 6,
+      "blankTaskVisible": true
+    },
+    {
+      "route": "ai-assistant-side-panel",
+      "viewport": "desktop",
+      "panel": {
+        "x": 835.203125,
+        "y": 0,
+        "width": 604.796875,
+        "height": 1000,
+        "top": 0,
+        "right": 1440,
+        "bottom": 1000,
+        "left": 835.203125
+      },
+      "shell": {
+        "x": 0,
+        "y": 0,
+        "width": 835.1875,
+        "height": 1076,
+        "top": 0,
+        "right": 835.1875,
+        "bottom": 1076,
+        "left": 0
+      },
+      "panelStyle": {
+        "display": "block",
+        "visibility": "visible",
+        "position": "fixed"
+      },
+      "panelOverflow": false,
+      "documentOverflow": false
+    }
+  ]
+}

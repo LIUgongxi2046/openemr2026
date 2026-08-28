@@ -329,7 +329,7 @@ final class TertiaryMockBusinessDataGenerator {
                 response.put("exchanges", records);
                 copy(response, first, "document_id", "exchange_id", "content_hash", "receipt_status");
                 response.put("shared_at", "ACKNOWLEDGED".equals(first.get("receipt_status")) ? producedAt.toString() : null);
-                response.put("clinical_impact", "区域回执与院内签署解耦；未确认记录进入幂等重试队列");
+                response.put("clinical_impact", "区域回执不影响院内病历签署；未确认记录进入幂等重试队列");
             }
             case "MODEL_PROVIDER" -> {
                 response.put("outputs", records);

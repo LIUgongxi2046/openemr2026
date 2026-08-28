@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>住院原型对照</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 18px; background: #111827; color: #f8fafc; font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  h1 { margin: 0 0 16px; font-size: 22px; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+  figure { margin: 0; padding: 10px; background: #1f2937; border-radius: 10px; }
+  figcaption { margin-bottom: 8px; color: #cbd5e1; font-weight: 700; }
+  img { display: block; width: 100%; height: auto; background: white; }
+</style>
+<h1 id="title"></h1>
+<div class="pair">
+  <figure><figcaption>4180 原型</figcaption><img id="source"></figure>
+  <figure><figcaption>4177 当前实现</figcaption><img id="implementation"></figure>
+</div>
+<script>
+  const route = new URLSearchParams(location.search).get('route') || 'inpatient';
+  document.querySelector('#title').textContent = `${route} · 1440px 首轮对照`;
+  document.querySelector('#source').src = `../source/${route}-1440.png`;
+  document.querySelector('#implementation').src = `../implementation/${route}-1440-before.png`;
+</script>
+</html>
