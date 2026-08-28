@@ -53,7 +53,7 @@ const navigation: NavItem[] = [
   { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量', count: '7' },
   { id: 'archive-assets', label: '病案资产中心', icon: '▣', group: '病历与质量', count: '3' },
   { id: 'care-operations', label: '医疗协同中心', icon: '✚', group: '业务协同', count: '8' },
-  { id: 'clinical-tasks', label: '任务与临床路径', icon: '☑', group: '业务协同', count: '9' },
+  { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同', count: '9' },
   { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心', count: '6' },
   { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心', count: '9' },
   { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心', count: '13' },
@@ -139,6 +139,22 @@ const subNav = computed<SubNav | null>(() => {
   if (inpatientRoutes.includes(c)) {
     return { kind: 'domain', title: '临床业务门户', active: c.startsWith('inpatient-doc') ? 'inpatient-course' : c, items: [['inpatient', '患者列表'], ['inpatient-overview', '患者总览'], ['inpatient-course', '病历文书'], ['ip-orders', '医嘱与用药'], ['ip-results', '检查检验'], ['ip-consult', '查房会诊'], ['ip-pathway', '临床路径'], ['ward', '护理摘要'], ['inpatient-discharge', '出院病案']] };
   }
+  if (c === 'clinical-tasks') {
+    const requestedView = typeof route.query.view === 'string' ? route.query.view : 'overview';
+    const activeView = ['overview', 'team', 'collaboration', 'notifications', 'pathway', 'rules'].includes(requestedView)
+      ? requestedView
+      : 'overview';
+    return {
+      kind: 'center',
+      title: '任务中心',
+      active: `clinical-tasks?view=${activeView}`,
+      items: [
+        ['clinical-tasks?view=overview', '任务总览'], ['clinical-tasks?view=team', '团队队列'],
+        ['clinical-tasks?view=collaboration', '委托协作'], ['clinical-tasks?view=notifications', '消息通知'],
+        ['clinical-tasks?view=pathway', '临床路径'], ['clinical-tasks?view=rules', '任务规则'],
+      ],
+    };
+  }
   if (careOperationRoutes.includes(c)) {
     return { kind: 'center', title: '医疗协同', active: c, items: [['care-operations', '协同总览'], ['billing', '费用结算'], ['outpatient-pharmacy', '门诊药房'], ['inpatient-pharmacy', '住院药房'], ['lab-workbench', '检验'], ['imaging-workbench', '检查影像'], ['surgery-schedule', '手术'], ['transfusion', '输血']] };
   }
@@ -165,7 +181,7 @@ const routeRoleContext = computed(() => {
   if (id === 'ward') return '病区护士 · 心内科一病区';
   if (inpatientRoutes.includes(id)) return '住院医生 · 心内科一病区';
   if (emergencyRoutes.includes(id)) return '急诊医生 · 抢救区';
-  if (id === 'clinical-tasks') return '统一临床任务中心';
+  if (id === 'clinical-tasks') return '任务中心';
   if (outpatientRoutes.includes(id) || recordRoutes.includes(id)) return '病历中心 · 当前门诊就诊';
   return '管理与治理工作台';
 });
@@ -342,7 +358,7 @@ async function closeAssistant() {
             <div class="notification-tabs" role="tablist" aria-label="通知筛选"><button type="button" role="tab" :aria-selected="notificationFilter === 'all'" @click="notificationFilter = 'all'">全部</button><button type="button" role="tab" :aria-selected="notificationFilter === 'unread'" @click="notificationFilter = 'unread'">未读 <b>{{ unreadNotifications }}</b></button></div>
             <ul v-if="filteredNotifications.length"><li v-for="item in filteredNotifications" :key="item.id" :class="{ unread: item.unread }"><button class="notification-main" type="button" @click="openNotification(item)"><i class="notification-item-icon" :class="item.category" aria-hidden="true">{{ item.category === 'critical' ? '!' : item.category === 'task' ? '✓' : '◇' }}</i><span><b>{{ item.title }}</b><small>{{ item.description }}</small></span><em aria-hidden="true">›</em></button><button v-if="item.unread" class="notification-read" type="button" :aria-label="`标记${item.title}为已读`" @click="markNotificationRead(item.id)">✓</button></li></ul>
             <div v-else class="notification-empty"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18"/><path d="m8 12 2.2 2.2L16 8.5"/></svg><strong>没有未读通知</strong><span>新的临床与治理提醒会显示在这里。</span></div>
-            <footer><RouterLink to="/clinical-tasks" @click="activeMenu = null">进入统一任务中心 <span aria-hidden="true">→</span></RouterLink></footer>
+            <footer><RouterLink to="/clinical-tasks" @click="activeMenu = null">进入任务中心 <span aria-hidden="true">→</span></RouterLink></footer>
           </section>
         </div>
         <div class="topbar-menu-control">
@@ -374,10 +390,10 @@ async function closeAssistant() {
       </template>
     </aside>
     <main id="main-content" class="main">
-      <div v-if="subNav" class="center-nav" :class="subNav.kind">
+      <nav v-if="subNav" class="center-nav" :class="[subNav.kind, { 'task-center-subnav': routeId === 'clinical-tasks' }]" :aria-label="`${subNav.title}二级导航`">
         <b>{{ subNav.title }}</b>
-        <RouterLink v-for="[id, label] in subNav.items" :key="id" :to="`/${id}`" :class="{ active: id === subNav.active }">{{ label }}</RouterLink>
-      </div>
+        <RouterLink v-for="[id, label] in subNav.items" :key="id" :to="`/${id}`" :class="{ active: id === subNav.active }" :aria-current="id === subNav.active ? 'page' : undefined">{{ label }}</RouterLink>
+      </nav>
       <div v-if="isAdminDomain" class="admin-domain-layout">
         <aside class="admin-domain-nav card" aria-label="系统管理二级导航">
           <div class="admin-nav-title"><b>系统管理</b><span>身份 · 主数据 · 安全 · 运行</span></div>

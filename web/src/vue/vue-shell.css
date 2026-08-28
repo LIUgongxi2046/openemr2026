@@ -546,6 +546,8 @@
   .sidebar .nav-count { margin-left: 2px; }
   .main { grid-column: 1; grid-row: 3; width: 100%; min-width: 0; padding-inline: 12px; }
   .center-nav { width: auto; max-width: none; margin-inline: -12px; padding-inline: 12px; }
+  .center-nav.task-center-subnav { gap: 4px; }
+  .center-nav.task-center-subnav a { min-height: 36px; padding-inline: 10px; }
   .vue-boundary-page { padding: 24px 12px 56px; }
   .outpatient-route-grid { grid-template-columns: minmax(0,1fr); }
   .governance-sign-panel { grid-template-columns: minmax(0,1fr); }

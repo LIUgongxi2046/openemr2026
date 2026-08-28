@@ -226,6 +226,9 @@ h3 { margin: 16px 0 8px; color: #435164; font-size: 13px; }
 .center-nav a { white-space: nowrap; padding: 8px 10px; border-radius: 7px; color: var(--muted); font-size: 12px; text-decoration: none; }
 .center-nav a:hover { background: #f3f7fb; color: var(--ink); }
 .center-nav a.active { background: var(--blue-50); color: var(--blue); font-weight: 800; }
+.center-nav.task-center-subnav { gap: 6px; scrollbar-width: thin; }
+.center-nav.task-center-subnav > b { margin-right: 6px; }
+.center-nav.task-center-subnav a { display: inline-flex; align-items: center; min-height: 34px; padding: 7px 12px; }
 
 .nav-icon { width: 21px; flex: 0 0 21px; text-align: center; font-size: 16px; border: none; }
 .nav-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
