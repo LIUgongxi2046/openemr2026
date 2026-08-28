@@ -7,7 +7,15 @@ import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminDataPager from '../components/AdminDataPager.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
+import AdminOrganizationTree from '../components/AdminOrganizationTree.vue';
 import { toClinicalIssue } from '../clinical-error';
+import {
+  allExpandableOrganizationIds,
+  buildOrganizationTree,
+  countVisibleOrganizationNodes,
+  defaultExpandedOrganizationIds,
+  toggleOrganizationTreeId,
+} from '../organization-tree';
 
 type UnitType = OrganizationUnitWire['unit_type'];
 const unitTypeLabels: Record<UnitType, string> = { ORGANIZATION: '医疗机构', FACILITY: '院区', DEPARTMENT: '科室', WARD: '病区', BED: '床位' };
@@ -25,11 +33,19 @@ const createOpen = ref(false);
 const importOpen = ref(false);
 const deactivateTarget = ref<OrganizationUnitWire | null>(null);
 const selectedUnitId = ref('');
+const expandedTreeIds = ref<Set<string>>(new Set());
+const treeInitialized = ref(false);
 const form = reactive({ unitType: 'DEPARTMENT' as UnitType, code: '', name: '', parentId: '', subtype: '' });
 const importText = ref('科室,CARD-REHAB,心脏康复中心,\n病区,CARD-REHAB-W1,心脏康复一病区,CARD-REHAB');
 const unitTypeByInput: Readonly<Record<string, UnitType>> = Object.freeze({ 医疗机构: 'ORGANIZATION', 机构: 'ORGANIZATION', 院区: 'FACILITY', 科室: 'DEPARTMENT', 病区: 'WARD', 床位: 'BED' });
 const units = computed(() => query.data.value ?? []);
 const activeUnits = computed(() => units.value.filter((unit) => unit.status === 'ACTIVE'));
+const organizationTree = computed(() => buildOrganizationTree(units.value));
+const expandableTreeIds = computed(() => allExpandableOrganizationIds(organizationTree.value));
+const visibleTreeCount = computed(() => countVisibleOrganizationNodes(organizationTree.value, expandedTreeIds.value));
+const totalTreeCount = computed(() => countVisibleOrganizationNodes(organizationTree.value, expandableTreeIds.value));
+const treeFullyExpanded = computed(() => expandableTreeIds.value.size > 0
+  && [...expandableTreeIds.value].every((unitId) => expandedTreeIds.value.has(unitId)));
 const filteredUnits = computed(() => {
   const keyword = search.value.trim().toLowerCase();
   return units.value.filter((unit) => (typeFilter.value === 'ALL' || unit.unit_type === typeFilter.value)
@@ -56,32 +72,19 @@ const parents = computed(() => {
 });
 const parentRequired = computed(() => ['FACILITY', 'WARD', 'BED'].includes(form.unitType));
 watch([search, typeFilter, statusFilter], () => { page.value = 1; });
-
-const treeRows = computed(() => {
-  const byParent = new Map<string, OrganizationUnitWire[]>();
-  for (const unit of units.value.filter((item) => item.status === 'ACTIVE')) {
-    const key = unit.parent_unit_id ?? 'ROOT';
-    const current = byParent.get(key) ?? [];
-    current.push(unit); byParent.set(key, current);
+watch(organizationTree, (nodes) => {
+  if (!treeInitialized.value && nodes.length) {
+    expandedTreeIds.value = defaultExpandedOrganizationIds(nodes);
+    treeInitialized.value = true;
   }
-  const order: Record<UnitType, number> = { ORGANIZATION: 0, FACILITY: 1, DEPARTMENT: 2, WARD: 3, BED: 4 };
-  const result: Array<{ unit: OrganizationUnitWire; depth: number; childCount: number }> = [];
-  const append = (parent: string, depth: number) => {
-    const children = [...(byParent.get(parent) ?? [])].sort((a, b) => order[a.unit_type] - order[b.unit_type] || a.display_name.localeCompare(b.display_name, 'zh-CN'));
-    for (const child of children) {
-      const descendants = byParent.get(child.unit_id) ?? [];
-      result.push({ unit: child, depth, childCount: descendants.length });
-      if (child.unit_type !== 'BED') append(child.unit_id, depth + 1);
-    }
-  };
-  append('ROOT', 0);
-  return result.filter((row) => row.unit.unit_type !== 'BED');
-});
-function childSummary(unit: OrganizationUnitWire, childCount: number) {
-  if (unit.unit_type === 'WARD') return `${units.value.filter((item) => item.parent_unit_id === unit.unit_id && item.unit_type === 'BED' && item.status === 'ACTIVE').length} 床`;
-  const nextType: Partial<Record<UnitType, string>> = { ORGANIZATION: '院区', FACILITY: '科室', DEPARTMENT: '病区' };
-  return `${childCount} ${nextType[unit.unit_type] ?? '单元'}`;
+}, { immediate: true });
+
+function toggleTreeUnit(unitId: string) {
+  expandedTreeIds.value = toggleOrganizationTreeId(expandedTreeIds.value, unitId);
 }
+function selectTreeUnit(unitId: string) { selectedUnitId.value = unitId; page.value = 1; }
+function expandAllTreeUnits() { expandedTreeIds.value = new Set(expandableTreeIds.value); }
+function collapseAllTreeUnits() { expandedTreeIds.value = new Set(); }
 
 function label(unit: OrganizationUnitWire) { return `${unitTypeLabels[unit.unit_type]} · ${unit.display_name}`; }
 function formatDate(value: string | null) { return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' }).format(new Date(value)) : '长期有效'; }
@@ -162,13 +165,13 @@ async function deactivate(unit: OrganizationUnitWire) {
 </script>
 
 <template>
-  <section data-page-root class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page organization-admin-page">
     <div class="page-head"><div class="page-title"><h1>组织机构与工作单元</h1><p>机构、院区、科室、病区和床位的统一版本化层级</p></div><div class="head-actions"><button class="btn" type="button" @click="importOpen = true">导入组织</button><button class="btn" type="button" @click="panel = panel === 'IMPACT' ? 'NONE' : 'IMPACT'">查看变更影响</button><button class="btn primary" type="button" @click="createOpen = true">新建组织节点</button></div></div>
     <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在读取组织有效期层级" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
     <template v-else>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
-      <div class="grid admin-master-detail"><aside class="card org-tree"><div class="card-head">组织树 <span class="sub">{{ metrics.ORGANIZATION }} 个机构 · 实时</span></div><button class="tree-row" :class="{ active: !selectedUnitId }" type="button" @click="selectedUnitId = ''; page = 1"><b>全部组织单元</b><span>{{ activeUnits.length }} 项</span></button><button v-for="row in treeRows" :key="row.unit.unit_id" class="tree-row" :class="{ active: selectedUnitId === row.unit.unit_id }" type="button" @click="selectedUnitId = row.unit.unit_id; page = 1"><b :style="{ paddingLeft: `${row.depth * 12}px` }">{{ row.childCount ? '▾ ' : '· ' }}{{ row.unit.display_name }}</b><span>{{ childSummary(row.unit, row.childCount) }}</span></button></aside><section class="card"><div class="toolbar"><input v-model="search" class="search" placeholder="编码、名称或上级"><select v-model="typeFilter" class="select"><option value="ALL">全部组织类型</option><option v-for="(name, type) in unitTypeLabels" :key="type" :value="type">{{ name }}</option></select><select v-model="statusFilter" class="select"><option value="ACTIVE">有效优先</option><option value="INACTIVE">已停用</option><option value="ALL">全部状态</option></select></div><div v-if="!visibleUnits.length" class="admin-empty">暂无匹配组织单元。</div><div v-else class="admin-table-wrap"><table class="table"><thead><tr><th>编码</th><th>名称</th><th>类型</th><th>上级</th><th>有效期</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="unit in pagedUnits" :key="unit.unit_id"><td><b>{{ unit.unit_code }}</b></td><td>{{ unit.display_name }}</td><td>{{ unitTypeLabels[unit.unit_type] }}</td><td>{{ parentName(unit) }}</td><td>{{ formatDate(unit.effective_until) }}</td><td><span class="status" :class="unit.status === 'ACTIVE' ? 'green' : 'amber'">{{ unit.status === 'ACTIVE' ? '有效' : '已停用' }}</span><button class="task-action" :disabled="unit.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = unit">{{ busy === unit.unit_id ? '处理中…' : '停用' }}</button></td></tr></tbody></table><AdminDataPager v-model:page="page" :page-size="pageSize" :total="visibleUnits.length" /></div><div class="card-body"><div class="notice hard"><div class="notice-title">已引用组织不能直接删除</div>组织、科室、病区和床位均保留历史语义；停用操作写入数据库审计链，并使用终止时间退出新业务选择范围。</div></div></section></div>
+      <div class="grid admin-master-detail"><aside class="card org-tree"><div class="card-head"><span>组织树 <span class="sub">{{ metrics.ORGANIZATION }} 个机构 · 实时</span></span><span class="org-tree-node-count">{{ visibleTreeCount }} / {{ totalTreeCount }} 节点</span></div><div class="org-tree-toolbar"><button class="task-action" type="button" :disabled="treeFullyExpanded" @click="expandAllTreeUnits">全部展开</button><button class="task-action" type="button" :disabled="expandedTreeIds.size === 0" @click="collapseAllTreeUnits">全部收起</button></div><button class="tree-row" :class="{ active: !selectedUnitId }" type="button" @click="selectedUnitId = ''; page = 1"><b>全部组织单元</b><span>{{ activeUnits.length }} 项</span></button><div class="org-tree-scroll" role="region" aria-label="组织树节点列表" tabindex="0"><AdminOrganizationTree :nodes="organizationTree" :expanded-ids="expandedTreeIds" :selected-unit-id="selectedUnitId" @toggle="toggleTreeUnit" @select="selectTreeUnit" /></div></aside><section class="card"><div class="toolbar"><input v-model="search" class="search" placeholder="编码、名称或上级"><select v-model="typeFilter" class="select"><option value="ALL">全部组织类型</option><option v-for="(name, type) in unitTypeLabels" :key="type" :value="type">{{ name }}</option></select><select v-model="statusFilter" class="select"><option value="ACTIVE">有效优先</option><option value="INACTIVE">已停用</option><option value="ALL">全部状态</option></select></div><div v-if="!visibleUnits.length" class="admin-empty">暂无匹配组织单元。</div><div v-else class="admin-table-wrap"><table class="table"><thead><tr><th>编码</th><th>名称</th><th>类型</th><th>上级</th><th>有效期</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="unit in pagedUnits" :key="unit.unit_id"><td><b>{{ unit.unit_code }}</b></td><td>{{ unit.display_name }}</td><td>{{ unitTypeLabels[unit.unit_type] }}</td><td>{{ parentName(unit) }}</td><td>{{ formatDate(unit.effective_until) }}</td><td><span class="status" :class="unit.status === 'ACTIVE' ? 'green' : 'amber'">{{ unit.status === 'ACTIVE' ? '有效' : '已停用' }}</span><button class="task-action" :disabled="unit.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = unit">{{ busy === unit.unit_id ? '处理中…' : '停用' }}</button></td></tr></tbody></table><AdminDataPager v-model:page="page" :page-size="pageSize" :total="visibleUnits.length" /></div><div class="card-body"><div class="notice hard"><div class="notice-title">已引用组织不能直接删除</div>组织、科室、病区和床位均保留历史语义；停用操作写入数据库审计链，并使用终止时间退出新业务选择范围。</div></div></section></div>
       <section v-if="panel === 'IMPACT' && selectedUnit" class="admin-panel admin-form-panel"><header><div><h2>{{ selectedUnit.display_name }} · 变更影响</h2><p>影响范围由当前数据库组织层级实时计算。</p></div></header><div class="admin-impact-grid"><div><span>直接下级</span><b>{{ selectedImpact.directChildren }}</b></div><div><span>有效后代单元</span><b>{{ selectedImpact.descendants }}</b></div><div><span>有效床位</span><b>{{ selectedImpact.activeBeds }}</b></div><div><span>处理原则</span><b>{{ selectedImpact.descendants ? '先迁移或停用下级' : '可提交停用' }}</b></div></div></section>
     </template>
     <AdminActionDialog v-model:open="createOpen" title="新建组织节点" description="根据类型选择必要上级范围，保存后立即进入新业务选择范围。" :busy="Boolean(busy)"><form class="admin-form compact-admin-form" @submit.prevent="createUnit"><label><span>组织类型</span><select v-model="form.unitType" autofocus @change="form.parentId = ''"><option v-for="(name, type) in unitTypeLabels" :key="type" :value="type">{{ name }}</option></select></label><label><span>组织编码（系统唯一）</span><input v-model="form.code" maxlength="96" required placeholder="例：CARD-WARD-02" /></label><label><span>组织名称</span><input v-model="form.name" maxlength="256" required placeholder="例：心内二病区" /></label><label><span>上级组织{{ parentRequired ? '' : '（可选）' }}</span><select v-model="form.parentId" :required="parentRequired"><option value="">无上级</option><option v-for="parent in parents" :key="parent.unit_id" :value="parent.unit_id">{{ label(parent) }}</option></select></label><label><span>业务分类（可选）</span><input v-model="form.subtype" placeholder="例：护理单元" /></label><button class="button primary" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在创建…' : '创建并生效' }}</button></form></AdminActionDialog>
