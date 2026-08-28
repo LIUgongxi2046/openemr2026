@@ -6,6 +6,8 @@ import { clinicalContext } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { issueExecutionLease, issueExecutionPatientLease, listSurgicalProcedures, scheduleSurgicalProcedure, transitionSurgicalProcedure } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type BodySite = SurgicalProcedureWire['body_site'];
@@ -44,6 +46,7 @@ const timeoutCount = computed(() => procedures.value.filter((p) => p.status === 
 const form = reactive({ procedureName: '', bodySite: 'ABDOMEN' as BodySite, laterality: 'NONE' as Laterality, surgeonId: clinicalContext.userId, anesthesiologistId: clinicalContext.collaboratorUserId });
 const busy = ref('');
 const notice = ref('');
+const createDialogOpen = ref(false);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -62,6 +65,7 @@ async function schedule() {
       scheduled_at: new Date().toISOString(),
     });
     form.procedureName = '';
+    createDialogOpen.value = false;
     notice.value = '手术已排程，进入安全核查（Time-Out）与完成闭环。';
     await proceduresQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -84,9 +88,10 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
-      <div><p class="eyebrow">医疗协同执行 / 围手术期</p><h1>围手术期排程与安全核查</h1><p>排程 → 安全核查（Time-Out）→ 完成三步闭环，术者与麻醉医生显式登记。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
+      <div><p class="eyebrow">诊疗执行 / 围手术期</p><h1>围手术期排程与安全核查</h1><p>排程 → 安全核查（Time-Out）→ 完成三步闭环，术者与麻醉医生显式登记。</p></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button primary" @click="createDialogOpen = true">新增手术排程</button></div>
     </div>
+    <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前患者围手术期</span></div><dl><div><dt>安全核查</dt><dd>Time-Out 留痕</dd></div><div><dt>术者 / 麻醉</dt><dd>显式登记</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
@@ -100,8 +105,7 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
         <article><span>已完成</span><strong>{{ procedures.filter((p) => p.status === 'COMPLETED').length }}</strong><small>COMPLETED</small></article>
       </section>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>手术排程台账</h2><p>状态机：SCHEDULED → TIME_OUT_COMPLETED → COMPLETED。</p></div><button class="button secondary" @click="proceduresQuery.refetch()">刷新</button></header>
           <div v-if="procedures.length === 0" class="empty-state"><span>术</span><p>当前患者暂无手术排程</p><small>在右侧录入术式开始排程</small></div>
           <div v-else class="admin-table-wrap">
@@ -123,20 +127,18 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
               </tbody>
             </table>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>手术排程</h2><p>术式、术者与麻醉医生必填。</p></div></header>
-          <form class="admin-form" @submit.prevent="schedule">
-            <label><span>术式名称</span><input v-model="form.procedureName" maxlength="256" required placeholder="例：腹腔镜胆囊切除术" /></label>
-            <label><span>部位</span><select v-model="form.bodySite"><option v-for="site in bodySites" :key="site" :value="site">{{ bodySiteLabels[site] }}</option></select></label>
-            <label><span>侧别</span><select v-model="form.laterality"><option v-for="lat in lateralities" :key="lat" :value="lat">{{ lateralityLabels[lat] }}</option></select></label>
-            <label><span>术者 ID</span><input v-model="form.surgeonId" maxlength="36" required placeholder="UUID" /></label>
-            <label><span>麻醉医生 ID</span><input v-model="form.anesthesiologistId" maxlength="36" required placeholder="UUID" /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'schedule' ? '正在排程…' : '排程手术' }}</button>
-          </form>
-        </section>
-      </div>
+      <AdminActionDialog v-model:open="createDialogOpen" title="新增手术排程" description="术式、部位、术者和麻醉医生均需显式登记。" eyebrow="诊疗执行 / 围手术期" size="large" :busy="busy === 'schedule'">
+        <form class="admin-form" @submit.prevent="schedule">
+          <label><span>术式名称</span><input v-model="form.procedureName" maxlength="256" required placeholder="例：腹腔镜胆囊切除术" /></label>
+          <label><span>部位</span><select v-model="form.bodySite"><option v-for="site in bodySites" :key="site" :value="site">{{ bodySiteLabels[site] }}</option></select></label>
+          <label><span>侧别</span><select v-model="form.laterality"><option v-for="lat in lateralities" :key="lat" :value="lat">{{ lateralityLabels[lat] }}</option></select></label>
+          <label><span>术者 ID</span><input v-model="form.surgeonId" maxlength="36" required placeholder="UUID" /></label>
+          <label><span>麻醉医生 ID</span><input v-model="form.anesthesiologistId" maxlength="36" required placeholder="UUID" /></label>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'schedule' ? '正在排程…' : '排程手术' }}</button>
+        </form>
+      </AdminActionDialog>
     </template>
   </section>
 </template>

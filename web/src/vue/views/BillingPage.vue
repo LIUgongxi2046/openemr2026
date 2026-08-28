@@ -6,6 +6,8 @@ import { clinicalContext, issueContextLease } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { createCharge, createPriceCatalogVersion, issueExecutionLease, listCharges, reverseCharge } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({
@@ -34,6 +36,8 @@ const chargeForm = reactive({ itemCode: '', quantity: 1 });
 const priceForm = reactive({ catalogCode: '', itemCode: '', itemName: '', unitPrice: 0, unit: '次', releaseVersion: '' });
 const busy = ref('');
 const notice = ref('');
+const chargeDialogOpen = ref(false);
+const priceDialogOpen = ref(false);
 const reversingId = ref('');
 const reverseReason = ref('');
 
@@ -50,6 +54,7 @@ async function submitCharge() {
   try {
     await createCharge(lease, { item_code: chargeForm.itemCode.trim(), quantity: chargeForm.quantity });
     chargeForm.itemCode = '';
+    chargeDialogOpen.value = false;
     notice.value = '收费已入账，价格取自当前生效价格目录，审计链与出箱事件已同步记录。';
     await chargesQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -68,6 +73,7 @@ async function submitPrice() {
       release_version: priceForm.releaseVersion.trim(),
     });
     priceForm.itemCode = ''; priceForm.itemName = ''; priceForm.releaseVersion = '';
+    priceDialogOpen.value = false;
     notice.value = '价格目录版本已创建，收费将按生效期匹配单价。';
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -92,9 +98,10 @@ async function submitReverse(charge: ChargeItemWire) {
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
-      <div><p class="eyebrow">医疗协同执行 / 收费与价格</p><h1>费用、收退费、预交与结算</h1><p>按价格目录记费、冲正留痕；价格目录按版本管理，不物理删除历史价格。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
+      <div><p class="eyebrow">诊疗执行 / 收费与价格</p><h1>费用、收退费、预交与结算</h1><p>按价格目录记费、冲正留痕；价格目录按版本管理，不物理删除历史价格。</p></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button secondary" @click="priceDialogOpen = true">新建价格版本</button><button class="button primary" @click="chargeDialogOpen = true">新增记费</button></div>
     </div>
+    <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前就诊收费</span></div><dl><div><dt>价格来源</dt><dd>价格目录版本</dd></div><div><dt>冲正</dt><dd>不可物理删除</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
@@ -108,8 +115,7 @@ async function submitReverse(charge: ChargeItemWire) {
         <article><span>冲正笔数</span><strong>{{ reversedCount }}</strong><small>REVERSED</small></article>
       </section>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>收费台账</h2><p>单价与金额由价格目录匹配，冲正必须附原因。</p></div><button class="button secondary" @click="chargesQuery.refetch()">刷新</button></header>
           <div v-if="charges.length === 0" class="empty-state"><span>费</span><p>当前就诊尚无收费记录</p><small>可在右侧记费，或先创建价格目录版本</small></div>
           <div v-else class="admin-table-wrap">
@@ -131,27 +137,17 @@ async function submitReverse(charge: ChargeItemWire) {
               </tbody>
             </table>
           </div>
-          <div v-if="reversingId" class="admin-form">
-            <label><span>冲正原因（必填）</span><textarea v-model="reverseReason" rows="2" placeholder="说明退费原因，写入审计链" /></label>
-            <div class="toolbar-actions">
-              <button class="button secondary" :disabled="Boolean(busy)" @click="reversingId = ''">取消</button>
-              <button class="button danger" :disabled="!reverseReason.trim() || Boolean(busy)" @click="submitReverse(charges.find((c) => c.charge_item_id === reversingId)!)">确认冲正</button>
-            </div>
-          </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>记费</h2><p>项目编码与数量必填，单价来自价格目录。</p></div></header>
-          <form class="admin-form" @submit.prevent="submitCharge">
-            <label><span>项目编码</span><input v-model="chargeForm.itemCode" maxlength="96" required placeholder="例：CHARGE-CONSULT" /></label>
-            <label><span>数量</span><input v-model.number="chargeForm.quantity" type="number" min="0.01" step="0.01" required /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'charge' ? '正在记费…' : '记费入账' }}</button>
-          </form>
-        </section>
-      </div>
+      <AdminActionDialog v-model:open="chargeDialogOpen" title="新增记费" description="项目编码与数量必填，单价由当前生效价格目录匹配。" eyebrow="诊疗执行 / 费用结算" :busy="busy === 'charge'">
+        <form class="admin-form" @submit.prevent="submitCharge">
+          <label><span>项目编码</span><input v-model="chargeForm.itemCode" maxlength="96" required placeholder="例：CHARGE-CONSULT" /></label>
+          <label><span>数量</span><input v-model.number="chargeForm.quantity" type="number" min="0.01" step="0.01" required /></label>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'charge' ? '正在记费…' : '记费入账' }}</button>
+        </form>
+      </AdminActionDialog>
 
-      <section class="admin-panel">
-        <header><div><h2>价格目录版本</h2><p>新增版本后，收费按生效期匹配单价；历史版本保留不删。</p></div></header>
+      <AdminActionDialog v-model:open="priceDialogOpen" title="新建价格目录版本" description="历史版本保留不删，新收费按生效期匹配单价。" eyebrow="诊疗执行 / 价格目录" size="large" :busy="busy === 'price'">
         <form class="admin-form" @submit.prevent="submitPrice">
           <label><span>目录编码</span><input v-model="priceForm.catalogCode" maxlength="64" required placeholder="例：CATALOG-CHARGE" /></label>
           <label><span>项目编码</span><input v-model="priceForm.itemCode" maxlength="96" required placeholder="例：CHARGE-CONSULT" /></label>
@@ -161,7 +157,14 @@ async function submitReverse(charge: ChargeItemWire) {
           <label><span>发布版本</span><input v-model="priceForm.releaseVersion" maxlength="32" required placeholder="例：2026-08-01" /></label>
           <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'price' ? '正在创建…' : '创建价格版本' }}</button>
         </form>
-      </section>
+      </AdminActionDialog>
+
+      <AdminActionDialog :open="Boolean(reversingId)" title="确认冲正收费" description="冲正会影响当前结算结果，原收费和冲正证据均永久保留。" eyebrow="诊疗执行 / 高风险操作" tone="danger" :busy="busy.startsWith('reverse:')" @update:open="reversingId = $event ? reversingId : ''">
+        <form class="admin-form" @submit.prevent="submitReverse(charges.find((c) => c.charge_item_id === reversingId)!)">
+          <label><span>冲正原因（必填）</span><textarea v-model="reverseReason" rows="3" required placeholder="说明退费原因，写入审计链" /></label>
+          <button class="button danger full" :disabled="!reverseReason.trim() || Boolean(busy)">{{ busy.startsWith('reverse:') ? '正在冲正…' : '确认冲正' }}</button>
+        </form>
+      </AdminActionDialog>
     </template>
   </section>
 </template>

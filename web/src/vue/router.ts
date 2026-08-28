@@ -1,11 +1,13 @@
 import { createMemoryHistory, createRouter, createWebHashHistory, type RouterHistory, type RouteRecordRaw } from 'vue-router';
 
 import { nativeVueRouteIds, routeRegistry, specialtyGuardRouteIds } from './route-registry';
+import { executionPatientFlowRouteIds } from './execution-patient-flow';
 import { clearInpatientSyntheticActor } from '../clinical-api';
 import { authSession } from '../auth-session';
 
 const plannedComponent = () => import('./views/PlannedRoutePage.vue');
 const specialtyGuardComponent = () => import('./views/SpecialtySupportGuardPage.vue');
+const executionPatientFlowComponent = () => import('./views/ExecutionPatientRoutePage.vue');
 const nativeComponents: Record<string, () => Promise<unknown>> = {
   clinical: () => import('./views/ClinicalPortalPage.vue'),
   admin: () => import('./views/AdminWorkspacePage.vue'),
@@ -216,7 +218,7 @@ export function buildContractRoutes(): RouteRecordRaw[] {
     ...(definition.route_id === 'clinical-tasks'
       ? { alias: ['/tasks'] }
       : definition.route_id === 'login-context' ? { alias: ['/login-context'] } : {}),
-    component: nativeComponents[definition.route_id]
+    component: (executionPatientFlowRouteIds.has(definition.route_id) ? executionPatientFlowComponent : nativeComponents[definition.route_id])
       ?? (specialtyGuardRouteIds.has(definition.route_id) ? specialtyGuardComponent : undefined)
       ?? plannedComponent,
     meta: {

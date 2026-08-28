@@ -5,6 +5,8 @@ import type { PharmacyDispensingWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
 import { issueExecutionLease, issueExecutionPatientLease, listPharmacyDispensings, preparePharmacyDispensing, transitionPharmacyDispensing } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const statusLabels: Record<PharmacyDispensingWire['status'], string> = {
@@ -35,6 +37,7 @@ const dispensedCount = computed(() => dispensings.value.filter((d) => d.status =
 const form = reactive({ drugCode: '', batchNumber: '', quantity: 1, quantityUnit: '片' });
 const busy = ref('');
 const notice = ref('');
+const createDialogOpen = ref(false);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -53,6 +56,7 @@ async function prepare() {
       prepared_at: new Date().toISOString(),
     });
     form.drugCode = ''; form.batchNumber = '';
+    createDialogOpen.value = false;
     notice.value = '调剂已调配，等待第二人审方核验后方可发药。';
     await dispensingsQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -75,9 +79,10 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
-      <div><p class="eyebrow">医疗协同执行 / 药房</p><h1>门诊药房审方与调剂</h1><p>调配 → 第二人审方核验 → 发药，三步闭环；未核验不可发药。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
+      <div><p class="eyebrow">诊疗执行 / 药房</p><h1>门诊药房审方与调剂</h1><p>调配 → 第二人审方核验 → 发药，三步闭环；未核验不可发药。</p></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button primary" @click="createDialogOpen = true">新增调配</button></div>
     </div>
+    <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>门诊发药双人核验</span></div><dl><div><dt>发药前提</dt><dd>第二人核验</dd></div><div><dt>批次</dt><dd>强制填写</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
@@ -91,8 +96,7 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
         <article><span>已发药</span><strong>{{ dispensedCount }}</strong><small>DISPENSED</small></article>
       </section>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>调剂台账</h2><p>状态机：PREPARED → VERIFIED → DISPENSED，每步写入审计链。</p></div><button class="button secondary" @click="dispensingsQuery.refetch()">刷新</button></header>
           <div v-if="dispensings.length === 0" class="empty-state"><span>药</span><p>当前患者暂无调剂记录</p><small>在右侧录入药品与批次开始调配</small></div>
           <div v-else class="admin-table-wrap">
@@ -114,19 +118,17 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
               </tbody>
             </table>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>调配</h2><p>药品编码、批次与数量必填；调配后需第二人核验。</p></div></header>
-          <form class="admin-form" @submit.prevent="prepare">
-            <label><span>药品编码</span><input v-model="form.drugCode" maxlength="64" required placeholder="例：DRUG-AMOXICILLIN" /></label>
-            <label><span>批次号</span><input v-model="form.batchNumber" maxlength="64" required placeholder="例：BATCH-2026-0812" /></label>
-            <label><span>数量</span><input v-model.number="form.quantity" type="number" min="0.01" step="0.01" required /></label>
-            <label><span>单位</span><input v-model="form.quantityUnit" maxlength="16" required /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'prepare' ? '正在调配…' : '调配并待核验' }}</button>
-          </form>
-        </section>
-      </div>
+      <AdminActionDialog v-model:open="createDialogOpen" title="新增门诊调配" description="药品编码、批次与数量必填；调配后需第二人审方核验。" eyebrow="诊疗执行 / 门诊药房" :busy="busy === 'prepare'">
+        <form class="admin-form" @submit.prevent="prepare">
+          <label><span>药品编码</span><input v-model="form.drugCode" maxlength="64" required placeholder="例：DRUG-AMOXICILLIN" /></label>
+          <label><span>批次号</span><input v-model="form.batchNumber" maxlength="64" required placeholder="例：BATCH-2026-0812" /></label>
+          <label><span>数量</span><input v-model.number="form.quantity" type="number" min="0.01" step="0.01" required /></label>
+          <label><span>单位</span><input v-model="form.quantityUnit" maxlength="16" required /></label>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'prepare' ? '正在调配…' : '调配并待核验' }}</button>
+        </form>
+      </AdminActionDialog>
     </template>
   </section>
 </template>

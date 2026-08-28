@@ -5,6 +5,8 @@ import type { ImagingOrderWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
 import { createImagingOrder, issueExecutionLease, issueExecutionPatientLease, listImagingOrders, transitionImagingOrder } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type Modality = ImagingOrderWire['modality'];
@@ -45,6 +47,8 @@ const reportedCount = computed(() => orders.value.filter((o) => o.status === 'RE
 const form = reactive({ modality: 'CT' as Modality, bodyPart: 'CHEST' as BodyPart, laterality: 'NONE' as Laterality, contrastRequired: false });
 const busy = ref('');
 const notice = ref('');
+const createDialogOpen = ref(false);
+const cancelTarget = ref<ImagingOrderWire | null>(null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -62,6 +66,7 @@ async function create() {
       contrast_required: form.contrastRequired, ordered_at: new Date().toISOString(),
     });
     notice.value = '影像检查已申请，进入执行与报告闭环。';
+    createDialogOpen.value = false;
     await ordersQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -73,6 +78,7 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
   busy.value = `${action}:${order.imaging_order_id}`; notice.value = '';
   try {
     await transitionImagingOrder(lease, order, action);
+    if (action === 'CANCEL') cancelTarget.value = null;
     notice.value = action === 'PERFORM' ? '已登记执行，可录入报告。' : action === 'REPORT' ? '报告已完成并归档。' : '检查已取消。';
     await ordersQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -83,9 +89,10 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
-      <div><p class="eyebrow">医疗协同执行 / 影像</p><h1>检查影像工作台</h1><p>影像申请 → 执行 → 报告三步闭环；造影剂需求显式登记。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
+      <div><p class="eyebrow">诊疗执行 / 影像</p><h1>检查影像工作台</h1><p>影像申请 → 执行 → 报告三步闭环；造影剂需求显式登记。</p></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button primary" @click="createDialogOpen = true">新增检查申请</button></div>
     </div>
+    <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前患者影像检查</span></div><dl><div><dt>部位</dt><dd>显式登记</dd></div><div><dt>造影剂</dt><dd>强制勾选</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
@@ -99,8 +106,7 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
         <article><span>造影剂</span><strong>{{ orders.filter((o) => o.contrast_required).length }}</strong><small>需造影</small></article>
       </section>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>影像检查台账</h2><p>状态机：ORDERED → PERFORMED → REPORTED（或 CANCELLED）。</p></div><button class="button secondary" @click="ordersQuery.refetch()">刷新</button></header>
           <div v-if="orders.length === 0" class="empty-state"><span>影</span><p>当前患者暂无影像检查</p><small>在右侧申请检查</small></div>
           <div v-else class="admin-table-wrap">
@@ -117,25 +123,28 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
                   <td class="admin-actions">
                     <button v-if="order.status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'PERFORM')">登记执行</button>
                     <button v-if="order.status === 'PERFORMED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'REPORT')">录入报告</button>
-                    <button v-if="order.status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'CANCEL')">取消</button>
+                    <button v-if="order.status === 'ORDERED'" class="task-action danger" :disabled="Boolean(busy)" @click="cancelTarget = order">取消</button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>影像申请</h2><p>模态、部位、侧别必填；造影剂需求显式勾选。</p></div></header>
-          <form class="admin-form" @submit.prevent="create">
-            <label><span>模态</span><select v-model="form.modality"><option v-for="m in modalities" :key="m" :value="m">{{ m }}</option></select></label>
-            <label><span>部位</span><select v-model="form.bodyPart"><option v-for="part in bodyParts" :key="part" :value="part">{{ bodyPartLabels[part] }}</option></select></label>
-            <label><span>侧别</span><select v-model="form.laterality"><option v-for="lat in lateralities" :key="lat" :value="lat">{{ lateralityLabels[lat] }}</option></select></label>
-            <label class="checkbox"><input v-model="form.contrastRequired" type="checkbox" />需要造影剂</label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在申请…' : '申请检查' }}</button>
-          </form>
-        </section>
-      </div>
+      <AdminActionDialog v-model:open="createDialogOpen" title="新增影像检查申请" description="模态、部位、侧别必填；造影剂需求必须显式确认。" eyebrow="诊疗执行 / 检查影像" :busy="busy === 'create'">
+        <form class="admin-form" @submit.prevent="create">
+          <label><span>模态</span><select v-model="form.modality"><option v-for="m in modalities" :key="m" :value="m">{{ m }}</option></select></label>
+          <label><span>部位</span><select v-model="form.bodyPart"><option v-for="part in bodyParts" :key="part" :value="part">{{ bodyPartLabels[part] }}</option></select></label>
+          <label><span>侧别</span><select v-model="form.laterality"><option v-for="lat in lateralities" :key="lat" :value="lat">{{ lateralityLabels[lat] }}</option></select></label>
+          <label class="checkbox"><input v-model="form.contrastRequired" type="checkbox" />需要造影剂</label>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在申请…' : '申请检查' }}</button>
+        </form>
+      </AdminActionDialog>
+
+      <AdminActionDialog :open="Boolean(cancelTarget)" title="取消影像检查" description="检查不会物理删除，将转为已取消并保留审计记录。" eyebrow="诊疗执行 / 高风险操作" tone="danger" :busy="busy.startsWith('CANCEL:')" @update:open="cancelTarget = $event ? cancelTarget : null">
+        <div class="admin-confirm-impact"><strong>{{ cancelTarget?.modality }} · {{ cancelTarget ? bodyPartLabels[cancelTarget.body_part] : '' }}</strong><p>确认后，该申请不能继续登记执行或报告。</p></div>
+        <button class="button danger full" :disabled="Boolean(busy)" @click="cancelTarget && transition(cancelTarget, 'CANCEL')">{{ busy.startsWith('CANCEL:') ? '正在取消…' : '确认取消检查' }}</button>
+      </AdminActionDialog>
     </template>
   </section>
 </template>

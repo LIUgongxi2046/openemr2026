@@ -78,6 +78,49 @@
 /* 文本链接（急诊去向导航等） */
 .text-link { color: var(--blue); font-weight: 700; font-size: 12px; }
 
-/* 住院工作台三栏骨架（原型 inpatient 250px/1fr/315px） */
-.inpatient-grid { grid-template-columns: 250px minmax(0, 1fr) 315px; }
-@media (max-width: 1180px) { .inpatient-grid { grid-template-columns: 220px minmax(0, 1fr); } .inpatient-grid > .card:last-child { display: none; } }
+/* 住院工作台：与原型一致的左列表 / 主区 / 业务右栏。 */
+.inpatient-grid { grid-template-columns: 250px minmax(0, 1fr) 315px; gap: 14px; align-items: start; min-width: 0; }
+.inpatient-grid > *, .prototype-secondary-grid > *, .prototype-primary-stack > * { min-width: 0; }
+.prototype-secondary-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; align-items: start; min-width: 0; }
+.prototype-primary-stack { display: grid; gap: 14px; min-width: 0; }
+.prototype-right-rail { min-width: 0; height: min(685px, calc(100dvh - 150px)); overflow: auto; }
+.prototype-right-rail .card-head { display: flex; align-items: center; gap: 8px; }
+.prototype-right-rail .card-head > :last-child { margin-left: auto; white-space: nowrap; }
+.prototype-rail-body { display: grid; gap: 12px; min-width: 0; }
+.prototype-summary { margin: 0; color: var(--stale); font-size: 11px; line-height: 1.7; overflow-wrap: anywhere; }
+.prototype-rail-action { width: 100%; justify-content: center; text-decoration: none; box-sizing: border-box; }
+.prototype-rail-body .notice { margin: 0; }
+.prototype-rail-body .notice a { display: inline-block; margin-top: 7px; font-weight: 700; }
+.prototype-timeline, .prototype-queue, .prototype-checks { display: grid; gap: 8px; min-width: 0; }
+.prototype-timeline > div { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 9px; align-items: start; }
+.prototype-timeline i { width: 7px; height: 7px; margin-top: 4px; border: 2px solid #87acd6; border-radius: 50%; background: #fff; }
+.prototype-timeline span { display: grid; gap: 3px; min-width: 0; }
+.prototype-timeline b, .prototype-queue b { color: var(--ink); font-size: 11px; }
+.prototype-timeline small { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.prototype-queue > div, .prototype-checks > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fbfcfe; }
+.prototype-queue > div > :last-child, .prototype-checks b { flex: 0 0 auto; }
+.prototype-checks span { color: var(--muted); font-size: 10px; }
+.prototype-checks b { font-size: 10px; }
+.prototype-checks b.green { color: var(--green); }.prototype-checks b.amber { color: var(--amber); }.prototype-checks b.red { color: var(--red); }
+
+@media (max-width: 1180px) {
+  .inpatient-grid { grid-template-columns: 220px minmax(0, 1fr); }
+  .inpatient-grid > .prototype-right-rail { grid-column: 1 / -1; }
+  .prototype-secondary-grid { grid-template-columns: minmax(0, 1fr); }
+  .prototype-right-rail { height: auto; max-height: none; }
+  .prototype-secondary-grid > .prototype-right-rail .prototype-rail-body,
+  .inpatient-grid > .prototype-right-rail .prototype-rail-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prototype-secondary-grid > .prototype-right-rail .card-head,
+  .inpatient-grid > .prototype-right-rail .card-head { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .inpatient-grid, .prototype-secondary-grid { grid-template-columns: minmax(0, 1fr); }
+  .inpatient-grid > .prototype-right-rail { grid-column: auto; }
+  .prototype-secondary-grid > .prototype-right-rail .prototype-rail-body,
+  .inpatient-grid > .prototype-right-rail .prototype-rail-body { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .page-head, .page-heading { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .page-head .head-actions, .page-heading .toolbar-actions { width: 100%; justify-content: flex-start; }
+  .page-head .head-actions > *, .page-heading .toolbar-actions > * { max-width: 100%; }
+  .card-toolbar { flex-wrap: wrap; }
+  .card-toolbar > *, .toolbar-actions { min-width: 0; }
+}

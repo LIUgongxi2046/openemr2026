@@ -9,6 +9,7 @@ import type { SimulationWorkbenchDefinition } from '../simulation-workbenches';
 import AdminActionDialog from './AdminActionDialog.vue';
 import AdminConfirmDialog from './AdminConfirmDialog.vue';
 import ClinicalPageState from './ClinicalPageState.vue';
+import ExecutionPatientContextBar from './ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const props = defineProps<{ definition: SimulationWorkbenchDefinition }>();
@@ -169,6 +170,7 @@ function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '生产启�
 <template>
   <section data-page-root class="content vue-native-page simulation-workbench-page">
     <div class="page-heading admin-heading"><div><p class="eyebrow">模拟接口 / {{ definition.id }}</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><RouterLink class="button secondary" to="/mock-interfaces">查看接口文档</RouterLink><button class="button primary" type="button" @click="openCreate">新建仿真配置</button></div></div>
+    <ExecutionPatientContextBar />
     <div class="portal-safety"><b>三级医院业务仿真生成器</b><span>按配置生成跨院区、跨科室业务批次；不访问真实外部系统，不接收真实 PHI/凭据。</span><span class="status amber">待真实适配器</span></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value || configLeaseQuery.isPending.value || profilesQuery.isPending.value" kind="loading" message="正在加载模拟接口、文档与三级医院配置" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="profilesQuery.refetch()" />

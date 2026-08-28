@@ -6,6 +6,8 @@ import { issueOrderLease, listClinicalOrders } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type SpecimenType = LabSpecimenWire['specimen_type'];
@@ -47,6 +49,7 @@ const receivedCount = computed(() => specimens.value.filter((s) => s.collection_
 const form = reactive({ orderItemId: '', specimenType: 'BLOOD' as SpecimenType });
 const busy = ref('');
 const notice = ref('');
+const createDialogOpen = ref(false);
 
 watchEffect(() => {
   if (!form.orderItemId && eligibleOrderItems.value[0]) form.orderItemId = eligibleOrderItems.value[0].order_item_id;
@@ -65,6 +68,7 @@ async function create() {
   try {
     await createLabSpecimen(lease, { order_item_id: form.orderItemId.trim(), specimen_type: form.specimenType });
     form.orderItemId = '';
+    createDialogOpen.value = false;
     notice.value = '标本已申请，等待采集与接收闭环。';
     await specimensQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
@@ -94,14 +98,16 @@ async function receive(specimen: LabSpecimenWire) {
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
 }
+
 </script>
 
 <template>
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
-      <div><p class="eyebrow">医疗协同执行 / 检验</p><h1>检验工作台</h1><p>标本申请 → 采集 → 接收三步闭环，采集人与时间强制留痕。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button></div>
+      <div><p class="eyebrow">诊疗执行 / 检验</p><h1>检验工作台</h1><p>标本申请 → 采集 → 接收三步闭环，采集人与时间强制留痕。</p></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button primary" :disabled="eligibleOrderItems.length === 0" @click="createDialogOpen = true">新增标本申请</button></div>
     </div>
+    <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前就诊检验标本</span></div><dl><div><dt>采集</dt><dd>采集人留痕</dd></div><div><dt>接收</dt><dd>接收人留痕</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
@@ -115,8 +121,7 @@ async function receive(specimen: LabSpecimenWire) {
         <article><span>已接收</span><strong>{{ receivedCount }}</strong><small>RECEIVED</small></article>
       </section>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>标本台账</h2><p>状态机：ORDERED → COLLECTED → RECEIVED。</p></div><button class="button secondary" @click="specimensQuery.refetch()">刷新</button></header>
           <div v-if="specimens.length === 0" class="empty-state"><span>检</span><p>当前就诊暂无标本</p><small>在右侧录入医嘱条目创建标本申请</small></div>
           <div v-else class="admin-table-wrap">
@@ -137,21 +142,20 @@ async function receive(specimen: LabSpecimenWire) {
               </tbody>
             </table>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>标本申请</h2><p>关联医嘱条目 ID 与标本类型。</p></div></header>
-          <form class="admin-form" @submit.prevent="create">
-            <label><span>检验医嘱项目</span><select v-model="form.orderItemId" required>
-              <option value="" disabled>请选择未采样项目</option>
-              <option v-for="item in eligibleOrderItems" :key="item.order_item_id" :value="item.order_item_id">{{ item.display_name }} · {{ item.catalog_code }}</option>
-            </select></label>
-            <p v-if="eligibleOrderItems.length === 0" class="admin-form-hint">暂无未采样的检验医嘱，请先在医嘱工作台创建并签署检验项目。</p>
-            <label><span>标本类型</span><select v-model="form.specimenType"><option v-for="type in specimenTypes" :key="type" :value="type">{{ specimenLabels[type] }}</option></select></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在申请…' : '创建标本申请' }}</button>
-          </form>
-        </section>
-      </div>
+      <AdminActionDialog v-model:open="createDialogOpen" title="新增标本申请" description="关联已签署的检验医嘱项目，创建后进入采集、接收或拒收流程。" eyebrow="诊疗执行 / 检验" :busy="busy === 'create'">
+        <form class="admin-form" @submit.prevent="create">
+          <label><span>检验医嘱项目</span><select v-model="form.orderItemId" required>
+            <option value="" disabled>请选择未采样项目</option>
+            <option v-for="item in eligibleOrderItems" :key="item.order_item_id" :value="item.order_item_id">{{ item.display_name }} · {{ item.catalog_code }}</option>
+          </select></label>
+          <p v-if="eligibleOrderItems.length === 0" class="admin-form-hint">暂无未采样的检验医嘱，请先在医嘱工作台创建并签署检验项目。</p>
+          <label><span>标本类型</span><select v-model="form.specimenType"><option v-for="type in specimenTypes" :key="type" :value="type">{{ specimenLabels[type] }}</option></select></label>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在申请…' : '创建标本申请' }}</button>
+        </form>
+      </AdminActionDialog>
+
     </template>
   </section>
 </template>
