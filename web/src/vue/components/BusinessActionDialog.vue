@@ -4,6 +4,7 @@ import { nextTick, ref, watch } from 'vue';
 const props = withDefaults(defineProps<{
   open: boolean;
   title: string;
+  eyebrow?: string;
   description?: string;
   confirmLabel?: string;
   busy?: boolean;
@@ -11,6 +12,7 @@ const props = withDefaults(defineProps<{
   width?: 'compact' | 'wide';
 }>(), {
   description: '',
+  eyebrow: '业务配置',
   confirmLabel: '确认',
   busy: false,
   danger: false,
@@ -45,7 +47,7 @@ function cancel() {
     <form method="dialog" class="business-dialog__surface" @submit.prevent="$emit('confirm')">
       <header>
         <div>
-          <p class="business-dialog__eyebrow">业务配置</p>
+          <p class="business-dialog__eyebrow">{{ eyebrow }}</p>
           <h2 :id="`business-dialog-title-${title}`">{{ title }}</h2>
           <p v-if="description">{{ description }}</p>
         </div>

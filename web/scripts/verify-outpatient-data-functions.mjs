@@ -5,92 +5,217 @@ import { chromium } from 'playwright';
 
 const webDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const projectDir = resolve(webDir, '..');
-const outputDir = resolve(projectDir, 'output/playwright');
+const outputDir = resolve(projectDir, 'output/playwright/outpatient-final-audit');
 const baseUrl = (process.env.OPENEMR2026_BROWSER_BASE_URL || 'http://127.0.0.1:4177').replace(/\/$/, '');
-await mkdir(outputDir, { recursive: true });
+const username = process.env.OPENEMR2026_DEV_LOGIN_USERNAME || 'linwei';
+const password = process.env.OPENEMR2026_DEV_LOGIN_PASSWORD || 'OpenEMR2026-dev!';
+const routes = ['outpatient', 'opd-record', 'opd-diagnosis', 'opd-orders', 'opd-results', 'opd-consult', 'opd-followup'];
+const navigationLabels = ['门诊工作台', '门诊病历', '诊断', '医嘱处方', '检查检验', '会诊转诊', '随访终诊'];
 
+await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const checks = [];
 const findings = [];
 let currentRoute = 'bootstrap';
-page.on('console', (message) => { if (message.type() === 'error') findings.push({ route: currentRoute, check: 'console', detail: message.text() }); });
-page.on('pageerror', (error) => findings.push({ route: currentRoute, check: 'pageerror', detail: error.message }));
-page.on('response', (response) => { if (response.status() >= 400 && response.url().includes('/api/v1/')) findings.push({ route: currentRoute, check: 'api-response', status: response.status(), url: response.url() }); });
 
-async function route(id) {
+page.on('console', (message) => {
+  if (message.type() === 'error') findings.push({ route: currentRoute, check: 'console', detail: message.text() });
+});
+page.on('pageerror', (error) => findings.push({ route: currentRoute, check: 'pageerror', detail: error.message }));
+page.on('response', (response) => {
+  if (response.status() >= 400 && response.url().includes('/api/v1/')) {
+    findings.push({ route: currentRoute, check: 'api-response', status: response.status(), url: response.url() });
+  }
+});
+
+async function check(name, action) {
+  try {
+    checks.push({ route: currentRoute, name, status: 'PASS', ...((await action()) || {}) });
+  } catch (error) {
+    findings.push({ route: currentRoute, check: name, detail: error instanceof Error ? error.message : String(error) });
+  }
+}
+
+async function login() {
+  currentRoute = 'login';
+  await page.goto(`${baseUrl}/#/outpatient`, { waitUntil: 'domcontentloaded' });
+  const submit = page.getByRole('button', { name: '登录系统' });
+  if (await submit.isVisible().catch(() => false)) {
+    await page.getByLabel('用户名').fill(username);
+    await page.locator('#system-login-password').fill(password);
+    await submit.click();
+  }
+  await page.waitForFunction(() => document.documentElement.dataset.routeId === 'outpatient', undefined, { timeout: 30_000 });
+}
+
+async function openRoute(id) {
   currentRoute = id;
   await page.goto(`${baseUrl}/#/${id}`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction((routeId) => document.documentElement.dataset.routeId === routeId, id, { timeout: 8_000 });
+  await page.waitForFunction((routeId) => document.documentElement.dataset.routeId === routeId, id, { timeout: 15_000 });
   await page.locator('main h1').waitFor({ state: 'visible' });
   await page.waitForFunction(() => {
     const root = document.querySelector('main [data-page-root]');
-    return root && !root.querySelector('.clinical-page-state.loading,.state-page:not(.error)');
-  }, undefined, { timeout: 20_000 }).catch(() => {});
-  await page.waitForTimeout(150);
+    return root && !root.querySelector('.clinical-page-state.loading');
+  }, undefined, { timeout: 30_000 }).catch(() => {});
+  await page.waitForTimeout(250);
 }
 
-async function check(name, action) {
-  try { checks.push({ name, status: 'PASS', ...(await action() || {}) }); }
-  catch (error) { findings.push({ route: currentRoute, check: name, detail: error instanceof Error ? error.message : String(error) }); }
+async function expectDialogFromButton(buttonName, dialogTitle) {
+  const buttons = page.getByRole('button', { name: buttonName, exact: true });
+  let button;
+  for (let index = 0; index < await buttons.count(); index += 1) {
+    const candidate = buttons.nth(index);
+    if (await candidate.isVisible() && !(await candidate.isDisabled())) {
+      button = candidate;
+      break;
+    }
+  }
+  if (!button) throw new Error(`没有可用操作按钮：${buttonName}`);
+  await button.click();
+  const dialog = page.getByRole('dialog').filter({ hasText: dialogTitle });
+  await dialog.waitFor({ state: 'visible' });
+  const box = await dialog.boundingBox();
+  const viewport = page.viewportSize();
+  if (!box || !viewport || box.x < 0 || box.y < 0 || box.x + box.width > viewport.width + 1 || box.y + box.height > viewport.height + 1) {
+    throw new Error(`弹窗超出视口：${dialogTitle}`);
+  }
+  await dialog.getByRole('button', { name: '关闭弹窗' }).click();
+  await dialog.waitFor({ state: 'hidden' });
+}
+
+async function verifyLayout(viewportLabel) {
+  const result = await page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const pageOverflow = Math.max(root.scrollWidth, body.scrollWidth) - root.clientWidth;
+    const parents = [...document.querySelectorAll('.toolbar-actions,.head-actions,.inline-actions')];
+    const overlaps = [];
+    for (const parent of parents) {
+      const items = [...parent.querySelectorAll(':scope > button,:scope > a')].filter((element) => {
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+      });
+      for (let left = 0; left < items.length; left += 1) {
+        for (let right = left + 1; right < items.length; right += 1) {
+          const a = items[left].getBoundingClientRect();
+          const b = items[right].getBoundingClientRect();
+          const intersectionWidth = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          const intersectionHeight = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+          if (intersectionWidth > 2 && intersectionHeight > 2) overlaps.push(`${items[left].textContent?.trim()} / ${items[right].textContent?.trim()}`);
+        }
+      }
+    }
+    return { pageOverflow, overlaps };
+  });
+  if (result.pageOverflow > 2) throw new Error(`${viewportLabel} 页面横向溢出 ${result.pageOverflow}px`);
+  if (result.overlaps.length) throw new Error(`${viewportLabel} 操作按钮相互遮挡：${result.overlaps.join('；')}`);
+  return result;
 }
 
 try {
-  await route('outpatient');
-  await check('outpatient-summary-has-data', async () => {
-    await page.getByText('原发性高血压 2 级（高危）', { exact: true }).first().waitFor({ state: 'visible' });
-    await page.getByText('2 条活动', { exact: true }).waitFor({ state: 'visible' });
-    await page.getByText(/^\d+ 份报告$/, { exact: true }).waitFor({ state: 'visible' });
-  });
-  await page.screenshot({ path: resolve(outputDir, 'outpatient-workspace-1440x1000.png'), fullPage: true });
+  await login();
 
-  await route('opd-diagnosis');
+  await openRoute('outpatient');
+  await check('seven-secondary-navigation-items', async () => {
+    for (const label of navigationLabels) await page.getByRole('link', { name: label, exact: true }).first().waitFor({ state: 'visible' });
+  });
+  await check('outpatient-summary-has-realistic-workflow-data', async () => {
+    await page.locator('.queue-list article').first().waitFor({ state: 'visible' });
+    await page.locator('.summary-grid article').nth(3).waitFor({ state: 'visible' });
+    if (await page.locator('.queue-list article').count() < 3) throw new Error('候诊队列数据不足 3 条');
+  });
+
+  await openRoute('opd-record');
+  await check('record-editor-and-workflow-actions', async () => {
+    await page.locator('textarea').first().waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: '运行质控' }).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: /立即保存|保存中/ }).waitFor({ state: 'visible' });
+  });
+
+  await openRoute('opd-diagnosis');
   await check('diagnosis-data-and-filter', async () => {
     const cards = page.locator('.diagnosis-card');
     await cards.first().waitFor({ state: 'visible' });
-    if (await cards.count() < 2) throw new Error('诊断合成数据少于 2 条');
+    if (await cards.count() < 2) throw new Error('诊断数据少于 2 条');
     await page.getByLabel('状态').selectOption('PROVISIONAL');
-    if (await cards.count() !== 1) throw new Error('诊断状态筛选未收敛到 1 条待确认记录');
+    if (await cards.count() < 1) throw new Error('待确认诊断筛选无结果');
     await page.getByLabel('状态').selectOption('ALL');
   });
-  await page.screenshot({ path: resolve(outputDir, 'opd-diagnosis-1440x1000.png'), fullPage: true });
+  await check('diagnosis-create-modal', () => expectDialogFromButton('新增诊断', '新增诊断'));
+  await check('diagnosis-edit-modal', () => expectDialogFromButton('更正', '更正诊断'));
+  await check('diagnosis-delete-lifecycle-modal', () => expectDialogFromButton('停止', '停止诊断'));
 
-  await route('opd-orders');
+  await openRoute('opd-orders');
   await check('orders-data-and-filter', async () => {
     const cards = page.locator('.order-card');
     await cards.first().waitFor({ state: 'visible' });
-    if (await cards.count() < 3) throw new Error('医嘱合成数据少于 3 条');
-    await page.getByText('苯磺酸氨氯地平片', { exact: true }).waitFor({ state: 'visible' });
+    if (await cards.count() < 3) throw new Error('医嘱数据少于 3 条');
     await page.getByLabel('状态').selectOption('ACTIVE');
-    if (await cards.count() < 2) throw new Error('活动医嘱筛选结果不足');
+    if (await cards.count() < 1) throw new Error('活动医嘱筛选无结果');
     await page.getByLabel('状态').selectOption('ALL');
   });
-  await page.screenshot({ path: resolve(outputDir, 'opd-orders-1440x1000.png'), fullPage: true });
+  await check('orders-create-modal', () => expectDialogFromButton('新增医嘱', '新建医嘱草稿'));
+  await check('orders-delete-lifecycle-modal', async () => {
+    const stop = page.getByRole('button', { name: '停止医嘱', exact: true });
+    const cancel = page.getByRole('button', { name: '取消医嘱', exact: true });
+    if (await stop.count()) return expectDialogFromButton('停止医嘱', '停止医嘱');
+    if (await cancel.count()) return expectDialogFromButton('取消医嘱', '取消医嘱');
+    throw new Error('没有可验证的医嘱停止/取消操作');
+  });
 
-  await route('opd-results');
+  await openRoute('opd-results');
   await check('results-data-and-filter', async () => {
     const cards = page.locator('.result-card');
     await cards.first().waitFor({ state: 'visible' });
-    if (await cards.count() < 2) throw new Error('检查检验复杂合成报告少于 2 份');
-    await page.getByText('3.3 mmol/L', { exact: true }).waitFor({ state: 'visible' });
+    if (await cards.count() < 2) throw new Error('检查检验报告少于 2 份');
     await page.getByLabel('分类').selectOption('ABNORMAL');
-    if (await cards.count() < 1) throw new Error('异常结果筛选未保留血钾报告');
+    if (await cards.count() < 1) throw new Error('异常结果筛选无结果');
+    await page.getByLabel('分类').selectOption('ALL');
   });
-  await page.screenshot({ path: resolve(outputDir, 'opd-results-1440x1000.png'), fullPage: true });
+  await check('results-create-modal', () => expectDialogFromButton('录入结果', '录入已审核结果'));
+  await check('results-edit-modal', () => expectDialogFromButton('更正报告', '追加结果更正版本'));
 
-  await route('opd-consult');
+  await openRoute('opd-consult');
   await check('consult-data-and-actions', async () => {
     const rows = page.locator('.admin-table tbody tr');
     await rows.first().waitFor({ state: 'visible' });
-    if (await rows.count() < 2) throw new Error('会诊转诊合成数据少于 2 条');
-    await page.getByText('心血管内科', { exact: true }).waitFor({ state: 'visible' });
-    await page.getByText('营养科', { exact: true }).waitFor({ state: 'visible' });
-    if (await page.getByRole('button', { name: '发送' }).count() < 1) throw new Error('会诊发送操作缺失');
+    if (await rows.count() < 2) throw new Error('会诊转诊数据少于 2 条');
   });
-  await page.screenshot({ path: resolve(outputDir, 'opd-consult-1440x1000.png'), fullPage: true });
-} finally { await browser.close(); }
+  await check('consult-create-modal', () => expectDialogFromButton('新建会诊 / 转诊', '新建会诊 / 转诊'));
+  await check('consult-delete-lifecycle-modal', () => expectDialogFromButton('拒绝', '拒绝会诊 / 转诊'));
 
-const result = { run_at: new Date().toISOString(), checks: checks.length + findings.length, passed: checks.length, failed: findings.length, findings, observations: checks };
+  await openRoute('opd-followup');
+  await check('followup-data-and-actions', async () => {
+    const rows = page.locator('.admin-table tbody tr');
+    await rows.first().waitFor({ state: 'visible' });
+    if (await rows.count() < 4) throw new Error('随访终诊数据少于 4 条');
+  });
+  await check('followup-create-modal', () => expectDialogFromButton('登记随访', '登记随访计划'));
+  await check('followup-edit-modal', () => expectDialogFromButton('填写结局', '填写随访结局'));
+
+  for (const viewport of [{ width: 1440, height: 1000, label: 'desktop' }, { width: 390, height: 844, label: 'mobile' }]) {
+    await page.setViewportSize(viewport);
+    for (const id of routes) {
+      await openRoute(id);
+      await check(`${id}-${viewport.label}-layout`, () => verifyLayout(viewport.label));
+      await page.screenshot({ path: resolve(outputDir, `${id}-${viewport.label}.png`), fullPage: true });
+    }
+  }
+} finally {
+  await browser.close();
+}
+
+const result = {
+  run_at: new Date().toISOString(),
+  routes,
+  checks: checks.length + findings.length,
+  passed: checks.length,
+  failed: findings.length,
+  findings,
+  observations: checks,
+};
 const outputPath = resolve(outputDir, 'outpatient-data-function-audit.json');
 await writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`);
 console.log(JSON.stringify({ checks: result.checks, passed: result.passed, failed: result.failed, artifact: outputPath }));

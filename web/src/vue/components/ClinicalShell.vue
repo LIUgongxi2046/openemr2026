@@ -131,7 +131,7 @@ const subNav = computed<SubNav | null>(() => {
     };
   }
   if (outpatientRoutes.includes(c) && !recordRoutes.includes(c)) {
-    return { kind: 'domain', title: '临床业务门户', active: c, items: [['outpatient', '门诊工作台'], ['opd-record', '门诊病历'], ['opd-diagnosis', '诊断'], ['opd-orders', '医嘱处方'], ['opd-results', '检查检验'], ['opd-consult', '会诊转诊']] };
+    return { kind: 'domain', title: '临床业务门户', active: c, items: [['outpatient', '门诊工作台'], ['opd-record', '门诊病历'], ['opd-diagnosis', '诊断'], ['opd-orders', '医嘱处方'], ['opd-results', '检查检验'], ['opd-consult', '会诊转诊'], ['opd-followup', '随访终诊']] };
   }
   if (emergencyRoutes.includes(c)) {
     return { kind: 'domain', title: '临床业务门户', active: c, items: [['emergency', '急诊工作台'], ['er-triage', '预检分诊'], ['er-record', '急诊病历'], ['er-observation', '抢救留观'], ['er-nursing', '急诊护理'], ['er-handoff', '急会诊与交接']] };

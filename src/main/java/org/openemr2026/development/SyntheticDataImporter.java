@@ -2364,6 +2364,74 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 on conflict (tenant_id, referral_id) do nothing
                 """).param("tenant", TENANT_ID).param("patient", patientId).param("encounter", encounterId)
                 .param("facility", FACILITY_ID).update();
+
+        upsertOutpatientOrder("018f0000-0000-7000-8000-00000000ef14", "COMPLETED",
+                "评估高血压相关心律与心肌缺血风险");
+        upsertOrderItem("018f0000-0000-7000-8000-00000000ef24",
+                "018f0000-0000-7000-8000-00000000ef14", "IMAGING", "ECG-12LEAD", "十二导联心电图", "COMPLETED");
+        upsertExecutionTask("018f0000-0000-7000-8000-00000000ef34",
+                "018f0000-0000-7000-8000-00000000ef14", "018f0000-0000-7000-8000-00000000ef24",
+                patientId, encounterId, "COMPLETED", 1, 1, "次");
+        jdbc.sql("""
+                insert into clinical_result(
+                  tenant_id, result_id, patient_id, encounter_id, facility_id, order_id,
+                  execution_task_id, report_type, source_system, source_report_key,
+                  current_version_id, author_user_id)
+                values (:tenant, '018f0000-0000-7000-8000-00000000ef61'::uuid, :patient, :encounter,
+                  :facility, '018f0000-0000-7000-8000-00000000ef14'::uuid,
+                  '018f0000-0000-7000-8000-00000000ef34'::uuid, 'IMAGING',
+                  'JC-AFFILIATED-HOSPITAL-ECG-SIMULATION', 'ECG-20260828-OP0842',
+                  '018f0000-0000-7000-8000-00000000ef62'::uuid, :author)
+                on conflict (tenant_id, result_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId).param("encounter", encounterId)
+                .param("facility", FACILITY_ID).param("author", USER_ID).update();
+        jdbc.sql("""
+                insert into clinical_result_version(
+                  tenant_id, result_version_id, result_id, version_no, report_status, conclusion,
+                  reported_at, change_type, authored_by)
+                values (:tenant, '018f0000-0000-7000-8000-00000000ef62'::uuid,
+                  '018f0000-0000-7000-8000-00000000ef61'::uuid, 1, 'FINAL',
+                  '窦性心律，心率 76 次/分；电轴正常，未见急性 ST-T 缺血性改变。',
+                  now() - interval '35 minute', 'INITIAL', :author)
+                on conflict (tenant_id, result_version_id) do nothing
+                """).param("tenant", TENANT_ID).param("author", USER_ID).update();
+        jdbc.sql("""
+                insert into clinical_result_observation(
+                  tenant_id, observation_id, result_version_id, item_code, item_name, value_type,
+                  text_value, abnormal_flag)
+                values (:tenant, '018f0000-0000-7000-8000-00000000ef63'::uuid,
+                  '018f0000-0000-7000-8000-00000000ef62'::uuid, 'ECG-CONCLUSION', '心电图结论',
+                  'TEXT', '窦性心律，心率 76 次/分，未见急性缺血性改变', 'NORMAL')
+                on conflict (tenant_id, observation_id) do nothing
+                """).param("tenant", TENANT_ID).update();
+
+        jdbc.sql("""
+                insert into outpatient_followup(
+                  tenant_id, followup_id, patient_id, encounter_id, followup_type, content,
+                  outcome, status, due_at, completed_at, created_at)
+                select :tenant, seed.followup_id::uuid, :patient, :encounter,
+                  seed.followup_type, seed.content, seed.outcome, seed.status,
+                  seed.due_at, seed.completed_at, seed.created_at
+                from (values
+                  ('018f0000-0000-7000-8000-00000000efa1', 'EDUCATION',
+                   '高血压家庭监测教育：每早晚规范测量并记录，限盐少于 5 g/日，出现胸痛或神经系统症状立即就诊。',
+                   '已完成面对面教育，患者可正确复述测压方法、用药时间和红旗症状。',
+                   'COMPLETED', now() - interval '1 hour', now() - interval '50 minute', now() - interval '2 hour'),
+                  ('018f0000-0000-7000-8000-00000000efa2', 'REVISIT',
+                   '两周后心内科复诊：携家庭血压日志，复查血钾、肌酐和 eGFR，评估氨氯地平疗效与下肢水肿。',
+                   null, 'PENDING', now() + interval '14 day', null, now() - interval '90 minute'),
+                  ('018f0000-0000-7000-8000-00000000efa3', 'FOLLOWUP',
+                   '用药后 72 小时电话随访：核对服药依从性、家庭血压、头晕及心悸，若持续血压 ≥180/110 mmHg 启动紧急处置。',
+                   null, 'PENDING', now() + interval '3 day', null, now() - interval '80 minute'),
+                  ('018f0000-0000-7000-8000-00000000efa4', 'FOLLOWUP',
+                   '血钾偏低处置后当日随访：核对无肌无力、心悸或晕厥，确认复测安排与饮食建议。',
+                   '患者无肌无力、心悸或晕厥；已安排 48 小时内复查电解质。',
+                   'COMPLETED', now() - interval '30 minute', now() - interval '20 minute', now() - interval '70 minute')
+                ) as seed(followup_id, followup_type, content, outcome, status,
+                  due_at, completed_at, created_at)
+                on conflict (tenant_id, followup_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId).param("encounter", encounterId)
+                .update();
     }
 
     private void upsertOutpatientOrder(String orderId, String status, String indication) {

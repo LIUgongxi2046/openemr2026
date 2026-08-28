@@ -4,6 +4,7 @@ import { computed, reactive, ref } from 'vue';
 import { clinicalContext } from '../../clinical-api';
 import type { ReferralWire } from '../../generated/contracts';
 import { createReferral, issueOutpatientPatientLease, listReferrals, transitionReferral } from '../../api/emergency';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -30,6 +31,9 @@ const form = reactive({
 });
 const busy = ref<string>('');
 const notice = ref('');
+const createOpen = ref(false);
+const transitionTarget = ref<ReferralWire | null>(null);
+const transitionAction = ref<'SEND' | 'ACCEPT' | 'REJECT' | null>(null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)) : '—';
@@ -53,6 +57,7 @@ async function create() {
       clinical_summary: form.clinical_summary.trim(),
     });
     notice.value = '转诊/会诊申请已建立（DRAFT），可发送给目标科室/机构。';
+    createOpen.value = false;
     form.reason = ''; form.clinical_summary = ''; form.target_department = ''; form.target_organization = '';
     await itemsQuery.refetch();
   } catch (error) {
@@ -60,13 +65,21 @@ async function create() {
   } finally { busy.value = ''; }
 }
 
-async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'REJECT') {
+function beginTransition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'REJECT') {
+  transitionTarget.value = referral;
+  transitionAction.value = action;
+}
+
+async function transition() {
+  const referral = transitionTarget.value;
+  const action = transitionAction.value;
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value) return;
+  if (!lease || !referral || !action || busy.value) return;
   busy.value = referral.referral_id; notice.value = '';
   try {
     await transitionReferral(lease, referral, action);
     notice.value = `转诊已${action === 'SEND' ? '发送' : action === 'ACCEPT' ? '接受' : '拒绝'}。`;
+    transitionTarget.value = null; transitionAction.value = null;
     await itemsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -82,7 +95,7 @@ async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'R
         <h1>门诊会诊、转诊与协同</h1>
         <p>院内科间会诊与院外转诊统一走转诊状态机：草稿 → 发送 → 接受/拒绝；附临床摘要与转诊原因，全程审计可溯。</p>
       </div>
-      <RouterLink class="button secondary" to="/outpatient">返回门诊</RouterLink>
+      <div class="toolbar-actions"><RouterLink class="button secondary" to="/outpatient">返回门诊</RouterLink><button class="button primary" @click="createOpen = true">新建会诊 / 转诊</button></div>
     </div>
 
     <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取会诊与转诊记录" />
@@ -96,8 +109,7 @@ async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'R
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header><div><h2>会诊 / 转诊台账</h2><p>草稿可发送，发送后可接受或拒绝。</p></div><button class="button secondary" @click="itemsQuery.refetch()">刷新</button></header>
           <div v-if="!items.length" class="admin-empty" role="status">暂无会诊或转诊记录，可在右侧新建。</div>
           <div v-else class="admin-table-wrap">
@@ -112,29 +124,28 @@ async function transition(referral: ReferralWire, action: 'SEND' | 'ACCEPT' | 'R
                   <td>{{ formatDate(referral.sent_at) }}</td>
                   <td>
                     <span class="inline-actions">
-                      <button class="task-action" :disabled="Boolean(busy) || referral.status !== 'DRAFT'" @click="transition(referral, 'SEND')">发送</button>
-                      <button class="task-action" :disabled="Boolean(busy) || referral.status !== 'SENT'" @click="transition(referral, 'ACCEPT')">接受</button>
-                      <button class="task-action" :disabled="Boolean(busy) || referral.status !== 'SENT'" @click="transition(referral, 'REJECT')">拒绝</button>
+                      <button class="task-action" :disabled="Boolean(busy) || referral.status !== 'DRAFT'" @click="beginTransition(referral, 'SEND')">发送</button>
+                      <button class="task-action" :disabled="Boolean(busy) || referral.status !== 'SENT'" @click="beginTransition(referral, 'ACCEPT')">接受</button>
+                      <button class="task-action danger" :disabled="Boolean(busy) || referral.status !== 'SENT'" @click="beginTransition(referral, 'REJECT')">拒绝</button>
                     </span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
+      </section>
 
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>新建会诊 / 转诊</h2><p>原因与临床摘要为必填。</p></div></header>
-          <form class="admin-form" @submit.prevent="create">
+      <BusinessActionDialog :open="createOpen" title="新建会诊 / 转诊" description="申请首先建立为草稿，发送后才进入目标科室或机构待办。" eyebrow="门诊会诊转诊" confirm-label="建立申请草稿" :busy="busy === 'create'" width="wide" @cancel="createOpen = false" @confirm="create">
+          <div class="admin-form">
             <label><span>类型</span><select v-model="form.referral_type"><option value="INTERNAL">院内会诊 / 转科</option><option value="EXTERNAL">院外转诊</option></select></label>
-            <label><span>目标科室</span><input v-model="form.target_department" placeholder="例：心血管内科" /></label>
-            <label><span>目标机构</span><input v-model="form.target_organization" placeholder="院外转诊时填写" /></label>
+            <label v-if="form.referral_type === 'INTERNAL'"><span>目标科室</span><select v-model="form.target_department" required><option value="">请选择</option><option>心血管内科</option><option>肾内科</option><option>营养科</option><option>全科医学科</option></select></label>
+            <label v-else><span>目标机构</span><input v-model="form.target_organization" required placeholder="例：江城市康复医院" /></label>
             <label><span>转诊 / 会诊原因</span><textarea v-model="form.reason" rows="2" required placeholder="例：胸痛待排，需心血管会诊" /></label>
             <label><span>临床摘要</span><textarea v-model="form.clinical_summary" rows="3" required placeholder="病情摘要、已做检查与用药" /></label>
-            <button class="button primary full" :disabled="Boolean(busy) || !form.reason.trim() || !form.clinical_summary.trim()">{{ busy === 'create' ? '正在建立…' : '建立转诊/会诊' }}</button>
-          </form>
-        </section>
-      </div>
+          </div>
+      </BusinessActionDialog>
+
+      <BusinessActionDialog :open="Boolean(transitionTarget && transitionAction)" :title="transitionAction === 'SEND' ? '发送会诊 / 转诊' : transitionAction === 'ACCEPT' ? '接受会诊 / 转诊' : '拒绝会诊 / 转诊'" :description="transitionAction === 'REJECT' ? '拒绝代替物理删除，申请与审计证据继续可追溯。' : '确认后将推进转诊状态机并影响下游待办。'" eyebrow="门诊会诊转诊" :confirm-label="transitionAction === 'SEND' ? '确认发送' : transitionAction === 'ACCEPT' ? '确认接受' : '确认拒绝'" :danger="transitionAction === 'REJECT'" :busy="Boolean(busy)" @cancel="transitionTarget = null; transitionAction = null" @confirm="transition"><p class="dialog-warning">{{ transitionTarget?.reason }} · {{ transitionTarget?.target_department || transitionTarget?.target_organization }}</p></BusinessActionDialog>
     </template>
   </section>
 </template>
