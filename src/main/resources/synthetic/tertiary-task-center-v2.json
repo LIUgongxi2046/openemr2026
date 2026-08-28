@@ -1,0 +1,68 @@
+{
+  "dataset_version": "2026.08",
+  "hospital_level": "三级甲等",
+  "source_note": "用于开发验收的脱敏仿真业务目录；规则结构参照三级医院常见诊疗、质控与时限管理场景，不含真实患者信息。",
+  "task_rules": [
+    {"key":"sepsis-bundle-1h","name":"脓毒症一小时集束化处置规则","task_type":"SEPSIS_BUNDLE","risk_level":"CRITICAL","due_minutes":60,"escalation_minutes":15,"assignment_strategy":"急诊/ICU主管医师 → 医疗组长 → 科主任","applies_to":["急诊","住院"]},
+    {"key":"stroke-door-to-needle","name":"卒中绿色通道静脉溶栓时限规则","task_type":"STROKE_DNT","risk_level":"CRITICAL","due_minutes":60,"escalation_minutes":15,"assignment_strategy":"卒中团队 → 神经内科二线 → 科主任","applies_to":["急诊"]},
+    {"key":"chest-pain-door-to-balloon","name":"胸痛中心急诊PCI时限规则","task_type":"STEMI_D2B","risk_level":"CRITICAL","due_minutes":90,"escalation_minutes":20,"assignment_strategy":"胸痛中心 → 导管室 → 心内科主任","applies_to":["急诊"]},
+    {"key":"vte-assessment-24h","name":"住院患者VTE风险评估规则","task_type":"VTE_ASSESSMENT","risk_level":"HIGH","due_minutes":1440,"escalation_minutes":240,"assignment_strategy":"主管医师 → 医疗组长","applies_to":["住院"]},
+    {"key":"antimicrobial-review-72h","name":"抗菌药物72小时再评估规则","task_type":"ANTIMICROBIAL_REVIEW","risk_level":"HIGH","due_minutes":4320,"escalation_minutes":720,"assignment_strategy":"主管医师 → 感染管理医师 → 科主任","applies_to":["急诊","住院"]},
+    {"key":"surgery-timeout","name":"手术安全核查三方确认规则","task_type":"SURGERY_TIMEOUT","risk_level":"CRITICAL","due_minutes":30,"escalation_minutes":10,"assignment_strategy":"手术医师/麻醉医师/巡回护士 → 手术部负责人","applies_to":["手术"]},
+    {"key":"transfusion-observation","name":"输血不良反应监测处置规则","task_type":"TRANSFUSION_OBSERVATION","risk_level":"CRITICAL","due_minutes":15,"escalation_minutes":5,"assignment_strategy":"责任护士 → 主管医师 → 输血科","applies_to":["急诊","住院","手术"]},
+    {"key":"discharge-med-reconciliation","name":"出院用药重整与患者教育规则","task_type":"DISCHARGE_MED_RECONCILIATION","risk_level":"HIGH","due_minutes":480,"escalation_minutes":120,"assignment_strategy":"主管医师 → 临床药师 → 医疗组长","applies_to":["住院"]}
+  ],
+  "pathways": [
+    {"code":"SEPSIS-ADULT","config_key":"sepsis-adult-v20","name":"成人脓毒症与脓毒性休克临床路径 v2.0","specialty":"CRITICAL_CARE","diagnosis":"A41.9","version":2,"admission_criteria":"疑似或明确感染并存在器官功能障碍，完成SOFA/qSOFA、感染灶、灌注和复苏目标评估。","entry_rules":["感染证据或高度疑似感染","SOFA较基线上升或存在低灌注"],"exclusion_rules":["明确非感染性休克","已进入临终关怀且不实施积极复苏"],"quality_indicators":["乳酸检测及时率","血培养送检率","抗菌药物及时率","复苏后再评估完成率"],"stages":[
+      {"code":"RECOGNITION","name":"识别与分层","start":0,"end":0,"tasks":[["LACTATE","乳酸与器官功能评估","ORDER_ITEM","LAB.LACTATE",true],["SEPSIS_NOTE","脓毒症初始评估记录","DOCUMENT_TASK","DOC.SEPSIS.INITIAL",true]]},
+      {"code":"BUNDLE_1H","name":"一小时集束化处置","start":0,"end":1,"tasks":[["CULTURE","抗菌药物前血培养","ORDER_ITEM","LAB.BLOOD_CULTURE",true],["ANTIBIOTIC","经验性抗菌药物医嘱","ORDER_ITEM","ORDER.ANTIMICROBIAL",true]]},
+      {"code":"RESUSCITATION","name":"复苏与器官支持","start":0,"end":3,"tasks":[["REASSESS","灌注与容量反应性再评估","DOCUMENT_TASK","DOC.SEPSIS.REASSESS",true],["SOURCE_CONTROL","感染源控制评估","DOCUMENT_TASK","DOC.SOURCE_CONTROL",true]]},
+      {"code":"DEESCALATION","name":"病原学复核与降阶梯","start":2,"end":7,"tasks":[["ANTIMICROBIAL_REVIEW","抗菌药物72小时再评估","DOCUMENT_TASK","DOC.AMR.REVIEW",true],["DISCHARGE_PLAN","出ICU或出院计划","DOCUMENT_TASK","DOC.DISCHARGE.PLAN",true]]}
+    ]},
+    {"code":"AECOPD","config_key":"aecopd-v31","name":"慢性阻塞性肺疾病急性加重临床路径 v3.1","specialty":"RESPIRATORY","diagnosis":"J44.1","version":3,"admission_criteria":"COPD基础上呼吸困难、咳嗽或咳痰加重，需要调整维持治疗并完成严重度评估。","entry_rules":["临床诊断AECOPD","完成呼吸衰竭和感染评估"],"exclusion_rules":["主要诊断为肺栓塞或急性心衰","需立即气管插管且病情不稳定"],"quality_indicators":["血气评估率","规范氧疗率","吸入装置教育率"],"stages":[
+      {"code":"ASSESSMENT","name":"急性评估","start":0,"end":1,"tasks":[["ABG","动脉血气分析","ORDER_ITEM","LAB.ABG",true],["CXR","胸部影像评估","ORDER_ITEM","IMG.CHEST",true]]},
+      {"code":"STABILIZATION","name":"氧疗与气道管理","start":0,"end":3,"tasks":[["OXYGEN_TARGET","目标氧饱和度记录","DOCUMENT_TASK","DOC.OXYGEN.TARGET",true],["BRONCHODILATOR","支气管舒张治疗","ORDER_ITEM","ORDER.BRONCHODILATOR",true]]},
+      {"code":"REVIEW","name":"病因与疗效复核","start":2,"end":5,"tasks":[["INFECTION_REVIEW","感染证据与抗菌药物复核","DOCUMENT_TASK","DOC.INFECTION.REVIEW",true],["NIV_REVIEW","无创通气适应证复核","DOCUMENT_TASK","DOC.NIV.REVIEW",false]]},
+      {"code":"DISCHARGE","name":"稳定与出院准备","start":4,"end":10,"tasks":[["INHALER_EDU","吸入装置使用教育","DOCUMENT_TASK","DOC.INHALER.EDU",true],["FOLLOWUP","呼吸专科随访预约","DOCUMENT_TASK","DOC.FOLLOWUP.RESP",true]]}
+    ]},
+    {"code":"T2DM-INPATIENT","config_key":"t2dm-inpatient-v22","name":"2型糖尿病住院血糖管理临床路径 v2.2","specialty":"ENDOCRINOLOGY","diagnosis":"E11.9","version":2,"admission_criteria":"2型糖尿病血糖控制不佳或合并急慢性并发症，需要住院完成分层和治疗方案调整。","entry_rules":["明确2型糖尿病","存在控制不佳或并发症评估需求"],"exclusion_rules":["糖尿病酮症酸中毒需急诊专病路径","妊娠期糖尿病"],"quality_indicators":["HbA1c检测率","低血糖事件率","出院用药教育完成率"],"stages":[
+      {"code":"BASELINE","name":"基线与并发症筛查","start":0,"end":1,"tasks":[["HBA1C","糖化血红蛋白","ORDER_ITEM","LAB.HBA1C",true],["COMPLICATION_SCREEN","慢性并发症筛查记录","DOCUMENT_TASK","DOC.DM.COMPLICATION",true]]},
+      {"code":"GLUCOSE_CONTROL","name":"住院血糖管理","start":1,"end":5,"tasks":[["GLUCOSE_PROFILE","床旁血糖谱","ORDER_ITEM","LAB.POCT.GLUCOSE",true],["HYPO_PROTOCOL","低血糖风险处置预案","DOCUMENT_TASK","DOC.DM.HYPO",true]]},
+      {"code":"REGIMEN","name":"方案优化","start":3,"end":7,"tasks":[["MED_REVIEW","降糖方案与肾功能复核","DOCUMENT_TASK","DOC.DM.MED_REVIEW",true],["NUTRITION","医学营养治疗评估","DOCUMENT_TASK","DOC.DM.NUTRITION",true]]},
+      {"code":"SELF_MANAGEMENT","name":"自我管理与随访","start":5,"end":10,"tasks":[["EDUCATION","注射与监测教育","DOCUMENT_TASK","DOC.DM.EDUCATION",true],["FOLLOWUP","内分泌专科随访","DOCUMENT_TASK","DOC.FOLLOWUP.ENDO",true]]}
+    ]},
+    {"code":"HIP-FRACTURE","config_key":"hip-fracture-v24","name":"老年髋部骨折围手术期临床路径 v2.4","specialty":"ORTHOPEDICS","diagnosis":"S72.0","version":2,"admission_criteria":"影像学明确髋部骨折，完成手术获益、麻醉风险、抗凝状态和多学科评估。","entry_rules":["新鲜髋部骨折","具备手术或规范保守治疗指征"],"exclusion_rules":["病理性骨折需肿瘤路径","多发伤需创伤中心综合路径"],"quality_indicators":["手术等待时间","VTE预防率","术后早期活动率"],"stages":[
+      {"code":"PREOP","name":"术前多学科评估","start":0,"end":2,"tasks":[["ANESTHESIA","麻醉风险评估","DOCUMENT_TASK","DOC.ANESTHESIA.ASSESS",true],["VTE","VTE与出血风险评估","DOCUMENT_TASK","DOC.VTE.ASSESS",true]]},
+      {"code":"SURGERY","name":"手术与安全核查","start":1,"end":3,"tasks":[["TIMEOUT","手术安全核查","DOCUMENT_TASK","DOC.SURGERY.TIMEOUT",true],["PROPHYLAXIS","围术期抗菌药物","ORDER_ITEM","ORDER.SURGICAL.PROPHYLAXIS",true]]},
+      {"code":"RECOVERY","name":"术后恢复","start":2,"end":7,"tasks":[["PAIN","疼痛与谵妄评估","DOCUMENT_TASK","DOC.POSTOP.PAIN_DELIRIUM",true],["MOBILIZATION","早期下床活动","DOCUMENT_TASK","DOC.REHAB.MOBILIZATION",true]]},
+      {"code":"SECONDARY_PREVENTION","name":"骨质疏松二级预防","start":5,"end":14,"tasks":[["OSTEOPOROSIS","骨质疏松评估与治疗","DOCUMENT_TASK","DOC.OSTEOPOROSIS",true],["REHAB_PLAN","康复与跌倒预防计划","DOCUMENT_TASK","DOC.REHAB.PLAN",true]]}
+    ]},
+    {"code":"ACUTE-APPENDICITIS","config_key":"acute-appendicitis-v19","name":"急性阑尾炎临床路径 v1.9","specialty":"GENERAL_SURGERY","diagnosis":"K35.8","version":1,"admission_criteria":"临床与影像支持急性阑尾炎，完成穿孔、脓肿、麻醉和手术方式评估。","entry_rules":["急性阑尾炎诊断明确","具备手术或观察治疗适应证"],"exclusion_rules":["弥漫性腹膜炎需急诊重症路径","复杂腹腔感染需个体化治疗"],"quality_indicators":["术前抗菌药物及时率","非计划再手术率","住院日"],"stages":[
+      {"code":"DIAGNOSIS","name":"诊断与分型","start":0,"end":1,"tasks":[["IMAGING","腹部超声或CT","ORDER_ITEM","IMG.APPENDIX",true],["SURGERY_ASSESS","外科手术评估记录","DOCUMENT_TASK","DOC.SURGERY.ASSESS",true]]},
+      {"code":"PREOP","name":"术前准备","start":0,"end":1,"tasks":[["CONSENT","手术知情同意","DOCUMENT_TASK","DOC.SURGERY.CONSENT",true],["ANTIBIOTIC","术前抗菌药物","ORDER_ITEM","ORDER.SURGICAL.PROPHYLAXIS",true]]},
+      {"code":"POSTOP","name":"术后观察","start":1,"end":3,"tasks":[["DIET","饮食与胃肠功能评估","DOCUMENT_TASK","DOC.POSTOP.DIET",true],["WOUND","切口与感染监测","DOCUMENT_TASK","DOC.POSTOP.WOUND",true]]},
+      {"code":"DISCHARGE","name":"出院与病理随访","start":2,"end":5,"tasks":[["PATHOLOGY","病理结果追踪","ORDER_ITEM","PATH.APPENDIX",true],["DISCHARGE_EDU","出院教育","DOCUMENT_TASK","DOC.DISCHARGE.EDU",true]]}
+    ]},
+    {"code":"CESAREAN-DELIVERY","config_key":"cesarean-delivery-v28","name":"计划性剖宫产临床路径 v2.8","specialty":"OBSTETRICS","diagnosis":"O82","version":2,"admission_criteria":"单胎或多胎妊娠具有剖宫产指征，完成母胎状态、麻醉和围术期风险评估。","entry_rules":["剖宫产指征明确","母胎生命体征稳定"],"exclusion_rules":["危重孕产妇抢救","胎盘植入需多学科专项路径"],"quality_indicators":["预防性抗菌药物及时率","产后出血发生率","母乳喂养指导率"],"stages":[
+      {"code":"MATERNAL_FETAL","name":"母胎评估","start":0,"end":1,"tasks":[["FETAL_MONITOR","胎心监护","ORDER_ITEM","OBS.FETAL.MONITOR",true],["BLEEDING_RISK","产后出血风险评估","DOCUMENT_TASK","DOC.OBS.BLEEDING_RISK",true]]},
+      {"code":"OPERATIVE","name":"手术分娩","start":1,"end":2,"tasks":[["TIMEOUT","手术安全核查","DOCUMENT_TASK","DOC.SURGERY.TIMEOUT",true],["NEWBORN","新生儿初始评估","DOCUMENT_TASK","DOC.NEWBORN.INITIAL",true]]},
+      {"code":"POSTPARTUM","name":"产后观察","start":1,"end":4,"tasks":[["HEMORRHAGE","产后出血监测","DOCUMENT_TASK","DOC.OBS.HEMORRHAGE",true],["VTE","产褥期VTE风险评估","DOCUMENT_TASK","DOC.VTE.ASSESS",true]]},
+      {"code":"DISCHARGE","name":"母婴出院准备","start":3,"end":5,"tasks":[["FEEDING","母乳喂养指导","DOCUMENT_TASK","DOC.OBS.FEEDING",true],["FOLLOWUP","产后复诊与预警教育","DOCUMENT_TASK","DOC.FOLLOWUP.OBS",true]]}
+    ]},
+    {"code":"CATARACT","config_key":"cataract-surgery-v17","name":"老年性白内障日间手术临床路径 v1.7","specialty":"OPHTHALMOLOGY","diagnosis":"H25.9","version":1,"admission_criteria":"老年性白内障影响视功能，完成眼部检查、人工晶体测算和日间手术安全评估。","entry_rules":["白内障诊断明确","符合日间手术管理条件"],"exclusion_rules":["活动性眼部感染","复杂眼底疾病需联合手术"],"quality_indicators":["日间手术取消率","术后眼内炎发生率","术后复诊完成率"],"stages":[
+      {"code":"PREOP","name":"术前眼科评估","start":0,"end":0,"tasks":[["BIOMETRY","人工晶体生物测量","ORDER_ITEM","OPH.BIOMETRY",true],["EYE_EXAM","裂隙灯与眼底评估","DOCUMENT_TASK","DOC.OPH.EXAM",true]]},
+      {"code":"SURGERY","name":"日间手术","start":0,"end":1,"tasks":[["TIMEOUT","眼别与人工晶体核查","DOCUMENT_TASK","DOC.OPH.TIMEOUT",true],["PHACO","超声乳化手术记录","DOCUMENT_TASK","DOC.OPH.PHACO",true]]},
+      {"code":"OBSERVATION","name":"术后短时观察","start":0,"end":1,"tasks":[["IOP","术后眼压与切口评估","DOCUMENT_TASK","DOC.OPH.POSTOP",true],["MED_EDU","滴眼液用药教育","DOCUMENT_TASK","DOC.OPH.MED_EDU",true]]},
+      {"code":"FOLLOWUP","name":"术后复诊","start":1,"end":30,"tasks":[["DAY1","术后首日复诊","DOCUMENT_TASK","DOC.OPH.FOLLOWUP_D1",true],["MONTH1","术后一月视功能复评","DOCUMENT_TASK","DOC.OPH.FOLLOWUP_M1",true]]}
+    ]},
+    {"code":"ACUTE-PANCREATITIS","config_key":"acute-pancreatitis-v23","name":"急性胰腺炎临床路径 v2.3","specialty":"GASTROENTEROLOGY","diagnosis":"K85.9","version":2,"admission_criteria":"急性胰腺炎诊断成立，完成病因、严重度、器官衰竭和局部并发症评估。","entry_rules":["符合急性胰腺炎诊断标准","完成严重度分层"],"exclusion_rules":["需立即手术的急腹症","持续器官衰竭需重症专病路径"],"quality_indicators":["早期严重度评估率","目标导向液体复苏记录率","早期肠内营养率"],"stages":[
+      {"code":"SEVERITY","name":"诊断与严重度分层","start":0,"end":1,"tasks":[["LAB_PANEL","胰酶与器官功能检验","ORDER_ITEM","LAB.PANCREATITIS",true],["SEVERITY_NOTE","严重度分层记录","DOCUMENT_TASK","DOC.AP.SEVERITY",true]]},
+      {"code":"EARLY_TREATMENT","name":"早期支持治疗","start":0,"end":3,"tasks":[["FLUID_REVIEW","液体复苏动态评估","DOCUMENT_TASK","DOC.AP.FLUID",true],["PAIN_NUTRITION","镇痛与营养计划","DOCUMENT_TASK","DOC.AP.NUTRITION",true]]},
+      {"code":"ETIOLOGY","name":"病因与并发症评估","start":2,"end":7,"tasks":[["BILIARY","胆源性病因评估","ORDER_ITEM","IMG.BILIARY",true],["COMPLICATION","局部并发症复查","DOCUMENT_TASK","DOC.AP.COMPLICATION",false]]},
+      {"code":"RECOVERY","name":"恢复与复发预防","start":5,"end":14,"tasks":[["DIET","经口进食耐受评估","DOCUMENT_TASK","DOC.AP.DIET",true],["PREVENTION","病因干预与随访计划","DOCUMENT_TASK","DOC.AP.PREVENTION",true]]}
+    ]}
+  ],
+  "variance_rules": ["禁忌证","资源不可用","患者拒绝","诊断变更","必做任务失败","其他需审核原因"],
+  "completion_rules": ["所有必做阶段任务有权威来源证据","未决变异为零","出院计划与随访已记录"],
+  "exit_rules": ["诊断变更后经独立审核退出","出现重大禁忌证后经审核退出","患者撤回同意后记录原因并退出"]
+}
