@@ -267,16 +267,28 @@ function formatDate(value?: string) {
 </template>
 
 <style scoped>
-.data-center-catalog-page { display: grid; gap: 16px; }
-.data-center-catalog-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.data-center-catalog-page { display: grid; align-content: start; gap: 14px; }
+.data-center-catalog-page > .page-head,
+.data-center-catalog-page > .admin-metrics,
+.data-center-catalog-page > .admin-notice,
+.data-center-catalog-page > .catalog-safeguards { margin: 0; }
+.data-center-catalog-page .head-actions { gap: 10px; }
+.data-center-catalog-grid { grid-template-columns: repeat(auto-fill, minmax(288px, 350px)); justify-content: start; gap: 14px; }
+.data-center-catalog-grid .connector-card { padding: 0; }
 .connector-card .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .connector-card .folder-row { gap: 14px; }
 .connector-card .folder-row > span { color: var(--muted); }
 .connector-card .folder-row > strong { min-width: 0; overflow-wrap: anywhere; text-align: right; }
-.catalog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.catalog-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .catalog-safeguards { margin-top: 0; }
 .catalog-dialog-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
 .full-span { grid-column: 1 / -1; }
-@media (max-width: 1100px) { .data-center-catalog-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .data-center-catalog-grid, .catalog-dialog-form { grid-template-columns: minmax(0, 1fr); } .full-span { grid-column: auto; } }
+@media (max-width: 760px) {
+  .data-center-catalog-page .page-head { height: auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 10px; }
+  .data-center-catalog-page .head-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin-left: 0; }
+  .data-center-catalog-page .head-actions .btn { flex: 1 1 140px; width: auto; min-height: 36px; text-align: center; }
+  .data-center-catalog-page .head-actions .btn:last-child:nth-child(odd) { flex-basis: 100%; }
+  .data-center-catalog-grid, .catalog-dialog-form { grid-template-columns: minmax(0, 1fr); }
+  .full-span { grid-column: auto; }
+}
 </style>

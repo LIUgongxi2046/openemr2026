@@ -76,14 +76,14 @@ const systemMeta: Record<string, { code: string; protocol: string; status: strin
           <div v-if="integrationInterfaces.length === 0" class="card-body">暂无集成模拟接口。</div>
           <div v-else class="card-body">
             <div v-for="item in integrationInterfaces" :key="item.code" class="extension-card integration-system-row">
-              <div style="display:flex;align-items:center;gap:8px">
+              <div class="integration-system-summary">
                 <b>{{ systemMeta[item.system_type]?.code ?? item.code }}</b>
                 <span class="status blue">{{ systemTypeLabel(item.system_type) }}</span>
                 <span>{{ systemMeta[item.system_type]?.protocol }}</span>
                 <span class="status" :class="systemMeta[item.system_type]?.tone">{{ systemMeta[item.system_type]?.status }}</span>
                 <span>{{ systemMeta[item.system_type]?.volume }} / 24h</span>
                 <span>{{ systemMeta[item.system_type]?.errors }} 异常</span>
-                <button class="btn sm" style="margin-left:auto" :disabled="Boolean(busyCode)" @click="testConnection(item.code)">{{ busyCode === item.code ? '测试中…' : '连接测试' }}</button>
+                <button class="btn sm integration-test-button" :disabled="Boolean(busyCode)" @click="testConnection(item.code)">{{ busyCode === item.code ? '测试中…' : '连接测试' }}</button>
               </div>
               <p>{{ item.description }}</p>
               <template v-if="results[item.code]">
@@ -114,9 +114,19 @@ const systemMeta: Record<string, { code: string; protocol: string; status: strin
 
 <style scoped>
 .mock-payload { margin: 8px 0 0; padding: 10px; max-height: 260px; overflow: auto; color: #26384d; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; font-size: 11px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
-.integration-layout { grid-template-columns: minmax(0, 1fr) 330px; }
+.integration-layout { grid-template-columns: minmax(0, 1fr) 330px; align-items: start; }
+.integration-layout > .scroll-card { height: auto; max-height: none; overflow: visible; }
 .integration-metrics { margin-bottom: 14px; }
 .metric-danger { color: var(--red); }
-.integration-system-row > div { flex-wrap: wrap; }
-.integration-system-row > div > span:not(.status) { color: var(--muted); font-size: 10px; }
+.head-actions { gap: 10px; }
+.integration-system-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.integration-system-summary > span:not(.status) { color: var(--muted); font-size: 10px; }
+.integration-test-button { margin-left: auto; }
+@media (max-width: 960px) { .integration-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .page-head { height: auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 14px; }
+  .head-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 0; }
+  .head-actions .btn { flex: 1 1 140px; width: auto; min-height: 36px; text-align: center; }
+  .integration-test-button { margin-left: 0; width: 100%; }
+}
 </style>

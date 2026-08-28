@@ -54,6 +54,12 @@ const rules = computed(() => allRules.value.filter((rule) => showInactive.value 
 const evaluations = computed(() => evaluationsQuery.data.value ?? []);
 const selectedRule = computed(() => rules.value.find((rule) => rule.data_quality_rule_id === selectedRuleId.value) ?? null);
 const activeCount = computed(() => rules.value.filter((rule) => rule.status === 'ACTIVE').length);
+const blockingCount = computed(() => rules.value.filter((rule) => rule.status === 'ACTIVE' && rule.severity === 'BLOCKING').length);
+const warningCount = computed(() => rules.value.filter((rule) => rule.status === 'ACTIVE' && rule.severity === 'WARNING').length);
+const workQueue = computed(() => [...rules.value]
+  .filter((rule) => rule.status === 'ACTIVE')
+  .sort((left, right) => severityOptions.indexOf(right.severity) - severityOptions.indexOf(left.severity))
+  .slice(0, 5));
 const evalIssue = computed(() => evaluationsQuery.error.value ? toClinicalIssue(evaluationsQuery.error.value) : null);
 
 const form = reactive({
@@ -150,12 +156,12 @@ async function recordEvaluation() {
 </script>
 
 <template>
-  <section data-page-root class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page data-quality-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">数据中心 / 数据质量</p>
-        <h1>数据质量规则</h1>
-        <p>按维度注册完整性、一致性、及时性、唯一性与有效性规则，记录规则级评估结论；停用不物理删除。</p>
+        <h1>全院数据质量与问题工单</h1>
+        <p>覆盖质量规则、问题队列、整改复核与审计追踪；停用不物理删除，历史证据持续保留。</p>
       </div>
       <div class="admin-inline-tools">
         <label class="admin-code-input"><span>维度筛选</span>
@@ -173,9 +179,32 @@ async function recordEvaluation() {
       <section class="admin-metrics" aria-label="数据质量统计">
         <article><span>规则总数</span><strong>{{ rules.length }}</strong><small>当前筛选</small></article>
         <article><span>有效规则</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
-        <article><span>评估记录</span><strong>{{ selectedRule ? evaluations.length : 0 }}</strong><small>{{ selectedRule ? selectedRule.rule_code : '未选择' }}</small></article>
+        <article><span>阻断级问题</span><strong>{{ blockingCount }}</strong><small>影响新业务流程</small></article>
+        <article><span>警告级问题</span><strong>{{ warningCount }}</strong><small>进入整改队列</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <section class="quality-operations">
+        <div class="admin-panel quality-work-queue">
+          <header><div><h2>质量问题工作队列</h2><p>阻断级优先，查看评估后可记录实测值并形成复核证据。</p></div></header>
+          <div v-if="workQueue.length === 0" class="admin-empty">当前筛选下没有待处理规则。</div>
+          <div v-else class="quality-queue-list">
+            <button v-for="rule in workQueue" :key="`queue-${rule.data_quality_rule_id}`" class="quality-queue-row" @click="selectRule(rule.data_quality_rule_id)">
+              <span><strong>{{ rule.rule_name }}</strong><small>{{ dimensionLabels[rule.dimension] }} · {{ rule.target_entity }}</small></span>
+              <span class="quality-queue-meta"><b>{{ severityLabels[rule.severity] }}</b><small>阈值 {{ rule.threshold }}</small></span>
+            </button>
+          </div>
+          <ol class="quality-flow" aria-label="质量整改流程"><li>发现</li><li>分派</li><li>整改</li><li>复核</li><li>关闭</li></ol>
+        </div>
+        <aside class="admin-panel quality-safeguards">
+          <header><div><h2>安全与恢复</h2><p>质量规则直接影响流程，所有动作保留审计证据。</p></div></header>
+          <div class="folder-row"><span>规则变更</span><strong>版本化新增</strong></div>
+          <div class="folder-row"><span>阻断级失败</span><strong>进入人工复核</strong></div>
+          <div class="folder-row"><span>失败重试</span><strong>幂等记录</strong></div>
+          <div class="folder-row"><span>规则停用</span><strong>历史证据保留</strong></div>
+          <button class="button secondary quality-refresh" @click="reload">刷新工作队列</button>
+        </aside>
+      </section>
 
       <section class="admin-panel">
           <header>
@@ -254,6 +283,25 @@ async function recordEvaluation() {
 </template>
 
 <style scoped>
+.data-quality-page { display: grid; align-content: start; gap: 14px; }
+.data-quality-page > .page-heading,
+.data-quality-page > .admin-metrics,
+.data-quality-page > .admin-notice,
+.data-quality-page > .admin-panel { margin: 0; }
 .quality-dialog-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
-@media (max-width: 700px) { .quality-dialog-form { grid-template-columns: minmax(0, 1fr); } }
+.admin-inline-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.data-quality-page td.admin-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 176px; }
+.toolbar-actions { gap: 8px; }
+.quality-operations { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr); gap: 14px; }
+.quality-work-queue, .quality-safeguards { margin: 0; }
+.quality-queue-list { display: grid; gap: 8px; }
+.quality-queue-row { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: inherit; text-align: left; cursor: pointer; }
+.quality-queue-row > span { display: grid; gap: 3px; min-width: 0; }
+.quality-queue-row small { color: var(--muted); }
+.quality-queue-meta { flex: 0 0 auto; text-align: right; }
+.quality-flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 14px 0 0; padding: 0; list-style: none; }
+.quality-flow li { padding: 8px 6px; border-radius: 999px; background: var(--blue-50); color: var(--blue); font-size: 11px; font-weight: 700; text-align: center; }
+.quality-refresh { width: 100%; margin-top: 12px; }
+@media (max-width: 900px) { .quality-operations { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) { .quality-dialog-form { grid-template-columns: minmax(0, 1fr); } .admin-inline-tools { align-items: stretch; } .admin-inline-tools .button { width: 100%; } .quality-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); } .data-quality-page td.admin-actions { min-width: 154px; } }
 </style>

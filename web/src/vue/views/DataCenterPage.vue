@@ -47,5 +47,10 @@ const modules = [
 .hub-hero > div > span { color: #dbeafe; }
 .hub-module { color: inherit; text-decoration: none; }
 @media (max-width: 1200px) { .data-center-module-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 760px) { .data-center-module-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .page-head { height: auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 14px; }
+  .head-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 0; }
+  .head-actions .btn { flex: 1 1 140px; width: auto; min-height: 36px; text-align: center; }
+  .data-center-module-grid { grid-template-columns: minmax(0, 1fr); }
+}
 </style>

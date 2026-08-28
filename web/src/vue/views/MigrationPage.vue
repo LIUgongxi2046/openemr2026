@@ -45,6 +45,19 @@ const registeredSourceCodes = computed(() => new Set(sources.value.map((source) 
 const batches = computed(() => (batchesQuery.data.value ?? [])
   .filter((batch) => registeredSourceCodes.value.has(batch.source_system)));
 const candidates = computed(() => candidatesQuery.data.value ?? []);
+const totalRecords = computed(() => batches.value.reduce((sum, batch) => sum + batch.record_count, 0));
+const totalMismatches = computed(() => batches.value.reduce((sum, batch) => sum + batch.mismatch_count, 0));
+const reconciledCount = computed(() => batches.value.filter((batch) => ['RECONCILED', 'SWITCHED'].includes(batch.batch_status)).length);
+const differenceQueue = computed(() => batches.value.filter((batch) => batch.mismatch_count > 0));
+const migrationSteps = ['源盘点', '字段映射', '患者匹配', '试迁', '对账', '切换', '观察', '归档'];
+const currentStep = computed(() => {
+  if (batches.value.some((batch) => batch.batch_status === 'SWITCHED')) return 6;
+  if (batches.value.some((batch) => batch.batch_status === 'RECONCILED')) return 5;
+  if (batches.value.some((batch) => batch.batch_status === 'TRIAL')) return 4;
+  if (sources.value.some((source) => source.connection_status === 'ACTIVE')) return 3;
+  if (sources.value.length) return 2;
+  return 1;
+});
 
 const mappingsQuery = useQuery({
   queryKey: ['governance', 'migration', 'mappings', selectedSourceId],
@@ -179,6 +192,24 @@ async function createCheckpoint() {
   finally { busy.value = ''; }
 }
 
+function exportReconciliationReport() {
+  const header = ['批次ID', '源系统', '记录数', '差异数', '状态', '开始时间'];
+  const rows = batches.value.map((batch) => [
+    batch.batch_id, batch.source_system, batch.record_count, batch.mismatch_count,
+    statusLabel(batch.batch_status), batch.started_at,
+  ]);
+  const csv = [header, ...rows]
+    .map((row) => row.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(','))
+    .join('\n');
+  const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `历史迁移对账报告-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  notice.value = `已导出 ${rows.length} 个批次的对账报告。`;
+}
+
 function requestRiskAction(kind: 'retire-source' | 'deactivate-mapping' | 'rollback-batch', item: SourceSystemInventoryWire | SourceFieldMappingWire | HistoricalMigrationBatchWire) {
   riskKind.value = kind;
   riskSource.value = kind === 'retire-source' ? item as SourceSystemInventoryWire : null;
@@ -208,15 +239,47 @@ const riskDescription = computed(() => riskKind.value === 'retire-source'
 </script>
 
 <template>
-  <section data-page-root class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page migration-page">
     <div class="page-heading admin-heading">
-      <div><p class="eyebrow">数据中心 / 历史迁移</p><h1>历史数据迁移与上线切换</h1><p>源系统盘点、字段映射、患者匹配与断点重跑；切换须对账一致，进度单调可续迁。</p></div><div class="toolbar-actions"><button class="button secondary" @click="batchesQuery.refetch()">刷新</button><button class="button primary" @click="dialog = 'batch'">开始迁移批次</button></div>
+      <div><p class="eyebrow">数据中心 / 历史迁移</p><h1>历史数据迁移与上线切换</h1><p>源系统盘点、字段映射、患者匹配与断点重跑；切换须对账一致，进度单调可续迁。</p></div><div class="toolbar-actions migration-head-actions"><button class="button secondary" :disabled="batches.length === 0" @click="exportReconciliationReport">导出对账报告</button><button class="button secondary" @click="batchesQuery.refetch()">刷新</button><button class="button primary" @click="dialog = 'batch'">开始迁移批次</button></div>
     </div>
 
     <ClinicalPageState v-if="leaseQuery.isPending.value || sourcesQuery.isPending.value" kind="loading" message="正在读取迁移上下文" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="sourcesQuery.refetch()" />
     <template v-else>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <section class="card migration-overview" aria-label="迁移控制台总览">
+        <div class="card-head">迁移控制台 <span class="sub">按原型八阶段执行，生产切换受零差异门禁控制</span></div>
+        <div class="card-body">
+          <ol class="migration-stepper">
+            <li v-for="(step, index) in migrationSteps" :key="step" :class="{ done: index + 1 < currentStep, active: index + 1 === currentStep }"><span>{{ index + 1 }}</span><b>{{ step }}</b></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="admin-metrics" aria-label="迁移批次指标">
+        <article><span>源系统</span><strong>{{ sources.length }}</strong><small>{{ sources.filter((source) => source.connection_status === 'ACTIVE').length }} 个已激活</small></article>
+        <article><span>迁移记录</span><strong>{{ totalRecords.toLocaleString('zh-CN') }}</strong><small>{{ batches.length }} 个有效批次</small></article>
+        <article><span>已完成对账</span><strong>{{ reconciledCount }}</strong><small>含已切换批次</small></article>
+        <article><span>待处理差异</span><strong>{{ totalMismatches }}</strong><small>切换前必须清零</small></article>
+      </section>
+
+      <section class="migration-operations">
+        <div class="admin-panel migration-reconciliation">
+          <header><div><h2>对象对账</h2><p>实时汇总有效迁移批次，点击批次可进入断点记录。</p></div></header>
+          <div v-if="batches.length === 0" class="admin-empty">暂无有效迁移批次。</div>
+          <div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>源系统</th><th>记录</th><th>差异</th><th>状态</th></tr></thead><tbody>
+            <tr v-for="batch in batches.slice(0, 5)" :key="`overview-${batch.batch_id}`"><td><button class="link-button" @click="selectedBatchId = batch.batch_id">{{ batch.source_system }}</button></td><td>{{ batch.record_count.toLocaleString('zh-CN') }}</td><td>{{ batch.mismatch_count }}</td><td><span class="admin-status" :class="batch.batch_status.toLowerCase()">{{ statusLabel(batch.batch_status) }}</span></td></tr>
+          </tbody></table></div>
+        </div>
+        <aside class="admin-panel migration-differences">
+          <header><div><h2>差异队列</h2><p>有差异的批次不能执行生产切换。</p></div></header>
+          <div v-if="differenceQueue.length === 0" class="admin-empty migration-clean">当前有效批次无待处理差异。</div>
+          <button v-for="batch in differenceQueue.slice(0, 4)" :key="`difference-${batch.batch_id}`" class="difference-row" @click="selectedBatchId = batch.batch_id"><span>{{ batch.source_system }}</span><strong>{{ batch.mismatch_count }} 项</strong></button>
+          <button class="button secondary export-button" :disabled="batches.length === 0" @click="exportReconciliationReport">导出对账报告</button>
+        </aside>
+      </section>
 
       <section class="admin-panel">
         <header><div><h2>源系统盘点</h2><p>编码唯一，生命周期 已注册→已配置→激活→退休。</p></div><button class="button primary" @click="dialog = 'source'">注册源系统</button></header>
@@ -298,3 +361,30 @@ const riskDescription = computed(() => riskKind.value === 'retire-source'
     <AdminConfirmDialog v-model:open="riskOpen" :title="riskTitle" :description="riskDescription" confirm-label="确认执行" :busy="Boolean(busy)" @confirm="confirmRiskAction" />
   </section>
 </template>
+
+<style scoped>
+.migration-page { display: grid; align-content: start; gap: 14px; }
+.migration-page > .page-heading,
+.migration-page > .admin-metrics,
+.migration-page > .admin-notice,
+.migration-page > .admin-panel { margin: 0; }
+.migration-head-actions { gap: 10px; }
+.migration-overview { margin: 0; }
+.migration-stepper { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.migration-stepper li { position: relative; display: grid; justify-items: center; gap: 6px; min-width: 0; color: var(--muted); font-size: 11px; text-align: center; }
+.migration-stepper li::after { content: ''; position: absolute; top: 13px; left: calc(50% + 17px); right: calc(-50% + 17px); height: 2px; background: var(--line); }
+.migration-stepper li:last-child::after { display: none; }
+.migration-stepper span { position: relative; z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%; background: var(--card); }
+.migration-stepper li.done span, .migration-stepper li.active span { border-color: var(--blue); background: var(--blue); color: white; }
+.migration-stepper li.done::after { background: var(--blue); }
+.migration-stepper li.active b { color: var(--blue); }
+.migration-operations { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr); gap: 14px; }
+.migration-reconciliation, .migration-differences { margin: 0; }
+.migration-differences { align-content: start; }
+.difference-row { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: inherit; cursor: pointer; }
+.difference-row strong { color: var(--red); }
+.migration-clean { color: var(--green); }
+.export-button { width: 100%; margin-top: 12px; }
+@media (max-width: 900px) { .migration-operations { grid-template-columns: minmax(0, 1fr); } .migration-stepper { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 16px; } .migration-stepper li:nth-child(4)::after { display: none; } }
+@media (max-width: 600px) { .migration-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); } .migration-stepper li:nth-child(even)::after { display: none; } .migration-head-actions { align-items: stretch; } .migration-head-actions .button { width: 100%; } }
+</style>
