@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
-import type { MockInvocationResultWire } from '../../generated/contracts';
+import type { ConfigurationItemWire, MockInvocationResultWire } from '../../generated/contracts';
+import { issueConfigurationLease, listConfigurations } from '../../api/config';
 import { invokeMockInterface, issueMockLease, listMockInterfaces } from '../../api/mock';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -15,20 +16,53 @@ const interfacesQuery = useQuery({
   queryFn: () => listMockInterfaces(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value), retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? interfacesQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? interfacesQuery.error.value) : null);
+const configLeaseQuery = useQuery({
+  queryKey: ['integration', 'config-lease'], queryFn: issueConfigurationLease,
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
+const connectorsQuery = useQuery({
+  queryKey: ['integration', 'connectors'],
+  queryFn: () => listConfigurations(configLeaseQuery.data.value!, 'INTEGRATION_CONNECTOR'),
+  enabled: () => Boolean(configLeaseQuery.data.value), retry: false,
+});
+const incidentsQuery = useQuery({
+  queryKey: ['integration', 'incidents'],
+  queryFn: () => listConfigurations(configLeaseQuery.data.value!, 'INTEGRATION_INCIDENT'),
+  enabled: () => Boolean(configLeaseQuery.data.value), retry: false,
+});
+const issue = computed(() => {
+  const error = leaseQuery.error.value ?? interfacesQuery.error.value ?? configLeaseQuery.error.value
+    ?? connectorsQuery.error.value ?? incidentsQuery.error.value;
+  return error ? toClinicalIssue(error) : null;
+});
 
-const integrationInterfaces = computed(() => (interfacesQuery.data.value ?? []).filter((i) => i.system_type.startsWith('INTEGRATION_')));
+const integrationInterfaces = computed(() => (interfacesQuery.data.value ?? [])
+  .filter((item) => item.system_type.startsWith('INTEGRATION_')));
+const connectors = computed(() => (connectorsQuery.data.value ?? []).filter((item) => item.status === 'ACTIVE'));
+const incidents = computed(() => (incidentsQuery.data.value ?? []).filter((item) => item.status === 'ACTIVE'));
 const busyCode = ref('');
 const notice = ref('');
 const results = ref<Record<string, MockInvocationResultWire>>({});
 
-async function testConnection(code: string) {
+function text(item: ConfigurationItemWire, key: string, fallback = '—') {
+  const value = item.payload?.[key];
+  return typeof value === 'string' && value.trim() ? value : fallback;
+}
+function number(item: ConfigurationItemWire, key: string) {
+  const value = Number(item.payload?.[key] ?? 0);
+  return Number.isFinite(value) ? value : 0;
+}
+function interfaceFor(item: ConfigurationItemWire) {
+  const expected = `INTEGRATION_${text(item, 'system_type', '')}`;
+  return integrationInterfaces.value.find((candidate) => candidate.system_type === expected);
+}
+async function testConnection(item: ConfigurationItemWire) {
   const lease = leaseQuery.data.value;
-  if (!lease || busyCode.value) return;
-  busyCode.value = code; notice.value = '';
+  const mock = interfaceFor(item);
+  if (!lease || !mock || busyCode.value) return;
+  busyCode.value = item.config_key; notice.value = '';
   try {
-    results.value[code] = await invokeMockInterface(lease, code);
+    results.value[item.config_key] = await invokeMockInterface(lease, mock.code);
   } catch (error) {
     const next = toClinicalIssue(error);
     notice.value = `${next.code}：${next.message}`;
@@ -38,16 +72,21 @@ async function testConnection(code: string) {
 }
 
 function systemTypeLabel(value: string) {
-  return ({ INTEGRATION_LIS: '检验 LIS', INTEGRATION_PACS: '影像 PACS', INTEGRATION_HIS: '医保 HIS', INTEGRATION_CA: '电子签名 CA', INTEGRATION_HIE: '区域平台' } as Record<string, string>)[value] ?? value;
+  return ({ LIS: '检验 LIS', PACS: '影像 PACS', HIS: '费用医保 HIS', CA: '电子签名 CA', HIE: '区域平台', PHARMACY: '药品管理', BLOOD_BANK: '临床输血', PATHOLOGY: '病理系统', ANESTHESIA: '麻醉手术', IOMT: '医疗设备' } as Record<string, string>)[value] ?? value;
 }
-
-const systemMeta: Record<string, { code: string; protocol: string; status: string; volume: string; errors: number; tone: string }> = {
-  INTEGRATION_LIS: { code: 'LIS-CORE', protocol: 'HL7 v2 / FHIR', status: '正常', volume: '28,641', errors: 3, tone: 'green' },
-  INTEGRATION_PACS: { code: 'PACS-A', protocol: 'DICOMweb / DIMSE', status: '降级', volume: '8,920', errors: 12, tone: 'amber' },
-  INTEGRATION_HIS: { code: 'HIS-BILL', protocol: 'REST / MQ', status: '正常', volume: '41,205', errors: 0, tone: 'green' },
-  INTEGRATION_CA: { code: 'CA-SIGN', protocol: 'HTTPS / SDK', status: '正常', volume: '2,846', errors: 1, tone: 'green' },
-  INTEGRATION_HIE: { code: 'REGION-HIE', protocol: 'CDA / FHIR', status: '积压', volume: '1,218', errors: 36, tone: 'red' },
-};
+function statusLabel(item: ConfigurationItemWire) {
+  return ({ HEALTHY: '正常', DEGRADED: '降级', BACKLOG: '积压', OFFLINE: '离线' } as Record<string, string>)[text(item, 'operational_status')] ?? text(item, 'operational_status');
+}
+function statusTone(item: ConfigurationItemWire) {
+  return ({ HEALTHY: 'green', DEGRADED: 'amber', BACKLOG: 'red', OFFLINE: 'red' } as Record<string, string>)[text(item, 'operational_status')] ?? 'blue';
+}
+const messageVolume = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'message_volume_24h'), 0));
+const errorCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'error_count_24h'), 0));
+const pendingCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'pending_reconciliation'), 0));
+const blockingCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'business_blocking'), 0));
+const successRate = computed(() => messageVolume.value > 0
+  ? ((messageVolume.value - errorCount.value) / messageVolume.value * 100).toFixed(2) : '—');
+const formatInteger = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
 </script>
 
 <template>
@@ -57,15 +96,15 @@ const systemMeta: Record<string, { code: string; protocol: string; status: strin
       <div class="head-actions"><RouterLink class="btn" to="/integration-mapping">集成拓扑</RouterLink><RouterLink class="btn primary" :to="{ path: '/integration-connectors', query: { action: 'create' } }">新建连接器</RouterLink></div>
     </div>
 
-    <div v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value" class="card"><div class="card-body">正在读取集成接口…</div></div>
+    <div v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value || configLeaseQuery.isPending.value || connectorsQuery.isPending.value || incidentsQuery.isPending.value" class="card"><div class="card-body">正在读取集成接口与运行台账…</div></div>
     <div v-else-if="issue" class="card"><div class="card-body">加载失败：{{ issue.code }} {{ issue.message }}</div></div>
 
     <template v-else>
       <section class="metric-grid integration-metrics" aria-label="集成运行指标">
-        <article class="metric"><div class="name">生产连接器</div><div class="value">18</div><div class="trend">LIS/PACS/HIS/CA/设备</div></article>
-        <article class="metric"><div class="name">24h 消息</div><div class="value">82,830</div><div class="trend">成功 99.86%</div></article>
-        <article class="metric"><div class="name">失败/死信</div><div class="value metric-danger">52</div><div class="trend">业务阻断 3</div></article>
-        <article class="metric"><div class="name">待对账</div><div class="value">17</div><div class="trend">报告/图像 12</div></article>
+        <article class="metric"><div class="name">生产连接器</div><div class="value">{{ connectors.length }}</div><div class="trend">来自已发布连接器目录</div></article>
+        <article class="metric"><div class="name">24h 消息</div><div class="value">{{ formatInteger(messageVolume) }}</div><div class="trend">成功 {{ successRate }}%</div></article>
+        <article class="metric"><div class="name">失败/死信</div><div class="value metric-danger">{{ formatInteger(errorCount) }}</div><div class="trend">业务阻断 {{ blockingCount }}</div></article>
+        <article class="metric"><div class="name">待对账</div><div class="value">{{ pendingCount }}</div><div class="trend">开放差异工单 {{ incidents.length }}</div></article>
       </section>
 
       <div v-if="notice" class="inline-notice error" role="status">{{ notice }}</div>
@@ -73,22 +112,22 @@ const systemMeta: Record<string, { code: string; protocol: string; status: strin
       <div class="grid integration-layout">
         <section class="card scroll-card">
           <div class="card-head">系统与运行状态 <span class="sub">三级医院仿真 · 可连接测试</span></div>
-          <div v-if="integrationInterfaces.length === 0" class="card-body">暂无集成模拟接口。</div>
+          <div v-if="connectors.length === 0" class="card-body">暂无已发布连接器。</div>
           <div v-else class="card-body">
-            <div v-for="item in integrationInterfaces" :key="item.code" class="extension-card integration-system-row">
+            <div v-for="item in connectors" :key="item.config_id" class="extension-card integration-system-row">
               <div class="integration-system-summary">
-                <b>{{ systemMeta[item.system_type]?.code ?? item.code }}</b>
-                <span class="status blue">{{ systemTypeLabel(item.system_type) }}</span>
-                <span>{{ systemMeta[item.system_type]?.protocol }}</span>
-                <span class="status" :class="systemMeta[item.system_type]?.tone">{{ systemMeta[item.system_type]?.status }}</span>
-                <span>{{ systemMeta[item.system_type]?.volume }} / 24h</span>
-                <span>{{ systemMeta[item.system_type]?.errors }} 异常</span>
-                <button class="btn sm integration-test-button" :disabled="Boolean(busyCode)" @click="testConnection(item.code)">{{ busyCode === item.code ? '测试中…' : '连接测试' }}</button>
+                <b>{{ item.display_name }}</b>
+                <span class="status blue">{{ systemTypeLabel(text(item, 'system_type')) }}</span>
+                <span>{{ text(item, 'protocol') }}</span>
+                <span class="status" :class="statusTone(item)">{{ statusLabel(item) }}</span>
+                <span>{{ formatInteger(number(item, 'message_volume_24h')) }} / 24h</span>
+                <span>{{ number(item, 'error_count_24h') }} 异常</span>
+                <button class="btn sm integration-test-button" :disabled="Boolean(busyCode) || !interfaceFor(item)" @click="testConnection(item)">{{ busyCode === item.config_key ? '测试中…' : interfaceFor(item) ? '连接测试' : '无模拟端点' }}</button>
               </div>
-              <p>{{ item.description }}</p>
-              <template v-if="results[item.code]">
-                <div class="notice info"><div class="notice-title">模拟响应 · 连接成功</div>{{ results[item.code].notice }}</div>
-                <pre class="mock-payload">{{ JSON.stringify(results[item.code].payload, null, 2) }}</pre>
+              <p>{{ text(item, 'description') }}</p>
+              <template v-if="results[item.config_key]">
+                <div class="notice info"><div class="notice-title">模拟响应 · 连接成功</div>{{ results[item.config_key].notice }}</div>
+                <pre class="mock-payload">{{ JSON.stringify(results[item.config_key].payload, null, 2) }}</pre>
               </template>
             </div>
           </div>
@@ -97,13 +136,11 @@ const systemMeta: Record<string, { code: string; protocol: string; status: strin
         <aside class="card scroll-card">
           <div class="card-head">互操作与消息对账</div>
           <div class="card-body">
-            <div class="notice hard"><div class="notice-title">区域平台积压 36</div>CDA 回执延迟，不影响院内病历签署；共享状态保持“待确认”。</div>
-            <div class="notice rule"><div class="notice-title">PACS 图像部分降级</div>报告可用，3 个 Study 的 WADO-RS 调阅超时；临床页不伪装图像完整。</div>
-            <div class="folder-row">LIS 报告<span class="status green">正常</span></div>
-            <div class="folder-row">PACS 报告<span class="status green">正常</span></div>
-            <div class="folder-row">PACS 图像<span class="status amber">部分可用</span></div>
-            <div class="folder-row">电子签名<span class="status green">正常</span></div>
-            <div class="folder-row">区域共享<span class="status red">待确认</span></div>
+            <div v-if="incidents.length === 0" class="admin-empty">当前没有开放差异工单。</div>
+            <div v-for="incident in incidents.slice(0, 4)" :key="incident.config_id" class="notice" :class="text(incident, 'result') === 'RECOVERED' ? 'info' : 'hard'">
+              <div class="notice-title">{{ incident.display_name }}</div>{{ text(incident, 'clinical_impact') }}
+            </div>
+            <div v-for="connector in connectors" :key="`status-${connector.config_id}`" class="folder-row">{{ connector.display_name }}<span class="status" :class="statusTone(connector)">{{ statusLabel(connector) }}</span></div>
             <RouterLink class="btn" style="width:100%;margin-top:12px" to="/integration-messages">查看异常消息</RouterLink>
           </div>
         </aside>

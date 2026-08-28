@@ -53,6 +53,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
     private final TransactionTemplate transactions;
     private final Path datasetPath;
     private final Path diseaseCaseCatalogPath;
+    private final Path dataCenterDatasetPath;
     private final String loginPassword;
 
     SyntheticDataImporter(
@@ -62,12 +63,15 @@ final class SyntheticDataImporter implements ApplicationRunner {
             @Value("${openemr2026.synthetic-dataset:samples/data/synthetic-clinical-golden-v1.json}") String datasetPath,
             @Value("${openemr2026.synthetic-disease-cases:samples/data/synthetic-50-disease-cases-v1.json}")
             String diseaseCaseCatalogPath,
+            @Value("${openemr2026.tertiary-data-center-dataset:samples/data/tertiary-data-center-business-v2.json}")
+            String dataCenterDatasetPath,
             @Value("${openemr2026.dev-login-password:OpenEMR2026-dev!}") String loginPassword) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
         this.transactions = transactions;
         this.datasetPath = Path.of(datasetPath);
         this.diseaseCaseCatalogPath = Path.of(diseaseCaseCatalogPath);
+        this.dataCenterDatasetPath = Path.of(dataCenterDatasetPath);
         this.loginPassword = loginPassword;
     }
 
@@ -78,10 +82,15 @@ final class SyntheticDataImporter implements ApplicationRunner {
         JsonNode root = objectMapper.readTree(json);
         String diseaseCaseJson = Files.readString(diseaseCaseCatalogPath, StandardCharsets.UTF_8);
         SyntheticDiseaseCaseCatalog diseaseCases = SyntheticDiseaseCaseCatalog.parse(objectMapper, diseaseCaseJson);
-        transactions.executeWithoutResult(status -> importRoot(root, diseaseCases));
+        String dataCenterJson = Files.readString(dataCenterDatasetPath, StandardCharsets.UTF_8);
+        TertiaryDataCenterDataset dataCenter = TertiaryDataCenterDataset.parse(objectMapper, dataCenterJson);
+        transactions.executeWithoutResult(status -> importRoot(root, diseaseCases, dataCenter));
     }
 
-    private void importRoot(JsonNode root, SyntheticDiseaseCaseCatalog diseaseCases) {
+    private void importRoot(
+            JsonNode root,
+            SyntheticDiseaseCaseCatalog diseaseCases,
+            TertiaryDataCenterDataset dataCenter) {
         upsertInfrastructure();
         upsertAdministrationFixtures();
         upsertSpecialtyReferencePatients();
@@ -103,6 +112,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
         upsertDiseaseCases(diseaseCases.cases());
         refreshPlaceholderPatientProfiles();
         upsertTertiaryDataCenterFixtures();
+        upsertTertiaryDataCenterDataset(dataCenter);
         upsertTertiaryTaskPathwayFixtures();
     }
 
@@ -1374,6 +1384,211 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 ) as seed(snapshot_id, metric_type, metric_name, metric_value, unit, dimension)
                 on conflict (tenant_id, snapshot_id) do nothing
                 """).param("tenant", TENANT_ID).update();
+    }
+
+    /**
+     * Imports the complete data-center catalog from a validated external dataset. Seed rows are
+     * insert-only so subsequent CRUD and lifecycle actions remain authoritative across restarts.
+     */
+    private void upsertTertiaryDataCenterDataset(TertiaryDataCenterDataset dataset) {
+        for (JsonNode row : dataset.rows("configurations")) {
+            jdbc.sql("""
+                    insert into config_item(
+                      tenant_id, config_id, config_type, config_key, display_name, payload,
+                      status, row_version, schema_version, validation_state, validation_errors,
+                      approval_state, approved_by, published_at, created_by)
+                    values (:tenant, cast(:id as uuid), :type, :key, :name, cast(:payload as jsonb),
+                      'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
+                      now() - interval '14 days', :author)
+                    on conflict (tenant_id, config_type, config_key) do update set
+                      display_name = excluded.display_name,
+                      payload = excluded.payload,
+                      status = 'ACTIVE',
+                      row_version = config_item.row_version + 1,
+                      schema_version = excluded.schema_version,
+                      validation_state = 'VALID',
+                      validation_errors = '[]'::jsonb,
+                      approval_state = 'APPROVED',
+                      approved_by = excluded.approved_by,
+                      published_at = excluded.published_at,
+                      updated_at = now()
+                    where config_item.payload->>'fixture_source' = 'tertiary-data-center-v1'
+                    """).param("tenant", TENANT_ID)
+                    .param("id", required(row, "id")).param("type", required(row, "config_type"))
+                    .param("key", required(row, "config_key")).param("name", required(row, "display_name"))
+                    .param("payload", writeJson(row.path("payload"))).param("approver", COLLABORATOR_USER_ID)
+                    .param("author", USER_ID).update();
+        }
+        jdbc.sql("""
+                update config_item set status = 'ARCHIVED', published_at = null,
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and status <> 'ARCHIVED'
+                  and config_type in ('INTEGRATION_CONNECTOR','DEVICE_CATALOG',
+                    'RESEARCH_PROJECT','INTEGRATION_INCIDENT')
+                  and payload->>'fixture_source' = 'tertiary-data-center-v1'
+                """).param("tenant", TENANT_ID).update();
+
+        for (JsonNode row : dataset.rows("source_systems")) {
+            jdbc.sql("""
+                    insert into source_system_inventory(
+                      tenant_id, source_system_id, source_code, display_name, system_type,
+                      connection_status, registered_by, registered_at)
+                    values (:tenant, cast(:id as uuid), :code, :name, :type, 'ACTIVE', :author,
+                      now() - make_interval(days => :days))
+                    on conflict (tenant_id, source_system_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("code", required(row, "source_code")).param("name", required(row, "display_name"))
+                    .param("type", required(row, "system_type")).param("author", USER_ID)
+                    .param("days", row.path("registered_days_ago").asInt()).update();
+        }
+        for (JsonNode row : dataset.rows("field_mappings")) {
+            jdbc.sql("""
+                    insert into source_field_mapping(
+                      tenant_id, mapping_id, source_system_id, source_field, target_entity,
+                      target_field, status, registered_by, registered_at)
+                    values (:tenant, cast(:id as uuid), cast(:source as uuid), :source_field,
+                      :target_entity, :target_field, 'ACTIVE', :author, now() - interval '45 days')
+                    on conflict (tenant_id, mapping_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("source", required(row, "source_id"))
+                    .param("source_field", required(row, "source_field"))
+                    .param("target_entity", required(row, "target_entity"))
+                    .param("target_field", required(row, "target_field"))
+                    .param("author", USER_ID).update();
+        }
+        for (JsonNode row : dataset.rows("migration_batches")) {
+            int completedDays = row.path("completed_days_ago").isNumber()
+                    ? row.path("completed_days_ago").asInt() : -1;
+            jdbc.sql("""
+                    insert into historical_migration_batch(
+                      tenant_id, batch_id, source_system, batch_status, record_count,
+                      mismatch_count, started_at, completed_at, created_by, row_version)
+                    values (:tenant, cast(:id as uuid), :source, :status, :records, :mismatches,
+                      now() - make_interval(days => :started_days),
+                      case when :completed_days >= 0
+                        then now() - make_interval(days => :completed_days) else null end,
+                      :author, 1)
+                    on conflict (tenant_id, batch_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("source", required(row, "source_system"))
+                    .param("status", required(row, "batch_status"))
+                    .param("records", row.path("record_count").asInt())
+                    .param("mismatches", row.path("mismatch_count").asInt())
+                    .param("started_days", row.path("started_days_ago").asInt())
+                    .param("completed_days", completedDays).param("author", USER_ID).update();
+        }
+        for (JsonNode row : dataset.rows("migration_checkpoints")) {
+            jdbc.sql("""
+                    insert into historical_migration_checkpoint(
+                      tenant_id, checkpoint_id, batch_id, processed_records, last_source_key,
+                      checkpointed_by, checkpointed_at)
+                    values (:tenant, cast(:id as uuid), cast(:batch as uuid), :processed, :last_key,
+                      :author, now() - make_interval(hours => :hours))
+                    on conflict (tenant_id, checkpoint_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("batch", required(row, "batch_id"))
+                    .param("processed", row.path("processed_records").asLong())
+                    .param("last_key", required(row, "last_source_key"))
+                    .param("author", USER_ID).param("hours", row.path("hours_ago").asInt()).update();
+        }
+        for (JsonNode row : dataset.rows("quality_rules")) {
+            jdbc.sql("""
+                    insert into data_quality_rule(
+                      tenant_id, data_quality_rule_id, rule_code, rule_name, dimension,
+                      target_entity, threshold, severity, status)
+                    values (:tenant, cast(:id as uuid), :code, :name, :dimension,
+                      :entity, :threshold, :severity, 'ACTIVE')
+                    on conflict (tenant_id, data_quality_rule_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("code", required(row, "rule_code")).param("name", required(row, "rule_name"))
+                    .param("dimension", required(row, "dimension")).param("entity", required(row, "target_entity"))
+                    .param("threshold", row.path("threshold").asDouble())
+                    .param("severity", required(row, "severity")).update();
+        }
+        for (JsonNode row : dataset.rows("quality_evaluations")) {
+            jdbc.sql("""
+                    insert into data_quality_evaluation(
+                      tenant_id, data_quality_evaluation_id, data_quality_rule_id, target_entity_id,
+                      measured_value, threshold, status, evaluated_at, evaluated_by)
+                    select :tenant, cast(:id as uuid), rule.data_quality_rule_id, cast(:entity as uuid),
+                      :measured, rule.threshold,
+                      case when :measured >= rule.threshold then 'PASSED' else 'FAILED' end,
+                      now() - make_interval(hours => :hours), :author
+                    from data_quality_rule rule
+                    where rule.tenant_id = :tenant and rule.data_quality_rule_id = cast(:rule as uuid)
+                    on conflict (tenant_id, data_quality_evaluation_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("rule", required(row, "rule_id"))
+                    .param("entity", required(row, "target_entity_id"))
+                    .param("measured", row.path("measured_value").asDouble())
+                    .param("hours", row.path("hours_ago").asInt()).param("author", USER_ID).update();
+        }
+        for (JsonNode row : dataset.rows("research_cohorts")) {
+            jdbc.sql("""
+                    insert into research_cohort(
+                      tenant_id, research_cohort_id, cohort_code, cohort_name,
+                      inclusion_criteria, exclusion_criteria, status)
+                    values (:tenant, cast(:id as uuid), :code, :name, :include, :exclude, 'ACTIVE')
+                    on conflict (tenant_id, research_cohort_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("code", required(row, "cohort_code")).param("name", required(row, "cohort_name"))
+                    .param("include", required(row, "inclusion_criteria"))
+                    .param("exclude", required(row, "exclusion_criteria")).update();
+        }
+        for (JsonNode row : dataset.rows("research_snapshots")) {
+            jdbc.sql("""
+                    insert into research_cohort_snapshot(
+                      tenant_id, research_cohort_snapshot_id, research_cohort_id, member_count,
+                      criteria_hash, computed_at, computed_by)
+                    values (:tenant, cast(:id as uuid), cast(:cohort as uuid), :members, :hash,
+                      now() - make_interval(hours => :hours), :author)
+                    on conflict (tenant_id, research_cohort_snapshot_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("cohort", required(row, "cohort_id"))
+                    .param("members", row.path("member_count").asInt())
+                    .param("hash", required(row, "criteria_hash"))
+                    .param("hours", row.path("hours_ago").asInt()).param("author", USER_ID).update();
+        }
+        for (JsonNode row : dataset.rows("dataset_requests")) {
+            String requestStatus = required(row, "status");
+            String watermark = row.path("export_watermark").isTextual()
+                    ? row.path("export_watermark").stringValue() : "";
+            jdbc.sql("""
+                    insert into research_dataset_request(
+                      tenant_id, request_id, requester_id, purpose, scope_description, status,
+                      approved_by, approved_at, exported_at, exported_by, export_watermark,
+                      row_version, created_at, updated_at)
+                    values (:tenant, cast(:id as uuid), :author, :purpose, :scope, :status,
+                      case when :status in ('APPROVED','EXPORTED') then :approver else null end,
+                      case when :status in ('APPROVED','EXPORTED') then now() - interval '2 days' else null end,
+                      case when :status = 'EXPORTED' then now() - interval '1 day' else null end,
+                      case when :status = 'EXPORTED' then :approver else null end,
+                      case when :status = 'EXPORTED' then :watermark else null end,
+                      1, now() - make_interval(days => :days), now() - interval '1 day')
+                    on conflict (tenant_id, request_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("author", USER_ID).param("purpose", required(row, "purpose"))
+                    .param("scope", required(row, "scope_description")).param("status", requestStatus)
+                    .param("approver", COLLABORATOR_USER_ID).param("watermark", watermark)
+                    .param("days", row.path("created_days_ago").asInt()).update();
+        }
+        for (JsonNode row : dataset.rows("metric_snapshots")) {
+            jdbc.sql("""
+                    insert into metric_snapshot(
+                      tenant_id, snapshot_id, metric_type, metric_name, metric_value, unit,
+                      dimension, period, status, computed_at)
+                    values (:tenant, cast(:id as uuid), :type, :name, :value, :unit,
+                      cast(:dimension as jsonb), current_date, 'FINAL', now() - interval '6 hours')
+                    on conflict (tenant_id, snapshot_id) do nothing
+                    """).param("tenant", TENANT_ID).param("id", required(row, "id"))
+                    .param("type", required(row, "metric_type")).param("name", required(row, "metric_name"))
+                    .param("value", row.path("metric_value").asDouble()).param("unit", required(row, "unit"))
+                    .param("dimension", writeJson(row.path("dimension"))).update();
+        }
+    }
+
+    private static String required(JsonNode row, String field) {
+        return TertiaryDataCenterDataset.required(row, field);
     }
 
     private String writeJson(Object value) {

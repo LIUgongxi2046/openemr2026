@@ -115,6 +115,7 @@ function parseField(field: DataCenterCatalogField): unknown {
 
 function payload() {
   return {
+    ...(selected.value?.payload ?? {}),
     schema_version: 1,
     description: form.description.trim(),
     hospital_level: '三级甲等',
