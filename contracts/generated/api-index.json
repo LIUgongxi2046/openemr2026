@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 443,
+  "operation_count": 449,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -6579,6 +6579,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "rejectLabSpecimen",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/lab-specimens/{specimen_id}/rejections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "LabSpecimenRejectRequest",
+      "output_schema": "LabSpecimen",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:rejectLabSpecimen",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "reportAdverseEvent",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7532,6 +7549,91 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:viewClinicalTask",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidEmergencyNursingNote",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-nursing-notes/{note_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyClinicalFactVoidRequest",
+      "output_schema": "EmergencyNursingNote",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyNursingNote",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidEmergencyObservation",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-observations/{observation_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyClinicalFactVoidRequest",
+      "output_schema": "EmergencyObservation",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyObservation",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidEmergencyResuscitation",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-resuscitations/{resuscitation_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyClinicalFactVoidRequest",
+      "output_schema": "EmergencyResuscitation",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyResuscitation",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidEmergencyTriageAssessment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-triage-assessments/{triage_assessment_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyClinicalFactVoidRequest",
+      "output_schema": "EmergencyTriageAssessment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyTriageAssessment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidShiftHandover",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/shift-handovers/{handover_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ShiftHandoverVoidRequest",
+      "output_schema": "ShiftHandover",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidShiftHandover",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

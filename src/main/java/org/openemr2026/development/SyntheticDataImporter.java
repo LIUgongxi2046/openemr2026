@@ -109,6 +109,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
         upsertOutpatientClinicalFixture();
         upsertEmergencyFixture();
         upsertInpatientFixture();
+        upsertTertiaryInpatientWorkspaceFixtures();
         upsertDiseaseCases(diseaseCases.cases());
         refreshPlaceholderPatientProfiles();
         upsertTertiaryDataCenterFixtures();
@@ -304,18 +305,31 @@ final class SyntheticDataImporter implements ApplicationRunner {
         jdbc.sql("""
                 insert into model_deployment(
                   tenant_id, model_deployment_id, model_code, provider_code, display_name,
-                  residency_policy, endpoint_url, status, evaluation_status, row_version)
+                  residency_policy, endpoint_url, api_key_ref, connection_status,
+                  status, evaluation_status, row_version)
                 select :tenant, seed.model_deployment_id::uuid, seed.model_code, seed.provider_code,
-                  seed.display_name, seed.residency_policy, seed.endpoint_url, 'ACTIVE', 'APPROVED', 1
+                  seed.display_name, seed.residency_policy, seed.endpoint_url,
+                  'env://TERTIARY_HOSPITAL_AI_GATEWAY_TOKEN', 'READY', 'ACTIVE', 'APPROVED', 1
                 from (values
                   ('018f0000-0000-7000-8000-00000000f001', 'DEEPSEEK-V3-CLINICAL-LOCAL', 'DEEPSEEK',
-                   'DeepSeek V3 临床本地路由', 'ON_PREM_ONLY', null),
+                   'DeepSeek V3 临床综合主模型', 'ON_PREM_ONLY', 'https://ai-gateway.tertiary-hospital.example/v1'),
                   ('018f0000-0000-7000-8000-00000000f002', 'DEEPSEEK-R1-REASONING-LOCAL', 'DEEPSEEK',
-                   'DeepSeek R1 临床推理路由', 'ON_PREM_ONLY', null),
+                   'DeepSeek R1 疑难病例推理模型', 'ON_PREM_ONLY', 'https://ai-gateway.tertiary-hospital.example/v1'),
                   ('018f0000-0000-7000-8000-00000000f003', 'QWEN3-EMBEDDING-LOCAL', 'QWEN',
-                   'Qwen3 临床检索向量模型', 'ON_PREM_ONLY', null)
+                   'Qwen3 医学知识检索向量模型', 'ON_PREM_ONLY', 'https://ai-gateway.tertiary-hospital.example/v1'),
+                  ('018f0000-0000-7000-8000-00000000f005', 'QWEN2.5-VL-MEDICAL', 'QWEN',
+                   'Qwen2.5-VL 医学影像文档理解模型', 'LOCAL_PREFERRED', 'https://ai-gateway.tertiary-hospital.example/v1'),
+                  ('018f0000-0000-7000-8000-00000000f006', 'GLM4-PATIENT-COMMUNICATION', 'GLM',
+                   'GLM-4 医患沟通与随访模型', 'LOCAL_PREFERRED', 'https://ai-gateway.tertiary-hospital.example/v1'),
+                  ('018f0000-0000-7000-8000-00000000f007', 'BGE-M3-CLINICAL-RERANK', 'QWEN',
+                   'BGE-M3 临床术语重排模型', 'ON_PREM_ONLY', 'https://ai-gateway.tertiary-hospital.example/v1')
                 ) as seed(model_deployment_id, model_code, provider_code, display_name, residency_policy, endpoint_url)
-                on conflict (tenant_id, model_code) do nothing
+                on conflict (tenant_id, model_code) do update
+                set display_name = excluded.display_name,
+                    endpoint_url = excluded.endpoint_url,
+                    api_key_ref = excluded.api_key_ref,
+                    connection_status = 'READY',
+                    status = 'ACTIVE', evaluation_status = 'APPROVED', updated_at = now()
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""
@@ -335,7 +349,19 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f109', 'MEDICATION_RISK_EXPLANATION', '用药风险解释'),
                   ('018f0000-0000-7000-8000-00000000f10a', 'MINIMUM_NECESSARY_REDACTION', '最小必要数据脱敏'),
                   ('018f0000-0000-7000-8000-00000000f10b', 'SOURCE_REFERENCE_CITATION', '可定位来源引用'),
-                  ('018f0000-0000-7000-8000-00000000f10c', 'CANDIDATE_BOUNDARY_VALIDATION', '候选结果边界校验')
+                  ('018f0000-0000-7000-8000-00000000f10c', 'CANDIDATE_BOUNDARY_VALIDATION', '候选结果边界校验'),
+                  ('018f0000-0000-7000-8000-00000000f10d', 'ADMISSION_RISK_SUMMARY', '入院风险摘要'),
+                  ('018f0000-0000-7000-8000-00000000f10e', 'EMERGENCY_TRIAGE_CONTEXT', '急诊分诊上下文整理'),
+                  ('018f0000-0000-7000-8000-00000000f10f', 'SURGICAL_RISK_BRIEF', '围手术期风险摘要'),
+                  ('018f0000-0000-7000-8000-00000000f110', 'MEDICATION_RECONCILIATION', '用药重整'),
+                  ('018f0000-0000-7000-8000-00000000f111', 'ANTIBIOTIC_STEWARDSHIP_REVIEW', '抗菌药物管理审阅'),
+                  ('018f0000-0000-7000-8000-00000000f112', 'LAB_TREND_ANALYSIS', '检验趋势分析'),
+                  ('018f0000-0000-7000-8000-00000000f113', 'IMAGING_REPORT_SUMMARY', '影像报告摘要'),
+                  ('018f0000-0000-7000-8000-00000000f114', 'NURSING_HANDOFF_SUMMARY', '护理交接摘要'),
+                  ('018f0000-0000-7000-8000-00000000f115', 'DISCHARGE_PLAN_DRAFT', '出院计划候选起草'),
+                  ('018f0000-0000-7000-8000-00000000f116', 'MDT_CASE_PREPARATION', 'MDT 病例资料准备'),
+                  ('018f0000-0000-7000-8000-00000000f117', 'DRG_RECORD_COMPLETENESS', 'DRG 病案完整性检查'),
+                  ('018f0000-0000-7000-8000-00000000f118', 'PRIVACY_DEIDENTIFICATION', '医疗数据脱敏')
                 ) as seed(skill_registry_id, skill_code, skill_name)
                 on conflict (tenant_id, skill_code, skill_version) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -357,7 +383,19 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f209', 'CARE_PLAN_READ', '诊疗计划只读工具', 'DATABASE_QUERY'),
                   ('018f0000-0000-7000-8000-00000000f20a', 'DOCUMENT_TEMPLATE_READ', '文书模板只读工具', 'DATABASE_QUERY'),
                   ('018f0000-0000-7000-8000-00000000f20b', 'CLINICAL_RULE_EVALUATE', '临床硬规则只读评估', 'FUNCTION'),
-                  ('018f0000-0000-7000-8000-00000000f20c', 'AGENT_EVIDENCE_APPEND', '医助证据链追加工具', 'FUNCTION')
+                  ('018f0000-0000-7000-8000-00000000f20c', 'AGENT_EVIDENCE_APPEND', '医助证据链追加工具', 'FUNCTION'),
+                  ('018f0000-0000-7000-8000-00000000f20d', 'ALLERGY_READ', '过敏史只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f20e', 'VITAL_SIGN_READ', '生命体征只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f20f', 'LAB_TREND_READ', '检验趋势只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f210', 'IMAGING_REPORT_READ', '影像报告只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f211', 'MEDICATION_ADMIN_READ', '用药执行只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f212', 'NURSING_RECORD_READ', '护理记录只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f213', 'SURGERY_SCHEDULE_READ', '手术排程只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f214', 'ANESTHESIA_RECORD_READ', '麻醉记录只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f215', 'BLOOD_TRANSFUSION_READ', '输血记录只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f216', 'INFECTION_EVENT_READ', '院感事件只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f217', 'PATHOLOGY_REPORT_READ', '病理报告只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f218', 'MDT_RECORD_READ', 'MDT 记录只读工具', 'DATABASE_QUERY')
                 ) as seed(tool_registry_id, tool_code, tool_name, tool_type)
                 on conflict (tenant_id, tool_code, tool_version) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -439,10 +477,10 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   status, row_version, schema_version, validation_state, validation_errors,
                   approval_state, approved_by, published_at, created_by)
                 values (:tenant, '018f0000-0000-7000-8000-00000000c108'::uuid,
-                  'AI_ASSISTANT_POLICY', 'xiaonan-clinical-policy-v1', 'AI医助小南·三级甲等医院临床工作策略',
+                  'AI_ASSISTANT_POLICY', 'xiaonan-clinical-policy-v1', 'AI医助 Eva·三级甲等医院临床工作策略',
                   jsonb_build_object(
                   'schema_version', 1,
-                  'description', '覆盖门诊、急诊与住院场景的统一小南工作策略。',
+                  'description', '覆盖门诊、急诊与住院场景的统一 Eva 工作策略。',
                   'proactive_level', 'REMIND_ONLY',
                   'allowed_sources', jsonb_build_array('DOCUMENT_VERSION', 'OBSERVATION', 'ORDER', 'RESULT', 'RULE'),
                   'model_policy', 'TENANT_ACTIVE_MODEL_WITH_LOCAL_FALLBACK',
@@ -450,12 +488,15 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   'approval_required', true,
                   'main_agent_count', 5,
                   'child_agent_count', 33,
-                  'environment', 'dev-synthetic'),
+                  'hospital_level', '三级甲等',
+                  'facility_name', '江城大学附属医院（仿真）',
+                  'campuses', jsonb_build_array('本部院区', '东院区', '感染病院区'),
+                  'environment', 'tertiary-hospital-simulation'),
                   'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver, now(), :author)
                 on conflict (tenant_id, config_id) do update
                 set config_key = excluded.config_key,
                     display_name = excluded.display_name,
-                    payload = excluded.payload || config_item.payload,
+                    payload = config_item.payload || excluded.payload,
                     status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
                     approval_state = 'APPROVED', approved_by = excluded.approved_by,
                     published_at = coalesce(config_item.published_at, now()), updated_at = now()
@@ -493,14 +534,16 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     'target_agent', seed.target_agent,
                     'measured_score', seed.measured_score,
                     'release_gate', case when seed.measured_score >= seed.pass_threshold then 'PASSED' else 'BLOCKED' end,
-                    'environment', 'dev-synthetic'),
+                    'hospital_level', '三级甲等',
+                    'facility_name', '江城大学附属医院（仿真）',
+                    'environment', 'tertiary-hospital-simulation'),
                   'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver, now(), :author
                 from (values
-                  ('018f0000-0000-7000-8000-00000000f801', 'eval-encounter-summarizer-v1', '就诊摘要医助发布审核', 'ENCOUNTER_SUMMARIZER', '核验事实一致性、时线完整性和来源覆盖。', 'agent-encounter-golden-v1', 120, 0.9500::numeric, 0.9780::numeric),
-                  ('018f0000-0000-7000-8000-00000000f802', 'eval-document-drafter-v1', '文书起草医助发布审核', 'DOCUMENT_DRAFTER', '核验模板完整性、来源对齐和未确认项标注。', 'agent-document-golden-v1', 160, 0.9600::numeric, 0.9720::numeric),
-                  ('018f0000-0000-7000-8000-00000000f803', 'eval-record-qc-v1', '病历质控医助发布审核', 'RECORD_QC', '核验硬规则优先、语义缺陷准确性和低打扰率。', 'agent-record-qc-golden-v1', 140, 0.9500::numeric, 0.9690::numeric),
-                  ('018f0000-0000-7000-8000-00000000f804', 'eval-result-followup-v1', '结果闭环医助发布审核', 'RESULT_FOLLOWUP_COORDINATOR', '核验危急值不降级、结果版本可追溯和闭环责任。', 'agent-result-golden-v1', 180, 0.9800::numeric, 0.9860::numeric),
-                  ('018f0000-0000-7000-8000-00000000f805', 'eval-care-coordinator-v1', '诊疗协同医助发布审核', 'CARE_COORDINATOR', '核验职责范围、任务去重、责任人与截止时间完整性。', 'agent-care-golden-v1', 130, 0.9500::numeric, 0.9710::numeric)
+                  ('018f0000-0000-7000-8000-00000000f901', 'eval-emergency-triage-v1', '急诊分诊上下文完整性评测', 'ENCOUNTER_SUMMARIZER', '覆盖创伤、胸痛、卒中、高热与特殊人群的分诊事实整理。', 'tertiary-ed-triage-golden-v1', 220, 0.9700::numeric, 0.9820::numeric),
+                  ('018f0000-0000-7000-8000-00000000f902', 'eval-admission-risk-v1', '入院风险摘要评测', 'ENCOUNTER_SUMMARIZER', '核验过敏、跌倒、VTE、压疮和营养风险事实覆盖。', 'tertiary-admission-risk-v1', 180, 0.9600::numeric, 0.9760::numeric),
+                  ('018f0000-0000-7000-8000-00000000f903', 'eval-surgical-document-v1', '围手术期文书起草评测', 'DOCUMENT_DRAFTER', '覆盖术前讨论、手术记录、麻醉记录与术后计划。', 'tertiary-surgery-document-v1', 200, 0.9700::numeric, 0.9790::numeric),
+                  ('018f0000-0000-7000-8000-00000000f904', 'eval-discharge-plan-v1', '出院计划与患者指导评测', 'DOCUMENT_DRAFTER', '核验出院用药、复诊、红旗症状和患者可理解性。', 'tertiary-discharge-plan-v1', 190, 0.9600::numeric, 0.9740::numeric),
+                  ('018f0000-0000-7000-8000-00000000f905', 'eval-drg-completeness-v1', 'DRG 病案完整性评测', 'RECORD_QC', '核验主要诊断、主要手术、并发症与时间逻辑缺项。', 'tertiary-drg-qc-v1', 260, 0.9600::numeric, 0.9730::numeric)
                 ) as seed(config_id, config_key, display_name, target_agent, description,
                   dataset_version, case_count, pass_threshold, measured_score)
                 on conflict (tenant_id, config_id) do update
@@ -607,7 +650,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000c102', 'FORM_TEMPLATE', 'syn-medical-record-v1', '复杂病历结构化模板', '包含主诉、现病史、系统回顾、查体、诊断依据与计划。'),
                   ('018f0000-0000-7000-8000-00000000c103', 'RULE', 'syn-clinical-safety-v1', '临床安全与时限规则', '覆盖过敏、剂量、危急值、超时与会诊升级规则。'),
                   ('018f0000-0000-7000-8000-00000000c104', 'SCOPE', 'syn-role-scope-v1', '院科患者关系数据范围', '按机构、岗位、患者关系和临时授权组合控制。'),
-                  ('018f0000-0000-7000-8000-00000000c105', 'AGENT_COMPOSITION', 'syn-agent-team-v1', 'AI医助小南团队编排', '六类医助按诊疗场景协同处理，临床写入均需医生确认。'),
+                  ('018f0000-0000-7000-8000-00000000c105', 'AGENT_COMPOSITION', 'syn-agent-team-v1', 'AI医助 Eva 团队编排', '六类医助按诊疗场景协同处理，临床写入均需医生确认。'),
                   ('018f0000-0000-7000-8000-00000000c106', 'AGENT_CONTEXT', 'syn-agent-context-v1', '最小必要临床上下文', '绑定患者、就诊、任务、来源和有效期，切换后立即失效。'),
                   ('018f0000-0000-7000-8000-00000000c109', 'CONFIG_RELEASE', 'syn-config-release-v1', '配置灰度发布批次', '包含差异、验证证据、灰度范围、停止条件和回退点。'),
                   ('018f0000-0000-7000-8000-00000000c110', 'CONFIG_UPGRADE', 'syn-config-upgrade-v1', '配置包升级预演', '覆盖兼容性检查、冲突决议、迁移预演与恢复校验。'),
@@ -1167,7 +1210,14 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   status, row_version, schema_version, validation_state, validation_errors,
                   approval_state, approved_by, published_at, created_by)
                 select :tenant, seed.config_id::uuid, seed.config_type, seed.config_key,
-                  seed.display_name, cast(seed.payload as jsonb), 'ACTIVE', 1, 1, 'VALID',
+                  seed.display_name, cast(seed.payload as jsonb) || jsonb_build_object(
+                    'fixture_source', 'tertiary-business-generator-v2',
+                    'generation_method', 'DETERMINISTIC_SEEDED',
+                    'generator_version', 'tertiary-business-v2',
+                    'default_record_count', 36,
+                    'record_count_range', jsonb_build_array(12, 200),
+                    'contains_real_phi', false),
+                  'ACTIVE', 1, 1, 'VALID',
                   '[]'::jsonb, 'APPROVED', :approver, now() - interval '14 days', :author
                 from (values
                   ('018f0000-0000-7000-8000-00000000f101','INTEGRATION_CONNECTOR','lis-core-prod','LIS-CORE · 生产检验系统','{"schema_version":1,"fixture_source":"tertiary-data-center-v1","hospital_level":"三级甲等","organization":"江城大学附属医院","description":"全院检验申请、标本、报告和危急值回传主连接器","system_type":"LIS","protocol":"HL7 v2.5.1 / FHIR R4","capabilities":["ADT","ORM","ORU","危急值"],"endpoint":"医疗专网 10.20.4.18","secret_reference":"file://secrets/integration/lis-core-prod","timeout_retry":"5s / 3 次 / 指数退避","circuit_breaker":"60s / 人工降级","connector_version":"v3.2.1"}'),
@@ -1184,7 +1234,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f131','INTEGRATION_INCIDENT','tr-882177','TR-882177 · WADO-RS 调阅超时','{"schema_version":1,"fixture_source":"tertiary-data-center-v1","hospital_level":"三级甲等","organization":"江城大学附属医院","description":"PACS 图像只读调阅超时，报告仍可用","trace_id":"TR-882177","direction":"EMR_TO_PACS","event_type":"WADO-RS","business_object":"Study 8821","result":"TIMEOUT","latency":"5.0s","clinical_impact":"报告可用，图像暂不可用；临床页明确显示降级","retry_policy":"沿用父 Trace 和 Study UID 幂等重试，三次失败转影像科人工队列"}'),
                   ('018f0000-0000-7000-8000-00000000f132','INTEGRATION_INCIDENT','tr-882151','TR-882151 · 区域 CDA 待回执','{"schema_version":1,"fixture_source":"tertiary-data-center-v1","hospital_level":"三级甲等","organization":"江城大学附属医院","description":"区域平台 CDA 上传后回执延迟","trace_id":"TR-882151","direction":"EMR_TO_HIE","event_type":"CDA_UPLOAD","business_object":"CDA-21018","result":"PENDING_ACK","latency":"12m","clinical_impact":"不影响院内签署，区域共享状态保持待确认","retry_policy":"回执查询只读重试；上传使用文档哈希防止重复副作用"}')
                 ) as seed(config_id, config_type, config_key, display_name, payload)
-                on conflict (tenant_id, config_id) do update set
+                on conflict (tenant_id, config_type, config_key) do update set
                   display_name = excluded.display_name, payload = excluded.payload,
                   validation_state = 'VALID', validation_errors = '[]'::jsonb,
                   approval_state = 'APPROVED', approved_by = excluded.approved_by,
@@ -1224,7 +1274,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f810','archive-preservation-tertiary','电子病案 WORM 长期保存','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"archive-preservation","interface_code":"STORAGE_PRESERVE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"内容哈希、30 年保留、WORM 封存与抽样恢复","default_entity":"synthetic://archive/case-001","default_scenario":"SUCCESS","owner_department":"病案管理科 / 信息中心","operating_window":"7×24 小时","timeout_ms":30000,"retry_limit":2,"manual_fallback":"哈希不一致停止封存并启动双人复核","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f811','pathology-tertiary','病理标本到诊断签署闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"pathology-workbench","interface_code":"PATHOLOGY_DIAGNOSE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"标本接收、取材、制片、诊断复核和签署状态轴","default_entity":"PATH-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"病理科","operating_window":"工作日 08:00–20:00；冰冻病理 7×24","timeout_ms":10000,"retry_limit":2,"manual_fallback":"标本身份不一致立即阻断，转病理科双人核对","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f812','anesthesia-tertiary','手术麻醉事件轴与 PACU 去向','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"anesthesia-workbench","interface_code":"ANESTHESIA_EVENT","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"术前评估、诱导、连续监护、用药事件与复苏去向","default_entity":"018f0000-0000-7000-8000-000000000101","default_scenario":"SUCCESS","owner_department":"麻醉科","operating_window":"7×24 小时","timeout_ms":3000,"retry_limit":2,"manual_fallback":"数据中断转纸面/本地麻醉记录，恢复后按事件时间幂等补录","documentation_version":"v1.0 / 2026-08-28"}'),
-                  ('018f0000-0000-7000-8000-00000000f813','therapy-tertiary','治疗排程、双核对与不良事件闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"therapy-workbench","interface_code":"THERAPY_EXECUTE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"康复、放疗和高风险治疗排程、患者/医嘱核对与执行闭环","default_entity":"THER-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"医疗协同中心","operating_window":"工作日 07:30–20:00；急诊 7×24","timeout_ms":5000,"retry_limit":2,"manual_fallback":"核对失败禁止执行，不良事件转医疗安全上报","documentation_version":"v1.0 / 2026-08-28"}')
+                  ('018f0000-0000-7000-8000-00000000f813','therapy-tertiary','治疗排程、双核对与不良事件闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"therapy-workbench","interface_code":"THERAPY_EXECUTE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"康复、放疗和高风险治疗排程、患者/医嘱核对与执行闭环","default_entity":"THER-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"诊疗执行中心","operating_window":"工作日 07:30–20:00；急诊 7×24","timeout_ms":5000,"retry_limit":2,"manual_fallback":"核对失败禁止执行，不良事件转医疗安全上报","documentation_version":"v1.0 / 2026-08-28"}')
                 ) as seed(config_id, config_key, display_name, payload)
                 on conflict (tenant_id, config_id) do update set
                   config_type = excluded.config_type, config_key = excluded.config_key,
@@ -1992,7 +2042,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   tenant_id, dictionary_item_id, dictionary_code, item_code, item_name,
                   status, effective_from)
                 select :tenant,
-                  md5('tertiary-dictionary:' || seed.dictionary_code || ':' || seed.item_code)::uuid,
+                  overlay(overlay(md5('tertiary-dictionary:' || seed.dictionary_code || ':' || seed.item_code)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   seed.dictionary_code, seed.item_code, seed.item_name, 'ACTIVE', date '2026-01-01'
                 from (values
                   ('BLOOD_TYPE','A','A型 / Type A'), ('BLOOD_TYPE','B','B型 / Type B'),
@@ -2026,7 +2077,11 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('BED_CLASS','STANDARD','普通床 / Standard'), ('BED_CLASS','ICU','监护床 / ICU'),
                   ('BED_CLASS','ISOLATION','隔离床 / Isolation'), ('BED_CLASS','MATERNITY','产科床 / Maternity')
                 ) as seed(dictionary_code, item_code, item_name)
-                on conflict (tenant_id, dictionary_code, item_code) do nothing
+                on conflict (tenant_id, dictionary_code, item_code) do update
+                set dictionary_item_id = excluded.dictionary_item_id
+                where dictionary_item.dictionary_item_id =
+                  md5('tertiary-dictionary:' || dictionary_item.dictionary_code || ':' || dictionary_item.item_code)::uuid
+                  and dictionary_item.dictionary_item_id <> excluded.dictionary_item_id
                 """).param("tenant", TENANT_ID).update();
     }
 
@@ -2038,7 +2093,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   patient_relationship_required, relationship_types, resource_statuses,
                   purpose_codes, emergency_override_allowed, priority, valid_from,
                   created_by, approved_by, published_at)
-                select :tenant, md5('tertiary-policy:' || seed.policy_code)::uuid,
+                select :tenant,
+                  overlay(overlay(md5('tertiary-policy:' || seed.policy_code) placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   seed.policy_code, seed.policy_name, 1, seed.effect, 'PUBLISHED', seed.role_code,
                   seed.resource_type, seed.action_code, :organization, :facility,
                   seed.relationship_required, seed.relationship_types::text[], array['ACTIVE'],
@@ -3272,6 +3328,258 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 admittedAt.plusHours(48));
         upsertInpatientTask("018f0000-0000-7000-8000-00000000bb08", "EMR.FOUR_LEVEL_REVIEW",
                 admittedAt.plusHours(72));
+    }
+
+    /**
+     * Adds de-identified, clinically plausible tertiary-hospital workflow evidence for the
+     * inpatient workbench. These are synthetic records: they exercise real constraints and state
+     * transitions without importing production PHI.
+     */
+    private void upsertTertiaryInpatientWorkspaceFixtures() {
+        UUID patientId = UUID.fromString("018f0000-0000-7000-8000-000000000002");
+        UUID encounterId = UUID.fromString("018f0000-0000-7000-8000-000000000102");
+        jdbc.sql("""
+                insert into clinical_order(
+                  tenant_id, order_id, patient_id, encounter_id, facility_id, order_scope, status,
+                  clinical_indication, author_user_id, signed_by, signed_at, rule_watermark)
+                select :tenant, seed.order_id::uuid, :patient, :encounter, :facility,
+                  seed.order_scope, seed.status, seed.indication, :author, :signer,
+                  seed.signed_at, 'TERTIARY-INPATIENT-RULESET-2026.08'
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc01', 'LONG_TERM', 'ACTIVE',
+                   '慢性心力衰竭急性加重，优化容量管理并监测血压、肾功能与电解质。',
+                   '2026-08-25 08:20:00+08'::timestamptz),
+                  ('018f0000-0000-7000-8000-00000000bc02', 'TEMPORARY', 'COMPLETED',
+                   '评估心肌损伤、心衰程度、肾功能与利尿治疗相关电解质变化。',
+                   '2026-08-26 06:35:00+08'::timestamptz),
+                  ('018f0000-0000-7000-8000-00000000bc03', 'TEMPORARY', 'COMPLETED',
+                   '评估左心室收缩功能、瓣膜状态及容量负荷，指导心衰分型与治疗。',
+                   '2026-08-26 07:00:00+08'::timestamptz)
+                ) as seed(order_id, order_scope, status, indication, signed_at)
+                on conflict (tenant_id, order_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId)
+                .param("encounter", encounterId).param("facility", FACILITY_ID)
+                .param("author", USER_ID).param("signer", ATTENDING_USER_ID).update();
+        jdbc.sql("""
+                insert into clinical_order_item(
+                  tenant_id, order_item_id, order_id, item_type, catalog_code, display_name,
+                  requested_quantity, quantity_unit, instructions, item_state)
+                select :tenant, seed.item_id::uuid, seed.order_id::uuid, seed.item_type,
+                  seed.catalog_code, seed.display_name, seed.quantity, seed.unit,
+                  seed.instructions, seed.item_state
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc11',
+                   '018f0000-0000-7000-8000-00000000bc01', 'MEDICATION', 'MED-FUROSEMIDE-IV-20',
+                   '呋塞米注射液', 14::numeric, '支',
+                   '20 mg 静脉注射，每日 2 次；严密记录出入量，每日监测体重、血压、血钾和肾功能。', 'ACTIVE'),
+                  ('018f0000-0000-7000-8000-00000000bc12',
+                   '018f0000-0000-7000-8000-00000000bc02', 'LAB', 'LAB.TROPONIN.I',
+                   '高敏心肌肌钙蛋白 I + NT-proBNP + 肾功能电解质', 1::numeric, '次',
+                   '急检；危急值按临床窗口报告并完成闭环处置。', 'COMPLETED'),
+                  ('018f0000-0000-7000-8000-00000000bc13',
+                   '018f0000-0000-7000-8000-00000000bc03', 'IMAGING', 'IMG-ECHOCARDIOGRAPHY',
+                   '经胸超声心动图', 1::numeric, '次',
+                   '床旁完成，重点评估 LVEF、节段性室壁运动、瓣膜及下腔静脉。', 'COMPLETED')
+                ) as seed(item_id, order_id, item_type, catalog_code, display_name,
+                  quantity, unit, instructions, item_state)
+                on conflict (tenant_id, order_item_id) do nothing
+                """).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                insert into order_execution_task(
+                  tenant_id, execution_task_id, order_id, order_item_id, patient_id, encounter_id,
+                  task_state, requested_quantity, performed_quantity, quantity_unit)
+                select :tenant, seed.task_id::uuid, seed.order_id::uuid, seed.item_id::uuid,
+                  :patient, :encounter, seed.task_state, seed.requested, seed.performed, seed.unit
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc21',
+                   '018f0000-0000-7000-8000-00000000bc01',
+                   '018f0000-0000-7000-8000-00000000bc11', 'PENDING', 14::numeric, 0::numeric, '支'),
+                  ('018f0000-0000-7000-8000-00000000bc22',
+                   '018f0000-0000-7000-8000-00000000bc02',
+                   '018f0000-0000-7000-8000-00000000bc12', 'COMPLETED', 1::numeric, 1::numeric, '次'),
+                  ('018f0000-0000-7000-8000-00000000bc23',
+                   '018f0000-0000-7000-8000-00000000bc03',
+                   '018f0000-0000-7000-8000-00000000bc13', 'COMPLETED', 1::numeric, 1::numeric, '次')
+                ) as seed(task_id, order_id, item_id, task_state, requested, performed, unit)
+                on conflict (tenant_id, execution_task_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId)
+                .param("encounter", encounterId).update();
+        jdbc.sql("""
+                insert into clinical_result(
+                  tenant_id, result_id, patient_id, encounter_id, facility_id, order_id,
+                  execution_task_id, report_type, source_system, source_report_key,
+                  current_version_id, author_user_id)
+                select :tenant, seed.result_id::uuid, :patient, :encounter, :facility,
+                  seed.order_id::uuid, seed.task_id::uuid, seed.report_type,
+                  'JC-AFFILIATED-HOSPITAL-SIMULATION', seed.report_key,
+                  seed.version_id::uuid, :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc31',
+                   '018f0000-0000-7000-8000-00000000bc02',
+                   '018f0000-0000-7000-8000-00000000bc22', 'LAB',
+                   'LIS-IP-20260826-006381', '018f0000-0000-7000-8000-00000000bc41'),
+                  ('018f0000-0000-7000-8000-00000000bc32',
+                   '018f0000-0000-7000-8000-00000000bc03',
+                   '018f0000-0000-7000-8000-00000000bc23', 'IMAGING',
+                   'PACS-ECHO-IP-20260826-000917', '018f0000-0000-7000-8000-00000000bc42')
+                ) as seed(result_id, order_id, task_id, report_type, report_key, version_id)
+                on conflict (tenant_id, result_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId)
+                .param("encounter", encounterId).param("facility", FACILITY_ID)
+                .param("author", ATTENDING_USER_ID).update();
+        jdbc.sql("""
+                insert into clinical_result_version(
+                  tenant_id, result_version_id, result_id, version_no, report_status, conclusion,
+                  reported_at, change_type, authored_by)
+                select :tenant, seed.version_id::uuid, seed.result_id::uuid, 1, 'FINAL',
+                  seed.conclusion, seed.reported_at, 'INITIAL', :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc41',
+                   '018f0000-0000-7000-8000-00000000bc31',
+                   'hs-cTnI 升高并达危急值，NT-proBNP 显著升高，伴低钾血症及轻度肾功能受损；已通知临床并完成接收确认。',
+                   '2026-08-26 07:12:00+08'::timestamptz),
+                  ('018f0000-0000-7000-8000-00000000bc42',
+                   '018f0000-0000-7000-8000-00000000bc32',
+                   '左心室扩大，左心室整体收缩功能中度降低，LVEF 约 35%；二尖瓣轻至中度反流，下腔静脉增宽且吸气塌陷率减低。',
+                   '2026-08-26 10:08:00+08'::timestamptz)
+                ) as seed(version_id, result_id, conclusion, reported_at)
+                on conflict (tenant_id, result_version_id) do nothing
+                """).param("tenant", TENANT_ID).param("author", ATTENDING_USER_ID).update();
+        jdbc.sql("""
+                insert into clinical_result_observation(
+                  tenant_id, observation_id, result_version_id, item_code, item_name, value_type,
+                  numeric_value, unit, reference_low, reference_high, abnormal_flag)
+                select :tenant, seed.observation_id::uuid, seed.version_id::uuid, seed.item_code,
+                  seed.item_name, 'NUMERIC', seed.numeric_value, seed.unit, seed.reference_low,
+                  seed.reference_high, seed.abnormal_flag
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc51',
+                   '018f0000-0000-7000-8000-00000000bc41', 'HS-TNI', '高敏心肌肌钙蛋白 I',
+                   286::numeric, 'ng/L', 0::numeric, 34::numeric, 'CRITICAL_HIGH'),
+                  ('018f0000-0000-7000-8000-00000000bc52',
+                   '018f0000-0000-7000-8000-00000000bc41', 'NT-PROBNP', 'N 末端 B 型利钠肽原',
+                   4860::numeric, 'pg/mL', 0::numeric, 900::numeric, 'HIGH'),
+                  ('018f0000-0000-7000-8000-00000000bc53',
+                   '018f0000-0000-7000-8000-00000000bc41', 'K', '血钾',
+                   3.2::numeric, 'mmol/L', 3.5::numeric, 5.5::numeric, 'LOW'),
+                  ('018f0000-0000-7000-8000-00000000bc54',
+                   '018f0000-0000-7000-8000-00000000bc41', 'CREA', '血清肌酐',
+                   138::numeric, 'µmol/L', 57::numeric, 111::numeric, 'HIGH'),
+                  ('018f0000-0000-7000-8000-00000000bc55',
+                   '018f0000-0000-7000-8000-00000000bc42', 'LVEF', '左心室射血分数',
+                   35::numeric, '%', 50::numeric, 75::numeric, 'LOW')
+                ) as seed(observation_id, version_id, item_code, item_name, numeric_value,
+                  unit, reference_low, reference_high, abnormal_flag)
+                on conflict (tenant_id, observation_id) do nothing
+                """).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                insert into critical_value_case(
+                  tenant_id, critical_value_id, result_id, observation_id, patient_id,
+                  encounter_id, state, row_version, created_at, updated_at)
+                values (:tenant, '018f0000-0000-7000-8000-00000000bc61',
+                  '018f0000-0000-7000-8000-00000000bc31',
+                  '018f0000-0000-7000-8000-00000000bc51', :patient, :encounter,
+                  'ACKNOWLEDGED', 2, '2026-08-26 07:12:30+08', '2026-08-26 07:18:00+08')
+                on conflict (tenant_id, critical_value_id) do nothing
+                """).param("tenant", TENANT_ID).param("patient", patientId)
+                .param("encounter", encounterId).update();
+        jdbc.sql("""
+                insert into critical_value_event(
+                  tenant_id, critical_value_event_id, critical_value_id, event_type,
+                  actor_user_id, notification_method, recipient_confirmed, occurred_at)
+                select :tenant, seed.event_id::uuid,
+                  '018f0000-0000-7000-8000-00000000bc61', seed.event_type, seed.actor,
+                  seed.notification_method, seed.recipient_confirmed, seed.occurred_at
+                from (values
+                  ('018f0000-0000-7000-8000-00000000bc71', 'CREATED', :laboratory,
+                   null::varchar, null::boolean, '2026-08-26 07:12:30+08'::timestamptz),
+                  ('018f0000-0000-7000-8000-00000000bc72', 'ACKNOWLEDGED', :clinician,
+                   '电话+工作台消息', true, '2026-08-26 07:18:00+08'::timestamptz)
+                ) as seed(event_id, event_type, actor, notification_method,
+                  recipient_confirmed, occurred_at)
+                on conflict (tenant_id, critical_value_event_id) do nothing
+                """).param("tenant", TENANT_ID).param("laboratory", ATTENDING_USER_ID)
+                .param("clinician", USER_ID).update();
+
+        jdbc.sql("""
+                insert into inpatient_consultation(
+                  tenant_id, consultation_id, admission_id, organization_id, facility_id,
+                  patient_id, encounter_id, requested_department, urgency, reason,
+                  clinical_question, status, due_at, requested_by, requested_at)
+                values (:tenant, '018f0000-0000-7000-8000-00000000bd01', :admission,
+                  :organization, :facility, :patient, :encounter, '临床药学部', 'URGENT',
+                  '心力衰竭患者合并肾功能下降，需要评估利尿剂、RAAS 抑制剂与电解质风险。',
+                  '请给出基于当前肾功能、血钾与血压的个体化用药调整及监测建议。',
+                  'REQUESTED', '2026-08-29 11:00:00+08', :requester,
+                  '2026-08-28 09:05:00+08')
+                on conflict (tenant_id, consultation_id) do nothing
+                """).param("tenant", TENANT_ID).param("admission", SYNTHETIC_ADMISSION_ID)
+                .param("organization", ORGANIZATION_ID).param("facility", FACILITY_ID)
+                .param("patient", patientId).param("encounter", encounterId)
+                .param("requester", USER_ID).update();
+        jdbc.sql("""
+                insert into inpatient_consultation(
+                  tenant_id, consultation_id, admission_id, organization_id, facility_id,
+                  patient_id, encounter_id, requested_department, urgency, reason,
+                  clinical_question, status, due_at, requested_by, requested_at,
+                  accepted_by, accepted_at, opinion, recommendation, opinion_signed_by,
+                  opinion_signed_at, completed_by, completed_at)
+                values (:tenant, '018f0000-0000-7000-8000-00000000bd02', :admission,
+                  :organization, :facility, :patient, :encounter, '肾内科', 'ROUTINE',
+                  '利尿后肌酐波动，心肾综合征风险评估。',
+                  '当前容量负荷与肾功能变化是否支持继续利尿及 RAAS 抑制治疗？',
+                  'COMPLETED', '2026-08-26 17:00:00+08', :requester,
+                  '2026-08-26 09:10:00+08', :consultant, '2026-08-26 09:32:00+08',
+                  '结合尿量、下腔静脉宽度与 NT-proBNP 趋势，当前仍存在容量负荷，暂不建议停用利尿治疗。',
+                  '每日监测体重、出入量、肌酐、eGFR 及血钾；如收缩压低于 90 mmHg 或肌酐较基线升高超过 30%，及时复评方案。',
+                  :consultant, '2026-08-26 10:15:00+08', :requester,
+                  '2026-08-26 10:22:00+08')
+                on conflict (tenant_id, consultation_id) do nothing
+                """).param("tenant", TENANT_ID).param("admission", SYNTHETIC_ADMISSION_ID)
+                .param("organization", ORGANIZATION_ID).param("facility", FACILITY_ID)
+                .param("patient", patientId).param("encounter", encounterId)
+                .param("requester", USER_ID).param("consultant", ATTENDING_USER_ID).update();
+
+        UUID pathwayInstanceId = UUID.fromString("018f0000-0000-7000-8000-00000000be01");
+        jdbc.sql("""
+                insert into inpatient_pathway_instance(
+                  tenant_id, pathway_instance_id, admission_id, organization_id, facility_id,
+                  patient_id, encounter_id, pathway_definition_id, pathway_version_id, status,
+                  current_stage_code, admission_basis, enrolled_by, enrolled_at)
+                select :tenant, :instance, :admission, :organization, :facility, :patient,
+                  :encounter, :definition, :version, 'ACTIVE', 'ADMISSION_ASSESSMENT',
+                  '主要诊断为慢性心力衰竭急性加重，已核对血流动力学状态、肾功能、用药禁忌与患者意愿，符合标准路径入径条件。',
+                  :actor, '2026-08-25 08:40:00+08'
+                where not exists (
+                  select 1 from inpatient_pathway_instance
+                  where tenant_id = :tenant and admission_id = :admission and status = 'ACTIVE')
+                on conflict (tenant_id, pathway_instance_id) do nothing
+                """).param("tenant", TENANT_ID).param("instance", pathwayInstanceId)
+                .param("admission", SYNTHETIC_ADMISSION_ID).param("organization", ORGANIZATION_ID)
+                .param("facility", FACILITY_ID).param("patient", patientId).param("encounter", encounterId)
+                .param("definition", HEART_FAILURE_PATHWAY_ID).param("version", HEART_FAILURE_PATHWAY_V1_ID)
+                .param("actor", USER_ID).update();
+        jdbc.sql("""
+                insert into inpatient_pathway_task(
+                  tenant_id, pathway_task_id, pathway_instance_id, stage_code, task_code,
+                  display_name, source_type, source_key, required, sequence_no, state)
+                select :tenant, seed.task_id::uuid, :instance, template.stage_code,
+                  template.task_code, template.display_name, template.source_type,
+                  template.source_key, template.required, template.sequence_no, 'PENDING'
+                from clinical_pathway_stage_task template
+                join (values
+                  ('ADMISSION_RECORD', '018f0000-0000-7000-8000-00000000be11'),
+                  ('FIRST_COURSE', '018f0000-0000-7000-8000-00000000be12'),
+                  ('TROPONIN_RESULT', '018f0000-0000-7000-8000-00000000be13'),
+                  ('DAILY_COURSE', '018f0000-0000-7000-8000-00000000be14'),
+                  ('DISCHARGE_RECORD', '018f0000-0000-7000-8000-00000000be15')
+                ) as seed(task_code, task_id) on seed.task_code = template.task_code
+                where template.tenant_id = :tenant and template.pathway_version_id = :version
+                  and exists (select 1 from inpatient_pathway_instance
+                    where tenant_id = :tenant and pathway_instance_id = :instance)
+                on conflict (tenant_id, pathway_task_id) do nothing
+                """).param("tenant", TENANT_ID).param("instance", pathwayInstanceId)
+                .param("version", HEART_FAILURE_PATHWAY_V1_ID).update();
     }
 
     private void upsertInpatientTask(String taskId, String documentTypeCode, OffsetDateTime dueAt) {

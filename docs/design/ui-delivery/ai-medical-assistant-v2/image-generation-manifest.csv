@@ -4,3 +4,6 @@ asset_id,generation_tool,prompt_summary,source_image_path,output_file_path
 "XN-SCREEN-002","image_gen.imagegen","基于门诊工作台生成不遮挡主流程的420px小南右侧任务面板","screens/xiaonan-workflow-side-panel.png","screens/xiaonan-workflow-side-panel.png"
 "XN-STATE-001","image_gen.imagegen","生成安全空上下文、匹配、执行、部分完成、阻断、等待审阅六态母版","states/xiaonan-task-states.png","states/xiaonan-task-states.png"
 "XN-SCREEN-003","image_gen.imagegen","在任务工作台中生成主 Agent 负责人、两位真实子 Agent 接力、贡献凭证与独立核验非子 Agent 的协作界面","screens/xiaonan-child-agent-collaboration.png","screens/xiaonan-child-agent-collaboration.png"
+"XN-WORKBENCH-20260828","image_gen.imagegen","继承现有小南形象，生成患者资料、数据检索、医助调度、系统工具与医生确认的 Agent 工作台空状态图","../../../web/public/brand/ai-medical-assistant-xiaonan.png","../../../web/public/brand/ai-medical-assistant-xiaonan-workbench.png"
+"EVA-AVATAR-20260828","image_gen.imagegen","生成专业亲和的女性医疗智能助理 Eva 半身头像，白色背景，蓝青医疗视觉","","../../../web/public/brand/ai-medical-assistant-eva.png"
+"EVA-WORKBENCH-20260828","image_gen.imagegen","生成女性医疗智能助理 Eva 调度患者资料、医助团队、模型和院内工具的工作台空状态插图","","../../../web/public/brand/ai-medical-assistant-eva-workbench.png"

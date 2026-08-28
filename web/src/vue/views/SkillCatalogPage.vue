@@ -114,6 +114,8 @@ async function deactivate(skill: SkillRegistryWire) {
       <section class="admin-metrics" aria-label="医助能力统计">
         <article><span>能力总数</span><strong>{{ skills.length }}</strong><small>全部登记</small></article>
         <article><span>可用能力</span><strong>{{ activeCount }}</strong><small>当前已启用</small></article>
+        <article><span>版本管理</span><strong>全量</strong><small>新版本生效、旧版本留痕</small></article>
+        <article><span>使用方式</span><strong>按团队编排</strong><small>随医助任务调用</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 

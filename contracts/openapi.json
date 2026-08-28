@@ -2065,6 +2065,44 @@
         }
       }
     },
+    "/lab-specimens/{specimen_id}/rejections": {
+      "post": {
+        "operationId": "rejectLabSpecimen",
+        "parameters": [
+          {
+            "name": "specimen_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabSpecimenRejectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "lab specimen rejected with an auditable reason",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabSpecimen"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/adverse-events": {
       "get": {
         "operationId": "listAdverseEvents",
@@ -19981,6 +20019,46 @@
           }
         }
       },
+      "LabSpecimenRejectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "expected_row_version",
+          "rejection_reason"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "encounter_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "rejection_reason": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 1000
+          }
+        }
+      },
       "AdverseEvent": {
         "type": "object",
         "additionalProperties": false,
@@ -32965,7 +33043,15 @@
           "stage_code": { "type": "string" },
           "target_type": { "type": "string", "enum": ["ENCOUNTER", "DOCUMENT", "RESULT", "TASK", "CARE_PLAN"] },
           "target_id": { "type": "string", "format": "uuid" },
-          "objective": { "type": "string", "minLength": 2, "maxLength": 1024 }
+          "objective": { "type": "string", "minLength": 2, "maxLength": 1024 },
+          "model_deployment_id": { "type": ["string", "null"], "format": "uuid" },
+          "authorization_level": { "type": "string", "enum": ["READ_ONLY", "STANDARD", "EXTENDED"], "default": "STANDARD" },
+          "context_scopes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "enum": ["RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS"] }
+          }
         }
       },
       "MedicalAgentChildRun": {

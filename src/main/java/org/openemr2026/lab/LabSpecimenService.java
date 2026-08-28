@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.LabSpecimenCollectRequestWire;
 import org.openemr2026.contracts.LabSpecimenCreateRequestWire;
 import org.openemr2026.contracts.LabSpecimenReceiveRequestWire;
+import org.openemr2026.contracts.LabSpecimenRejectRequestWire;
 import org.openemr2026.contracts.LabSpecimenWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -117,6 +118,36 @@ final class LabSpecimenService {
             appendEvidence(identity, request.patientId(), specimenId, current.rowVersion() + 1,
                     "LAB_SPECIMEN_RECEIVED", "LabSpecimenReceived");
             completeCommand(identity, "LAB_SPECIMEN_RECEIVE", idempotencyKey, specimenId);
+            return specimen(identity.tenantId(), specimenId, request.patientId(), request.encounterId());
+        });
+    }
+
+    LabSpecimenWire rejectSpecimen(
+            ClinicalIdentity identity, String idempotencyKey, UUID specimenId, LabSpecimenRejectRequestWire request) {
+        String reason = request.rejectionReason() == null ? "" : request.rejectionReason().trim();
+        if (reason.length() < 2 || reason.length() > 1000) {
+            throw invalid("rejection_reason must contain 2 to 1000 characters");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "LAB_SPECIMEN_REJECT", idempotencyKey,
+                    sha256(specimenId + "|" + request.expectedRowVersion() + "|" + reason));
+            SpecimenHead current = lock(identity.tenantId(), specimenId, request.patientId(),
+                    request.encounterId(), request.facilityId());
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new LabSpecimenException("LAB_SPECIMEN_VERSION_CONFLICT", 409, "The specimen changed; reload before retrying");
+            }
+            if (!"ORDERED".equals(current.status()) && !"COLLECTED".equals(current.status())) {
+                throw new LabSpecimenException("LAB_SPECIMEN_STATE_INVALID", 409, "Only an ordered or collected specimen can be rejected");
+            }
+            jdbc.sql("""
+                    update lab_specimen set collection_status = 'REJECTED', rejection_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and specimen_id = :specimen and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("specimen", specimenId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), specimenId, current.rowVersion() + 1,
+                    "LAB_SPECIMEN_REJECTED", "LabSpecimenRejected");
+            completeCommand(identity, "LAB_SPECIMEN_REJECT", idempotencyKey, specimenId);
             return specimen(identity.tenantId(), specimenId, request.patientId(), request.encounterId());
         });
     }

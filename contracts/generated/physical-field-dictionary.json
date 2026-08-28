@@ -177,7 +177,14 @@
     "src/main/resources/db/migration/V174__remove_invalid_ai_validation_model.sql",
     "src/main/resources/db/migration/V175__capability_pack_editable_inheritance.sql",
     "src/main/resources/db/migration/V176__tertiary_hospital_ai_center_simulation.sql",
-    "src/main/resources/db/migration/V177__harden_medical_agent_context_and_release_lifecycle.sql"
+    "src/main/resources/db/migration/V177__harden_medical_agent_context_and_release_lifecycle.sql",
+    "src/main/resources/db/migration/V178__repair_tertiary_policy_uuid_contract.sql",
+    "src/main/resources/db/migration/V179__repair_ai_evaluation_fixture_uuid_collisions.sql",
+    "src/main/resources/db/migration/V180__support_auditable_lab_specimen_rejection.sql",
+    "src/main/resources/db/migration/V181__emergency_fact_corrections_and_voids.sql",
+    "src/main/resources/db/migration/V182__normalize_synthetic_shift_handover_uuids.sql",
+    "src/main/resources/db/migration/V183__shift_handover_safe_void.sql",
+    "src/main/resources/db/migration/V184__eva_agent_runtime_controls.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
   "field_count": 2748,

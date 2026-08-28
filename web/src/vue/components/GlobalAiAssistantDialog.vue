@@ -1,266 +1,125 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
-
-import { issueContextLease } from '../../clinical-api';
-import { streamAssistantResponse } from '../../api/assistant';
-import {
-  createMedicalAgentRun,
-  issueMedicalAgentCatalogLease,
-  issueMedicalAgentRunLease,
-  listMedicalAgentCatalog,
-} from '../../api/medical-agents';
-import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire } from '../../generated/contracts';
+import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
+import { createMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog } from '../../api/medical-agents';
+import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
+import { evaDefaultPatientContexts, useEvaClinicalContext } from '../use-eva-clinical-context';
+import EvaComposerControls from './EvaComposerControls.vue';
+import EvaPatientPicker from './EvaPatientPicker.vue';
+import XiaonanAgentTeamRail from './XiaonanAgentTeamRail.vue';
 
-interface ChatMessage { role: 'user' | 'assistant'; text: string; agentName?: string }
+type AuthorizationLevel = 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
+type ContextScope = 'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS';
+interface TaskEvent { id: string; label: string; detail: string; status: 'running' | 'done' | 'waiting' | 'failed' }
+interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; events?: TaskEvent[]; runId?: string }
 
-const props = defineProps<{
-  open: boolean;
-  mode: 'center' | 'side';
-  routeId: string;
-  contextLabel: string;
-  patientId: string | null;
-  encounterId: string | null;
-  taskId: string | null;
-}>();
+const props = defineProps<{ open: boolean; mode: 'center' | 'side'; routeId: string; contextLabel: string; patientId: string | null; encounterId: string | null; taskId: string | null }>();
 const emit = defineEmits<{ close: []; 'mode-change': [mode: 'center' | 'side'] }>();
-
-const dialog = ref<HTMLDialogElement | null>(null);
+const initialContext = evaDefaultPatientContexts.find((item) => item.patientId === props.patientId && item.encounterId === props.encounterId) ?? evaDefaultPatientContexts[0];
+const patient = useEvaClinicalContext(initialContext);
+const rootElement = ref<HTMLDialogElement | HTMLElement | null>(null);
 const messages = ref<ChatMessage[]>([]);
 const draft = ref('');
 const busy = ref(false);
 const notice = ref('');
 const selectedAgentCode = ref('');
-const contextKey = computed(() => [props.routeId, props.patientId, props.encounterId, props.taskId].join(':'));
-const leaseQuery = useQuery({
-  queryKey: computed(() => ['global-assistant', 'lease', contextKey.value]),
-  queryFn: () => issueContextLease(props.patientId, props.encounterId, 'AI_ASSISTANT'),
-  enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0,
-});
-const agentQuery = useQuery({
-  queryKey: ['global-assistant', 'medical-agent-families'],
-  queryFn: async () => {
-    const lease = await issueMedicalAgentCatalogLease();
-    return listMedicalAgentCatalog(lease);
-  },
-  enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0,
-});
-const issue = computed(() => leaseQuery.error.value ? toClinicalIssue(leaseQuery.error.value) : null);
-const agentIssue = computed(() => agentQuery.error.value ? toClinicalIssue(agentQuery.error.value) : null);
+const selectedChildCode = ref('');
+const selectedModelId = ref('');
+const authorizationLevel = ref<AuthorizationLevel>('STANDARD');
+const contextScopes = ref<ContextScope[]>(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS']);
+const teamCollapsed = ref(false);
+
+const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const modelLeaseQuery = useQuery({ queryKey: ['global-eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const modelsQuery = useQuery({ queryKey: ['global-eva', 'models'], queryFn: () => listModelDeployments(modelLeaseQuery.data.value!), enabled: computed(() => props.open && Boolean(modelLeaseQuery.data.value)), retry: false, staleTime: 60_000 });
+const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+
 const agents = computed(() => agentQuery.data.value ?? []);
+const availableModels = computed(() => (modelsQuery.data.value ?? []).filter((model) => model.status === 'ACTIVE' && model.evaluation_status === 'APPROVED' && model.connection_status === 'READY'));
+const selectedAgent = computed(() => agents.value.find((family) => family.main_agent.agent_code === selectedAgentCode.value));
+const selectedChild = computed(() => selectedAgent.value?.child_agents.find((child) => child.agent_code === selectedChildCode.value));
+const selectedModel = computed(() => availableModels.value.find((model) => model.model_deployment_id === selectedModelId.value));
+const issue = computed(() => { const error = agentQuery.error.value ?? modelLeaseQuery.error.value ?? modelsQuery.error.value ?? runLeaseQuery.error.value; return error ? toClinicalIssue(error) : null; });
 const childAgentCount = computed(() => agents.value.reduce((count, family) => count + family.child_agents.length, 0));
-const selectedAgent = computed(() => agents.value.find(
-  (family) => family.main_agent.agent_code === selectedAgentCode.value,
-));
 
-function clinicianAgentName(name: string) {
-  return doctorFacingTeamName(name);
-}
+watch([() => props.open, () => props.mode], async ([open, mode]) => { await nextTick(); const element = rootElement.value; if (!(element instanceof HTMLDialogElement)) return; if (mode === 'center' && open && !element.open) element.showModal(); if (!open && element.open) element.close(); }, { immediate: true });
+watch([() => props.open, () => props.mode], ([open, mode]) => { if (!open) return; teamCollapsed.value = mode === 'side'; }, { immediate: true });
+watch(agents, (next) => { if (next.length && !next.some((family) => family.main_agent.agent_code === selectedAgentCode.value)) selectedAgentCode.value = next[0].main_agent.agent_code; }, { immediate: true });
+watch(selectedAgent, (agent) => { if (agent && !agent.child_agents.some((child) => child.agent_code === selectedChildCode.value)) selectedChildCode.value = agent.child_agents[0]?.agent_code ?? ''; });
+watch(availableModels, (next) => { if (next.length && !next.some((model) => model.model_deployment_id === selectedModelId.value)) selectedModelId.value = next[0].model_deployment_id; }, { immediate: true });
 
-function clinicianAgentDescription(description: string) {
-  return doctorFacingAiText(description).replaceAll('候选', '草稿');
-}
-
-watch([() => props.open, () => props.mode], async ([open, mode]) => {
-  await nextTick();
-  const element = dialog.value;
-  if (!element) return;
-  if (mode === 'center' && open && !element.open) element.showModal();
-  if (!open && element.open) element.close();
-}, { immediate: true });
-
-watch(agents, (next) => {
-  if (next.length && !next.some((family) => family.main_agent.agent_code === selectedAgentCode.value)) {
-    selectedAgentCode.value = next[0].main_agent.agent_code;
-  }
-}, { immediate: true });
-
-watch(contextKey, () => {
-  messages.value = [];
-  draft.value = '';
-  notice.value = '';
-});
-
+function clinicianAgentName(name: string) { return doctorFacingTeamName(name); }
+function scopeLabel(scope: ContextScope) { return ({ RECORDS: '病历文书', ORDERS: '医嘱执行', RESULTS: '检查检验', TASKS: '任务随访', ATTACHMENTS: '病历附件' } as Record<ContextScope, string>)[scope]; }
 function requestClose() { emit('close'); }
 function changeMode(mode: 'center' | 'side') { if (mode !== props.mode) emit('mode-change', mode); }
 function cancel(event: Event) { event.preventDefault(); requestClose(); }
 function closed() { if (props.open) requestClose(); }
-
-async function send(
-  messageOverride?: string,
-  agentOverride?: MedicalAgentFamilyWire,
-  childOverride?: MedicalAgentReleaseWire,
-) {
-  const lease = leaseQuery.data.value;
-  const text = (messageOverride ?? draft.value).trim();
-  const agent = agentOverride ?? selectedAgent.value;
-  if (!lease || busy.value || !text) return;
-  busy.value = true;
-  notice.value = '';
-  if (agent) selectedAgentCode.value = agent.main_agent.agent_code;
-    const displayName = doctorFacingAiText(childOverride?.display_name ?? agent?.main_agent.display_name);
-  messages.value.push({ role: 'user', text, agentName: displayName });
-  draft.value = '';
-  try {
-    const agentContext = agent
-      ? `选定主 agent_code=${agent.main_agent.agent_code}, agent_name=${agent.main_agent.display_name}, agent_version=${agent.main_agent.release_version}`
-        + `${childOverride ? `，子 agent_code=${childOverride.agent_code}, stage_code=${childOverride.stage_code}, child_action=${childOverride.current_action}` : ''}`
-        + `。安全边界：${agent.main_agent.autonomy_level} 候选制，不自动写入临床事实。`
-      : '未指定专用 Agent，按AI医助小南通用边界处理。';
-    const contextualMessage = `当前页面 route_id=${props.routeId}${props.taskId ? `, task_id=${props.taskId}` : ''}。${agentContext} 用户任务：${text}`;
-    const chunks = await streamAssistantResponse(lease, contextualMessage, props.patientId, props.encounterId);
-    const reply = chunks.filter((chunk) => chunk.event === 'delta').map((chunk) => chunk.data).join('\n');
-    messages.value.push({ role: 'assistant', text: reply || '（无回复）', agentName: displayName });
-  } catch (error) {
-    const next = toClinicalIssue(error);
-    notice.value = `${next.code}：${next.message}`;
-    messages.value.push({ role: 'assistant', text: `请求失败：${next.message}`, agentName: displayName });
-  } finally { busy.value = false; }
-}
-
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedAgentCode.value = agent.main_agent.agent_code; }
+function useQuestionExample(example: string, agent: MedicalAgentFamilyWire, child?: MedicalAgentReleaseWire) { selectedAgentCode.value = agent.main_agent.agent_code; if (child) selectedChildCode.value = child.agent_code; draft.value = doctorFacingAiText(example); }
+function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) { useQuestionExample(child.question_examples[0] ?? child.current_action, agent, child); }
 
-function useQuestionExample(example: string, agent: MedicalAgentFamilyWire) {
-  selectedAgentCode.value = agent.main_agent.agent_code;
-  draft.value = doctorFacingAiText(example);
-}
+function initialEvents(child: MedicalAgentReleaseWire): TaskEvent[] { return [
+  { id: crypto.randomUUID(), label: 'Eva 规划当前页面任务', detail: props.contextLabel, status: 'done' },
+  { id: crypto.randomUUID(), label: '读取已选诊疗信息', detail: contextScopes.value.map(scopeLabel).join('、'), status: 'running' },
+  { id: crypto.randomUUID(), label: `安排${doctorFacingAiText(child.display_name)}`, detail: doctorFacingAiText(child.current_action), status: 'waiting' },
+  { id: crypto.randomUUID(), label: '执行模型与工具调用', detail: selectedModel.value?.display_name ?? '机构默认模型', status: 'waiting' },
+] }
+function mapEvents(run: MedicalAgentRunWire): TaskEvent[] { const labels: Record<string,string> = { RunCreated: '任务与授权已记录', MainAgentStarted: '主医助开始规划', ChildAgentStarted: '诊疗环节医助开始处理', ChildContributionReady: '医助结果已生成', ChildHandoffReceived: 'Eva 已接收结果', RunReadyForReview: '结果已完成核对', BudgetConsumptionRecorded: '模型用量已记录' }; return run.events.map((event) => ({ id: `${run.run_id}-${event.sequence}`, label: labels[event.event_type] ?? '任务状态已更新', detail: event.event_type === 'RunCreated' ? `${selectedModel.value?.display_name ?? '机构默认模型'} · ${contextScopes.value.map(scopeLabel).join('、')}` : String(event.payload.current_action ?? `运行记录 #${event.sequence}`), status: 'done' })); }
 
-async function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) {
-  selectedAgentCode.value = agent.main_agent.agent_code;
-  if (!props.patientId || !props.encounterId) {
-    await send(child.current_action, agent, child);
-    return;
-  }
-  if (busy.value) return;
-  busy.value = true;
-  notice.value = '';
-  messages.value.push({ role: 'user', text: child.current_action, agentName: doctorFacingAiText(child.display_name) });
+async function send() {
+  const text = draft.value.trim(); const lease = runLeaseQuery.data.value; const agent = selectedAgent.value; const child = selectedChild.value ?? agent?.child_agents[0];
+  if (!text || !lease || !agent || !child || !selectedModelId.value || busy.value) return;
+  busy.value = true; notice.value = ''; const responseId = crypto.randomUUID();
+  messages.value.push({ id: crypto.randomUUID(), role: 'user', text }); messages.value.push({ id: responseId, role: 'assistant', text: '', events: initialEvents(child) }); draft.value = '';
   try {
-    const runLease = await issueMedicalAgentRunLease(props.patientId, props.encounterId);
-    const run = await createMedicalAgentRun(runLease, {
-      patientId: props.patientId,
-      encounterId: props.encounterId,
-      mainAgentCode: agent.main_agent.agent_code,
-      stageCode: child.stage_code,
-      objective: child.current_action,
-      targetType: 'ENCOUNTER',
-      targetId: props.encounterId,
-    });
-    const contributors = run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、');
-    const summary = typeof run.output.summary === 'string'
-      ? run.output.summary : '医助团队已汇总专科医助工作结果，等待医生审阅。';
-    messages.value.push({
-      role: 'assistant',
-      text: `${doctorFacingAiText(summary)}\n参与医助：${contributors || doctorFacingAiText(child.display_name)}。\n进度：${run.state === 'WAITING_FOR_REVIEW' ? '结果待医生查看' : '处理中'}；共 ${run.events.length} 条处理记录。`,
-      agentName: clinicianAgentName(agent.main_agent.display_name),
-    });
-  } catch (error) {
-    const next = toClinicalIssue(error);
-    notice.value = `${next.code}：${next.message}`;
-    messages.value.push({ role: 'assistant', text: `医助协同失败：${next.message}`, agentName: doctorFacingAiText(child.display_name) });
-  } finally { busy.value = false; }
+    const run = await createMedicalAgentRun(lease, { patientId: patient.current.value.patientId, encounterId: patient.current.value.encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const response = messages.value.find((item) => item.id === responseId)!; response.events = mapEvents(run); response.runId = run.run_id;
+    const summary = typeof run.output.summary === 'string' ? run.output.summary : 'Eva 已汇总医助结果，等待医生审阅。'; response.text = `${doctorFacingAiText(summary)}\n参与医助：${run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(child.display_name)}。`;
+  } catch (error) { const next = toClinicalIssue(error); const response = messages.value.find((item) => item.id === responseId)!; response.text = `任务未完成：${next.message}`; response.events = (response.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' }); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = false; }
 }
+function newTask() { messages.value = []; draft.value = ''; notice.value = '已创建空白医助任务。'; }
+function resetPatient() { messages.value = []; draft.value = ''; notice.value = '已切换患者并创建空白任务。'; }
+async function selectSearchPatient(value: Parameters<typeof patient.selectPatient>[0]) { await patient.selectPatient(value); resetPatient(); }
+function selectEncounter(value: Parameters<typeof patient.selectEncounter>[0]) { patient.selectEncounter(value); resetPatient(); }
+function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { patient.selectDefault(value); resetPatient(); }
 </script>
 
 <template>
   <Teleport to="body">
-    <dialog v-if="mode === 'center'" ref="dialog" class="global-ai-dialog" aria-labelledby="global-ai-dialog-title" aria-describedby="global-ai-dialog-context" @cancel="cancel" @close="closed">
-      <div class="global-ai-dialog-shell">
-        <header>
-          <img class="global-ai-mascot" src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="52" height="52" />
-          <div class="global-ai-heading"><span>随诊协助 · 当前页面已连接</span><h2 id="global-ai-dialog-title">AI医助小南</h2><p id="global-ai-dialog-context">{{ contextLabel }}<template v-if="taskId"> · 当前任务已连接</template></p></div>
-          <b class="global-ai-agent-count" :aria-label="`${agents.length} 个医助团队，${childAgentCount} 位医助`">{{ agents.length }} 组 · {{ childAgentCount }} 位医助</b>
-          <div class="global-ai-mode-switch" role="group" aria-label="AI医助小南窗口模式"><button type="button" class="active" aria-pressed="true" @click="changeMode('center')">中窗</button><button type="button" aria-pressed="false" @click="changeMode('side')">右侧窗</button></div>
-          <button class="global-ai-close" type="button" aria-label="关闭AI医助小南" @click="requestClose">×</button>
-        </header>
-
-        <section class="global-ai-agents" aria-labelledby="global-ai-agent-title">
-          <div class="global-ai-section-heading"><div><strong id="global-ai-agent-title">选择医助团队</strong><span>选择诊疗任务，小南会展示每位医助的进度</span></div></div>
-          <div v-if="agentQuery.isPending.value" class="global-ai-agent-state">正在读取协作团队…</div>
-          <div v-else-if="agentIssue" class="global-ai-agent-state error">协作团队暂时不可用：{{ agentIssue.code }}</div>
-          <div v-else-if="agents.length === 0" class="global-ai-agent-state">当前没有可用的协作团队。</div>
-          <div v-else class="global-ai-agent-grid">
-            <article v-for="agent in agents" :key="agent.main_agent.agent_code" :class="{ selected: selectedAgentCode === agent.main_agent.agent_code }">
-              <button class="global-ai-agent-main" type="button" :aria-pressed="selectedAgentCode === agent.main_agent.agent_code" @click="selectAgent(agent)"><span><b>{{ clinicianAgentName(agent.main_agent.display_name) }}</b><small>{{ clinicianAgentDescription(agent.main_agent.description) }}</small></span><em>{{ agent.child_agents.length }} 位</em></button>
-              <dl><div><dt>当前进度</dt><dd>{{ doctorFacingAiText(agent.main_agent.current_action) }}</dd></div></dl>
-            </article>
-          </div>
-          <div v-if="selectedAgent" class="global-ai-child-strip" aria-label="专科医助任务">
-            <div><b>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队 · {{ selectedAgent.child_agents.length }} 位医助</b><span>选择任务后，小南会汇总进度和结果</span></div>
-            <button v-for="child in selectedAgent.child_agents" :key="child.agent_code" type="button" :disabled="busy || !leaseQuery.data.value" @click="runChildAgent(selectedAgent, child)"><span>{{ doctorFacingAiText(child.display_name) }}</span><small>{{ doctorFacingAiText(child.current_action) }}</small></button>
-          </div>
+    <component :is="mode === 'center' ? 'dialog' : 'aside'" v-if="open" ref="rootElement" :open="mode === 'side' ? true : undefined" :class="[mode === 'center' ? 'global-ai-dialog' : 'global-ai-side-panel', 'xiaonan-popup-root', 'eva-popup-root']" role="dialog" :aria-modal="mode === 'center'" aria-labelledby="global-ai-dialog-title" aria-describedby="global-ai-dialog-context" @cancel="cancel" @close="closed">
+      <div class="eva-popup-shell">
+        <header class="eva-popup-header"><img class="global-ai-mascot" src="/brand/ai-medical-assistant-eva.png" alt="Eva 女性医疗智能助理" width="46" height="46" /><div><span>临床任务工作台</span><h2 id="global-ai-dialog-title">AI医助 Eva</h2><p id="global-ai-dialog-context">{{ contextLabel }}<template v-if="taskId"> · 当前任务已连接</template></p></div><b>{{ agents.length }} 组 · {{ childAgentCount }} 位医助</b><nav aria-label="Eva窗口模式"><button type="button" :class="{ active: mode === 'center' }" @click="changeMode('center')">中窗</button><button type="button" :class="{ active: mode === 'side' }" @click="changeMode('side')">右侧窗</button></nav><button class="eva-popup-close" type="button" aria-label="关闭AI医助Eva" @click="requestClose">×</button></header>
+        <section class="eva-popup-workspace">
+          <XiaonanAgentTeamRail :agents="agents" :selected-agent-code="selectedAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" @example="useQuestionExample" @run-child="runChildAgent" />
+          <main class="eva-popup-main">
+            <section class="eva-popup-thread" aria-live="polite">
+              <div v-if="issue" class="eva-popup-empty error">Eva 工作区暂时不可用：{{ issue.message }}</div>
+              <div v-else-if="messages.length === 0" class="eva-popup-empty illustrated"><img src="/brand/ai-medical-assistant-eva-workbench.png" alt="Eva 医疗任务工作台" /><strong>交给 Eva 一项完整任务</strong><p>任务规划、诊疗信息、模型、工具和医助处理过程都会在对话里呈现。</p></div>
+              <article v-for="message in messages" :key="message.id" class="eva-popup-message" :class="message.role"><header><b>{{ message.role === 'user' ? '医生' : 'Eva' }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `…${message.runId.slice(-8)}` : '执行中' }}</span></header><ol v-if="message.events?.length"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span></li></ol><p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'">Eva 正在继续处理…</p></article>
+            </section>
+            <form class="eva-popup-composer" @submit.prevent="send"><p v-if="notice" role="status" class="inline-notice">{{ notice }}</p><textarea v-model="draft" :disabled="busy" rows="4" placeholder="描述需要完成的诊疗任务……" @keydown.enter.exact.prevent="send" /><footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" compact /><div><button class="btn" type="button" @click="newTask">新任务</button><RouterLink class="btn" to="/ai-assistant" @click="requestClose">完整工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId">{{ busy ? '执行中…' : '发送' }}</button></div></footer></form>
+          </main>
+          <EvaPatientPicker :current="patient.current.value" :defaults="evaDefaultPatientContexts" :results="patient.results.value" :encounters="patient.encounters.value" :selected-patient-id="patient.selectedPatient.value?.patient_id ?? ''" :searching="patient.searching.value" :loading-encounters="patient.loadingEncounters.value" :notice="patient.notice.value" compact @search="patient.search" @select-default="selectDefault" @select-patient="selectSearchPatient" @select-encounter="selectEncounter" />
         </section>
-
-        <section class="global-ai-thread" aria-live="polite">
-          <div v-if="leaseQuery.isPending.value" class="global-ai-empty">正在连接当前页面…</div>
-          <div v-else-if="issue" class="global-ai-empty error">当前页面暂时无法连接：{{ issue.message }}</div>
-          <div v-else-if="messages.length === 0" class="global-ai-empty compact"><strong>小南已准备好</strong><p>请选择上方协作任务，或直接输入希望小南协助的内容。</p></div>
-          <article v-for="(message, index) in messages" :key="index" class="global-ai-message" :class="message.role"><b>{{ message.role === 'user' ? '你' : (message.agentName || 'AI医助小南') }}</b><p>{{ message.text }}</p></article>
-        </section>
-
-        <form class="global-ai-composer" @submit.prevent="send()">
-          <p v-if="notice" role="status" class="inline-notice error">{{ notice }}</p>
-          <div class="global-ai-composer-context"><label for="global-ai-agent-select">医助团队</label><select id="global-ai-agent-select" v-model="selectedAgentCode"><option value="">小南综合协助</option><option v-for="agent in agents" :key="agent.main_agent.agent_code" :value="agent.main_agent.agent_code">{{ clinicianAgentName(agent.main_agent.display_name) }}</option></select></div>
-          <details v-if="selectedAgent" class="global-ai-question-examples">
-            <summary>不会提问？查看每位医助的示例</summary>
-            <div><strong>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队</strong><button v-for="example in selectedAgent.main_agent.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
-            <div v-for="child in selectedAgent.child_agents" :key="child.agent_code"><strong>{{ doctorFacingAiText(child.display_name) }}</strong><button v-for="example in child.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
-          </details>
-          <label for="global-ai-draft">告诉小南需要协助什么</label>
-          <textarea id="global-ai-draft" v-model="draft" :disabled="busy || !leaseQuery.data.value" rows="3" placeholder="例如：整理当前患者的会诊要点…" @keydown.enter.exact.prevent="send()" />
-          <div class="global-ai-composer-actions"><RouterLink class="btn" to="/ai-assistant" @click="requestClose">打开小南工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !leaseQuery.data.value">{{ busy ? '小南正在处理…' : '开始协助' }}</button></div>
-        </form>
       </div>
-    </dialog>
-    <aside v-else class="global-ai-side-panel" role="dialog" aria-modal="false" aria-labelledby="global-ai-side-title" aria-describedby="global-ai-side-context">
-      <div class="global-ai-dialog-shell">
-        <header>
-          <img class="global-ai-mascot" src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="52" height="52" />
-          <div class="global-ai-heading"><span>随诊协助 · 原页面可继续操作</span><h2 id="global-ai-side-title">AI医助小南</h2><p id="global-ai-side-context">{{ contextLabel }}<template v-if="taskId"> · 当前任务已连接</template></p></div>
-          <b class="global-ai-agent-count" :aria-label="`${agents.length} 个医助团队，${childAgentCount} 位医助`">{{ agents.length }} 组 · {{ childAgentCount }} 位医助</b>
-          <div class="global-ai-mode-switch" role="group" aria-label="AI医助小南窗口模式"><button type="button" aria-pressed="false" @click="changeMode('center')">中窗</button><button type="button" class="active" aria-pressed="true" @click="changeMode('side')">右侧窗</button></div>
-          <button class="global-ai-close" type="button" aria-label="关闭AI医助小南" @click="requestClose">×</button>
-        </header>
-
-        <section class="global-ai-agents" aria-labelledby="global-ai-side-agent-title">
-          <div class="global-ai-section-heading"><div><strong id="global-ai-side-agent-title">选择医助团队</strong><span>选择诊疗任务，小南会展示每位医助的进度</span></div></div>
-          <div v-if="agentQuery.isPending.value" class="global-ai-agent-state">正在读取协作团队…</div>
-          <div v-else-if="agentIssue" class="global-ai-agent-state error">协作团队暂时不可用：{{ agentIssue.code }}</div>
-          <div v-else-if="agents.length === 0" class="global-ai-agent-state">当前没有可用的协作团队。</div>
-          <div v-else class="global-ai-agent-grid">
-            <article v-for="agent in agents" :key="agent.main_agent.agent_code" :class="{ selected: selectedAgentCode === agent.main_agent.agent_code }">
-              <button class="global-ai-agent-main" type="button" :aria-pressed="selectedAgentCode === agent.main_agent.agent_code" @click="selectAgent(agent)"><span><b>{{ clinicianAgentName(agent.main_agent.display_name) }}</b><small>{{ clinicianAgentDescription(agent.main_agent.description) }}</small></span><em>{{ agent.child_agents.length }} 位</em></button>
-              <dl><div><dt>当前进度</dt><dd>{{ doctorFacingAiText(agent.main_agent.current_action) }}</dd></div></dl>
-            </article>
-          </div>
-          <div v-if="selectedAgent" class="global-ai-child-strip" aria-label="专科医助任务">
-            <div><b>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队 · {{ selectedAgent.child_agents.length }} 位医助</b><span>选择任务后，小南会汇总进度和结果</span></div>
-            <button v-for="child in selectedAgent.child_agents" :key="child.agent_code" type="button" :disabled="busy || !leaseQuery.data.value" @click="runChildAgent(selectedAgent, child)"><span>{{ doctorFacingAiText(child.display_name) }}</span><small>{{ doctorFacingAiText(child.current_action) }}</small></button>
-          </div>
-        </section>
-
-        <section class="global-ai-thread" aria-live="polite">
-          <div v-if="leaseQuery.isPending.value" class="global-ai-empty">正在连接当前页面…</div>
-          <div v-else-if="issue" class="global-ai-empty error">当前页面暂时无法连接：{{ issue.message }}</div>
-          <div v-else-if="messages.length === 0" class="global-ai-empty compact"><strong>小南已准备好</strong><p>请选择上方协作任务，或直接输入希望小南协助的内容。</p></div>
-          <article v-for="(message, index) in messages" :key="index" class="global-ai-message" :class="message.role"><b>{{ message.role === 'user' ? '你' : (message.agentName || 'AI医助小南') }}</b><p>{{ message.text }}</p></article>
-        </section>
-
-        <form class="global-ai-composer" @submit.prevent="send()">
-          <p v-if="notice" role="status" class="inline-notice error">{{ notice }}</p>
-          <div class="global-ai-composer-context"><label for="global-ai-side-agent-select">医助团队</label><select id="global-ai-side-agent-select" v-model="selectedAgentCode"><option value="">小南综合协助</option><option v-for="agent in agents" :key="agent.main_agent.agent_code" :value="agent.main_agent.agent_code">{{ clinicianAgentName(agent.main_agent.display_name) }}</option></select></div>
-          <details v-if="selectedAgent" class="global-ai-question-examples">
-            <summary>不会提问？查看每位医助的示例</summary>
-            <div><strong>{{ clinicianAgentName(selectedAgent.main_agent.display_name) }}医助团队</strong><button v-for="example in selectedAgent.main_agent.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
-            <div v-for="child in selectedAgent.child_agents" :key="child.agent_code"><strong>{{ doctorFacingAiText(child.display_name) }}</strong><button v-for="example in child.question_examples" :key="example" type="button" @click="useQuestionExample(example, selectedAgent)">{{ doctorFacingAiText(example) }}</button></div>
-          </details>
-          <label for="global-ai-side-draft">告诉小南需要协助什么</label>
-          <textarea id="global-ai-side-draft" v-model="draft" :disabled="busy || !leaseQuery.data.value" rows="3" placeholder="例如：整理当前患者的会诊要点…" @keydown.enter.exact.prevent="send()" />
-          <div class="global-ai-composer-actions"><RouterLink class="btn" to="/ai-assistant" @click="requestClose">打开小南工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !leaseQuery.data.value">{{ busy ? '小南正在处理…' : '开始协助' }}</button></div>
-        </form>
-      </div>
-    </aside>
+    </component>
   </Teleport>
 </template>
+
+<style scoped>
+:global(.global-ai-dialog.eva-popup-root) { width: min(1160px,calc(100vw - 32px)); height: min(860px,calc(100dvh - 32px)); max-height: none; }:global(.global-ai-side-panel.eva-popup-root) { width: var(--assistant-side-width); }.eva-popup-shell { display: grid; grid-template-rows: auto minmax(0,1fr); width: 100%; height: 100%; min-height: 0; }.eva-popup-header { display: grid; grid-template-columns: 46px minmax(0,1fr) auto auto 34px; align-items: center; gap: 10px; min-height: 72px; padding: 10px 13px; color: #fff; background: linear-gradient(135deg,#193a59,#1769e0); }.eva-popup-header > img { width: 46px; height: 46px; object-fit: cover; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px rgb(255 255 255 / 28%); }.eva-popup-header > div { display: grid; gap: 2px; min-width: 0; }.eva-popup-header span { color: #bdd8f5; font-size: 8px; font-weight: 800; letter-spacing: .5px; }.eva-popup-header h2 { margin: 1px 0; color: #fff; font-size: 17px; }.eva-popup-header p { margin: 0; overflow: hidden; color: #d9e8f7; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.eva-popup-header > b { padding: 6px 8px; border: 1px solid rgb(255 255 255 / 24%); border-radius: 999px; background: rgb(255 255 255 / 8%); font-size: 8px; white-space: nowrap; }.eva-popup-header nav { display: flex; gap: 2px; padding: 2px; border: 1px solid rgb(255 255 255 / 22%); border-radius: 8px; }.eva-popup-header button { height: 28px; padding: 0 8px; color: #fff; border: 0; border-radius: 6px; background: transparent; font-size: 9px; cursor: pointer; }.eva-popup-header nav button.active { color: #173e64; background: #fff; font-weight: 800; }.eva-popup-header .eva-popup-close { width: 34px; height: 34px; font-size: 22px; }.eva-popup-workspace { display: grid; grid-template-columns: auto minmax(0,1fr) 220px; min-width: 0; min-height: 0; overflow: hidden; }.eva-popup-main { display: grid; grid-template-rows: minmax(180px,1fr) auto; min-width: 0; min-height: 0; }.eva-popup-thread { display: grid; align-content: start; gap: 9px; min-height: 0; padding: 12px; overflow-y: auto; background: #fbfcfe; }.eva-popup-empty { padding: 24px 12px; color: #697d90; font-size: 10px; text-align: center; }.eva-popup-empty.error { color: #a32632; }.eva-popup-empty.illustrated { display: grid; justify-items: center; gap: 6px; max-width: 560px; margin: auto; }.eva-popup-empty img { width: min(100%,420px); max-height: 170px; object-fit: contain; border-radius: 10px; mix-blend-mode: multiply; }.eva-popup-empty strong { color: #29435d; font-size: 12px; }.eva-popup-empty p { margin: 0; line-height: 1.6; }.eva-popup-message { display: grid; gap: 7px; width: min(90%,650px); padding: 9px 11px; border: 1px solid #d8e3ed; border-radius: 10px; background: #fff; }.eva-popup-message.user { justify-self: end; width: min(78%,560px); border-color: #acd0ee; background: #edf6ff; }.eva-popup-message header { display: flex; justify-content: space-between; gap: 8px; }.eva-popup-message header b { color: #185b83; font-size: 9px; }.eva-popup-message header span { color: #8694a2; font-size: 7px; }.eva-popup-message > p { margin: 0; white-space: pre-wrap; color: #3c5268; font-size: 9px; line-height: 1.6; }.eva-popup-message ol { display: grid; gap: 1px; padding: 1px; margin: 0; border: 1px solid #dce5ed; border-radius: 8px; background: #e8eef3; list-style: none; }.eva-popup-message li { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: center; gap: 6px; padding: 7px 8px; background: #fff; }.eva-popup-message li i { display: grid; place-items: center; width: 18px; height: 18px; color: #fff; border-radius: 50%; background: #8497aa; font-size: 7px; font-style: normal; }.eva-popup-message li.done i { background: #159783; }.eva-popup-message li.running i { background: #1769e0; }.eva-popup-message li.failed i { background: #c43d45; }.eva-popup-message li span { display: grid; gap: 2px; min-width: 0; }.eva-popup-message li b, .eva-popup-message li small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.eva-popup-message li b { color: #3b5269; font-size: 8px; }.eva-popup-message li small { color: #81909f; font-size: 7px; }.eva-popup-composer { display: grid; gap: 7px; padding: 10px 12px max(10px,env(safe-area-inset-bottom)); border-top: 1px solid #d8e3ef; background: #fff; }.eva-popup-composer textarea { width: 100%; min-height: 70px; max-height: 145px; padding: 9px 10px; resize: vertical; border: 1px solid #bdcddd; border-radius: 9px; outline: none; font: inherit; line-height: 1.55; }.eva-popup-composer textarea:focus { border-color: #4f91d5; box-shadow: 0 0 0 3px rgb(23 105 224 / 10%); }.eva-popup-composer footer { display: flex; align-items: center; gap: 7px; }.eva-popup-composer footer > :first-child { flex: 1; min-width: 0; }.eva-popup-composer footer > div { display: flex; gap: 5px; }
+.global-ai-side-panel.eva-popup-root .eva-popup-header { grid-template-columns: 42px minmax(0,1fr) auto 32px; gap: 7px; }
+.global-ai-side-panel.eva-popup-root .eva-popup-header > b { display: none; }
+.global-ai-side-panel.eva-popup-root .eva-popup-header nav { grid-column: 3; }
+.global-ai-side-panel.eva-popup-root .eva-popup-header .eva-popup-close { grid-column: 4; }
+.global-ai-side-panel.eva-popup-root .eva-popup-workspace { grid-template-columns: auto minmax(0,1fr); grid-template-rows: minmax(0,1fr) auto; }
+.global-ai-side-panel.eva-popup-root :deep(.xiaonan-harness-team-rail) { grid-column: 1; grid-row: 1 / -1; }
+.global-ai-side-panel.eva-popup-root .eva-popup-main { grid-column: 2; grid-row: 1; }
+.global-ai-side-panel.eva-popup-root :deep(.eva-patient-picker) { grid-column: 2; grid-row: 2; width: 100%; max-height: 220px; border-left: 0; border-top: 1px solid #d8e3ef; }
+@media (max-width: 980px) { .eva-popup-workspace { grid-template-columns: auto minmax(0,1fr); overflow-y: auto; } :deep(.eva-patient-picker) { grid-column: 1 / -1; } .eva-popup-header > b { display: none; } }
+@media (max-width: 700px) { :global(.global-ai-dialog.eva-popup-root) { width: calc(100vw - 12px); height: calc(100dvh - 12px); } .eva-popup-header { grid-template-columns: 42px minmax(0,1fr) auto 32px; gap: 7px; } .eva-popup-header > b { display: none; } .eva-popup-workspace { grid-template-columns: minmax(0,1fr); } .eva-popup-main { min-height: 560px; } .eva-popup-composer footer { align-items: stretch; flex-direction: column; } }
+</style>

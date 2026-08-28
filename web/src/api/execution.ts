@@ -19,6 +19,7 @@ import {
   labSpecimenCollectRequestWireSchema,
   labSpecimenCreateRequestWireSchema,
   labSpecimenReceiveRequestWireSchema,
+  labSpecimenRejectRequestWireSchema,
   labSpecimenWireSchema,
   medicationAdministrationRequestWireSchema,
   medicationAdministrationWireSchema,
@@ -62,7 +63,7 @@ import {
 } from '../generated/contracts';
 
 /**
- * 医疗协同执行域（药房/收费/检验/影像/输血/手术/护理）API 客户端。
+ * 诊疗执行域（药房/收费/检验/影像/输血/手术/护理）API 客户端。
  * 除科室级交接班外，全部按「患者 + 就诊」签发上下文租约，复用 clinical-api 的请求内核。
  */
 export function issueExecutionLease(purpose: string): Promise<ContextLeaseWire> {
@@ -218,6 +219,15 @@ export async function receiveLabSpecimen(lease: ContextLeaseWire, specimen: LabS
   ));
 }
 
+export async function rejectLabSpecimen(lease: ContextLeaseWire, specimen: LabSpecimenWire, reason: string): Promise<LabSpecimenWire> {
+  return labSpecimenWireSchema.parse(await request(
+    `/lab-specimens/${specimen.specimen_id}/rejections`,
+    json('POST', lease, labSpecimenRejectRequestWireSchema.parse({
+      ...scoped(), expected_row_version: specimen.row_version, rejection_reason: reason,
+    })),
+  ));
+}
+
 // ── 检查影像工作台（预约闭环） ───────────────────────────────
 export async function listImagingOrders(lease: ContextLeaseWire): Promise<ImagingOrderWire[]> {
   return imagingOrderWireSchema.array().parse(await request(
@@ -352,7 +362,7 @@ export async function transitionSurgicalProcedure(
   ));
 }
 
-// ── 医疗协同中心（护理体征/计划/给药/交接/出院/床旁） ──────────
+// ── 诊疗执行中心（护理体征/计划/给药/交接/出院/床旁） ──────────
 export async function listVitalSigns(lease: ContextLeaseWire): Promise<VitalSignRecordWire[]> {
   return vitalSignRecordWireSchema.array().parse(await request(
     `/vital-signs?encounter_id=${encodeURIComponent(clinicalContext.encounterId)}`,

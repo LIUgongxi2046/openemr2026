@@ -52,7 +52,7 @@ const navigation: NavItem[] = [
   { id: 'record', label: '病历中心', icon: '▤', group: '病历与质量', count: '3' },
   { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量', count: '7' },
   { id: 'archive-assets', label: '病案资产中心', icon: '▣', group: '病历与质量', count: '3' },
-  { id: 'care-operations', label: '医疗协同中心', icon: '✚', group: '业务协同', count: '8' },
+  { id: 'care-operations', label: '诊疗执行中心', icon: '✚', group: '业务协同', count: '12' },
   { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同', count: '9' },
   { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心', count: '6' },
   { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心', count: '9' },
@@ -156,7 +156,19 @@ const subNav = computed<SubNav | null>(() => {
     };
   }
   if (careOperationRoutes.includes(c)) {
-    return { kind: 'center', title: '医疗协同', active: c, items: [['care-operations', '协同总览'], ['billing', '费用结算'], ['outpatient-pharmacy', '门诊药房'], ['inpatient-pharmacy', '住院药房'], ['lab-workbench', '检验'], ['imaging-workbench', '检查影像'], ['surgery-schedule', '手术'], ['transfusion', '输血']] };
+    return {
+      kind: 'center',
+      title: '诊疗执行',
+      active: c,
+      items: [
+        ['care-operations', '执行总览'], ['billing', '费用结算'],
+        ['outpatient-pharmacy', '门诊药房'], ['inpatient-pharmacy', '住院药房'],
+        ['lab-workbench', '检验'], ['pathology-workbench', '病理'],
+        ['imaging-workbench', '检查影像'], ['therapy-workbench', '治疗'],
+        ['surgery-schedule', '手术'], ['anesthesia-workbench', '麻醉'],
+        ['transfusion', '输血'], ['device-monitoring', '设备监护'],
+      ],
+    };
   }
   if (qualityCenterRoutes.includes(c)) {
     return { kind: 'center', title: '医疗质量中心', active: c, items: [['quality-center', '质量总览'], ['quality-rating', '评级取证'], ['infection-events', '院感事件'], ['credentials', '临床资质']] };
@@ -165,7 +177,7 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['integration', '集成交换'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['devices', '设备接入'], ['research', '科研统计']] };
   }
   if (aiPlatformRoutes.includes(c)) {
-    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-center', 'AI 总览'], ['ai-assistant', 'AI医助小南'], ['ai-assistant-policy', '小南工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
+    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-center', 'AI 总览'], ['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
   }
   if (configurationRoutes.includes(c)) {
     return { kind: 'center', title: '业务配置', active: c, items: [['workflow', '流程设计'], ['capability-pack', '能力包'], ['specialty-coverage', '科室适配'], ['form-designer', '表单模板'], ['rule-center', '规则时限'], ['scope-designer', '职责范围']] };
@@ -349,7 +361,7 @@ async function closeAssistant() {
         <button type="submit" aria-label="提交全局搜索">搜索</button>
       </form>
       <div class="top-actions">
-        <button ref="assistantLauncher" class="topbar-ai-assistant" type="button" aria-label="打开AI医助小南" :aria-expanded="assistantOpen" @click="assistantOpen = true"><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="28" height="28" /><small>AI医助小南</small></button>
+        <button ref="assistantLauncher" class="topbar-ai-assistant" type="button" aria-label="打开AI医助Eva" :aria-expanded="assistantOpen" @click="assistantOpen = true"><img src="/brand/ai-medical-assistant-eva.png" alt="" width="28" height="28" /><small>AI医助 Eva</small></button>
         <button ref="guideLauncher" class="icon-btn" type="button" aria-label="打开操作指引" @click="openGuide"><svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.35 2.35 0 0 1 4.55.8c0 1.8-2.35 2.05-2.35 3.55"/><path d="M12 17.2h.01"/></svg></button>
         <div class="topbar-menu-control">
           <button class="icon-btn notification-trigger" type="button" :aria-label="unreadNotifications ? `通知，${unreadNotifications} 条未读` : '通知，无未读'" aria-haspopup="true" :aria-expanded="activeMenu === 'notifications'" @click.stop="toggleMenu('notifications')"><svg class="topbar-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span v-if="unreadNotifications" aria-hidden="true">{{ unreadNotifications }}</span></button>
@@ -427,8 +439,8 @@ async function closeAssistant() {
     />
     <dialog v-if="guideOpen" ref="guideDialog" class="operation-guide-dialog" aria-labelledby="operation-guide-title" @close="onGuideClosed">
       <header><i aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></i><div><span>QUICK START</span><h2 id="operation-guide-title">操作指引</h2><p>从工作上下文到临床任务的四步入口</p></div><button type="button" aria-label="关闭操作指引" @click="closeGuide()"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></header>
-      <ol><li><b>1</b><div><strong>选择医院与角色</strong><span>顶栏切换当前工作上下文，服务端仍会独立校验授权。</span></div></li><li><b>2</b><div><strong>搜索患者或任务</strong><span>输入关键词后进入患者主索引，继续查看授权资料。</span></div></li><li><b>3</b><div><strong>进入业务工作台</strong><span>通过左侧一级导航和页面内子导航处理门诊、急诊或住院任务。</span></div></li><li><b>4</b><div><strong>调用AI医助小南</strong><span>小南保留当前页面上下文，生成内容需要人工审核后才能进入业务流程。</span></div></li></ol>
-      <section class="guide-quick-actions" aria-label="快捷入口"><strong>立即开始</strong><div><button type="button" @click="navigateFromGuide('/patient-registry')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg><span>患者主索引<small>搜索与登记患者</small></span></button><button type="button" @click="navigateFromGuide('/admin-users')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>账号与权限<small>查看用户与岗位授权</small></span></button><button type="button" @click="openAssistantFromGuide"><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="24" height="24"/><span>AI医助小南<small>带上下文开始问答</small></span></button></div></section>
+      <ol><li><b>1</b><div><strong>选择医院与角色</strong><span>顶栏切换当前工作上下文，服务端仍会独立校验授权。</span></div></li><li><b>2</b><div><strong>搜索患者或任务</strong><span>输入关键词后进入患者主索引，继续查看授权资料。</span></div></li><li><b>3</b><div><strong>进入业务工作台</strong><span>通过左侧一级导航和页面内子导航处理门诊、急诊或住院任务。</span></div></li><li><b>4</b><div><strong>调用AI医助 Eva</strong><span>Eva 保留当前页面上下文，生成内容需要人工审核后才能进入业务流程。</span></div></li></ol>
+      <section class="guide-quick-actions" aria-label="快捷入口"><strong>立即开始</strong><div><button type="button" @click="navigateFromGuide('/patient-registry')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M19 8v6M16 11h6"/></svg><span>患者主索引<small>搜索与登记患者</small></span></button><button type="button" @click="navigateFromGuide('/admin-users')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>账号与权限<small>查看用户与岗位授权</small></span></button><button type="button" @click="openAssistantFromGuide"><img src="/brand/ai-medical-assistant-eva.png" alt="" width="24" height="24"/><span>AI医助 Eva<small>带上下文开始任务</small></span></button></div></section>
       <footer><span>按 Esc 可随时关闭</span><button class="button secondary" type="button" @click="closeGuide()">稍后再看</button></footer>
     </dialog>
   </div>

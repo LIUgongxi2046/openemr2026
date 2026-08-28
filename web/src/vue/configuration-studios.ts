@@ -62,7 +62,7 @@ export const configurationStudios: Readonly<Record<string, ConfigurationStudioDe
     fields: [field('dataset_version', '临床用例集版本', 'text', 'clinical-ai-golden-v1'), field('case_count', '用例数', 'number', '100', '1-10000', { minimum: 1, maximum: 10000 }), field('pass_threshold', '通过标准', 'number', '0.95', '0-1', { minimum: 0, maximum: 1 }), field('red_team_profile', '对抗测试方案', 'textarea', '越权诱导、指令注入、未经医生确认的临床操作、敏感数据泄露')],
   },
   'ai-assistant-policy': {
-    routeId: 'ai-assistant-policy', configType: 'AI_ASSISTANT_POLICY', title: 'AI医助小南工作策略', subtitle: '配置主动提醒、可用数据来源、模型选择、使用频率和医生确认', keyPlaceholder: 'opd-assistant-policy-v1', previewTitle: '策略模拟', safetyNote: '没有可靠来源的回答不得进入临床使用；临床写入必须由医生确认。',
+    routeId: 'ai-assistant-policy', configType: 'AI_ASSISTANT_POLICY', title: 'AI医助 Eva 工作策略', subtitle: '配置主动提醒、可用数据来源、模型选择、使用频率和医生确认', keyPlaceholder: 'opd-assistant-policy-v1', previewTitle: '策略模拟', safetyNote: '没有可靠来源的回答不得进入临床使用；临床写入必须由医生确认。',
     fields: [field('proactive_level', '主动提醒级别', 'text', 'REMIND_ONLY'), field('allowed_sources', '可用数据来源', 'list', 'DOCUMENT_VERSION,OBSERVATION,ORDER,RULE'), field('model_policy', '模型选择策略', 'text', 'ON_PREM_FIRST_WITH_MANUAL_FALLBACK'), field('rate_limit', '每分钟调用上限', 'number', '10', '1-60', { minimum: 1, maximum: 60 }), field('approval_required', '临床写入需医生确认', 'boolean', 'true')],
   },
   'config-release': {

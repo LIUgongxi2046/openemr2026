@@ -128,6 +128,8 @@ async function deactivate(tool: ToolRegistryWire) {
       <section class="admin-metrics" aria-label="医助工具统计">
         <article><span>工具总数</span><strong>{{ tools.length }}</strong><small>全部登记</small></article>
         <article><span>可用工具</span><strong>{{ activeCount }}</strong><small>当前已启用</small></article>
+        <article><span>调用鉴权</span><strong>逐次校验</strong><small>按患者与岗位范围</small></article>
+        <article><span>异常处理</span><strong>可重试</strong><small>失败结果保留记录</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 

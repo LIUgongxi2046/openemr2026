@@ -1409,6 +1409,16 @@ export async function searchPatientsForAdmission(
   return patientSummaryWireSchema.array().parse(payload);
 }
 
+export async function listPatientEncounters(
+  lease: ContextLeaseWire,
+  patientId: string,
+): Promise<EncounterWire[]> {
+  const payload = await request(`/patients/${encodeURIComponent(patientId)}/encounters`, {
+    headers: explicitContextHeaders(lease, patientId, null),
+  });
+  return encounterWireSchema.array().parse(payload);
+}
+
 export async function createInpatientEncounterForAdmission(patientId: string): Promise<EncounterWire> {
   const lease = await issueContextLease(patientId, null, 'INPATIENT_ADMISSION');
   return encounterWireSchema.parse(await request('/encounters', {

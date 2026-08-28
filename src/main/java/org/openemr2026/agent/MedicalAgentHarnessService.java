@@ -22,6 +22,8 @@ import tools.jackson.databind.ObjectMapper;
 final class MedicalAgentHarnessService {
 
     private static final Set<String> TARGET_TYPES = Set.of("ENCOUNTER", "DOCUMENT", "RESULT", "TASK", "CARE_PLAN");
+    private static final Set<String> AUTHORIZATION_LEVELS = Set.of("READ_ONLY", "STANDARD", "EXTENDED");
+    private static final Set<String> CONTEXT_SCOPES = Set.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS");
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
@@ -74,6 +76,7 @@ final class MedicalAgentHarnessService {
             validateTarget(identity.tenantId(), command);
             MainReleaseRow main = main(command.mainAgentCode());
             ActiveBudget budget = ensureGovernanceReady(identity.tenantId(), main.agentCode());
+            ModelSelection model = resolveModel(identity.tenantId(), command.modelDeploymentId());
             List<NodeRow> nodes = nodes(main.compositionCode(), command.stageCode());
             if (nodes.isEmpty()) {
                 throw new AgentRunException("AGENT_STAGE_UNSUPPORTED", 409,
@@ -81,29 +84,37 @@ final class MedicalAgentHarnessService {
             }
             String requestHash = sha256(command.contextLeaseId() + "|" + command.mainAgentCode() + "|"
                     + command.stageCode() + "|" + command.targetType() + "|" + command.targetId() + "|"
-                    + command.objective());
+                    + command.objective() + "|" + model.deploymentId() + "|" + command.authorizationLevel()
+                    + "|" + command.contextScopes());
             beginCommand(identity, idempotencyKey, requestHash);
             UUID id = UUID.randomUUID();
             jdbc.sql("""
                     insert into medical_agent_run(
                       tenant_id, run_id, context_lease_id, root_agent_code, root_agent_version,
                       composition_code, composition_version, requested_stage, patient_id, encounter_id,
-                      target_type, target_id, objective, state, created_by)
+                      target_type, target_id, objective, model_deployment_id, authorization_level,
+                      context_scopes, state, created_by)
                     values (:tenant, :run, :lease, :root, :root_version, :composition, :composition_version,
-                      :stage, :patient, :encounter, :target_type, :target_id, :objective, 'QUEUED', :actor)
+                      :stage, :patient, :encounter, :target_type, :target_id, :objective, :model,
+                      :authorization, cast(:scopes as jsonb), 'QUEUED', :actor)
                     """).param("tenant", identity.tenantId()).param("run", id)
                     .param("lease", command.contextLeaseId()).param("root", main.agentCode())
                     .param("root_version", main.agentVersion()).param("composition", main.compositionCode())
                     .param("composition_version", main.compositionVersion()).param("stage", command.stageCode())
                     .param("patient", command.patientId()).param("encounter", command.encounterId())
                     .param("target_type", command.targetType()).param("target_id", command.targetId())
-                    .param("objective", command.objective().trim()).param("actor", identity.userId()).update();
+                    .param("objective", command.objective().trim()).param("model", model.deploymentId())
+                    .param("authorization", command.authorizationLevel()).param("scopes", json(command.contextScopes()))
+                    .param("actor", identity.userId()).update();
             appendEvent(identity.tenantId(), id, null, "RunCreated", Map.of(
                     "root_agent_code", main.agentCode(), "stage_code", command.stageCode(),
-                    "candidate_only", true));
+                    "candidate_only", true, "model_deployment_id", model.deploymentId(),
+                    "model_display_name", model.displayName(), "authorization_level", command.authorizationLevel(),
+                    "context_scopes", command.contextScopes()));
             transition(identity.tenantId(), id, "RUNNING", "MainAgentStarted", Map.of(
                     "root_agent_code", main.agentCode(), "composition_code", main.compositionCode()));
-            ContextFacts facts = contextFacts(identity.tenantId(), command.encounterId(), lease.watermark());
+            ContextFacts facts = contextFacts(identity.tenantId(), command.encounterId(), lease.watermark(),
+                    Set.copyOf(command.contextScopes()));
             List<Map<String, Object>> contributions = new ArrayList<>();
             boolean partial = false;
             for (NodeRow node : nodes) {
@@ -143,9 +154,14 @@ final class MedicalAgentHarnessService {
             output.put("root_agent_code", main.agentCode());
             output.put("stage_code", command.stageCode());
             output.put("objective", command.objective().trim());
-            output.put("summary", "小南已汇总 " + contributions.size() + " 位医助的处理结果，等待医生审阅。");
+            output.put("summary", "Eva 已汇总 " + contributions.size() + " 位医助的处理结果，等待医生审阅。");
+            output.put("model_deployment_id", model.deploymentId());
+            output.put("model_display_name", model.displayName());
+            output.put("authorization_level", command.authorizationLevel());
+            output.put("context_scopes", command.contextScopes());
             output.put("context_counts", Map.of("documents", facts.documentCount(), "results", facts.resultCount(),
-                    "open_tasks", facts.openTaskCount(), "open_critical_values", facts.openCriticalCount()));
+                    "orders", facts.orderCount(), "open_tasks", facts.openTaskCount(),
+                    "attachments", facts.attachmentCount(), "open_critical_values", facts.openCriticalCount()));
             output.put("contributions", contributions);
             output.put("warnings", List.of("本结果为 AI 协作候选，不自动写入病历、诊断、医嘱、结果或任务终态。"));
             String finalState = partial ? "PARTIAL" : "WAITING_FOR_REVIEW";
@@ -237,6 +253,24 @@ final class MedicalAgentHarnessService {
                 order by created_at desc, run_id desc limit 100
                 """).param("tenant", tenantId).param("encounter", encounterId).query(UUID.class).list();
         return ids.stream().map(id -> run(tenantId, id)).toList();
+    }
+
+    private ModelSelection resolveModel(UUID tenantId, UUID requestedDeploymentId) {
+        String requested = requestedDeploymentId == null ? "" : " and model_deployment_id = :deployment";
+        JdbcClient.StatementSpec query = jdbc.sql("""
+                select model_deployment_id, display_name from model_deployment
+                where tenant_id = :tenant and status = 'ACTIVE' and evaluation_status = 'APPROVED'
+                  and connection_status = 'READY'
+                """ + requested + " order by updated_at desc, model_deployment_id limit 1")
+                .param("tenant", tenantId);
+        if (requestedDeploymentId != null) query = query.param("deployment", requestedDeploymentId);
+        return query.query((rs, row) -> new ModelSelection(
+                        rs.getObject("model_deployment_id", UUID.class), rs.getString("display_name")))
+                .optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_MODEL_UNAVAILABLE", 409,
+                        requestedDeploymentId == null
+                                ? "No approved and connected model service is available"
+                                : "The selected model service is not approved, connected or active"));
     }
 
     private ActiveBudget ensureGovernanceReady(UUID tenantId, String mainAgentCode) {
@@ -382,8 +416,9 @@ final class MedicalAgentHarnessService {
                 rs.getString("output_schema"), rs.getBoolean("critical"))).list();
     }
 
-    private ContextFacts contextFacts(UUID tenantId, UUID encounterId, String watermark) {
-        List<Map<String, Object>> references = jdbc.sql("""
+    private ContextFacts contextFacts(UUID tenantId, UUID encounterId, String watermark, Set<String> scopes) {
+        List<Map<String, Object>> references = new ArrayList<>();
+        if (scopes.contains("RECORDS")) references.addAll(jdbc.sql("""
                 select document.document_id, document.current_version_id, document.document_type_code,
                   document.status, version.content_hash
                 from clinical_document document
@@ -397,18 +432,39 @@ final class MedicalAgentHarnessService {
                         "source_type", "DOCUMENT_VERSION", "source_id", rs.getObject("current_version_id", UUID.class),
                         "document_id", rs.getObject("document_id", UUID.class),
                         "document_type", rs.getString("document_type_code"), "status", rs.getString("status"),
-                        "content_hash", rs.getString("content_hash"), "authorization_watermark", watermark)).list();
-        long results = count("select count(*) from clinical_result where tenant_id = :tenant and encounter_id = :encounter",
-                tenantId, encounterId);
-        long tasks = count("""
+                        "content_hash", rs.getString("content_hash"), "authorization_watermark", watermark)).list());
+        if (scopes.contains("RESULTS")) references.addAll(jdbc.sql("""
+                select result_id, current_version_id, report_type
+                from clinical_result where tenant_id = :tenant and encounter_id = :encounter
+                order by updated_at desc, result_id limit 20
+                """).param("tenant", tenantId).param("encounter", encounterId)
+                .query((rs, row) -> Map.<String, Object>of(
+                        "source_type", "RESULT_VERSION", "source_id", rs.getObject("current_version_id", UUID.class),
+                        "result_id", rs.getObject("result_id", UUID.class), "report_type", rs.getString("report_type"),
+                        "authorization_watermark", watermark)).list());
+        long documents = scopes.contains("RECORDS") ? count(
+                "select count(*) from clinical_document where tenant_id = :tenant and encounter_id = :encounter",
+                tenantId, encounterId) : 0;
+        long orders = scopes.contains("ORDERS") ? count(
+                "select count(*) from clinical_order where tenant_id = :tenant and encounter_id = :encounter",
+                tenantId, encounterId) : 0;
+        long results = scopes.contains("RESULTS") ? count(
+                "select count(*) from clinical_result where tenant_id = :tenant and encounter_id = :encounter",
+                tenantId, encounterId) : 0;
+        long tasks = scopes.contains("TASKS") ? count("""
                 select count(*) from clinical_task where tenant_id = :tenant and encounter_id = :encounter
                   and state not in ('COMPLETED', 'WITHDRAWN', 'EXPIRED')
-                """, tenantId, encounterId);
-        long critical = count("""
+                """, tenantId, encounterId) : 0;
+        long attachments = scopes.contains("ATTACHMENTS") ? count("""
+                select count(*) from clinical_document_attachment
+                where tenant_id = :tenant and encounter_id = :encounter
+                  and storage_status = 'AVAILABLE' and malware_scan_status = 'PASSED'
+                """, tenantId, encounterId) : 0;
+        long critical = scopes.contains("RESULTS") ? count("""
                 select count(*) from critical_value_case where tenant_id = :tenant and encounter_id = :encounter
                   and state <> 'DISPOSED'
-                """, tenantId, encounterId);
-        return new ContextFacts(references.size(), results, tasks, critical, List.copyOf(references));
+                """, tenantId, encounterId) : 0;
+        return new ContextFacts(documents, orders, results, tasks, attachments, critical, List.copyOf(references));
     }
 
     private long count(String sql, UUID tenantId, UUID encounterId) {
@@ -423,11 +479,13 @@ final class MedicalAgentHarnessService {
         contribution.put("action", node.currentAction());
         contribution.put("contribution_label", node.contributionLabel());
         contribution.put("output_schema", node.outputSchema());
-        contribution.put("summary", node.displayName() + "已完成当前诊疗范围核对，并将可定位事实交回小南汇总。");
+        contribution.put("summary", node.displayName() + "已完成当前诊疗范围核对，并将可定位事实交回 Eva 汇总。");
         contribution.put("facts", List.of(
                 "当前就诊可定位文书 " + facts.documentCount() + " 份",
+                "已授权医嘱记录 " + facts.orderCount() + " 项",
                 "已确认结果记录 " + facts.resultCount() + " 项",
                 "未闭环任务 " + facts.openTaskCount() + " 项",
+                "已通过安全检查的附件 " + facts.attachmentCount() + " 份",
                 "未处置危急值 " + facts.openCriticalCount() + " 项"));
         contribution.put("gaps", facts.sourceReferences().isEmpty()
                 ? List.of("当前作用域没有可定位文书版本，贡献降级为 PARTIAL。") : List.of());
@@ -546,6 +604,15 @@ final class MedicalAgentHarnessService {
                 || command.objective().trim().length() > 1024) {
             throw invalid("objective must contain 2 to 1024 characters");
         }
+        if (command.authorizationLevel() == null
+                || !AUTHORIZATION_LEVELS.contains(command.authorizationLevel())) {
+            throw invalid("authorization_level must be READ_ONLY, STANDARD or EXTENDED");
+        }
+        if (command.contextScopes() == null || command.contextScopes().isEmpty()
+                || command.contextScopes().size() > CONTEXT_SCOPES.size()
+                || !CONTEXT_SCOPES.containsAll(command.contextScopes())) {
+            throw invalid("context_scopes must contain one or more supported clinical data scopes");
+        }
     }
 
     private AgentReleaseView view(AgentReleaseRow row) {
@@ -610,7 +677,8 @@ final class MedicalAgentHarnessService {
 
     record CreateRunCommand(UUID organizationId, UUID facilityId, UUID patientId, UUID encounterId,
             UUID contextLeaseId, String mainAgentCode, String stageCode, String targetType,
-            UUID targetId, String objective) {}
+            UUID targetId, String objective, UUID modelDeploymentId, String authorizationLevel,
+            List<String> contextScopes) {}
 
     record AgentFamilyView(AgentReleaseView mainAgent, List<AgentReleaseView> childAgents) {}
 
@@ -647,8 +715,9 @@ final class MedicalAgentHarnessService {
     private record NodeRow(String agentCode, String agentVersion, String displayName, String displayRole,
             String currentAction, String contributionLabel, String outputSchema, boolean critical) {}
     private record LeaseRow(String watermark) {}
-    private record ContextFacts(long documentCount, long resultCount, long openTaskCount, long openCriticalCount,
-            List<Map<String, Object>> sourceReferences) {}
+    private record ContextFacts(long documentCount, long orderCount, long resultCount, long openTaskCount,
+            long attachmentCount, long openCriticalCount, List<Map<String, Object>> sourceReferences) {}
+    private record ModelSelection(UUID deploymentId, String displayName) {}
     private record RootRunRow(UUID runId, UUID contextLeaseId, String rootAgentCode, String rootAgentVersion,
             String compositionCode, String compositionVersion, String stageCode, UUID patientId, UUID encounterId,
             String targetType, UUID targetId, String objective, String state, long sequence, String output,

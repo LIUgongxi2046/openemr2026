@@ -48,7 +48,7 @@ async function silence(reminder: ClinicalReminderWire) {
 
 <template>
   <section data-page-root class="content admin-content vue-native-page">
-    <div class="page-heading admin-heading"><div><p class="eyebrow">AI医助小南 / 提醒</p><h1>主动提醒详情</h1><p>提醒可确认或静默；一提醒可转一任务（限频由服务端收敛）。</p></div></div>
+    <div class="page-heading admin-heading"><div><p class="eyebrow">AI医助 Eva / 提醒</p><h1>主动提醒详情</h1><p>提醒可确认或静默；一提醒可转一任务（限频由服务端收敛）。</p></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || remindersQuery.isPending.value" kind="loading" message="正在读取提醒" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="remindersQuery.refetch()" />
     <template v-else>

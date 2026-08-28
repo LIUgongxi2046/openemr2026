@@ -103,6 +103,47 @@ final class TertiaryBusinessConfigurationImportTest {
     }
 
     @Test
+    void devSyntheticProfileImportsTertiaryAiEvaluationReleaseFixturesWithoutUuidCollisions() {
+        Map<String, Integer> evaluationFixtures = jdbc.sql("""
+                select count(*) as evaluations,
+                  count(distinct config_id) as ids,
+                  count(*) filter (where payload->>'hospital_level' = '三级甲等'
+                    and payload->>'environment' = 'tertiary-hospital-simulation'
+                    and status = 'ACTIVE' and validation_state = 'VALID') as complete
+                from config_item
+                where tenant_id = :tenant and config_type = 'AGENT_EVAL'
+                  and config_key like 'eval-%-v1'
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query((rs, row) -> Map.of(
+                        "evaluations", rs.getInt("evaluations"),
+                        "ids", rs.getInt("ids"),
+                        "complete", rs.getInt("complete")))
+                .single();
+        assertThat(evaluationFixtures).containsEntry("evaluations", 10)
+                .containsEntry("ids", 10).containsEntry("complete", 10);
+    }
+
+    @Test
+    void devSyntheticProfileImportsCompleteTertiaryAiModelSkillAndToolCatalogs() {
+        Map<String, Integer> catalog = jdbc.sql("""
+                select
+                  (select count(*) from model_deployment where tenant_id = :tenant
+                    and status = 'ACTIVE' and connection_status = 'READY') as ready_models,
+                  (select count(*) from skill_registry where tenant_id = :tenant
+                    and status = 'ACTIVE') as active_skills,
+                  (select count(*) from tool_registry where tenant_id = :tenant
+                    and status = 'ACTIVE') as active_tools
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query((rs, row) -> Map.of(
+                        "models", rs.getInt("ready_models"),
+                        "skills", rs.getInt("active_skills"),
+                        "tools", rs.getInt("active_tools")))
+                .single();
+        assertThat(catalog).containsEntry("models", 6)
+                .containsEntry("skills", 24).containsEntry("tools", 24);
+    }
+
+    @Test
     void catalogPayloadsRemainInternallyCompleteAndDeterministic() {
         assertThat(TertiaryBusinessConfigurationCatalog.configurations()).hasSize(32)
                 .allSatisfy(seed -> assertThat(seed.payload())

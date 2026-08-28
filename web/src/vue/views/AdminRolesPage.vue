@@ -27,6 +27,8 @@ const form = reactive({ code: '', name: '', objectType: 'ROLE', parent: '—', p
 const roleLabels: Readonly<Record<string, string>> = Object.freeze({
   SYSTEM_ADMIN: '系统管理员', CLINICAL_ADMIN: '临床管理员', CLINICIAN: '临床医师',
   NURSE: '护士', ATTENDING_PHYSICIAN: '主治医师', CHIEF_PHYSICIAN: '科主任',
+  REGISTERED_NURSE: '注册护士', NURSE_MANAGER: '护士长', PHARMACIST: '药师',
+  LAB_TECHNICIAN: '检验技师', RADIOLOGIST: '影像医师', REGISTRAR: '挂号与入院登记员',
   MEDICAL_RECORDS: '病案管理员',
   SECURITY_AUDITOR: '安全审计员', AUTHORIZATION_ADMIN: '授权管理员',
   CONFIG_AUTHOR: '配置作者', CONFIG_APPROVER: '配置审批人',
@@ -103,7 +105,7 @@ function statusLabel(value: string) { return ({ DRAFT: '草稿', PENDING_APPROVA
 </script>
 
 <template>
-  <section data-page-root class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page roles-admin-page">
     <div class="page-head"><div class="page-title"><h1>角色、工作组与职责分离</h1><p>角色表达权限模板，工作组表达协作分派；岗位任期与临床资质独立治理</p></div><div class="head-actions"><button class="btn" type="button" :disabled="query.isFetching.value" @click="scanConflicts">{{ query.isFetching.value ? '扫描中…' : '职责冲突扫描' }}</button><button class="btn primary" type="button" @click="createOpen = true">新建角色/工作组</button></div></div>
     <ClinicalPageState v-if="query.isPending.value || leaseQuery.isPending.value || catalogQuery.isPending.value" kind="loading" message="正在读取角色、工作组和有效任期" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />

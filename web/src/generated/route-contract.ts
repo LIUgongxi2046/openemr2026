@@ -1041,7 +1041,7 @@ export const generatedRouteContract = {
       "route_id": "ai-assistant",
       "path": "#/ai-assistant",
       "screen_id": "HASH-082",
-      "title": "AI医助小南",
+      "title": "AI医助 Eva",
       "primary_domain": "AI",
       "roles": [
         "AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"
@@ -1101,7 +1101,7 @@ export const generatedRouteContract = {
       "route_id": "ai-assistant-policy",
       "path": "#/ai-assistant-policy",
       "screen_id": "HASH-086",
-      "title": "AI医助小南策略与效果治理",
+      "title": "AI医助 Eva 工作策略与效果治理",
       "primary_domain": "AI",
       "roles": [
         "AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"
@@ -1403,7 +1403,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/anesthesia-workbench.png"
@@ -1867,7 +1867,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/billing.png"
@@ -1926,7 +1926,7 @@ export const generatedRouteContract = {
       "route_id": "care-operations",
       "path": "#/care-operations",
       "screen_id": "HASH-051",
-      "title": "医疗协同中心",
+      "title": "诊疗执行中心",
       "primary_domain": "COLLABORATION",
       "roles": [
         "AUTHORIZED_ROLE"
@@ -1958,7 +1958,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/care-operations.png"
@@ -2075,7 +2075,7 @@ export const generatedRouteContract = {
         "PATIENT_CONTEXT",
         "ENCOUNTER_OR_PURPOSE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/clinical-tasks.png"
@@ -3097,7 +3097,7 @@ export const generatedRouteContract = {
         "ROLE",
         "SOURCE_STATUS"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/device-monitoring.png"
@@ -3872,7 +3872,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/imaging-workbench.png"
@@ -4331,7 +4331,7 @@ export const generatedRouteContract = {
         "PATIENT_CONTEXT",
         "ENCOUNTER_OR_PURPOSE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/inpatient-pharmacy.png"
@@ -4804,7 +4804,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/lab-workbench.png"
@@ -6909,7 +6909,7 @@ export const generatedRouteContract = {
         "PATIENT_CONTEXT",
         "ENCOUNTER_OR_PURPOSE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/outpatient-pharmacy.png"
@@ -7000,7 +7000,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/pathology-workbench.png"
@@ -8715,7 +8715,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/surgery-schedule.png"
@@ -9073,7 +9073,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/therapy-workbench.png"
@@ -9176,7 +9176,7 @@ export const generatedRouteContract = {
         "SESSION",
         "ROLE"
       ],
-      "layout": "医疗协同执行",
+      "layout": "诊疗执行",
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/transfusion.png"

@@ -1822,7 +1822,7 @@
     },
     {
       "route_id": "care-operations",
-      "title": "医疗协同中心",
+      "title": "诊疗执行中心",
       "primary_domain": "COLLABORATION",
       "key_regions": [
         "页面标题与业务范围",

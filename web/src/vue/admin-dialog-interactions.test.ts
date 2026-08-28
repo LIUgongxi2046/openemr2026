@@ -75,6 +75,13 @@ describe('系统管理弹窗交互契约', () => {
     expect(studio).toContain("lifecycle('ARCHIVE', true)");
   });
 
+  it('对齐系统管理原型的主标题、差异处理和模板设计入口', () => {
+    expect(views['./views/WorkforceAdministrationPage.vue']).toContain('<h1>用户、人员与账户管理</h1>');
+    expect(views['./views/DictionaryAdministrationPage.vue']).toContain('>处理版本差异</button>');
+    expect(views['./views/DocumentTemplateAdministrationPage.vue']).toContain('>打开模板设计与修正</button>');
+    expect(components['./components/ConfigurationStudioPage.vue']).toContain('/^(?:syn-)?auth-/');
+  });
+
   it('AI 中心的模型、医助、能力、工具和额度均使用编辑与删除弹窗', () => {
     for (const page of ['ModelDeploymentPage.vue', 'AgentCatalogPage.vue', 'SkillCatalogPage.vue', 'ToolCatalogPage.vue', 'AiOpsPage.vue']) {
       const source = views[`./views/${page}`];
@@ -91,10 +98,12 @@ describe('系统管理弹窗交互契约', () => {
     expect(studio).toContain('@click="requestArchive(item)"');
   });
 
-  it('AI 医助小南的新任务与清空对话使用弹窗', () => {
+  it('AI 医助 Eva 的新任务直接创建空白聊天，清空已有任务仍确认', () => {
     const assistant = views['./views/AiAssistantPage.vue'];
-    expect(assistant).toContain('title="新建医助任务"');
-    expect(assistant).toContain('title="清空当前对话"');
+    expect(assistant).toContain('@click="newTask">新建医助任务</button>');
+    expect(assistant).toContain("function newTask() { messages.value = []; draft.value = '';");
+    expect(assistant).not.toContain('title="新建医助任务"');
+    expect(assistant).toContain('title="清空当前任务"');
     expect(assistant).toContain('<AdminConfirmDialog');
   });
 });

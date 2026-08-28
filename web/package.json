@@ -34,6 +34,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^24.13.3",
     "playwright": "1.61.1",
     "vitest": "4.1.10",
     "vue-tsc": "^3.3.10"

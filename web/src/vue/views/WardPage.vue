@@ -7,6 +7,7 @@ import {
   completeShiftHandover, createShiftHandover, createShiftHandoverPatient,
   listShiftHandoverPatients, listShiftHandovers,
 } from '../../api/execution';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -36,6 +37,10 @@ const form = reactive({ shiftFrom: '', shiftTo: '', incomingUserId: clinicalCont
 const patientForm = reactive({ patientId: clinicalContext.inpatientPatientId, summary: '', riskFlag: false });
 const busy = ref('');
 const notice = ref('');
+const createOpen = ref(false);
+const patientOpen = ref(false);
+const completeHandoverId = ref('');
+const completeHandover = computed(() => handovers.value.find((item) => item.handover_id === completeHandoverId.value));
 
 function statusLabel(status: string) {
   return status === 'DRAFT' ? '草稿' : status === 'COMPLETED' ? '已完成' : status;
@@ -50,6 +55,7 @@ async function create() {
       shift_from: form.shiftFrom, shift_to: form.shiftTo, incoming_user_id: form.incomingUserId, handover_summary: form.handoverSummary.trim(),
     });
     form.shiftFrom = ''; form.shiftTo = ''; form.handoverSummary = '';
+    createOpen.value = false;
     notice.value = '交接班已创建。'; await handoversQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -61,6 +67,7 @@ async function complete(handover: ShiftHandoverWire) {
   busy.value = handover.handover_id; notice.value = '';
   try {
     await completeShiftHandover(lease, handover);
+    completeHandoverId.value = '';
     notice.value = '交接班已完成。'; await handoversQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -75,6 +82,7 @@ async function addPatient() {
       handover_id: selectedHandoverId.value, patient_id: patientForm.patientId, summary: patientForm.summary.trim(), risk_flag: patientForm.riskFlag,
     });
     patientForm.summary = ''; patientForm.riskFlag = false;
+    patientOpen.value = false;
     notice.value = '患者已加入交接清单。'; await patientsQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -85,7 +93,7 @@ async function addPatient() {
   <section data-page-root class="content admin-content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>病区看板</h1><p>交接班与患者级交接清单 · 交接内容不可变 · 仅接班护士可确认完成</p></div>
-      <div class="head-actions"><button class="btn" type="button" @click="handoversQuery.refetch()">刷新交接班</button></div>
+      <div class="head-actions"><button class="btn" type="button" @click="handoversQuery.refetch()">刷新交接班</button><button class="btn primary" type="button" @click="createOpen = true">新增交接班</button></div>
     </div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || handoversQuery.isPending.value" kind="loading" message="正在读取病区交接" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="handoversQuery.refetch()" />
@@ -106,31 +114,15 @@ async function addPatient() {
               <td><button class="link-button" @click="selectedHandoverId = handover.handover_id"><strong>{{ handover.shift_from }} → {{ handover.shift_to }}</strong><small>…{{ handover.handover_id.slice(-8) }}</small></button></td>
               <td>{{ handover.handover_summary }}</td>
               <td><span class="admin-status" :class="handover.status.toLowerCase()">{{ statusLabel(handover.status) }}</span></td>
-              <td><button class="task-action" :disabled="handover.status !== 'DRAFT' || Boolean(busy)" @click="complete(handover)">{{ busy === handover.handover_id ? '处理中…' : '完成' }}</button></td>
+              <td><button class="task-action" :disabled="handover.status !== 'DRAFT' || Boolean(busy)" @click="completeHandoverId = handover.handover_id">{{ busy === handover.handover_id ? '处理中…' : '完成' }}</button></td>
             </tr>
           </tbody></table></div>
         </section>
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>新增交接班</h2><p>接班护士与交班护士分离。</p></div></header>
-          <form class="admin-form" @submit.prevent="create">
-            <label><span>交班时间</span><input v-model="form.shiftFrom" type="datetime-local" required /></label>
-            <label><span>接班时间</span><input v-model="form.shiftTo" type="datetime-local" required /></label>
-            <label><span>接班护士</span><input v-model="form.incomingUserId" required placeholder="人员 UUID" /></label>
-            <label><span>交接摘要</span><textarea v-model="form.handoverSummary" required rows="3" /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '创建中…' : '创建交接班' }}</button>
-          </form>
-        </section>
+        <aside class="admin-panel admin-form-panel"><header><div><h2>护理交接规则</h2><p>交班内容不可变，接班人与交班人必须分离。</p></div></header><div class="card-body"><ul class="admin-rule-list"><li>先创建班次交接记录</li><li>再逐位添加重点患者及风险标记</li><li>只有当前接班护士可确认完成</li></ul></div></aside>
       </div>
 
       <section class="admin-panel" v-if="selectedHandoverId">
-        <header><div><h2>患者级交接清单</h2><p>风险标记用于重点交接。</p></div>
-          <form class="admin-inline-form" @submit.prevent="addPatient">
-            <input v-model="patientForm.patientId" required placeholder="患者 UUID" />
-            <input v-model="patientForm.summary" required placeholder="交接摘要" />
-            <label class="inline-check"><input v-model="patientForm.riskFlag" type="checkbox" /> 风险</label>
-            <button class="button primary" :disabled="Boolean(busy)">加入</button>
-          </form>
-        </header>
+        <header><div><h2>患者级交接清单</h2><p>风险标记用于重点交接。</p></div><button class="button primary" type="button" :disabled="Boolean(busy)" @click="patientOpen = true">加入患者</button></header>
         <div v-if="patients.length === 0" class="admin-empty">该交接班暂无患者清单。</div>
         <div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>患者</th><th>摘要</th><th>风险标记</th></tr></thead><tbody>
           <tr v-for="patient in patients" :key="patient.shift_handover_patient_id">
@@ -139,6 +131,9 @@ async function addPatient() {
           </tr>
         </tbody></table></div>
       </section>
+      <BusinessActionDialog :open="createOpen" title="新增交接班" description="接班护士与交班护士必须分离；确认后交接内容不可覆盖。" confirm-label="创建交接班" :busy="busy === 'create'" width="wide" @cancel="createOpen = false" @confirm="create"><div class="dialog-grid"><label>交班时间<input v-model="form.shiftFrom" type="datetime-local" required /></label><label>接班时间<input v-model="form.shiftTo" type="datetime-local" required /></label></div><label>接班护士<input v-model="form.incomingUserId" required placeholder="人员 UUID" /></label><label>交接摘要<textarea v-model="form.handoverSummary" required rows="4" /></label></BusinessActionDialog>
+      <BusinessActionDialog :open="patientOpen && Boolean(selectedHandoverId)" title="加入患者交接清单" description="患者摘要会成为本次班次的不可变交接证据。" confirm-label="确认加入" :busy="busy === 'patient'" @cancel="patientOpen = false" @confirm="addPatient"><label>患者<input v-model="patientForm.patientId" required placeholder="患者 UUID" /></label><label>交接摘要<textarea v-model="patientForm.summary" required rows="4" /></label><label class="dialog-check"><input v-model="patientForm.riskFlag" type="checkbox" />标记为重点风险患者</label></BusinessActionDialog>
+      <BusinessActionDialog :open="Boolean(completeHandover)" title="确认完成交接班" description="完成后交接内容与患者清单均转为只读证据。" confirm-label="确认完成" :busy="Boolean(busy)" @cancel="completeHandoverId = ''" @confirm="completeHandover && complete(completeHandover)"><p v-if="completeHandover" class="dialog-warning">{{ completeHandover.shift_from }} → {{ completeHandover.shift_to }} · {{ completeHandover.handover_summary }}</p></BusinessActionDialog>
     </template>
   </section>
 </template>

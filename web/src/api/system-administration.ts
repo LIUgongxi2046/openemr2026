@@ -34,6 +34,12 @@ export interface RoleGovernanceResult {
 }
 
 const privilegedRoles = new Set(['SYSTEM_ADMIN', 'SECURITY_AUDITOR', 'AUTHORIZATION_ADMIN']);
+export const SYSTEM_ADMINISTRATION_DICTIONARY_CODES = [
+  'GENDER', 'ENCOUNTER_TYPE', 'ALLERGY_SEVERITY', 'LAB_UNIT',
+  'BLOOD_TYPE', 'RH_TYPE', 'ADMISSION_SOURCE', 'DISCHARGE_DISPOSITION',
+  'TRIAGE_LEVEL', 'DOCUMENT_STATUS', 'CREDENTIAL_TYPE', 'MARITAL_STATUS',
+  'PAYMENT_TYPE', 'CONSENT_STATUS', 'BED_CLASS',
+] as const;
 const incompatibleRoles = [
   ['SYSTEM_ADMIN', 'SECURITY_AUDITOR', '系统管理与安全审计必须职责分离'],
   ['CONFIG_AUTHOR', 'CONFIG_APPROVER', '配置作者不能审批自己的配置'],
@@ -100,7 +106,9 @@ export async function loadSystemAdministrationSnapshot(): Promise<SystemAdminist
     listConfigurations(configurationLease, 'PARAMETER'),
     listConfigurations(configurationLease, 'JOB'),
     listAuditEvents(auditLease),
-    listDictionaryItems(governanceLease, 'GENDER'),
+    Promise.all(SYSTEM_ADMINISTRATION_DICTIONARY_CODES
+      .map((dictionaryCode) => listDictionaryItems(governanceLease, dictionaryCode)))
+      .then((groups) => groups.flat()),
   ]);
   return { organizationUnits, workforce, policies, emergencyAccess, templates, dictionaryItems, masterData, parameters, jobs, auditEvents };
 }
@@ -121,7 +129,8 @@ export async function loadAuthenticationAdministration(): Promise<Authentication
     listAuditEvents(auditLease),
   ]);
   return {
-    parameters: parameters.filter((item) => item.config_key.startsWith('auth-') || item.config_key === 'admin-session-v1'),
+    parameters: parameters.filter((item) => /^(?:syn-)?auth-/.test(item.config_key)
+      || /^(?:syn-)?admin-session-v1$/.test(item.config_key)),
     events: events.filter((event) => ['LOGIN_SUCCEEDED', 'LOGIN_FAILED', 'LOGOUT_SUCCEEDED'].includes(event.action_code)),
     workforce,
     emergencyAccess,

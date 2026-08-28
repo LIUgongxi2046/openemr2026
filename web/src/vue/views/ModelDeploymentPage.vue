@@ -146,7 +146,7 @@ async function deactivate(model: ModelDeploymentWire) {
       <div>
         <p class="eyebrow">AI 中心 / 模型 API 配置</p>
         <h1>模型服务与 API 配置</h1>
-        <p>在这里配置模型提供方、API 地址、模型标识和密钥引用，供小南及医助团队调用。</p>
+        <p>在这里配置模型提供方、API 地址、模型标识和密钥引用，供 Eva 及医助团队调用。</p>
       </div>
     </div>
 
@@ -158,6 +158,7 @@ async function deactivate(model: ModelDeploymentWire) {
         <article><span>模型部署</span><strong>{{ models.length }}</strong><small>全部登记</small></article>
         <article><span>有效部署</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
         <article><span>API 已就绪</span><strong>{{ connectedCount }}</strong><small>地址与密钥引用完整</small></article>
+        <article><span>未就绪连接</span><strong>{{ Math.max(activeCount - connectedCount, 0) }}</strong><small>需补充连接配置</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
@@ -196,7 +197,7 @@ async function deactivate(model: ModelDeploymentWire) {
         </section>
       </div>
 
-      <AdminActionDialog v-model:open="editorOpen" :title="editingModel ? '编辑模型 API' : '新建模型 API 配置'" description="保存后，小南及医助团队的后续任务会读取最新有效连接配置。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
+      <AdminActionDialog v-model:open="editorOpen" :title="editingModel ? '编辑模型 API' : '新建模型 API 配置'" description="保存后，Eva 及医助团队的后续任务会读取最新有效连接配置。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
           <form class="admin-form ai-center-dialog-form" @submit.prevent="saveModel">
             <label><span>模型提供方</span><select v-model="form.providerCode" required :disabled="Boolean(editingModel)" @change="applyProviderPreset"><option value="" disabled>请选择提供方</option><option v-for="provider in providerOptions" :key="provider.code" :value="provider.code">{{ provider.label }}</option></select></label>
             <label><span>模型标识</span><input v-model="form.modelCode" maxlength="128" required :disabled="Boolean(editingModel)" placeholder="例：deepseek-chat" /></label>

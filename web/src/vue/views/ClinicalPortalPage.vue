@@ -114,10 +114,10 @@ function go(to: string): void {
   </div>
 
   <section class="portal-ai-intro" aria-labelledby="portal-ai-title">
-    <img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="52" height="52" />
+    <img src="/brand/ai-medical-assistant-eva.png" alt="" width="52" height="52" />
     <div class="portal-ai-copy">
       <span>AI CAPABILITIES</span>
-      <h2 id="portal-ai-title">AI医助小南随诊协同</h2>
+      <h2 id="portal-ai-title">AI医助 Eva 随诊协同</h2>
       <p>结合当前患者、就诊、页面和任务上下文，提供有来源、可回看的诊疗辅助；所有结果均需医务人员确认后才能进入业务流程。</p>
     </div>
     <ul>
@@ -125,7 +125,7 @@ function go(to: string): void {
       <li><b>主动风险提醒</b><span>识别危急值、任务超时与流程缺口</span></li>
       <li><b>任务草拟与专科协作</b><span>辅助拆解任务、调用专科医助并全程留痕</span></li>
     </ul>
-    <button class="btn primary" type="button" data-route-target="ai-assistant" @click="go('ai-assistant')">打开AI医助小南</button>
+    <button class="btn primary" type="button" data-route-target="ai-assistant" @click="go('ai-assistant')">打开AI医助 Eva</button>
   </section>
 
   <div class="domain-split domain-triple">

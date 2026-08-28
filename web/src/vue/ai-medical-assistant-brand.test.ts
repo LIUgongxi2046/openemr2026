@@ -13,7 +13,7 @@ const deprecatedNames = [
   ['AI', ' ', '助', '手'].join(''),
 ];
 
-describe('AI医助小南品牌契约', () => {
+describe('AI医助 Eva 品牌契约', () => {
   it('normalizes legacy platform terms returned by existing data', () => {
     expect(doctorFacingTeamName('就诊摘要主 Agent')).toBe('就诊摘要');
     expect(doctorFacingAiText('主 Agent 已汇总 3 个子 Agent，协作者等待处理')).toBe('医助团队 已汇总 3 个专科医助，医助等待处理');
@@ -25,9 +25,10 @@ describe('AI医助小南品牌契约', () => {
     const shell = components['./components/ClinicalShell.vue'];
     const dialog = components['./components/GlobalAiAssistantDialog.vue'];
 
-    expect(shell).toContain('打开AI医助小南');
-    expect(shell).toContain('/brand/ai-medical-assistant-xiaonan.png');
-    expect(dialog).toContain('id="global-ai-dialog-title">AI医助小南</h2>');
+    expect(shell).toContain('打开AI医助Eva');
+    expect(shell).toContain('/brand/ai-medical-assistant-eva.png');
+    expect(dialog).toContain('id="global-ai-dialog-title">AI医助 Eva</h2>');
+    expect(dialog).toContain('/brand/ai-medical-assistant-eva.png');
     expect(dialog).toContain('class="global-ai-mascot"');
   });
 
@@ -40,7 +41,7 @@ describe('AI医助小南品牌契约', () => {
     expect(login).toContain('医生确认与全程留痕');
     expect(login).toContain('<code>linwei</code>');
     expect(login).toContain('<code>OpenEMR2026-dev!</code>');
-    expect(clinicalHome).toContain('AI医助小南随诊协同');
+    expect(clinicalHome).toContain('AI医助 Eva 随诊协同');
     expect(clinicalHome).toContain('上下文问答与摘要');
     expect(clinicalHome).toContain('主动风险提醒');
     expect(clinicalHome).toContain('data-route-target="ai-assistant"');
@@ -48,11 +49,12 @@ describe('AI医助小南品牌契约', () => {
 
   it('keeps governance terminology out of the clinician dialog', () => {
     const dialog = components['./components/GlobalAiAssistantDialog.vue'];
+    const teamRail = components['./components/XiaonanAgentTeamRail.vue'];
     const template = dialog.slice(dialog.indexOf('<template>'));
 
-    expect(template).toContain('选择医助团队');
+    expect(teamRail).toContain('医助团队');
     expect(template).toContain('位医助');
-    expect(template).toContain('告诉小南需要协助什么');
+    expect(template).toContain('描述需要完成的诊疗任务');
     expect(template).not.toContain('安全边界');
     expect(template).not.toContain('A1 候选制');
     expect(template).not.toContain('ContextLease');
@@ -60,12 +62,18 @@ describe('AI医助小南品牌契约', () => {
     expect(template).not.toContain('Agent 治理 →');
   });
 
-  it('keeps implementation terminology out of the full Xiaonan workspace', () => {
+  it('keeps implementation terminology out of the full Eva workspace', () => {
     const page = views['./views/AiAssistantPage.vue'];
     const template = page.slice(page.indexOf('<template>'));
 
-    expect(template).toContain('小南医助团队');
-    expect(template).toContain('医助进度实时可见');
+    expect(template).toContain('医助团队');
+    expect(page).toContain('Eva 正在规划任务');
+    expect(template).toContain('class="eva-inline-events"');
+    expect(template).toContain('<EvaComposerControls');
+    expect(template).toContain('<EvaPatientPicker');
+    expect(template).not.toContain('读取诊疗数据');
+    expect(template).not.toContain('收起处理过程');
+    expect(template).not.toContain('操作确认');
     expect(template).not.toContain('DETERMINISTIC_FAKE');
     expect(template).not.toContain('Medical Harness');
     expect(template).not.toContain('ContextLease');
@@ -102,15 +110,16 @@ describe('AI医助小南品牌契约', () => {
     for (const name of deprecatedNames) expect(source).not.toContain(name);
   });
 
-  it('shows clickable question examples for Xiaonan, every medical assistant and each selected task', () => {
+  it('shows clickable question examples for Eva, every medical assistant and each selected task', () => {
     const dialog = components['./components/GlobalAiAssistantDialog.vue'];
     const workspace = views['./views/AiAssistantPage.vue'];
+    const teamRail = components['./components/XiaonanAgentTeamRail.vue'];
     const catalog = views['./views/AgentCatalogPage.vue'];
 
-    expect(dialog).toContain('查看每位医助的示例');
-    expect(dialog).toContain('child.question_examples');
-    expect(workspace).toContain('医生提问示例');
-    expect(workspace).toContain('selectedChild.question_examples');
+    expect(dialog).toContain('<XiaonanAgentTeamRail');
+    expect(workspace).toContain('<XiaonanAgentTeamRail');
+    expect(teamRail).toContain('主医助示例');
+    expect(teamRail).toContain('child.question_examples');
     expect(catalog).toContain('医生可以这样问');
     expect(catalog).toContain('child.question_examples');
   });

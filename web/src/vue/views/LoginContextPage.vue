@@ -59,7 +59,7 @@ async function login() {
         <li><span>AI 协同</span>问答、摘要、风险提醒、任务草拟与专科医助协作</li>
       </ul>
       <section class="system-login-ai-capabilities" aria-label="AI医助能力介绍">
-        <div><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="38" height="38" /><strong>AI医助小南</strong></div>
+        <div><img src="/brand/ai-medical-assistant-eva.png" alt="" width="38" height="38" /><strong>AI医助 Eva</strong></div>
         <p>结合当前患者、就诊和任务上下文提供辅助；生成结果标明来源，经医务人员确认后才能进入业务流程。</p>
         <div class="system-login-ai-tags"><span>带上下文问答</span><span>主动风险提醒</span><span>医生确认与全程留痕</span></div>
       </section>

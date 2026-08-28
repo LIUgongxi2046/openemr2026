@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.LabSpecimenCollectRequestWire;
 import org.openemr2026.contracts.LabSpecimenCreateRequestWire;
 import org.openemr2026.contracts.LabSpecimenReceiveRequestWire;
+import org.openemr2026.contracts.LabSpecimenRejectRequestWire;
 import org.openemr2026.contracts.LabSpecimenWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -121,6 +122,30 @@ final class LabSpecimenApiTest {
                 .isInstanceOf(LabSpecimenException.class)
                 .satisfies(e -> assertThat(((LabSpecimenException) e).code())
                         .isEqualTo("LAB_SPECIMEN_ORDER_TYPE_INVALID"));
+    }
+
+    @Test
+    void givenCollectedSpecimen_whenRejectingWithReason_thenLifecycleAndReasonRecorded() {
+        Context context = seedContext();
+        UUID orderItemId = seedOrderItem(context, "LAB");
+        LabSpecimenWire created = specimens.createSpecimen(identity(), "spec-" + UUID.randomUUID(),
+                new LabSpecimenCreateRequestWire(organization, facility, context.patientId(),
+                        context.encounterId(), orderItemId, LabSpecimenCreateRequestWire.SpecimenTypeValue.BLOOD));
+        LabSpecimenWire collected = specimens.collectSpecimen(identity(), "collect-" + UUID.randomUUID(),
+                created.specimenId(), new LabSpecimenCollectRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), created.rowVersion()));
+
+        LabSpecimenWire rejected = specimens.rejectSpecimen(identity(), "reject-" + UUID.randomUUID(),
+                created.specimenId(), new LabSpecimenRejectRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(),
+                        collected.rowVersion(), "标本溶血，需重新采集"));
+
+        assertThat(rejected.collectionStatus()).isEqualTo(LabSpecimenWire.CollectionStatusValue.REJECTED);
+        assertThat(rejected.rejectionReason()).isEqualTo("标本溶血，需重新采集");
+        assertThatThrownBy(() -> specimens.receiveSpecimen(identity(), "receive-" + UUID.randomUUID(),
+                created.specimenId(), new LabSpecimenReceiveRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), rejected.rowVersion())))
+                .isInstanceOf(LabSpecimenException.class);
     }
 
     @Test

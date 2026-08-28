@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { DictionaryItemWire } from '../../generated/contracts';
 import { createDictionaryItem, deactivateDictionaryItem, issueGovernanceLease, listDictionaryItems } from '../../api/governance';
+import { SYSTEM_ADMINISTRATION_DICTIONARY_CODES } from '../../api/system-administration';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
@@ -11,12 +12,18 @@ import { toClinicalIssue } from '../clinical-error';
 const code = ref('GENDER');
 const catalogSearch = ref('');
 const catalogSort = ref<'RISK' | 'NAME' | 'COUNT'>('RISK');
-const dictionaryCodes = ['GENDER', 'SEX', 'ENCOUNTER_TYPE', 'ALLERGY_SEVERITY', 'LAB_UNIT'] as const;
+const dictionaryCodes = SYSTEM_ADMINISTRATION_DICTIONARY_CODES;
 const dictionaryLabels: Readonly<Record<string, string>> = Object.freeze({
-  GENDER: '性别与社会性别', SEX: '生理性别', ENCOUNTER_TYPE: '就诊类型', ALLERGY_SEVERITY: '过敏严重程度', LAB_UNIT: '检验单位值集',
+  GENDER: '性别', ENCOUNTER_TYPE: '就诊类型', ALLERGY_SEVERITY: '过敏严重程度', LAB_UNIT: '检验单位值集',
+  BLOOD_TYPE: 'ABO 血型', RH_TYPE: 'Rh 血型', ADMISSION_SOURCE: '入院来源', DISCHARGE_DISPOSITION: '离院方式',
+  TRIAGE_LEVEL: '急诊分级', DOCUMENT_STATUS: '病历文书状态', CREDENTIAL_TYPE: '执业资质类型', MARITAL_STATUS: '婚姻状况',
+  PAYMENT_TYPE: '医疗付费方式', CONSENT_STATUS: '知情同意状态', BED_CLASS: '床位类型',
 });
 const dictionaryStandards: Readonly<Record<string, string>> = Object.freeze({
-  GENDER: '机构值集', SEX: 'GB/T 2261.1', ENCOUNTER_TYPE: '电子病历基本数据集', ALLERGY_SEVERITY: '临床安全值集', LAB_UNIT: 'UCUM + 机构扩展',
+  GENDER: '机构基础值集', ENCOUNTER_TYPE: '电子病历基本数据集', ALLERGY_SEVERITY: '临床安全值集', LAB_UNIT: 'UCUM + 机构扩展',
+  BLOOD_TYPE: '临床输血基础值集', RH_TYPE: '临床输血基础值集', ADMISSION_SOURCE: '住院登记值集', DISCHARGE_DISPOSITION: '住院病案首页值集',
+  TRIAGE_LEVEL: '院前与急诊分级值集', DOCUMENT_STATUS: '电子病历生命周期值集', CREDENTIAL_TYPE: '卫生专业人员资质目录', MARITAL_STATUS: '患者基本信息值集',
+  PAYMENT_TYPE: '医疗保障与结算值集', CONSENT_STATUS: '知情同意生命周期值集', BED_CLASS: '床位主数据值集',
 });
 const leaseQuery = useQuery({
   queryKey: ['governance', 'dictionary', 'lease'],
@@ -47,6 +54,7 @@ const catalogRows = computed(() => dictionaryCodes.map((dictionaryCode) => {
   : catalogSort.value === 'COUNT' ? right.count - left.count
     : right.inactive - left.inactive || right.count - left.count));
 const activeCount = computed(() => items.value.filter((item) => item.status === 'ACTIVE').length);
+const catalogTotalCount = computed(() => (catalogQuery.data.value ?? []).length);
 
 function localDateTimeValue(value = new Date()) {
   const offset = value.getTimezoneOffset() * 60_000;
@@ -125,7 +133,7 @@ async function importVersion() {
 
 <template>
   <section data-page-root class="content admin-content vue-native-page">
-    <div class="page-head"><div class="page-title"><h1>字典、术语与值集中心</h1><p>标准术语、产品内置和机构扩展分层；历史记录始终按原版本解释</p></div><div class="head-actions"><button class="btn" :disabled="Boolean(busy) || !code.trim()" @click="importOpen = true">导入版本</button><button class="btn" @click="panel = panel === 'REFERENCES' ? 'NONE' : 'REFERENCES'">引用分析</button><button class="btn primary" @click="createOpen = true">新增字典条目</button></div></div>
+    <div class="page-head"><div class="page-title"><h1>字典、术语与值集中心</h1><p>标准术语、产品内置和机构扩展分层；历史记录始终按原版本解释</p></div><div class="head-actions"><button class="btn" :disabled="Boolean(busy) || !code.trim()" @click="importOpen = true">导入版本</button><button class="btn" @click="panel = panel === 'REFERENCES' ? 'NONE' : 'REFERENCES'">引用分析</button><button class="btn primary" @click="createOpen = true">新建字典</button></div></div>
 
     <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value || catalogQuery.isPending.value" kind="loading" message="正在读取字典值集" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
@@ -134,8 +142,8 @@ async function importVersion() {
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
       <section v-if="panel === 'REFERENCES'" class="admin-panel admin-form-panel"><header><div><h2>{{ dictionaryLabels[code] ?? code }} · 引用分析</h2><p>按当前数据库值集版本核对可用性与历史语义保留策略。</p></div></header><div class="admin-impact-grid"><div><span>数据库条目</span><b>{{ items.length }}</b></div><div><span>当前有效</span><b>{{ activeCount }}</b></div><div><span>已停用</span><b>{{ items.length - activeCount }}</b></div><div><span>变更策略</span><b>仅停用，不物理删除</b></div></div></section>
       <div class="grid admin-list-detail">
-        <section class="card"><div class="toolbar"><input v-model="catalogSearch" class="search" placeholder="字典编码、名称或标准" /><select v-model="catalogSort" class="select" aria-label="字典排序"><option value="RISK">风险优先</option><option value="NAME">名称排序</option><option value="COUNT">条目数量</option></select></div><div class="admin-table-wrap"><table class="table"><thead><tr><th>字典名称 / 编码</th><th>来源 / 标准</th><th>全部条目</th><th>已停用条目</th><th>状态</th></tr></thead><tbody><tr v-for="catalog in catalogRows" :key="catalog.code" :class="{ selected: code === catalog.code }" @click="code = catalog.code; reload()"><td><b>{{ catalog.name }}</b><br><span class="meta">技术编码：{{ catalog.code }}</span></td><td>{{ catalog.standard }}</td><td>{{ catalog.count }}</td><td>{{ catalog.inactive }}</td><td><span class="status" :class="catalog.inactive ? 'amber' : 'green'">{{ catalog.inactive ? '含停用项' : '已发布' }}</span></td></tr></tbody></table></div></section>
-        <aside class="card"><div class="card-head">{{ dictionaryLabels[code] ?? code }} · 当前发布值集</div><div class="card-body"><div class="folder-row">字典编码<span>{{ code }}</span></div><div class="folder-row">标准来源<span>{{ dictionaryStandards[code] ?? '机构扩展' }}</span></div><div class="folder-row">有效条目<span>{{ activeCount }} 条</span></div><div class="folder-row">数据库条目<span>{{ items.length }} 条</span></div><div v-for="item in items" :key="item.dictionary_item_id" class="queue-item"><div class="queue-title">{{ item.item_name }} <b>{{ item.item_code }}</b><span class="status" :class="item.status === 'ACTIVE' ? 'green' : 'amber'">{{ item.status === 'ACTIVE' ? '有效' : '已停用' }}</span></div><button class="task-action" type="button" :disabled="item.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = item">停用</button></div><div class="notice hard"><div class="notice-title">历史引用保留原版本语义</div>已被业务事实引用的字典项不得物理删除，只能设置失效时间。</div></div></aside>
+        <section class="card"><div class="card-head">三级医院字典目录 <span class="sub">{{ dictionaryCodes.length }} 类 · {{ catalogTotalCount }} 条数据库记录</span></div><div class="toolbar"><input v-model="catalogSearch" class="search" placeholder="字典编码、名称或标准" /><select v-model="catalogSort" class="select" aria-label="字典排序"><option value="RISK">风险优先</option><option value="NAME">名称排序</option><option value="COUNT">条目数量</option></select></div><div class="admin-table-wrap"><table class="table"><thead><tr><th>字典名称 / 编码</th><th>来源 / 标准</th><th>全部条目</th><th>已停用条目</th><th>状态</th></tr></thead><tbody><tr v-for="catalog in catalogRows" :key="catalog.code" :class="{ selected: code === catalog.code }" @click="code = catalog.code; reload()"><td><b>{{ catalog.name }}</b><br><span class="meta">技术编码：{{ catalog.code }}</span></td><td>{{ catalog.standard }}</td><td>{{ catalog.count }}</td><td>{{ catalog.inactive }}</td><td><span class="status" :class="catalog.inactive ? 'amber' : 'green'">{{ catalog.inactive ? '含停用项' : '已发布' }}</span></td></tr></tbody></table></div></section>
+        <aside class="card"><div class="card-head">{{ dictionaryLabels[code] ?? code }} · 当前发布值集</div><div class="card-body"><div class="folder-row">字典编码<span>{{ code }}</span></div><div class="folder-row">标准来源<span>{{ dictionaryStandards[code] ?? '机构扩展' }}</span></div><div class="folder-row">有效条目<span>{{ activeCount }} 条</span></div><div class="folder-row">数据库条目<span>{{ items.length }} 条</span></div><div v-for="item in items" :key="item.dictionary_item_id" class="queue-item"><div class="queue-title">{{ item.item_name }} <b>{{ item.item_code }}</b><span class="status" :class="item.status === 'ACTIVE' ? 'green' : 'amber'">{{ item.status === 'ACTIVE' ? '有效' : '已停用' }}</span></div><button class="task-action" type="button" :disabled="item.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = item">停用</button></div><div class="notice hard"><div class="notice-title">历史引用保留原版本语义</div>已被业务事实引用的字典项不得物理删除，只能设置失效时间。</div><button class="btn primary admin-card-action" type="button" :disabled="Boolean(busy) || !code.trim()" @click="importOpen = true">处理版本差异</button></div></aside>
       </div>
     </template>
     <AdminActionDialog v-model:open="createOpen" title="新增字典条目" description="选择已有字典编码新增条目；新编码会同时建立该字典目录首个条目。" :busy="Boolean(busy)"><form class="admin-form compact-admin-form" @submit.prevent="createItem"><label><span>所属字典编码（系统唯一）</span><input v-model="code" autofocus maxlength="96" required /></label><label><span>条目编码（系统唯一）</span><input v-model="form.itemCode" maxlength="96" required placeholder="例：M" /></label><label><span>条目中文 / 英文名称</span><input v-model="form.itemName" maxlength="256" required placeholder="例：男性 / Male" /></label><label><span>开始生效时间</span><input v-model="form.effectiveFrom" type="datetime-local" required /></label><button class="button primary" :disabled="Boolean(busy) || !code.trim()">{{ busy === 'create' ? '正在创建…' : '创建并生效' }}</button></form></AdminActionDialog>

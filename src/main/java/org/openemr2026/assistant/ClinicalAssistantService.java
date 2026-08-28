@@ -28,16 +28,16 @@ final class ClinicalAssistantService {
                         rs.getString("model_policy"), rs.getString("allowed_sources"),
                         rs.getInt("rate_limit"), rs.getBoolean("approval_required")))
                 .optional().orElseThrow(() -> new ClinicalAssistantException(
-                        "AI_ASSISTANT_POLICY_INACTIVE", 409, "AI医助小南尚未发布有效工作策略"));
+                        "AI_ASSISTANT_POLICY_INACTIVE", 409, "AI医助 Eva 尚未发布有效工作策略"));
         if (!policy.approvalRequired()) {
             throw new ClinicalAssistantException(
                     "AI_ASSISTANT_POLICY_UNSAFE", 409, "AI医助工作策略必须要求医生确认临床写入");
         }
         String prompt = message == null ? "" : message.trim();
         List<String> chunks = List.of(
-                "小南已接收当前诊疗场景和医生问题，正在按机构策略组织回答。",
+                "Eva 已接收当前诊疗场景和医生问题，正在按机构策略组织回答。",
                 "您的问题：" + (prompt.isEmpty() ? "（空）" : prompt) + "。",
-                "当前已应用机构发布的小南工作策略：模型路由 " + policy.modelPolicy()
+                "当前已应用机构发布的 Eva 工作策略：模型路由 " + policy.modelPolicy()
                         + "，每分钟最多 " + policy.rateLimit() + " 次调用。",
                 "本次允许的数据来源为 " + policy.allowedSources()
                         + "；生成内容只作为医生审阅草稿，不会自动写入诊疗记录。",

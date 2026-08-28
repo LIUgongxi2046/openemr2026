@@ -8,14 +8,23 @@ const codeLabels: Readonly<Record<string, string>> = Object.freeze({
   SECURITY_ADMIN: '安全管理员', SECURITY_AUDITOR: '安全审计员', AUTHORIZATION_ADMIN: '授权管理员',
   CONFIG_AUTHOR: '配置创建人', CONFIG_APPROVER: '配置审批人', RESEARCHER: '科研人员',
   PHYSICIAN: '医师', ATTENDING_PHYSICIAN: '主治医师', CHIEF_PHYSICIAN: '主任医师',
+  REGISTERED_NURSE: '注册护士', NURSE_MANAGER: '护士长', PHARMACIST: '药师',
+  LAB_TECHNICIAN: '检验技师', RADIOLOGIST: '影像医师', REGISTRAR: '挂号与入院登记员',
   CLINICAL_CONTEXT: '临床访问上下文', CLINICAL_DOCUMENT: '临床病历', DOCUMENT: '病历文书',
   PATIENT: '患者主档', ENCOUNTER: '就诊记录', ORDER: '医嘱', RESULT: '检验检查结果',
   WORKFORCE_PERSON: '人员主档', RESEARCH_DATASET: '科研数据集', CONFIGURATION: '系统配置', APP_USER: '系统用户',
+  NURSING_RECORD: '护理记录', MEDICATION_ORDER: '药品医嘱', LAB_RESULT: '检验结果',
+  IMAGING_RESULT: '影像报告', INPATIENT_ADMISSION: '入院登记',
+  AUDIT_EVENT: '审计事件', CONFIG_ITEM: '配置项', PATIENT_IDENTITY: '患者身份信息',
   LEASE_ISSUE: '建立限时访问授权', READ: '查看', CREATE: '新增', UPDATE: '修改',
-  WRITE_DRAFT: '起草', SIGN: '签署', EXPORT: '导出', MANAGE: '管理',
+  WRITE: '书写', WRITE_DRAFT: '起草', SIGN: '签署', EXPORT: '导出', MANAGE: '管理',
+  REVIEW: '审核', VERIFY: '核验', DISPENSE: '调剂', ARCHIVE: '归档', PUBLISH: '发布', READ_CONTENT: '查看正文',
   CARE_TEAM: '当前照护团队', DIRECT_CARE: '直接诊疗', CARE_DELIVERY: '诊疗服务',
+  REGISTRATION: '登记业务', MEDICAL_RECORDS: '病案管理', AUDIT: '安全审计',
   DOCUMENT_DRAFT: '病历起草', ADMINISTRATION: '系统管理', SECONDARY_USE: '二次利用', RESEARCH: '科研',
   BOOLEAN: '是/否', STRING: '文本', NUMBER: '数值', INTEGER: '整数', OBJECT: '结构化对象', ARRAY: '列表',
+  INTEGER_SECONDS: '整数（秒）', INTEGER_MINUTES: '整数（分钟）', INTEGER_YEARS: '整数（年）',
+  INTEGER_MILLISECONDS: '整数（毫秒）',
   MANUAL: '手动执行', NOT_VALIDATED: '未校验', VALID: '校验通过', INVALID: '校验失败',
   MASTER_DATA: '医院主数据', PARAMETER: '系统参数', JOB: '后台任务', ROLE_CATALOG: '角色目录',
   FORM_TEMPLATE: '表单与病历模板', BUSINESS_RULE: '业务规则', AGENT_COMPOSITION: '医助团队编排',
@@ -91,7 +100,12 @@ export function adminValueLabel(value: unknown): string {
   if (text === '0 */5 * * * *') return '每 5 分钟执行一次';
   if (text === '0 */15 * * * *') return '每 15 分钟执行一次';
   if (text === '0 0 2 * * *') return '每天 02:00 执行';
-  if (text.includes(' -> ')) return text.split(' -> ').map((item) => adminCodeLabel(item)).join(' → ');
+  if (text.includes(' -> ')) {
+    const parts = text.split(' -> ');
+    return parts.every((item) => Boolean(codeLabels[item]))
+      ? parts.map((item) => adminCodeLabel(item)).join(' → ')
+      : parts.join(' → ');
+  }
   return text;
 }
 

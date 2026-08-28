@@ -1421,6 +1421,16 @@ export const labSpecimenReceiveRequestWireSchema = z.object({
 }).strict();
 export type LabSpecimenReceiveRequestWire = z.infer<typeof labSpecimenReceiveRequestWireSchema>;
 
+export const labSpecimenRejectRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "rejection_reason": z.string(),
+}).strict();
+export type LabSpecimenRejectRequestWire = z.infer<typeof labSpecimenRejectRequestWireSchema>;
+
 export const adverseEventWireSchema = z.object({
   "adverse_event_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -4295,6 +4305,9 @@ export const medicalAgentRunCreateRequestWireSchema = z.object({
   "target_type": z.enum(["ENCOUNTER","DOCUMENT","RESULT","TASK","CARE_PLAN"]),
   "target_id": z.string().uuid(),
   "objective": z.string(),
+  "model_deployment_id": z.string().uuid().nullable().optional(),
+  "authorization_level": z.enum(["READ_ONLY","STANDARD","EXTENDED"]).optional(),
+  "context_scopes": z.array(z.enum(["RECORDS","ORDERS","RESULTS","TASKS","ATTACHMENTS"])).min(1).optional(),
 }).strict();
 export type MedicalAgentRunCreateRequestWire = z.infer<typeof medicalAgentRunCreateRequestWireSchema>;
 

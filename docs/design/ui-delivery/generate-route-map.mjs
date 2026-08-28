@@ -46,7 +46,7 @@ function states(route){
 function family(route){
   if(specialty.test(route))return '核心专科';
   if(record.test(route))return '病历与病案';
-  if(execution.test(route))return '医疗协同执行';
+  if(execution.test(route))return '诊疗执行';
   if(clinical.test(route))return '临床工作域';
   if(governance.test(route))return '治理与管理';
   return '通用';

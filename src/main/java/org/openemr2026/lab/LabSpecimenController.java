@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.LabSpecimenCollectRequestWire;
 import org.openemr2026.contracts.LabSpecimenCreateRequestWire;
 import org.openemr2026.contracts.LabSpecimenReceiveRequestWire;
+import org.openemr2026.contracts.LabSpecimenRejectRequestWire;
 import org.openemr2026.contracts.LabSpecimenWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -78,5 +79,17 @@ final class LabSpecimenController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(specimens.receiveSpecimen(identity, idempotencyKey, specimenId, command));
+    }
+
+    @PostMapping("/lab-specimens/{specimen_id}/rejections")
+    ResponseEntity<LabSpecimenWire> reject(
+            HttpServletRequest request,
+            @PathVariable("specimen_id") UUID specimenId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody LabSpecimenRejectRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(specimens.rejectSpecimen(identity, idempotencyKey, specimenId, command));
     }
 }

@@ -38,6 +38,9 @@ export async function createMedicalAgentRun(
     targetType?: 'ENCOUNTER' | 'DOCUMENT' | 'RESULT' | 'TASK' | 'CARE_PLAN';
     targetId?: string;
     objective: string;
+    modelDeploymentId?: string | null;
+    authorizationLevel?: 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
+    contextScopes?: Array<'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS'>;
   },
 ): Promise<MedicalAgentRunWire> {
   const command = medicalAgentRunCreateRequestWireSchema.parse({
@@ -51,6 +54,9 @@ export async function createMedicalAgentRun(
     target_type: input.targetType ?? 'ENCOUNTER',
     target_id: input.targetId ?? input.encounterId,
     objective: input.objective,
+    model_deployment_id: input.modelDeploymentId ?? null,
+    authorization_level: input.authorizationLevel ?? 'STANDARD',
+    context_scopes: input.contextScopes ?? ['RECORDS', 'ORDERS', 'RESULTS', 'TASKS'],
   });
   return medicalAgentRunWireSchema.parse(await request('/medical-agents/runs', {
     method: 'POST',

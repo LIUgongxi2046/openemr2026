@@ -183,7 +183,7 @@ function routePolicy(routeId, notes) {
 function primaryDomain(routeId, notes) {
   const sourceDomain = notes.split('；')[0];
   if (sourceDomain === '病历与病案') return 'RECORD';
-  if (sourceDomain === '医疗协同执行') return 'COLLABORATION';
+  if (sourceDomain === '诊疗执行') return 'COLLABORATION';
   if (sourceDomain === '核心专科' || sourceDomain === '临床工作域') return 'CLINICAL';
   if (/^(quality|department-qc|infection|credentials)/.test(routeId)) return 'QUALITY';
   if (/^(data|research|cohort|opensource)/.test(routeId)) return 'DATA';

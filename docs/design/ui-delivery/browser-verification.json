@@ -367,7 +367,7 @@
       "route": "care-operations",
       "active": 1,
       "fab": true,
-      "h1": "医疗协同中心",
+      "h1": "诊疗执行中心",
       "overflow": false
     },
     {

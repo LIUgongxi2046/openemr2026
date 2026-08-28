@@ -126,6 +126,15 @@ final class SyntheticDiseaseCaseImportTest {
                   and item_name like '% / %'
                 """)).isGreaterThanOrEqualTo(50);
         assertThat(count("""
+                select count(*) from dictionary_item
+                where tenant_id = :tenant
+                  and dictionary_code in ('GENDER','ENCOUNTER_TYPE','ALLERGY_SEVERITY','LAB_UNIT',
+                    'BLOOD_TYPE','RH_TYPE','ADMISSION_SOURCE','DISCHARGE_DISPOSITION','TRIAGE_LEVEL',
+                    'DOCUMENT_STATUS','CREDENTIAL_TYPE','MARITAL_STATUS','PAYMENT_TYPE','CONSENT_STATUS','BED_CLASS')
+                  and (substring(dictionary_item_id::text from 15 for 1) not in ('1','2','3','4','5','6','7','8')
+                    or lower(substring(dictionary_item_id::text from 20 for 1)) not in ('8','9','a','b'))
+                """)).isZero();
+        assertThat(count("""
                 select count(*) from authorization_policy
                 where tenant_id = :tenant and status = 'PUBLISHED'
                 """)).isGreaterThanOrEqualTo(18);

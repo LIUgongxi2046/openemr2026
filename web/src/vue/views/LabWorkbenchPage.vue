@@ -4,7 +4,7 @@ import { computed, reactive, ref, watchEffect } from 'vue';
 import type { LabSpecimenWire } from '../../generated/contracts';
 import { issueOrderLease, listClinicalOrders } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
-import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen } from '../../api/execution';
+import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen, rejectLabSpecimen } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
@@ -50,6 +50,8 @@ const form = reactive({ orderItemId: '', specimenType: 'BLOOD' as SpecimenType }
 const busy = ref('');
 const notice = ref('');
 const createDialogOpen = ref(false);
+const rejectTarget = ref<LabSpecimenWire | null>(null);
+const rejectionReason = ref('');
 
 watchEffect(() => {
   if (!form.orderItemId && eligibleOrderItems.value[0]) form.orderItemId = eligibleOrderItems.value[0].order_item_id;
@@ -99,6 +101,19 @@ async function receive(specimen: LabSpecimenWire) {
   finally { busy.value = ''; }
 }
 
+async function reject() {
+  const lease = leaseQuery.data.value;
+  const specimen = rejectTarget.value;
+  if (!lease || !specimen || busy.value || !rejectionReason.value.trim()) return;
+  busy.value = `reject:${specimen.specimen_id}`; notice.value = '';
+  try {
+    await rejectLabSpecimen(lease, specimen, rejectionReason.value.trim());
+    rejectTarget.value = null; rejectionReason.value = '';
+    notice.value = '标本已拒收，原因与审计证据已保留，可重新创建标本申请。';
+    await specimensQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
 </script>
 
 <template>
@@ -137,6 +152,7 @@ async function receive(specimen: LabSpecimenWire) {
                   <td class="admin-actions">
                     <button v-if="specimen.collection_status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="collect(specimen)">采集</button>
                     <button v-if="specimen.collection_status === 'COLLECTED'" class="task-action" :disabled="Boolean(busy)" @click="receive(specimen)">接收</button>
+                    <button v-if="specimen.collection_status === 'ORDERED' || specimen.collection_status === 'COLLECTED'" class="task-action danger" :disabled="Boolean(busy)" @click="rejectTarget = specimen">拒收</button>
                   </td>
                 </tr>
               </tbody>
@@ -156,6 +172,12 @@ async function receive(specimen: LabSpecimenWire) {
         </form>
       </AdminActionDialog>
 
+      <AdminActionDialog :open="Boolean(rejectTarget)" title="拒收检验标本" description="标本不会物理删除，将转为已拒收并保留拒收原因。" eyebrow="诊疗执行 / 检验高风险操作" tone="danger" :busy="busy.startsWith('reject:')" @update:open="rejectTarget = $event ? rejectTarget : null">
+        <form class="admin-form" @submit.prevent="reject">
+          <label><span>拒收原因（必填）</span><textarea v-model="rejectionReason" rows="3" minlength="2" maxlength="1000" required placeholder="例：标本溶血，需重新采集" /></label>
+          <button class="button danger full" :disabled="rejectionReason.trim().length < 2 || Boolean(busy)">{{ busy.startsWith('reject:') ? '正在拒收…' : '确认拒收标本' }}</button>
+        </form>
+      </AdminActionDialog>
     </template>
   </section>
 </template>

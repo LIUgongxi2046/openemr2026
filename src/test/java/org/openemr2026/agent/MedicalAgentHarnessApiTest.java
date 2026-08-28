@@ -29,6 +29,7 @@ final class MedicalAgentHarnessApiTest {
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
     private static final String PATIENT = "018f0000-0000-7000-8000-000000000001";
     private static final String ENCOUNTER = "018f0000-0000-7000-8000-000000000101";
+    private static final String MODEL = "018f0000-0000-7000-8000-00000000f002";
 
     @LocalServerPort
     private int port;
@@ -91,8 +92,10 @@ final class MedicalAgentHarnessApiTest {
         String body = """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
                  "context_lease_id":"%s","main_agent_code":"DOCUMENT_DRAFTER","stage_code":"WARD_ROUND",
-                 "target_type":"ENCOUNTER","target_id":"%s","objective":"整理今日查房记录候选"}
-                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, lease.id(), ENCOUNTER);
+                 "target_type":"ENCOUNTER","target_id":"%s","objective":"整理今日查房记录候选",
+                 "model_deployment_id":"%s","authorization_level":"READ_ONLY",
+                 "context_scopes":["RECORDS","ATTACHMENTS"]}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, lease.id(), ENCOUNTER, MODEL);
         HttpResponse<String> response = http.send(scoped("/api/v1/medical-agents/runs", lease, PATIENT)
                 .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
@@ -102,6 +105,11 @@ final class MedicalAgentHarnessApiTest {
         assertThat(run.path("state").stringValue()).isEqualTo("WAITING_FOR_REVIEW");
         assertThat(run.path("root_agent_code").stringValue()).isEqualTo("DOCUMENT_DRAFTER");
         assertThat(run.path("output").path("candidate_only").booleanValue()).isTrue();
+        assertThat(run.path("output").path("model_deployment_id").stringValue()).isEqualTo(MODEL);
+        assertThat(run.path("output").path("authorization_level").stringValue()).isEqualTo("READ_ONLY");
+        assertThat(run.path("output").path("context_scopes").toString()).contains("RECORDS", "ATTACHMENTS");
+        assertThat(run.path("output").path("context_counts").path("orders").longValue()).isZero();
+        assertThat(run.path("output").path("context_counts").path("results").longValue()).isZero();
         assertThat(run.path("child_runs")).hasSize(1);
         JsonNode child = run.path("child_runs").get(0);
         assertThat(child.path("child_agent_code").stringValue()).isEqualTo("WARD_ROUND_NOTE_DRAFTER");
@@ -111,6 +119,15 @@ final class MedicalAgentHarnessApiTest {
                 "RunCreated", "MainAgentStarted", "ChildAgentStarted", "ChildContributionReady",
                 "ChildHandoffReceived", "RunReadyForReview");
         UUID runId = UUID.fromString(run.path("run_id").stringValue());
+        RunControls controls = jdbc.sql("""
+                select model_deployment_id, authorization_level, context_scopes::text
+                from medical_agent_run where tenant_id = :tenant and run_id = :run
+                """).param("tenant", UUID.fromString(TENANT)).param("run", runId)
+                .query((rs, row) -> new RunControls(rs.getObject("model_deployment_id", UUID.class),
+                        rs.getString("authorization_level"), rs.getString("context_scopes"))).single();
+        assertThat(controls.modelDeploymentId()).isEqualTo(UUID.fromString(MODEL));
+        assertThat(controls.authorizationLevel()).isEqualTo("READ_ONLY");
+        assertThat(controls.contextScopes()).contains("RECORDS", "ATTACHMENTS");
         assertThat(jdbc.sql("""
                 select count(*) from medical_agent_child_run
                 where tenant_id = :tenant and root_run_id = :run and state = 'COMPLETED'
@@ -265,4 +282,5 @@ final class MedicalAgentHarnessApiTest {
     }
 
     private record Lease(String id, String watermark) {}
+    private record RunControls(UUID modelDeploymentId, String authorizationLevel, String contextScopes) {}
 }

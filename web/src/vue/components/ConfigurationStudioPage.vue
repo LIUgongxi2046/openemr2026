@@ -39,7 +39,8 @@ const adminScopeStatus = ref('ALL');
 const adminSort = ref<'RISK' | 'RECENT' | 'NAME'>('RISK');
 const displayItems = computed(() => {
   let result = props.definition.routeId === 'admin-parameters'
-    ? items.value.filter((item) => !item.config_key.startsWith('auth-'))
+    ? items.value.filter((item) => !/^(?:syn-)?auth-/.test(item.config_key)
+      && !/^(?:syn-)?admin-session-v1$/.test(item.config_key))
     : [...items.value];
   if (isAdministrationView.value && adminKeyword.value.trim()) {
     const needle = adminKeyword.value.trim().toLocaleLowerCase();

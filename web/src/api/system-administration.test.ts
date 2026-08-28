@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { WorkforceIdentityWire } from '../generated/contracts';
-import { analyzeRoleGovernance } from './system-administration';
+import { analyzeRoleGovernance, SYSTEM_ADMINISTRATION_DICTIONARY_CODES } from './system-administration';
 
 function identity(personId: string, roleCode: string, overrides: Partial<WorkforceIdentityWire> = {}): WorkforceIdentityWire {
   return {
@@ -34,5 +34,16 @@ describe('analyzeRoleGovernance', () => {
     ], new Date('2026-08-25T00:00:00Z').getTime());
     expect(result.assignmentCount).toBe(1);
     expect(result.conflicts).toHaveLength(0);
+  });
+});
+
+describe('system administration dictionary catalog', () => {
+  it('loads the complete tertiary-hospital dictionary catalog instead of a small demo subset', () => {
+    expect(SYSTEM_ADMINISTRATION_DICTIONARY_CODES).toHaveLength(15);
+    expect(SYSTEM_ADMINISTRATION_DICTIONARY_CODES).toEqual(expect.arrayContaining([
+      'ADMISSION_SOURCE', 'DISCHARGE_DISPOSITION', 'TRIAGE_LEVEL', 'DOCUMENT_STATUS',
+      'CREDENTIAL_TYPE', 'PAYMENT_TYPE', 'CONSENT_STATUS', 'BED_CLASS',
+    ]));
+    expect(SYSTEM_ADMINISTRATION_DICTIONARY_CODES.every((code) => !code.startsWith('DICT-'))).toBe(true);
   });
 });
