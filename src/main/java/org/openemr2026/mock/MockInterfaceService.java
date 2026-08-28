@@ -4,7 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +15,11 @@ import org.springframework.stereotype.Service;
 final class MockInterfaceService {
 
     private static final Instant SIMULATION_EPOCH = Instant.parse("2026-08-24T00:00:00Z");
+    private final TertiaryMockBusinessDataGenerator dataGenerator;
+
+    MockInterfaceService(TertiaryMockBusinessDataGenerator dataGenerator) {
+        this.dataGenerator = dataGenerator;
+    }
 
     private static final List<MockInterfaceWire> INTERFACES = List.of(
             mock("LIS_RESULTS", "LIS 检验结果查询", "INTEGRATION_LIS", "模拟检验科 LIS：返回检验结果、危急值与报告状态",
@@ -97,8 +101,14 @@ final class MockInterfaceService {
             String code, String name, String type, String desc,
             String standardInterface, Map<String, Object> requestSchema,
             Map<String, Object> responseSchema, String integrationDoc) {
+        Map<String, Object> enrichedRequestSchema = new java.util.LinkedHashMap<>(requestSchema);
+        enrichedRequestSchema.put("record_count", "int(12..200), default 36");
+        Map<String, Object> enrichedResponseSchema = new java.util.LinkedHashMap<>(responseSchema);
+        enrichedResponseSchema.put("data_profile", "tertiary-hospital generation metadata");
+        enrichedResponseSchema.put("business_records", "array<generated business record>");
+        enrichedResponseSchema.put("record_summary", "object");
         return new MockInterfaceWire(code, name, type, desc,
-                standardInterface, requestSchema, responseSchema, integrationDoc);
+                standardInterface, enrichedRequestSchema, enrichedResponseSchema, integrationDoc);
     }
 
     MockInvocationResultWire invoke(String code, Map<String, Object> payload) {
@@ -111,23 +121,7 @@ final class MockInterfaceService {
             throw new MockInterfaceException("MOCK_DEPENDENCY_UNAVAILABLE", 503,
                     "合成外部依赖不可用；页面必须保留人工降级路径，且不得写入临床事实");
         }
-        Map<String, Object> response = switch (code) {
-            case "LIS_RESULTS" -> lisResults(payload);
-            case "PACS_IMAGES" -> pacsImages(payload);
-            case "HIS_INSURANCE" -> hisInsurance(payload);
-            case "CA_TIMESTAMP" -> caTimestamp(payload);
-            case "HIE_DOCUMENT_EXCHANGE" -> hieDocumentExchange(payload);
-            case "MODEL_PROVIDER" -> modelProvider(payload);
-            case "DEVICE_GATEWAY" -> deviceGateway(payload);
-            case "DICTATION_ASR" -> dictationAsr(payload);
-            case "IDP_AUTHENTICATE" -> idpAuthenticate(payload);
-            case "SCAN_CAPTURE" -> scanCapture(payload);
-            case "STORAGE_PRESERVE" -> storagePreserve(payload);
-            case "PATHOLOGY_DIAGNOSE" -> pathologyDiagnose(payload);
-            case "ANESTHESIA_EVENT" -> anesthesiaEvent(payload);
-            case "THERAPY_EXECUTE" -> therapyExecute(payload);
-            default -> throw new MockInterfaceException("MOCK_INTERFACE_UNKNOWN", 404, "未知模拟接口：" + code);
-        };
+        Map<String, Object> response = dataGenerator.generate(code, payload, simulationTime(payload));
         if ("DEGRADED".equals(scenario)) {
             response.put("_simulation", Map.of(
                     "scenario", "DEGRADED",
@@ -144,157 +138,9 @@ final class MockInterfaceService {
                         : "确定性合成数据 · 相同输入产生相同输出 · 不进入真实临床事实");
     }
 
-    private Map<String, Object> lisResults(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("patient_id", str(payload, "patient_id", "018f0000-0000-7000-8000-000000001001"));
-        result.put("results", List.of(
-                Map.of("test_code", "K", "test_name", "血钾", "value", "3.4", "unit", "mmol/L", "flag", "L", "status", "CONFIRMED"),
-                Map.of("test_code", "CREA", "test_name", "肌酐", "value", "92", "unit", "μmol/L", "flag", "", "status", "CONFIRMED"),
-                Map.of("test_code", "TNI", "test_name", "肌钙蛋白 I", "value", "0.12", "unit", "ng/mL", "flag", "H", "status", "PENDING_REVIEW")));
-        result.put("critical_values", List.of("血钾 3.4 mmol/L 低于参考下限，已触发危急值通知"));
-        return result;
-    }
-
-    private Map<String, Object> pacsImages(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("study_uid", "1.2.840.113619.2." + stableToken("PACS_IMAGES", payload, "study").substring(0, 8));
-        result.put("modality", "CT");
-        result.put("body_part", "CHEST");
-        result.put("series", List.of(
-                Map.of("series_no", 1, "description", "平扫", "images", 120, "status", "AVAILABLE"),
-                Map.of("series_no", 2, "description", "增强", "images", 80, "status", "REPORTING")));
-        result.put("report_status", "DRAFT");
-        return result;
-    }
-
-    private Map<String, Object> hisInsurance(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("claim_id", "CLM-" + stableToken("HIS_INSURANCE", payload, "claim").substring(0, 8).toUpperCase());
-        result.put("items", List.of(
-                Map.of("item", "血钾测定", "amount", "28.00", "reimbursement_ratio", 0.8, "category", "检验"),
-                Map.of("item", "胸部 CT 平扫", "amount", "320.00", "reimbursement_ratio", 0.7, "category", "检查")));
-        result.put("settlement_status", "SETTLED");
-        result.put("reimbursed_total", "254.40");
-        return result;
-    }
-
-    private Map<String, Object> caTimestamp(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("timestamp_token", "TSA-" + stableToken("CA_TIMESTAMP", payload, "token").substring(0, 12));
-        result.put("signed_at", simulationTime(payload).toString());
-        result.put("certificate_serial", "CA-" + stableToken("CA_TIMESTAMP", payload, "certificate").substring(0, 8).toUpperCase());
-        result.put("evidence_ref", "evidence:tsa:" + stableToken("CA_TIMESTAMP", payload, "evidence"));
-        result.put("algorithm", "SHA256withRSA");
-        return result;
-    }
-
-    private Map<String, Object> hieDocumentExchange(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("document_id", str(payload, "document_id", "CDA-21018"));
-        result.put("exchange_id", "HIE-" + stableToken("HIE_DOCUMENT_EXCHANGE", payload, "exchange")
-                .substring(0, 10).toUpperCase());
-        result.put("content_hash", str(payload, "content_hash",
-                "sha256:" + stableToken("HIE_DOCUMENT_EXCHANGE", payload, "document")));
-        result.put("receipt_status", "PENDING_ACK");
-        result.put("shared_at", null);
-        result.put("clinical_impact", "不影响院内病历签署；区域共享状态保持待确认");
-        return result;
-    }
-
-    private Map<String, Object> modelProvider(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("model", "MedBase-L 2.1 (DETERMINISTIC_FAKE)");
-        result.put("output_text", "AI 候选：建议核对血钾偏低与降压方案，具体处置需医生确认。");
-        result.put("citations", List.of("LIS 报告 v2", "门诊记录 07-21", "今日分诊 08:43"));
-        result.put("behavior", "DETERMINISTIC_FAKE");
-        return result;
-    }
-
-    private Map<String, Object> deviceGateway(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("device_id", str(payload, "device_id", "BEDSIDE-MONITOR-01"));
-        result.put("telemetry", List.of(
-                Map.of("metric", "HR", "value", 76, "unit", "bpm", "at", simulationTime(payload).minusSeconds(10).toString()),
-                Map.of("metric", "SpO2", "value", 98, "unit", "%", "at", simulationTime(payload).minusSeconds(10).toString()),
-                Map.of("metric", "NIBP", "value", "92/58", "unit", "mmHg", "at", simulationTime(payload).minusSeconds(20).toString())));
-        result.put("device_clock_offset_seconds", 86);
-        result.put("bound_patient", str(payload, "patient_id", "018f0000-0000-7000-8000-000000001001"));
-        return result;
-    }
-
-    private Map<String, Object> dictationAsr(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("segments", List.of(
-                Map.of("speaker", "医生", "text", "患者一周前无明显诱因出现头晕。", "confidence", 0.97),
-                Map.of("speaker", "医生", "text", "自测血压最高一百六十八。", "confidence", 0.94)));
-        result.put("unconfirmed_segments", 1);
-        return result;
-    }
-
-    private Map<String, Object> idpAuthenticate(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("authenticated", true);
-        result.put("subject", str(payload, "subject", "018f0000-0000-7000-8000-00000000aa04"));
-        result.put("mfa", "VERIFIED");
-        result.put("token_expires_in_seconds", 900);
-        result.put("roles", List.of("AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"));
-        return result;
-    }
-
-    private Map<String, Object> scanCapture(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("batch_id", "SCAN-" + stableToken("SCAN_CAPTURE", payload, "batch").substring(0, 8).toUpperCase());
-        result.put("pages", List.of(
-                Map.of("page", 1, "image_ref", "scan://page-1", "ocr_excerpt", "病案首页 · 主要诊断：急性心力衰竭", "checksum", "sha256:" + stableToken("SCAN_CAPTURE", payload, "page-1")),
-                Map.of("page", 2, "image_ref", "scan://page-2", "ocr_excerpt", "出院记录 · 出院医嘱", "checksum", "sha256:" + stableToken("SCAN_CAPTURE", payload, "page-2"))));
-        result.put("integrity", "VERIFIED");
-        return result;
-    }
-
-    private Map<String, Object> storagePreserve(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("storage_ref", "preserve://" + stableToken("STORAGE_PRESERVE", payload, "storage").substring(0, 12));
-        result.put("content_hash", "sha256:" + stableToken("STORAGE_PRESERVE", payload, "content"));
-        result.put("retention_years", 30);
-        result.put("format", "CDA");
-        result.put("sealed", true);
-        return result;
-    }
-
-    private Map<String, Object> pathologyDiagnose(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("specimen_id", "PATH-" + stableToken("PATHOLOGY_DIAGNOSE", payload, "specimen").substring(0, 8).toUpperCase());
-        result.put("stages", List.of(
-                Map.of("stage", "取材", "status", "COMPLETED", "at", simulationTime(payload).minusSeconds(72000).toString()),
-                Map.of("stage", "制片", "status", "COMPLETED", "at", simulationTime(payload).minusSeconds(36000).toString()),
-                Map.of("stage", "诊断", "status", "PENDING_REVIEW", "at", simulationTime(payload).toString())));
-        result.put("diagnosis_status", "PENDING_REVIEW");
-        return result;
-    }
-
-    private Map<String, Object> anesthesiaEvent(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("event_axis", List.of(
-                Map.of("at", simulationTime(payload).minusSeconds(2400).toString(), "event", "诱导", "drug", "丙泊酚"),
-                Map.of("at", simulationTime(payload).minusSeconds(1200).toString(), "event", "插管", "drug", "罗库溴铵"),
-                Map.of("at", simulationTime(payload).minusSeconds(300).toString(), "event", "监护", "drug", "无")));
-        result.put("recovery_disposition", "PACU");
-        result.put("monitoring", "STABLE");
-        return result;
-    }
-
-    private Map<String, Object> therapyExecute(Map<String, Object> payload) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("therapy_id", "THER-" + stableToken("THERAPY_EXECUTE", payload, "therapy").substring(0, 8).toUpperCase());
-        result.put("verification", Map.of("patient_checked", true, "order_checked", true, "dual_sign", true));
-        result.put("adverse_event", null);
-        result.put("status", "COMPLETED");
-        return result;
-    }
-
     private String str(Map<String, Object> payload, String key, String fallback) {
         Object value = payload.get(key);
-        return value == null ? fallback : String.valueOf(value);
+        return value == null || String.valueOf(value).isBlank() ? fallback : String.valueOf(value);
     }
 
     private Instant simulationTime(Map<String, Object> payload) {

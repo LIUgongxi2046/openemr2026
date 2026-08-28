@@ -32,9 +32,12 @@ final class MockInterfaceApiTest {
     @Test
     void givenRegistry_whenListing_thenAllSyntheticInterfacesAvailable() {
         List<MockInterfaceWire> interfaces = mocks.list();
+        assertThat(interfaces).hasSize(14);
         assertThat(interfaces).extracting(MockInterfaceWire::code)
                 .contains("LIS_RESULTS", "PACS_IMAGES", "HIS_INSURANCE", "CA_TIMESTAMP",
-                        "HIE_DOCUMENT_EXCHANGE", "MODEL_PROVIDER", "DEVICE_GATEWAY", "DICTATION_ASR");
+                        "HIE_DOCUMENT_EXCHANGE", "MODEL_PROVIDER", "DEVICE_GATEWAY", "DICTATION_ASR",
+                        "IDP_AUTHENTICATE", "SCAN_CAPTURE", "STORAGE_PRESERVE", "PATHOLOGY_DIAGNOSE",
+                        "ANESTHESIA_EVENT", "THERAPY_EXECUTE");
     }
 
     @Test
@@ -45,11 +48,67 @@ final class MockInterfaceApiTest {
         assertThat(result.mockInterfaceCode()).isEqualTo("LIS_RESULTS");
         assertThat(result.payload()).containsKey("results");
         assertThat(result.payload()).containsKey("critical_values");
+        assertThat(businessRecords(result)).hasSize(TertiaryMockBusinessDataGenerator.DEFAULT_RECORD_COUNT);
+        assertThat(dataProfile(result))
+                .containsEntry("hospital_level", "三级甲等")
+                .containsEntry("generation_method", "DETERMINISTIC_SEEDED")
+                .containsEntry("generator_version", TertiaryMockBusinessDataGenerator.GENERATOR_VERSION)
+                .containsEntry("record_count", TertiaryMockBusinessDataGenerator.DEFAULT_RECORD_COUNT)
+                .containsEntry("contains_real_phi", false);
         assertThat(result.scenario()).isEqualTo(MockInvocationResultWire.ScenarioValue.SUCCESS);
         assertThat(result.requestId()).isEqualTo(replay.requestId());
         assertThat(result.producedAt()).isEqualTo(replay.producedAt());
         assertThat(result.payload()).isEqualTo(replay.payload());
         assertThat(result.notice()).contains("合成");
+    }
+
+    @Test
+    void givenEveryAdapter_whenGeneratingTertiaryHospitalBatch_thenRecordsAreScaledAndDiverse() {
+        for (MockInterfaceWire adapter : mocks.list()) {
+            MockInvocationResultWire result = mocks.invoke(adapter.code(), Map.of(
+                    "simulation_scenario", "SUCCESS",
+                    "profile_key", "tertiary-regression-v2",
+                    "record_count", 48));
+            List<Map<String, Object>> records = businessRecords(result);
+
+            assertThat(records).as(adapter.code() + " batch size").hasSize(48);
+            assertThat(records).extracting(item -> item.get("business_id"))
+                    .as(adapter.code() + " unique business ids").doesNotHaveDuplicates();
+            assertThat(records).extracting(item -> item.get("department"))
+                    .as(adapter.code() + " department coverage").hasSizeGreaterThan(1);
+            assertThat(records).extracting(item -> item.get("campus"))
+                    .as(adapter.code() + " campus coverage").contains("本部院区", "东院区", "感染病院区");
+            assertThat(dataProfile(result)).containsEntry("record_count", 48);
+            if (!"IDP_AUTHENTICATE".equals(adapter.code())) {
+                assertThat(dataProfile(result).get("patient_count")).as(adapter.code() + " patient coverage")
+                        .isEqualTo(24L);
+                assertThat(dataProfile(result).get("encounter_count")).as(adapter.code() + " encounter coverage")
+                        .isEqualTo(48L);
+            }
+        }
+    }
+
+    @Test
+    void givenDifferentBusinessSeed_whenGenerating_thenDatasetChangesWithoutLosingReplayability() {
+        Map<String, Object> firstInput = Map.of("profile_key", "ward-a", "record_count", 24);
+        Map<String, Object> secondInput = Map.of("profile_key", "ward-b", "record_count", 24);
+
+        MockInvocationResultWire first = mocks.invoke("LIS_RESULTS", firstInput);
+        MockInvocationResultWire replay = mocks.invoke("LIS_RESULTS", firstInput);
+        MockInvocationResultWire second = mocks.invoke("LIS_RESULTS", secondInput);
+
+        assertThat(first.payload()).isEqualTo(replay.payload());
+        assertThat(first.payload()).isNotEqualTo(second.payload());
+        assertThat(businessRecords(first)).hasSize(24);
+        assertThat(businessRecords(second)).hasSize(24);
+    }
+
+    @Test
+    void givenInvalidBatchSize_whenGenerating_thenRequestIsRejected() {
+        assertThatThrownBy(() -> mocks.invoke("LIS_RESULTS", Map.of("record_count", 2)))
+                .isInstanceOf(MockInterfaceException.class)
+                .satisfies(error -> assertThat(((MockInterfaceException) error).code())
+                        .isEqualTo("MOCK_RECORD_COUNT_INVALID"));
     }
 
     @Test
@@ -82,5 +141,15 @@ final class MockInterfaceApiTest {
         assertThatThrownBy(() -> mocks.invoke("NOT_EXIST", Map.of()))
                 .isInstanceOf(MockInterfaceException.class)
                 .satisfies(e -> assertThat(((MockInterfaceException) e).code()).isEqualTo("MOCK_INTERFACE_UNKNOWN"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> businessRecords(MockInvocationResultWire result) {
+        return (List<Map<String, Object>>) result.payload().get("business_records");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> dataProfile(MockInvocationResultWire result) {
+        return (Map<String, Object>) result.payload().get("data_profile");
     }
 }

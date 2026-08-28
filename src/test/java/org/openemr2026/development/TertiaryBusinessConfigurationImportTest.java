@@ -57,7 +57,13 @@ final class TertiaryBusinessConfigurationImportTest {
                   count(*) filter (where payload->>'hospital_level' = '三级甲等'
                     and payload->>'organization' = '江城大学附属医院'
                     and coalesce(payload->>'interface_code', '') <> ''
-                    and coalesce(payload->>'manual_fallback', '') <> '') as complete_profiles
+                    and coalesce(payload->>'manual_fallback', '') <> ''
+                    and payload->>'fixture_source' = 'tertiary-business-generator-v2'
+                    and payload->>'generation_method' = 'DETERMINISTIC_SEEDED'
+                    and payload->>'generator_version' = 'tertiary-business-v2'
+                    and (payload->>'default_record_count')::int between 12 and 200
+                    and payload->'record_count_range' = '[12, 200]'::jsonb
+                    and payload->>'contains_real_phi' = 'false') as complete_profiles
                 from config_item
                 where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
                   and status = 'ACTIVE'

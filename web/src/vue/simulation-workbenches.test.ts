@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import workbenchSource from './components/SimulationWorkbenchPage.vue?raw';
 import { mockInterfaceSubmenus, simulationWorkbenches } from './simulation-workbenches';
 
 describe('mock interface submenu contract', () => {
@@ -16,5 +17,9 @@ describe('mock interface submenu contract', () => {
       expect(definition.defaultEntity.trim()).not.toBe('');
       expect(definition.systemType.trim()).not.toBe('');
     }
+  });
+
+  it('keeps the scenario result and API documentation panels top-aligned', () => {
+    expect(workbenchSource).toContain('.simulation-layout > .admin-panel + .admin-panel { margin-top: 0; }');
   });
 });

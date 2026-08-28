@@ -1192,7 +1192,14 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   status, row_version, schema_version, validation_state, validation_errors,
                   approval_state, approved_by, published_at, created_by)
                 select :tenant, seed.config_id::uuid, 'MOCK_INTERFACE_PROFILE', seed.config_key,
-                  seed.display_name, cast(seed.payload as jsonb), 'ACTIVE', 1, 1, 'VALID',
+                  seed.display_name, cast(seed.payload as jsonb) || jsonb_build_object(
+                    'fixture_source', 'tertiary-business-generator-v2',
+                    'generation_method', 'DETERMINISTIC_SEEDED',
+                    'generator_version', 'tertiary-business-v2',
+                    'default_record_count', 36,
+                    'record_count_range', jsonb_build_array(12, 200),
+                    'contains_real_phi', false),
+                  'ACTIVE', 1, 1, 'VALID',
                   '[]'::jsonb, 'APPROVED', :approver, now() - interval '10 days', :author
                 from (values
                   ('018f0000-0000-7000-8000-00000000f801','admin-auth-tertiary','全院 OIDC 与 MFA 认证基线','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"admin-auth","interface_code":"IDP_AUTHENTICATE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"临床、护理、医技和管理人员统一认证与高风险操作再认证","default_entity":"018f0000-0000-7000-8000-00000000aa04","default_scenario":"SUCCESS","owner_department":"信息中心身份安全组","operating_window":"7×24 小时；变更窗口周三 22:00–23:30","timeout_ms":3000,"retry_limit":1,"manual_fallback":"保留本地应急账号，高风险操作继续阻断并记录审计","documentation_version":"v1.0 / 2026-08-28"}'),
