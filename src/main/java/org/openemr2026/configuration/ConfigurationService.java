@@ -39,7 +39,17 @@ final class ConfigurationService {
             Map.entry("BACKUP", List.of("schema_version", "repository", "retention_days", "rpo_minutes", "rto_minutes", "checksum_policy")),
             Map.entry("INSTALL", List.of("schema_version", "prerequisites", "database_profile", "identity_profile", "resume_step")),
             Map.entry("OPERATION", List.of("schema_version", "health_checks", "maintenance_window", "downtime_mode", "recovery_steps")),
-            Map.entry("RELEASE_GATE", List.of("schema_version", "candidate_commit", "required_gates", "artifact_checksum", "rollback_entry")));
+            Map.entry("RELEASE_GATE", List.of("schema_version", "candidate_commit", "required_gates", "artifact_checksum", "rollback_entry")),
+            Map.entry("MOCK_INTERFACE_PROFILE", List.of(
+                    "schema_version", "workbench_id", "interface_code", "hospital_level", "organization",
+                    "facility", "description", "default_entity", "default_scenario", "owner_department",
+                    "operating_window", "timeout_ms", "retry_limit", "manual_fallback", "documentation_version")),
+            Map.entry("INTEGRATION_CONNECTOR", List.of("schema_version", "system_type", "protocol", "capabilities", "endpoint", "secret_reference", "timeout_retry", "circuit_breaker", "connector_version")),
+            Map.entry("DEVICE_CATALOG", List.of("schema_version", "device_type", "manufacturer_model", "department", "gateway", "standard_interface", "calibration_due", "clock_offset_seconds", "binding_policy")),
+            Map.entry("RESEARCH_PROJECT", List.of("schema_version", "project_type", "principal_investigator", "registry_number", "ethics_approval", "approved_purpose", "data_scope", "member_count", "expires_at")),
+            Map.entry("INTEGRATION_INCIDENT", List.of("schema_version", "trace_id", "direction", "event_type", "business_object", "result", "latency", "clinical_impact", "retry_policy")),
+            Map.entry("CLINICAL_TASK_RULE", List.of("schema_version", "task_type", "risk_level", "due_minutes", "escalation_minutes", "assignment_strategy", "completion_source", "channels", "applies_to", "enabled")),
+            Map.entry("CLINICAL_PATHWAY", List.of("schema_version", "pathway_code", "specialty_code", "diagnosis_code", "version_no", "admission_criteria", "stages", "publication_scope", "version_immutable_after_publish")));
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
@@ -273,9 +283,39 @@ final class ConfigurationService {
             case "RULE" -> validateRules(payload, errors);
             case "SCOPE" -> validateScope(payload, errors);
             case "CAPABILITY_PACK_COMPOSITION" -> validateCapabilityComposition(payload, errors);
+            case "CLINICAL_TASK_RULE" -> validateClinicalTaskRule(payload, errors);
+            case "CLINICAL_PATHWAY" -> validateClinicalPathway(payload, errors);
             default -> { }
         }
         return List.copyOf(errors);
+    }
+
+    private void validateClinicalTaskRule(Map<String, Object> payload, List<String> errors) {
+        long dueMinutes = number(payload.get("due_minutes"));
+        long escalationMinutes = number(payload.get("escalation_minutes"));
+        if (dueMinutes < 1 || dueMinutes > 43_200) errors.add("任务处理时限必须为 1 至 43200 分钟");
+        if (escalationMinutes < 1 || escalationMinutes >= dueMinutes) {
+            errors.add("升级提前量必须大于 0 且小于任务处理时限");
+        }
+        String riskLevel = text(payload.get("risk_level"));
+        if (!List.of("ROUTINE", "HIGH", "CRITICAL").contains(riskLevel)) errors.add("任务风险等级无效");
+        if (!"权威业务对象终态".equals(text(payload.get("completion_source")))) {
+            errors.add("任务完成依据必须为权威业务对象终态");
+        }
+    }
+
+    private void validateClinicalPathway(Map<String, Object> payload, List<String> errors) {
+        if (number(payload.get("version_no")) < 1) errors.add("临床路径版本号必须为正整数");
+        if (text(payload.get("admission_criteria")).length() < 4) errors.add("临床路径必须配置完整入径标准");
+        List<Map<String, Object>> stages = objectRows(payload.get("stages"));
+        if (stages.isEmpty()) errors.add("临床路径至少包含一个执行阶段");
+        List<String> codes = stages.stream().map(stage -> text(stage.get("code"))).toList();
+        if (codes.stream().anyMatch(String::isBlank) || codes.stream().distinct().count() != codes.size()) {
+            errors.add("临床路径阶段编码必须非空且唯一");
+        }
+        if (!Boolean.TRUE.equals(payload.get("version_immutable_after_publish"))) {
+            errors.add("临床路径发布后必须保持版本不可变");
+        }
     }
 
     private void validateWorkflow(Map<String, Object> payload, List<String> errors) {

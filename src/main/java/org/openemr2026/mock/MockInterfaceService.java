@@ -38,6 +38,11 @@ final class MockInterfaceService {
                     Map.of("content_hash", "string(sha256)", "algorithm", "string"),
                     Map.of("timestamp_token", "string", "signed_at", "date-time", "certificate_serial", "string"),
                     "真实 CA 对接：RFC 3161 TSA 时间戳 + X.509 证书；替换 handler 为真实 TSA 客户端。"),
+            mock("HIE_DOCUMENT_EXCHANGE", "区域平台文档交换", "INTEGRATION_HIE", "模拟区域平台：返回 CDA/FHIR 文档上传、回执和共享状态",
+                    "CDA R2 / HL7 FHIR R4 DocumentReference",
+                    Map.of("document_id", "string", "content_hash", "string(sha256)", "patient_id", "uuid"),
+                    Map.of("exchange_id", "string", "receipt_status", "string", "shared_at", "date-time|null"),
+                    "真实区域平台对接：按属地规范上传 CDA R2 或 FHIR 文档；上传使用文档哈希幂等，回执查询只读可重试。"),
             mock("MODEL_PROVIDER", "模型推理 Provider", "MODEL", "模拟外部模型服务：返回确定性推理文本与引用",
                     "OpenAI-compatible /chat/completions",
                     Map.of("model", "string", "messages", "array<message>", "max_tokens", "int"),
@@ -111,6 +116,7 @@ final class MockInterfaceService {
             case "PACS_IMAGES" -> pacsImages(payload);
             case "HIS_INSURANCE" -> hisInsurance(payload);
             case "CA_TIMESTAMP" -> caTimestamp(payload);
+            case "HIE_DOCUMENT_EXCHANGE" -> hieDocumentExchange(payload);
             case "MODEL_PROVIDER" -> modelProvider(payload);
             case "DEVICE_GATEWAY" -> deviceGateway(payload);
             case "DICTATION_ASR" -> dictationAsr(payload);
@@ -179,6 +185,19 @@ final class MockInterfaceService {
         result.put("certificate_serial", "CA-" + stableToken("CA_TIMESTAMP", payload, "certificate").substring(0, 8).toUpperCase());
         result.put("evidence_ref", "evidence:tsa:" + stableToken("CA_TIMESTAMP", payload, "evidence"));
         result.put("algorithm", "SHA256withRSA");
+        return result;
+    }
+
+    private Map<String, Object> hieDocumentExchange(Map<String, Object> payload) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("document_id", str(payload, "document_id", "CDA-21018"));
+        result.put("exchange_id", "HIE-" + stableToken("HIE_DOCUMENT_EXCHANGE", payload, "exchange")
+                .substring(0, 10).toUpperCase());
+        result.put("content_hash", str(payload, "content_hash",
+                "sha256:" + stableToken("HIE_DOCUMENT_EXCHANGE", payload, "document")));
+        result.put("receipt_status", "PENDING_ACK");
+        result.put("shared_at", null);
+        result.put("clinical_impact", "不影响院内病历签署；区域共享状态保持待确认");
         return result;
     }
 

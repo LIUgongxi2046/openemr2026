@@ -52,6 +52,24 @@ final class TertiaryBusinessConfigurationImportTest {
         assertThat(activePacks).isGreaterThanOrEqualTo(15);
         assertThat(activeCompositions).isGreaterThanOrEqualTo(15);
 
+        Map<String, Integer> mockProfiles = jdbc.sql("""
+                select count(*) as profiles, count(distinct payload->>'workbench_id') as workbenches,
+                  count(*) filter (where payload->>'hospital_level' = '三级甲等'
+                    and payload->>'organization' = '江城大学附属医院'
+                    and coalesce(payload->>'interface_code', '') <> ''
+                    and coalesce(payload->>'manual_fallback', '') <> '') as complete_profiles
+                from config_item
+                where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
+                  and status = 'ACTIVE'
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query((rs, row) -> Map.of(
+                        "profiles", rs.getInt("profiles"),
+                        "workbenches", rs.getInt("workbenches"),
+                        "complete", rs.getInt("complete_profiles")))
+                .single();
+        assertThat(mockProfiles).containsEntry("profiles", 13)
+                .containsEntry("workbenches", 13).containsEntry("complete", 13);
+
         Map<String, Integer> specialtyCoverage = jdbc.sql("""
                 select count(*) as assessments, count(distinct department_id) as departments,
                   count(*) filter (where support_level in ('GENERAL_AVAILABLE','BASIC_CLOSED_LOOP')) as supported,
@@ -91,5 +109,47 @@ final class TertiaryBusinessConfigurationImportTest {
                     assertThat(seed.evidenceHash()).matches("[0-9a-f]{64}");
                     assertThat(seed.modules()).isNotEmpty();
                 });
+    }
+
+    @Test
+    void devSyntheticProfileImportsOperationalTaskPathwayEvidence() {
+        Map<String, Integer> configuration = jdbc.sql("""
+                select
+                  count(*) filter (where config_type = 'CLINICAL_TASK_RULE') as task_rules,
+                  count(*) filter (where config_type = 'CLINICAL_PATHWAY') as pathways,
+                  count(*) filter (where payload->>'hospital_level' = '三级甲等') as tertiary_complete
+                from config_item
+                where tenant_id = :tenant and status = 'ACTIVE'
+                  and payload->>'fixture_source' = 'tertiary-task-pathway-v1'
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query((rs, row) -> Map.of(
+                        "task_rules", rs.getInt("task_rules"),
+                        "pathways", rs.getInt("pathways"),
+                        "tertiary_complete", rs.getInt("tertiary_complete")))
+                .single();
+        assertThat(configuration).containsEntry("task_rules", 5)
+                .containsEntry("pathways", 4).containsEntry("tertiary_complete", 9);
+
+        Map<String, Integer> workflowEvidence = jdbc.sql("""
+                select
+                  (select count(*) from clinical_task where tenant_id = :tenant
+                    and task_id between '018f0000-0000-7000-8000-00000000fc01'::uuid
+                      and '018f0000-0000-7000-8000-00000000fc06'::uuid) as tasks,
+                  (select count(*) from clinical_task_event where tenant_id = :tenant
+                    and task_event_id between '018f0000-0000-7000-8000-00000000fd01'::uuid
+                      and '018f0000-0000-7000-8000-00000000fd06'::uuid) as events,
+                  (select count(*) from clinical_task_team_queue where tenant_id = :tenant
+                    and queue_id between '018f0000-0000-7000-8000-00000000fe01'::uuid
+                      and '018f0000-0000-7000-8000-00000000fe02'::uuid) as queue_items,
+                  (select count(*) from clinical_task_notification where tenant_id = :tenant
+                    and notification_id between '018f0000-0000-7000-8000-00000000ff01'::uuid
+                      and '018f0000-0000-7000-8000-00000000ff03'::uuid) as notifications
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query((rs, row) -> Map.of(
+                        "tasks", rs.getInt("tasks"), "events", rs.getInt("events"),
+                        "queue_items", rs.getInt("queue_items"), "notifications", rs.getInt("notifications")))
+                .single();
+        assertThat(workflowEvidence).containsEntry("tasks", 6).containsEntry("events", 6)
+                .containsEntry("queue_items", 2).containsEntry("notifications", 3);
     }
 }

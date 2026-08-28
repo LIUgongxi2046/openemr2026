@@ -51,12 +51,18 @@ async function login() {
       />
       <p class="system-login-kicker">OpenEMR2026</p>
       <h1 id="system-name">电子病历系统</h1>
-      <p>连接门诊、急诊、住院、病历与医疗质量工作域的统一工作平台。</p>
+      <p>连接门诊、急诊、住院、病历、医疗质量与 AI 医助的统一工作平台。</p>
       <ul>
         <li><span>统一</span>全系统身份与岗位权限</li>
         <li><span>安全</span>会话撤销、失败锁定与全程审计</li>
         <li><span>连续</span>登录后返回原请求的业务页面</li>
+        <li><span>AI 协同</span>问答、摘要、风险提醒、任务草拟与专科医助协作</li>
       </ul>
+      <section class="system-login-ai-capabilities" aria-label="AI医助能力介绍">
+        <div><img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="38" height="38" /><strong>AI医助小南</strong></div>
+        <p>结合当前患者、就诊和任务上下文提供辅助；生成结果标明来源，经医务人员确认后才能进入业务流程。</p>
+        <div class="system-login-ai-tags"><span>带上下文问答</span><span>主动风险提醒</span><span>医生确认与全程留痕</span></div>
+      </section>
       <small>仅限授权人员使用。所有访问和操作均可审计。</small>
     </section>
 
@@ -74,7 +80,11 @@ async function login() {
       </form>
       <div class="system-login-environment">
         <b>开发验收环境</b>
-        <span>默认账号 linwei；密码由 OPENEMR2026_DEV_LOGIN_PASSWORD 配置。</span>
+        <dl>
+          <div><dt>体验账号</dt><dd><code>linwei</code></dd></div>
+          <div><dt>体验密码</dt><dd><code>OpenEMR2026-dev!</code></dd></div>
+        </dl>
+        <small>完整验收地址 <code>http://127.0.0.1:4177/</code>；需同时运行 <code>8080</code> 后端。仅用于本地开发与验收；部署环境应通过 <code>OPENEMR2026_DEV_LOGIN_PASSWORD</code> 覆盖默认密码。</small>
       </div>
       <footer><span>数据传输加密</span><span>会话服务端撤销</span><span>审计记录留痕</span></footer>
     </section>

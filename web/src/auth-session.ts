@@ -35,13 +35,22 @@ function persist() {
 }
 
 export async function loginClinicalSession(username: string, password: string): Promise<SessionLoginResponseWire> {
-  const response = await fetch('/api/v1/session/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
-  });
+  let response: Response;
+  try {
+    response = await fetch('/api/v1/session/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    throw new Error('登录服务暂不可用，请确认验收后端已在 8080 端口启动');
+  }
   const payload = await response.json().catch(() => null) as unknown;
-  if (!response.ok) throw new Error(response.status === 423 ? '账户已锁定，请稍后重试' : '用户名或密码错误');
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('用户名或密码错误');
+    if (response.status === 423) throw new Error('账户已锁定，请稍后重试');
+    throw new Error(`登录服务异常（HTTP ${response.status}），请检查验收后端`);
+  }
   const session = sessionLoginResponseWireSchema.parse(payload);
   authSession.token = session.bearer_token;
   authSession.user = session.user;
@@ -77,4 +86,3 @@ export function clearClinicalSession() {
   authSession.user = null;
   persist();
 }
-

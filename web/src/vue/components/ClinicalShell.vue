@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { clinicalContext } from '../../clinical-api';
 import { authSession, logoutClinicalSession } from '../../auth-session';
 import { specialtyGuardRouteIds } from '../route-registry';
+import { mockInterfaceSubmenus } from '../simulation-workbenches';
 
 const GlobalAiAssistantDialog = defineAsyncComponent(() => import('./GlobalAiAssistantDialog.vue'));
 
@@ -55,7 +56,7 @@ const navigation: NavItem[] = [
   { id: 'clinical-tasks', label: '任务与临床路径', icon: '☑', group: '业务协同', count: '9' },
   { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心', count: '6' },
   { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心', count: '9' },
-  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心' },
+  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心', count: '13' },
   { id: 'workflow', label: '业务配置', icon: '⌘', group: '管理与配置' },
   { id: 'admin', label: '系统管理', icon: '⚙', group: '管理与配置', count: '7' },
 ];
@@ -110,6 +111,7 @@ function isActive(navId: string): boolean {
     case 'workflow': return configurationRoutes.includes(c);
     case 'admin': return adminRoutes.includes(c) || operationRoutes.includes(c);
     case 'clinical': return clinicalFoundationRoutes.includes(c) || specialtyGuardRouteIds.has(c);
+    case 'mock-interfaces': return c === 'mock-interfaces' || c === 'mock-interface-workbench';
     default: return c === navId;
   }
 }
@@ -119,6 +121,15 @@ type SubNavItem = [string, string]
 interface SubNav { kind: 'domain' | 'center'; title: string; active: string; items: SubNavItem[] }
 const subNav = computed<SubNav | null>(() => {
   const c = routeId.value;
+  if (c === 'mock-interfaces' || c === 'mock-interface-workbench') {
+    const workbenchId = typeof route.params.workbenchId === 'string' ? route.params.workbenchId : 'mock-interfaces';
+    return {
+      kind: 'center',
+      title: '模拟接口',
+      active: workbenchId === 'mock-interfaces' ? 'mock-interfaces' : `mock-interfaces/${workbenchId}`,
+      items: mockInterfaceSubmenus.map(([id, label]) => [id === 'mock-interfaces' ? id : `mock-interfaces/${id}`, label]),
+    };
+  }
   if (outpatientRoutes.includes(c) && !recordRoutes.includes(c)) {
     return { kind: 'domain', title: '临床业务门户', active: c, items: [['outpatient', '门诊工作台'], ['opd-record', '门诊病历'], ['opd-diagnosis', '诊断'], ['opd-orders', '医嘱处方'], ['opd-results', '检查检验'], ['opd-consult', '会诊转诊']] };
   }
@@ -135,7 +146,7 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'center', title: '医疗质量中心', active: c, items: [['quality-center', '质量总览'], ['quality-rating', '评级取证'], ['infection-events', '院感事件'], ['credentials', '临床资质']] };
   }
   if (dataCenterRoutes.includes(c)) {
-    return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['research', '科研统计']] };
+    return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['integration', '集成交换'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['devices', '设备接入'], ['research', '科研统计']] };
   }
   if (aiPlatformRoutes.includes(c)) {
     return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-center', 'AI 总览'], ['ai-assistant', 'AI医助小南'], ['ai-assistant-policy', '小南工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };

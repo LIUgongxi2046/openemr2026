@@ -18,6 +18,23 @@ export interface SimulationWorkbenchDefinition {
   resultFocus: string[];
 }
 
+export const mockInterfaceSubmenus: ReadonlyArray<readonly [SimulationWorkbenchId | 'mock-interfaces', string]> = [
+  ['mock-interfaces', '接口总览'],
+  ['admin-auth', '身份认证'],
+  ['ai-capture', '语音转写'],
+  ['model-connection', '模型连接'],
+  ['model-routing', '模型路由'],
+  ['devices', '设备目录'],
+  ['device-monitoring', '设备监测'],
+  ['integration-connectors', '集成连接器'],
+  ['integration-messages', '消息追踪'],
+  ['archive-scan', '病案扫描'],
+  ['archive-preservation', '长期保存'],
+  ['pathology-workbench', '病理系统'],
+  ['anesthesia-workbench', '麻醉系统'],
+  ['therapy-workbench', '治疗执行'],
+];
+
 export const simulationWorkbenches: Record<SimulationWorkbenchId, SimulationWorkbenchDefinition> = {
   'admin-auth': { id: 'admin-auth', title: '认证与 MFA 场景演练', subtitle: 'OIDC + PKCE、MFA 与会话任期的确定性身份模拟', systemType: 'IDENTITY', entityLabel: '合成主体', entityKey: 'subject', defaultEntity: '018f0000-0000-7000-8000-00000000aa04', steps: ['发起 OIDC 授权', '校验 PKCE', '执行 MFA', '建立限时会话'], safeguards: ['不接收真实口令', 'Token 不写日志', '高风险操作仍需 step-up'], resultFocus: ['authenticated', 'mfa', 'token_expires_in_seconds'] },
   'ai-capture': { id: 'ai-capture', title: '语音采集、转写与人工复核', subtitle: '从合成音频引用到逐句确认，不直接写入病历', systemType: 'DICTATION', entityLabel: '音频引用', entityKey: 'audio_ref', defaultEntity: 'synthetic://dictation/opd-001', steps: ['获取患者同意', '采集合成音频', 'ASR 分句转写', '医生逐句确认'], safeguards: ['未确认句不得入病历', '保留说话人和置信度', '原始音频按策略到期'], resultFocus: ['segments', 'unconfirmed_segments'] },

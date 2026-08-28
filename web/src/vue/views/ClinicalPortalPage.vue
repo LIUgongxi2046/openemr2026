@@ -113,6 +113,21 @@ function go(to: string): void {
     <span class="status green">核心服务正常</span>
   </div>
 
+  <section class="portal-ai-intro" aria-labelledby="portal-ai-title">
+    <img src="/brand/ai-medical-assistant-xiaonan.png" alt="" width="52" height="52" />
+    <div class="portal-ai-copy">
+      <span>AI CAPABILITIES</span>
+      <h2 id="portal-ai-title">AI医助小南随诊协同</h2>
+      <p>结合当前患者、就诊、页面和任务上下文，提供有来源、可回看的诊疗辅助；所有结果均需医务人员确认后才能进入业务流程。</p>
+    </div>
+    <ul>
+      <li><b>上下文问答与摘要</b><span>基于当前诊疗事实生成带来源的候选内容</span></li>
+      <li><b>主动风险提醒</b><span>识别危急值、任务超时与流程缺口</span></li>
+      <li><b>任务草拟与专科协作</b><span>辅助拆解任务、调用专科医助并全程留痕</span></li>
+    </ul>
+    <button class="btn primary" type="button" data-route-target="ai-assistant" @click="go('ai-assistant')">打开AI医助小南</button>
+  </section>
+
   <div class="domain-split domain-triple">
     <section v-for="d in domains" :key="d.type" class="domain-card" :class="`${d.type}-domain`">
       <div class="domain-hero">
@@ -160,3 +175,26 @@ function go(to: string): void {
   </div>
   </section>
 </template>
+
+<style scoped>
+.portal-ai-intro { display: grid; grid-template-columns: 52px minmax(240px,.95fr) minmax(420px,1.35fr) auto; gap: 14px; align-items: center; padding: 15px 16px; margin-bottom: 14px; border: 1px solid #c8dcf0; border-radius: 12px; background: linear-gradient(135deg,#f3f8ff,#fff); box-shadow: 0 5px 18px rgba(31,79,128,.06); }
+.portal-ai-intro > img { width: 52px; height: 52px; border: 1px solid #d8e5f0; border-radius: 14px; background: #fff; object-fit: cover; }
+.portal-ai-copy > span { color: #1769a7; font-size: 9px; font-weight: 850; letter-spacing: 1.1px; }
+.portal-ai-copy h2 { margin: 3px 0 5px; font-size: 17px; }
+.portal-ai-copy p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.portal-ai-intro ul { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 0; margin: 0; list-style: none; }
+.portal-ai-intro li { display: grid; gap: 3px; min-height: 58px; padding: 9px 10px; border: 1px solid #dce8f3; border-radius: 8px; background: rgba(255,255,255,.82); }
+.portal-ai-intro li b { color: #234c70; font-size: 10px; }
+.portal-ai-intro li span { color: var(--muted); font-size: 9px; line-height: 1.45; }
+.portal-ai-intro > button { white-space: nowrap; }
+@media (max-width: 1280px) {
+  .portal-ai-intro { grid-template-columns: 52px minmax(0,1fr) auto; }
+  .portal-ai-intro ul { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .portal-ai-intro { grid-template-columns: 44px minmax(0,1fr); padding: 13px; }
+  .portal-ai-intro > img { width: 44px; height: 44px; border-radius: 12px; }
+  .portal-ai-intro ul { grid-template-columns: 1fr; }
+  .portal-ai-intro > button { grid-column: 1 / -1; width: 100%; }
+}
+</style>

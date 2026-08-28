@@ -183,6 +183,154 @@ final class ConfigurationApiTest {
         assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
     }
 
+    @Test
+    void givenTertiaryDataCenterCatalogs_whenValidating_thenCompleteSchemasAreAccepted() {
+        Map<String, Map<String, Object>> payloads = Map.of(
+                "INTEGRATION_CONNECTOR", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("system_type", "HIE"),
+                        Map.entry("protocol", "CDA R2 / FHIR R4"),
+                        Map.entry("capabilities", List.of("文档上传", "回执")),
+                        Map.entry("endpoint", "政务专网 HIE-GW-01"),
+                        Map.entry("secret_reference", "file://secrets/integration/hie-prod"),
+                        Map.entry("timeout_retry", "15s / 5 次 / 幂等业务键"),
+                        Map.entry("circuit_breaker", "300s / 院内流程继续"),
+                        Map.entry("connector_version", "v3.1.7")),
+                "DEVICE_CATALOG", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("device_type", "MONITOR"),
+                        Map.entry("manufacturer_model", "迈瑞 BeneVision N15"),
+                        Map.entry("department", "心血管内科一病区"),
+                        Map.entry("gateway", "GW-BEDSIDE-01"),
+                        Map.entry("standard_interface", "IEEE 11073 / HL7 ORU"),
+                        Map.entry("calibration_due", "2027-02-28"),
+                        Map.entry("clock_offset_seconds", 2),
+                        Map.entry("binding_policy", "腕带 + 床位双标识")),
+                "RESEARCH_PROJECT", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("project_type", "OBSERVATIONAL"),
+                        Map.entry("principal_investigator", "周教授"),
+                        Map.entry("registry_number", "MRR-2026-001842"),
+                        Map.entry("ethics_approval", "IRB-2026-119"),
+                        Map.entry("approved_purpose", "高血压真实世界治疗结局分析"),
+                        Map.entry("data_scope", List.of("门诊病历", "处方", "检验")),
+                        Map.entry("member_count", 8), Map.entry("expires_at", "2027-07-31")),
+                "INTEGRATION_INCIDENT", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("trace_id", "TR-882151"),
+                        Map.entry("direction", "EMR_TO_HIE"), Map.entry("event_type", "CDA_UPLOAD"),
+                        Map.entry("business_object", "CDA-21018"), Map.entry("result", "PENDING_ACK"),
+                        Map.entry("latency", "12m"),
+                        Map.entry("clinical_impact", "院内签署不受影响"),
+                        Map.entry("retry_policy", "文档哈希幂等，回执查询只读重试")));
+
+        payloads.forEach((type, payload) -> {
+            ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                    new ConfigurationItemDefineRequestWire(type, "SYN-" + UUID.randomUUID(),
+                            type + " 三级医院基线", payload));
+            ConfigurationItemWire validated = transition(identity(), draft,
+                    ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验三级医院数据中心完整配置");
+            assertThat(validated.validationState())
+                    .as(type + " should pass its complete catalog schema")
+                    .isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
+        });
+    }
+
+    @Test
+    void givenConnectorWithUnsupportedSecretReference_whenValidating_thenItFailsClosed() {
+        ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("INTEGRATION_CONNECTOR", "UNSAFE-" + UUID.randomUUID(),
+                        "不合规连接器", Map.ofEntries(
+                                Map.entry("schema_version", 1), Map.entry("system_type", "LIS"),
+                                Map.entry("protocol", "HL7 v2.5.1"), Map.entry("capabilities", List.of("ORU")),
+                                Map.entry("endpoint", "10.20.4.18"),
+                                Map.entry("secret_reference", "vault://integration/lis"),
+                                Map.entry("timeout_retry", "5s / 3 次"),
+                                Map.entry("circuit_breaker", "60s / 人工降级"),
+                                Map.entry("connector_version", "v1"))));
+
+        ConfigurationItemWire invalid = transition(identity(), draft,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "拒绝不受支持的秘密引用方案");
+
+        assertThat(invalid.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.INVALID);
+        assertThat(invalid.validationErrors()).anyMatch(error -> error.contains("env:// 或 file://"));
+    }
+
+    @Test
+    void givenCompleteMockInterfaceProfile_whenValidating_thenItCanEnterGovernedFlow() {
+        ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("MOCK_INTERFACE_PROFILE",
+                        "MOCK-" + UUID.randomUUID(), "LIS 三级医院仿真配置", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("workbench_id", "integration-connectors"),
+                        Map.entry("interface_code", "LIS_RESULTS"), Map.entry("hospital_level", "三级甲等"),
+                        Map.entry("organization", "江城大学附属医院"), Map.entry("facility", "本部院区"),
+                        Map.entry("description", "检验结果与危急值回传"), Map.entry("default_entity", "SYN-001"),
+                        Map.entry("default_scenario", "SUCCESS"), Map.entry("owner_department", "信息中心"),
+                        Map.entry("operating_window", "7×24"), Map.entry("timeout_ms", 5000),
+                        Map.entry("retry_limit", 3), Map.entry("manual_fallback", "转人工检验结果队列"),
+                        Map.entry("documentation_version", "v1.0 / 2026-08-28"))));
+
+        ConfigurationItemWire validated = transition(identity(), draft,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验模拟接口配置完整性");
+
+        assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
+        assertThat(validated.validationErrors()).isEmpty();
+    }
+
+    @Test
+    void givenTertiaryClinicalTaskRuleAndPathway_whenValidating_thenOperationalGatesAreEnforced() {
+        ConfigurationItemWire taskRule = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("CLINICAL_TASK_RULE", "TASK-" + UUID.randomUUID(),
+                        "危急值 15 分钟闭环", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("task_type", "CRITICAL_VALUE"),
+                        Map.entry("risk_level", "CRITICAL"), Map.entry("due_minutes", 15),
+                        Map.entry("escalation_minutes", 5), Map.entry("assignment_strategy", "当班医生 + 上级医师"),
+                        Map.entry("completion_source", "权威业务对象终态"), Map.entry("channels", List.of("站内", "消息总线")),
+                        Map.entry("applies_to", "全院危急值"), Map.entry("enabled", true))));
+        ConfigurationItemWire validRule = transition(identity(), taskRule,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验三级医院任务规则");
+        assertThat(validRule.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
+
+        ConfigurationItemWire pathway = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("CLINICAL_PATHWAY", "PATH-" + UUID.randomUUID(),
+                        "急性心肌梗死 PCI 路径", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("pathway_code", "AMI-PCI"),
+                        Map.entry("specialty_code", "CARDIOLOGY"), Map.entry("diagnosis_code", "I21.9"),
+                        Map.entry("version_no", 3), Map.entry("admission_criteria", "STEMI 且拟行急诊 PCI"),
+                        Map.entry("stages", List.of(Map.of("code", "EMERGENCY", "name", "急诊再灌注"),
+                                Map.of("code", "WARD", "name", "术后管理"))),
+                        Map.entry("publication_scope", "本部院区心内科"),
+                        Map.entry("version_immutable_after_publish", true))));
+        ConfigurationItemWire validPathway = transition(identity(), pathway,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验三级医院临床路径");
+        assertThat(validPathway.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
+    }
+
+    @Test
+    void givenUnsafeTaskRuleAndMutablePathway_whenValidating_thenTheyFailClosed() {
+        ConfigurationItemWire taskRule = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("CLINICAL_TASK_RULE", "TASK-BAD-" + UUID.randomUUID(),
+                        "无效任务规则", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("task_type", "CRITICAL_VALUE"),
+                        Map.entry("risk_level", "UNKNOWN"), Map.entry("due_minutes", 10),
+                        Map.entry("escalation_minutes", 10), Map.entry("assignment_strategy", "当班医生"),
+                        Map.entry("completion_source", "手工勾选"), Map.entry("channels", List.of("站内")),
+                        Map.entry("applies_to", "全院"), Map.entry("enabled", true))));
+        ConfigurationItemWire invalidRule = transition(identity(), taskRule,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "拒绝无效任务规则");
+        assertThat(invalidRule.validationErrors()).anyMatch(error -> error.contains("升级提前量"));
+        assertThat(invalidRule.validationErrors()).anyMatch(error -> error.contains("权威业务对象终态"));
+
+        ConfigurationItemWire pathway = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("CLINICAL_PATHWAY", "PATH-BAD-" + UUID.randomUUID(),
+                        "可变临床路径", Map.ofEntries(
+                        Map.entry("schema_version", 1), Map.entry("pathway_code", "BAD"),
+                        Map.entry("specialty_code", "CARDIOLOGY"), Map.entry("diagnosis_code", "I50.9"),
+                        Map.entry("version_no", 1), Map.entry("admission_criteria", "符合入径标准"),
+                        Map.entry("stages", List.of(Map.of("code", "WARD"), Map.of("code", "WARD"))),
+                        Map.entry("publication_scope", "本院"), Map.entry("version_immutable_after_publish", false))));
+        ConfigurationItemWire invalidPathway = transition(identity(), pathway,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "拒绝可变的临床路径配置");
+        assertThat(invalidPathway.validationErrors()).anyMatch(error -> error.contains("阶段编码"));
+        assertThat(invalidPathway.validationErrors()).anyMatch(error -> error.contains("版本不可变"));
+    }
+
     private ConfigurationItemWire transition(
             ClinicalIdentity actor, ConfigurationItemWire item,
             ConfigurationLifecycleRequestWire.ActionValue action, String reason) {

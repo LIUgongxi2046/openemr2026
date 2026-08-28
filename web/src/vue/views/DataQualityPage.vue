@@ -11,6 +11,8 @@ import {
   recordDataQualityEvaluation,
   registerDataQualityRule,
 } from '../../api/data';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -26,6 +28,7 @@ const severityLabels: Record<Severity, string> = { INFO: '提示', WARNING: '警
 
 const dimension = ref('');
 const selectedRuleId = ref('');
+const showInactive = ref(false);
 
 const leaseQuery = useQuery({
   queryKey: ['data', 'data-quality', 'lease'],
@@ -46,7 +49,8 @@ const evaluationsQuery = useQuery({
 });
 const issue = computed(() => (leaseQuery.error.value ?? rulesQuery.error.value)
   ? toClinicalIssue(leaseQuery.error.value ?? rulesQuery.error.value) : null);
-const rules = computed(() => rulesQuery.data.value ?? []);
+const allRules = computed(() => rulesQuery.data.value ?? []);
+const rules = computed(() => allRules.value.filter((rule) => showInactive.value || rule.status === 'ACTIVE'));
 const evaluations = computed(() => evaluationsQuery.data.value ?? []);
 const selectedRule = computed(() => rules.value.find((rule) => rule.data_quality_rule_id === selectedRuleId.value) ?? null);
 const activeCount = computed(() => rules.value.filter((rule) => rule.status === 'ACTIVE').length);
@@ -59,6 +63,10 @@ const form = reactive({
 const evalForm = reactive({ targetEntityId: clinicalContext.patientId, measuredValue: 0.5 });
 const busy = ref('');
 const notice = ref('');
+const createOpen = ref(false);
+const evaluationOpen = ref(false);
+const deactivateOpen = ref(false);
+const pendingDeactivate = ref<DataQualityRuleWire | null>(null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -90,10 +98,22 @@ async function createRule() {
     });
     form.ruleCode = ''; form.ruleName = ''; form.targetEntity = '';
     notice.value = '数据质量规则已注册，审计链与事件出箱已同步记录。';
+    createOpen.value = false;
     await rulesQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
+}
+
+function requestDeactivate(rule: DataQualityRuleWire) {
+  pendingDeactivate.value = rule;
+  deactivateOpen.value = true;
+}
+
+async function deactivatePending() {
+  if (!pendingDeactivate.value) return;
+  await deactivate(pendingDeactivate.value);
+  deactivateOpen.value = false;
 }
 
 async function deactivate(rule: DataQualityRuleWire) {
@@ -121,6 +141,7 @@ async function recordEvaluation() {
       evaluated_at: new Date().toISOString(),
     });
     notice.value = '评估已记录，通过/失败结论已写入审计链。';
+    evaluationOpen.value = false;
     await evaluationsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -141,6 +162,7 @@ async function recordEvaluation() {
           <select v-model="dimension"><option value="">全部维度</option><option v-for="dim in dimensionOptions" :key="dim" :value="dim">{{ dimensionLabels[dim] }}</option></select>
         </label>
         <button class="button secondary" :disabled="Boolean(busy)" @click="reload">查询</button>
+        <button class="button primary" :disabled="Boolean(busy)" @click="createOpen = true">新建质量规则</button>
       </div>
     </div>
 
@@ -155,10 +177,10 @@ async function recordEvaluation() {
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header>
-            <div><h2>规则台账</h2><p>阈值范围 0–1；选择规则后可在下方查看评估记录。</p></div>
+            <div><h2>规则台账</h2><p>阈值范围 0–1；默认只展示当前生效的业务规则。</p></div>
+            <label class="admin-code-input"><span>历史</span><input v-model="showInactive" type="checkbox" /> 包含已停用</label>
             <button class="button secondary" @click="rulesQuery.refetch()">刷新</button>
           </header>
           <div v-if="rules.length === 0" class="admin-empty" role="status">暂无数据质量规则，可在右侧注册。</div>
@@ -174,37 +196,23 @@ async function recordEvaluation() {
                   <td>{{ severityLabels[rule.severity] }}</td>
                   <td><span class="admin-status" :class="rule.status.toLowerCase()">{{ rule.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
                   <td class="admin-actions">
-                    <button class="task-action" :disabled="Boolean(busy)" @click="selectRule(rule.data_quality_rule_id)">评估</button>
-                    <button class="task-action" :disabled="rule.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(rule)">{{ busy === rule.data_quality_rule_id ? '处理中…' : '停用' }}</button>
+                    <button class="task-action" :disabled="Boolean(busy)" @click="selectRule(rule.data_quality_rule_id)">查看评估</button>
+                    <button class="task-action" :disabled="rule.status !== 'ACTIVE' || Boolean(busy)" @click="requestDeactivate(rule)">{{ busy === rule.data_quality_rule_id ? '处理中…' : '停用' }}</button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
-
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>注册规则</h2><p>规则编码、名称与目标实体必填，阈值默认 0.9。</p></div></header>
-          <form class="admin-form" @submit.prevent="createRule">
-            <label><span>规则编码</span><input v-model="form.ruleCode" maxlength="96" required placeholder="例：DQ-PATIENT-NAME" /></label>
-            <label><span>规则名称</span><input v-model="form.ruleName" maxlength="256" required placeholder="例：患者姓名完整性" /></label>
-            <label><span>维度</span><select v-model="form.dimension"><option v-for="dim in dimensionOptions" :key="dim" :value="dim">{{ dimensionLabels[dim] }}</option></select></label>
-            <label><span>目标实体</span><input v-model="form.targetEntity" maxlength="96" required placeholder="例：patient / encounter" /></label>
-            <label><span>阈值（0–1）</span><input v-model.number="form.threshold" type="number" min="0" max="1" step="0.01" required /></label>
-            <label><span>严重级别</span><select v-model="form.severity"><option v-for="severity in severityOptions" :key="severity" :value="severity">{{ severityLabels[severity] }}</option></select></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在注册…' : '注册并生效' }}</button>
-          </form>
-        </section>
-      </div>
+      </section>
 
       <section v-if="selectedRule" class="admin-panel">
         <header>
           <div><h2>评估记录 · {{ selectedRule.rule_code }}</h2><p>记录针对目标实体的实测值与通过/失败结论。</p></div>
-          <button class="button secondary" @click="selectRule('')">关闭</button>
+          <div class="toolbar-actions"><button class="button primary" :disabled="selectedRule.status !== 'ACTIVE'" @click="evaluationOpen = true">记录评估</button><button class="button secondary" @click="selectRule('')">关闭</button></div>
         </header>
         <ClinicalPageState v-if="evaluationsQuery.isPending.value" kind="loading" message="正在读取评估记录" />
         <ClinicalPageState v-else-if="evalIssue" kind="error" :code="evalIssue.code" :message="evalIssue.message" @retry="evaluationsQuery.refetch()" />
-        <div v-else class="admin-layout">
+        <div v-else>
           <section>
             <div v-if="evaluations.length === 0" class="admin-empty" role="status">该规则暂无评估记录，可在右侧记录。</div>
             <div v-else class="admin-table-wrap">
@@ -222,15 +230,30 @@ async function recordEvaluation() {
               </table>
             </div>
           </section>
-          <section class="admin-form-panel">
-            <form class="admin-form" @submit.prevent="recordEvaluation">
-              <label><span>目标实体 ID</span><input v-model="evalForm.targetEntityId" maxlength="36" required placeholder="UUID" /></label>
-              <label><span>实测值（0–1）</span><input v-model.number="evalForm.measuredValue" type="number" min="0" max="1" step="0.01" required /></label>
-              <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'record' ? '正在记录…' : '记录评估' }}</button>
-            </form>
-          </section>
         </div>
       </section>
     </template>
+
+    <AdminActionDialog v-model:open="createOpen" title="新建数据质量规则" description="规则保存后立即参与对应实体的质量评估；规则身份与阈值不可覆盖修改，变更需停用旧规则并创建新版本。" size="large" :busy="busy === 'create'">
+      <form class="admin-form quality-dialog-form" @submit.prevent="createRule">
+        <label><span>规则编码</span><input v-model="form.ruleCode" maxlength="96" required placeholder="例：DQ-PATIENT-NAME" /></label>
+        <label><span>规则名称</span><input v-model="form.ruleName" maxlength="256" required placeholder="例：患者姓名完整性" /></label>
+        <label><span>维度</span><select v-model="form.dimension"><option v-for="dim in dimensionOptions" :key="dim" :value="dim">{{ dimensionLabels[dim] }}</option></select></label>
+        <label><span>目标实体</span><input v-model="form.targetEntity" maxlength="96" required placeholder="例：patient / encounter" /></label>
+        <label><span>阈值（0–1）</span><input v-model.number="form.threshold" type="number" min="0" max="1" step="0.01" required /></label>
+        <label><span>严重级别</span><select v-model="form.severity"><option v-for="severity in severityOptions" :key="severity" :value="severity">{{ severityLabels[severity] }}</option></select></label>
+      </form>
+      <template #footer="{ close }"><button class="button secondary" :disabled="busy === 'create'" @click="close">取消</button><button class="button primary" :disabled="busy === 'create'" @click="createRule">{{ busy === 'create' ? '正在注册…' : '注册并生效' }}</button></template>
+    </AdminActionDialog>
+    <AdminActionDialog v-model:open="evaluationOpen" :title="`记录评估 · ${selectedRule?.rule_code ?? ''}`" description="实测值与规则阈值共同决定通过或失败，结论会进入审计链并影响质量整改队列。" :busy="busy === 'record'">
+      <form class="admin-form" @submit.prevent="recordEvaluation"><label><span>目标实体 ID</span><input v-model="evalForm.targetEntityId" maxlength="36" required placeholder="UUID" /></label><label><span>实测值（0–1）</span><input v-model.number="evalForm.measuredValue" type="number" min="0" max="1" step="0.01" required /></label></form>
+      <template #footer="{ close }"><button class="button secondary" :disabled="busy === 'record'" @click="close">取消</button><button class="button primary" :disabled="busy === 'record'" @click="recordEvaluation">{{ busy === 'record' ? '正在记录…' : '记录评估' }}</button></template>
+    </AdminActionDialog>
+    <AdminConfirmDialog v-model:open="deactivateOpen" :title="`停用规则 ${pendingDeactivate?.rule_code ?? ''}`" description="停用后新的数据质量评估不再执行该规则，历史失败记录、整改证据和审计链继续保留。" confirm-label="确认停用" :busy="Boolean(busy)" @confirm="deactivatePending" />
   </section>
 </template>
+
+<style scoped>
+.quality-dialog-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
+@media (max-width: 700px) { .quality-dialog-form { grid-template-columns: minmax(0, 1fr); } }
+</style>

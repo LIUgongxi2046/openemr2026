@@ -256,6 +256,12 @@ export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
         component: () => import('./views/MockInterfacePage.vue'),
         meta: { contractId: 'mock-interfaces', primaryDomain: 'ADMIN', guards: ['SESSION'], implementation: 'VUE_NATIVE' },
       },
+      {
+        path: '/mock-interfaces/:workbenchId',
+        name: 'mock-interface-workbench',
+        component: () => import('./views/MockInterfaceWorkbenchPage.vue'),
+        meta: { contractId: 'mock-interface-workbench', primaryDomain: 'ADMIN', guards: ['SESSION'], implementation: 'VUE_NATIVE' },
+      },
       { path: '/:pathMatch(.*)*', name: 'safe-not-found', component: () => import('./views/SafeNotFoundPage.vue') },
     ],
     scrollBehavior: () => ({ top: 0 }),

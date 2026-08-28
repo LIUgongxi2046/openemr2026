@@ -20,6 +20,8 @@ import {
   inpatientPathwayWorkspaceWireSchema,
   clinicalOrderWireSchema,
   clinicalTaskWireSchema,
+  clinicalTaskTeamQueueWireSchema,
+  clinicalTaskNotificationWireSchema,
   medicationSafetyEvaluationWireSchema,
   clinicalDiagnosisWireSchema,
   clinicalResultWireSchema,
@@ -67,6 +69,8 @@ import {
   type InpatientPathwayWorkspaceWire,
   type ClinicalOrderWire,
   type ClinicalTaskWire,
+  type ClinicalTaskTeamQueueWire,
+  type ClinicalTaskNotificationWire,
   type MedicationSafetyEvaluationWire,
   type ClinicalDiagnosisWire,
   type ClinicalResultWire,
@@ -123,13 +127,14 @@ const syntheticDefaults = {
   inpatientAdmissionId: '018f0000-0000-7000-8000-00000000bb03',
   inpatientWardId: '018f0000-0000-7000-8000-00000000bb01',
   collaboratorUserId: '018f0000-0000-7000-8000-00000000aa06',
+  departmentId: '018f0000-0000-7000-8000-00000000aa08',
 };
 
 const developmentDefaults = import.meta.env.DEV ? syntheticDefaults : {
   tenantId: '', organizationId: '', facilityId: '', userId: '', roleId: '', adminRoleId: '',
   patientId: '', encounterId: '', emergencyPatientId: '', emergencyEncounterId: '', documentId: '', inpatientPatientId: '',
   inpatientEncounterId: '', inpatientAdmissionId: '', inpatientWardId: '',
-  collaboratorUserId: '',
+  collaboratorUserId: '', departmentId: '',
 };
 
 export const clinicalContext = {
@@ -149,6 +154,7 @@ export const clinicalContext = {
   inpatientAdmissionId: import.meta.env.VITE_INPATIENT_ADMISSION_ID || developmentDefaults.inpatientAdmissionId,
   inpatientWardId: import.meta.env.VITE_INPATIENT_WARD_ID || developmentDefaults.inpatientWardId,
   collaboratorUserId: import.meta.env.VITE_COLLABORATOR_USER_ID || developmentDefaults.collaboratorUserId,
+  departmentId: import.meta.env.VITE_DEPARTMENT_ID || developmentDefaults.departmentId,
 };
 
 if (authSession.user) {
@@ -686,6 +692,136 @@ export async function collaborateClinicalTask(
       valid_until: action === 'delegations' ? new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() : null,
     }),
   }));
+}
+
+export async function listClinicalTaskTeamQueue(
+  lease: ContextLeaseWire,
+): Promise<ClinicalTaskTeamQueueWire[]> {
+  return clinicalTaskTeamQueueWireSchema.array().parse(await request(
+    `/clinical-task-team-queues?department_id=${clinicalContext.departmentId}`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function enqueueClinicalTask(
+  lease: ContextLeaseWire,
+  taskId: string,
+): Promise<ClinicalTaskTeamQueueWire> {
+  return clinicalTaskTeamQueueWireSchema.parse(await request('/clinical-task-team-queues', {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      department_id: clinicalContext.departmentId,
+      clinical_task_id: taskId,
+      enqueued_at: new Date().toISOString(),
+    }),
+  }));
+}
+
+export async function transitionClinicalTaskTeamQueue(
+  lease: ContextLeaseWire,
+  queue: ClinicalTaskTeamQueueWire,
+  action: 'claims' | 'completions' | 'withdrawals',
+): Promise<ClinicalTaskTeamQueueWire> {
+  return clinicalTaskTeamQueueWireSchema.parse(await request(
+    `/clinical-task-team-queues/${queue.queue_id}/${action}`,
+    {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        expected_row_version: queue.row_version,
+      }),
+    },
+  ));
+}
+
+export async function listClinicalTaskNotifications(
+  lease: ContextLeaseWire,
+  mode: 'outpatient' | 'inpatient',
+  taskId: string,
+): Promise<ClinicalTaskNotificationWire[]> {
+  return clinicalTaskNotificationWireSchema.array().parse(await request(
+    `/clinical-task-notifications?task_id=${taskId}`,
+    { headers: orderHeaders(lease, mode) },
+  ));
+}
+
+export async function createClinicalTaskNotification(
+  lease: ContextLeaseWire,
+  mode: 'outpatient' | 'inpatient',
+  input: {
+    taskId: string;
+    recipientUserId: string;
+    kind: ClinicalTaskNotificationWire['kind'];
+    channel: ClinicalTaskNotificationWire['channel'];
+    scheduledAt?: string | null;
+  },
+): Promise<ClinicalTaskNotificationWire> {
+  const context = orderContext(mode);
+  return clinicalTaskNotificationWireSchema.parse(await request('/clinical-task-notifications', {
+    method: 'POST',
+    headers: { ...orderHeaders(lease, mode), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      patient_id: context.patientId,
+      encounter_id: context.encounterId,
+      task_id: input.taskId,
+      recipient_user_id: input.recipientUserId,
+      kind: input.kind,
+      channel: input.channel,
+      scheduled_at: input.scheduledAt || null,
+    }),
+  }));
+}
+
+export async function transitionClinicalTaskNotification(
+  lease: ContextLeaseWire,
+  mode: 'outpatient' | 'inpatient',
+  notification: ClinicalTaskNotificationWire,
+  action: 'deliveries' | 'failures',
+  error?: string,
+): Promise<ClinicalTaskNotificationWire> {
+  const context = orderContext(mode);
+  return clinicalTaskNotificationWireSchema.parse(await request(
+    `/clinical-task-notifications/${notification.notification_id}/${action}`,
+    {
+      method: 'POST',
+      headers: { ...orderHeaders(lease, mode), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        patient_id: context.patientId,
+        encounter_id: context.encounterId,
+        expected_row_version: notification.row_version,
+        ...(action === 'failures' ? { error: error || '消息通道返回可重试失败' } : {}),
+      }),
+    },
+  ));
+}
+
+export async function recoverClinicalTaskNotifications(
+  lease: ContextLeaseWire,
+  mode: 'outpatient' | 'inpatient',
+  taskId: string,
+): Promise<number> {
+  const context = orderContext(mode);
+  const payload = await request('/clinical-task-notifications/recoveries', {
+    method: 'POST',
+    headers: { ...orderHeaders(lease, mode), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      patient_id: context.patientId,
+      encounter_id: context.encounterId,
+      task_id: taskId,
+    }),
+  }) as { recovered_count: number };
+  return payload.recovered_count;
 }
 
 export async function createClinicalOrder(

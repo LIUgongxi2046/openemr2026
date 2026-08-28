@@ -34,7 +34,7 @@ final class MockInterfaceApiTest {
         List<MockInterfaceWire> interfaces = mocks.list();
         assertThat(interfaces).extracting(MockInterfaceWire::code)
                 .contains("LIS_RESULTS", "PACS_IMAGES", "HIS_INSURANCE", "CA_TIMESTAMP",
-                        "MODEL_PROVIDER", "DEVICE_GATEWAY", "DICTATION_ASR");
+                        "HIE_DOCUMENT_EXCHANGE", "MODEL_PROVIDER", "DEVICE_GATEWAY", "DICTATION_ASR");
     }
 
     @Test
@@ -50,6 +50,17 @@ final class MockInterfaceApiTest {
         assertThat(result.producedAt()).isEqualTo(replay.producedAt());
         assertThat(result.payload()).isEqualTo(replay.payload());
         assertThat(result.notice()).contains("合成");
+    }
+
+    @Test
+    void givenRegionalExchange_whenInvoking_thenPendingReceiptDoesNotFakeCompletion() {
+        MockInvocationResultWire result = mocks.invoke("HIE_DOCUMENT_EXCHANGE", Map.of(
+                "document_id", "CDA-21018", "content_hash", "sha256:test"));
+
+        assertThat(result.payload())
+                .containsEntry("receipt_status", "PENDING_ACK")
+                .containsEntry("shared_at", null);
+        assertThat(result.payload().get("clinical_impact")).asString().contains("不影响院内病历签署");
     }
 
     @Test

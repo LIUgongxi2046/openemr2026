@@ -31,6 +31,21 @@ describe('AI医助小南品牌契约', () => {
     expect(dialog).toContain('class="global-ai-mascot"');
   });
 
+  it('introduces AI capabilities on login and the clinical home, and exposes the local experience account', () => {
+    const login = views['./views/LoginContextPage.vue'];
+    const clinicalHome = views['./views/ClinicalPortalPage.vue'];
+
+    expect(login).toContain('AI医助能力介绍');
+    expect(login).toContain('带上下文问答');
+    expect(login).toContain('医生确认与全程留痕');
+    expect(login).toContain('<code>linwei</code>');
+    expect(login).toContain('<code>OpenEMR2026-dev!</code>');
+    expect(clinicalHome).toContain('AI医助小南随诊协同');
+    expect(clinicalHome).toContain('上下文问答与摘要');
+    expect(clinicalHome).toContain('主动风险提醒');
+    expect(clinicalHome).toContain('data-route-target="ai-assistant"');
+  });
+
   it('keeps governance terminology out of the clinician dialog', () => {
     const dialog = components['./components/GlobalAiAssistantDialog.vue'];
     const template = dialog.slice(dialog.indexOf('<template>'));

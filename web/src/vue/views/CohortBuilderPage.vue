@@ -13,10 +13,12 @@ import {
   listResearchCohorts,
   recordResearchCohortSnapshot,
 } from '../../api/data';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const status = ref('');
+const status = ref('ACTIVE');
 const selectedCohortId = ref('');
 
 const leaseQuery = useQuery({
@@ -57,6 +59,11 @@ const snapshotForm = reactive({ memberCount: 0 });
 const memberForm = reactive({ patientId: clinicalContext.patientId });
 const busy = ref('');
 const notice = ref('');
+const createOpen = ref(false);
+const snapshotOpen = ref(false);
+const memberOpen = ref(false);
+const deactivateOpen = ref(false);
+const pendingDeactivate = ref<ResearchCohortWire | null>(null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -86,11 +93,15 @@ async function createCohort() {
     });
     form.cohortCode = ''; form.cohortName = ''; form.inclusionCriteria = ''; form.exclusionCriteria = '';
     notice.value = '研究队列已定义，审计链与事件出箱已同步记录。';
+    createOpen.value = false;
     await cohortsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
+
+function requestDeactivate(cohort: ResearchCohortWire) { pendingDeactivate.value = cohort; deactivateOpen.value = true; }
+async function deactivatePending() { if (pendingDeactivate.value) await deactivate(pendingDeactivate.value); deactivateOpen.value = false; }
 
 async function deactivate(cohort: ResearchCohortWire) {
   const lease = leaseQuery.data.value;
@@ -116,6 +127,7 @@ async function recordSnapshot() {
       computed_at: new Date().toISOString(),
     });
     notice.value = '队列快照已记录，判据哈希已生成。';
+    snapshotOpen.value = false;
     await snapshotsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -133,6 +145,7 @@ async function computeMember() {
       computed_at: new Date().toISOString(),
     });
     notice.value = '患者成员已计算并加入队列。';
+    memberOpen.value = false;
     await membersQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -153,6 +166,7 @@ async function computeMember() {
           <select v-model="status"><option value="">全部状态</option><option value="ACTIVE">有效</option><option value="INACTIVE">已停用</option></select>
         </label>
         <button class="button secondary" :disabled="Boolean(busy)" @click="reload">查询</button>
+        <button class="button primary" :disabled="Boolean(busy)" @click="createOpen = true">新建研究队列</button>
       </div>
     </div>
 
@@ -168,8 +182,7 @@ async function computeMember() {
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
-        <section class="admin-panel">
+      <section class="admin-panel">
           <header>
             <div><h2>队列台账</h2><p>选择队列后可在下方查看快照与成员。</p></div>
             <button class="button secondary" @click="cohortsQuery.refetch()">刷新</button>
@@ -186,34 +199,22 @@ async function computeMember() {
                   <td><span class="admin-status" :class="cohort.status.toLowerCase()">{{ cohort.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
                   <td class="admin-actions">
                     <button class="task-action" :disabled="Boolean(busy)" @click="selectCohort(cohort.research_cohort_id)">详情</button>
-                    <button class="task-action" :disabled="cohort.status !== 'ACTIVE' || Boolean(busy)" @click="deactivate(cohort)">{{ busy === cohort.research_cohort_id ? '处理中…' : '停用' }}</button>
+                    <button class="task-action" :disabled="cohort.status !== 'ACTIVE' || Boolean(busy)" @click="requestDeactivate(cohort)">{{ busy === cohort.research_cohort_id ? '处理中…' : '停用' }}</button>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
-
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>定义队列</h2><p>队列编码、名称与入组判据必填，排除判据可选。</p></div></header>
-          <form class="admin-form" @submit.prevent="createCohort">
-            <label><span>队列编码</span><input v-model="form.cohortCode" maxlength="96" required placeholder="例：COHORT-DM2-2026" /></label>
-            <label><span>队列名称</span><input v-model="form.cohortName" maxlength="256" required placeholder="例：2 型糖尿病队列" /></label>
-            <label><span>入组判据</span><textarea v-model="form.inclusionCriteria" required placeholder="例：诊断为 2 型糖尿病且年龄 ≥ 18" /></label>
-            <label><span>排除判据（可选）</span><textarea v-model="form.exclusionCriteria" placeholder="例：妊娠期糖尿病" /></label>
-            <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'create' ? '正在定义…' : '定义并生效' }}</button>
-          </form>
-        </section>
-      </div>
+      </section>
 
       <section v-if="selectedCohort" class="admin-panel">
         <header>
           <div><h2>快照与成员 · {{ selectedCohort.cohort_code }}</h2><p>快照记录成员数与判据哈希；成员由患者入排计算得出。</p></div>
-          <button class="button secondary" @click="selectCohort('')">关闭</button>
+          <div class="toolbar-actions"><button class="button secondary" @click="snapshotOpen = true">记录快照</button><button class="button primary" @click="memberOpen = true">计算成员</button><button class="button secondary" @click="selectCohort('')">关闭</button></div>
         </header>
         <ClinicalPageState v-if="snapshotsQuery.isPending.value || membersQuery.isPending.value" kind="loading" message="正在读取队列快照与成员" />
         <ClinicalPageState v-else-if="detailIssue" kind="error" :code="detailIssue.code" :message="detailIssue.message" @retry="snapshotsQuery.refetch()" />
-        <div v-else class="admin-layout">
+        <div v-else>
           <section>
             <h3>成员快照</h3>
             <div v-if="snapshots.length === 0" class="admin-empty" role="status">暂无快照，可在右侧记录。</div>
@@ -243,20 +244,21 @@ async function computeMember() {
               </table>
             </div>
           </section>
-          <section class="admin-form-panel">
-            <form class="admin-form" @submit.prevent="recordSnapshot">
-              <h3>记录快照</h3>
-              <label><span>成员数</span><input v-model.number="snapshotForm.memberCount" type="number" min="0" step="1" required /></label>
-              <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'snapshot' ? '正在记录…' : '记录快照' }}</button>
-            </form>
-            <form class="admin-form" @submit.prevent="computeMember">
-              <h3>计算成员</h3>
-              <label><span>患者 ID</span><input v-model="memberForm.patientId" maxlength="36" required placeholder="UUID" /></label>
-              <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'member' ? '正在计算…' : '计算并加入' }}</button>
-            </form>
-          </section>
         </div>
       </section>
     </template>
+
+    <AdminActionDialog v-model:open="createOpen" title="新建研究队列" description="入排判据一经定义即作为可复算身份保存；如需改变判据，应停用旧队列并创建新版本。" size="large" :busy="busy === 'create'">
+      <form class="admin-form cohort-dialog-form" @submit.prevent="createCohort"><label><span>队列编码</span><input v-model="form.cohortCode" maxlength="96" required placeholder="例：COHORT-DM2-2026" /></label><label><span>队列名称</span><input v-model="form.cohortName" maxlength="256" required placeholder="例：2 型糖尿病队列" /></label><label><span>入组判据</span><textarea v-model="form.inclusionCriteria" required placeholder="例：诊断为 2 型糖尿病且年龄 ≥ 18" /></label><label><span>排除判据（可选）</span><textarea v-model="form.exclusionCriteria" placeholder="例：妊娠期糖尿病" /></label></form>
+      <template #footer="{ close }"><button class="button secondary" :disabled="busy === 'create'" @click="close">取消</button><button class="button primary" :disabled="busy === 'create'" @click="createCohort">{{ busy === 'create' ? '正在定义…' : '定义并生效' }}</button></template>
+    </AdminActionDialog>
+    <AdminActionDialog v-model:open="snapshotOpen" :title="`记录队列快照 · ${selectedCohort?.cohort_code ?? ''}`" description="快照固化成员数、计算时间和判据哈希，创建后不可覆盖或删除。" :busy="busy === 'snapshot'"><form class="admin-form" @submit.prevent="recordSnapshot"><label><span>成员数</span><input v-model.number="snapshotForm.memberCount" type="number" min="0" step="1" required /></label></form><template #footer="{ close }"><button class="button secondary" :disabled="busy === 'snapshot'" @click="close">取消</button><button class="button primary" :disabled="busy === 'snapshot'" @click="recordSnapshot">记录快照</button></template></AdminActionDialog>
+    <AdminActionDialog v-model:open="memberOpen" :title="`计算队列成员 · ${selectedCohort?.cohort_code ?? ''}`" description="服务端会重新执行入排判据；只有活动患者且满足条件时才会加入队列。" :busy="busy === 'member'"><form class="admin-form" @submit.prevent="computeMember"><label><span>患者 ID</span><input v-model="memberForm.patientId" maxlength="36" required placeholder="UUID" /></label></form><template #footer="{ close }"><button class="button secondary" :disabled="busy === 'member'" @click="close">取消</button><button class="button primary" :disabled="busy === 'member'" @click="computeMember">计算并加入</button></template></AdminActionDialog>
+    <AdminConfirmDialog v-model:open="deactivateOpen" :title="`停用队列 ${pendingDeactivate?.cohort_code ?? ''}`" description="停用后不能生成新快照、计算新成员或发起新的数据交付；既有成员、快照和研究证据保持只读。" confirm-label="确认停用" :busy="Boolean(busy)" @confirm="deactivatePending" />
   </section>
 </template>
+
+<style scoped>
+.cohort-dialog-form { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0; }
+@media (max-width: 700px) { .cohort-dialog-form { grid-template-columns: minmax(0, 1fr); } }
+</style>

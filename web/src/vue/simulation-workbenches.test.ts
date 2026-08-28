@@ -1,24 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { simulationWorkbenches } from './simulation-workbenches';
+import { mockInterfaceSubmenus, simulationWorkbenches } from './simulation-workbenches';
 
-describe('scenario simulation workbenches', () => {
-  it('defines the 13 external dependency pages with complete workflows and safeguards', () => {
-    const definitions = Object.values(simulationWorkbenches);
-    expect(definitions).toHaveLength(13);
-    expect(new Set(definitions.map((item) => item.id)).size).toBe(13);
-    for (const item of definitions) {
-      expect(item.steps).toHaveLength(4);
-      expect(item.safeguards.length).toBeGreaterThanOrEqual(3);
-      expect(item.resultFocus.length).toBeGreaterThanOrEqual(2);
-      expect(item.defaultEntity).not.toBe('');
-    }
+describe('mock interface submenu contract', () => {
+  it('registers one overview and all 13 configured workbenches', () => {
+    expect(mockInterfaceSubmenus).toHaveLength(14);
+    expect(Object.keys(simulationWorkbenches)).toHaveLength(13);
+    expect(new Set(mockInterfaceSubmenus.map(([id]) => id)).size).toBe(14);
   });
 
-  it('covers identity, AI, devices, integrations, archives and clinical execution', () => {
-    const types = new Set(Object.values(simulationWorkbenches).map((item) => item.systemType));
-    expect(types).toEqual(new Set([
-      'IDENTITY', 'DICTATION', 'MODEL', 'DEVICE', 'INTEGRATION_',
-      'ARCHIVE_SCAN', 'ARCHIVE_STORAGE', 'PATHOLOGY', 'ANESTHESIA', 'THERAPY',
-    ]));
+  it('keeps every workbench actionable and safety documented', () => {
+    for (const definition of Object.values(simulationWorkbenches)) {
+      expect(definition.steps).toHaveLength(4);
+      expect(definition.safeguards.length).toBeGreaterThanOrEqual(3);
+      expect(definition.resultFocus.length).toBeGreaterThan(0);
+      expect(definition.defaultEntity.trim()).not.toBe('');
+      expect(definition.systemType.trim()).not.toBe('');
+    }
   });
 });

@@ -1,49 +1,261 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, ref } from 'vue';
-import type { ClinicalTaskWire } from '../../generated/contracts';
-import { clinicalContext, collaborateClinicalTask, commandClinicalTask, issueClinicalTaskLease, listClinicalTasks } from '../../clinical-api';
+import { computed, reactive, ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
+import type {
+  ClinicalTaskNotificationWire, ClinicalTaskTeamQueueWire, ClinicalTaskWire, ConfigurationItemWire,
+} from '../../generated/contracts';
+import {
+  clinicalContext, collaborateClinicalTask, commandClinicalTask, createClinicalTaskNotification,
+  enqueueClinicalTask, issueClinicalTaskLease, issueContextLease, issueInpatientLease,
+  listClinicalTaskNotifications, listClinicalTasks, listClinicalTaskTeamQueue,
+  loadInpatientPathwayWorkspace, recoverClinicalTaskNotifications, transitionClinicalTaskNotification,
+  transitionClinicalTaskTeamQueue,
+} from '../../clinical-api';
+import {
+  defineConfiguration, issueConfigurationLease, listConfigurations, transitionConfiguration, updateConfiguration,
+} from '../../api/config';
 import { developmentCopy } from '../../development-copy';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const mode = ref<'outpatient' | 'inpatient'>('outpatient'); const busy = ref<string | null>(null); const notice = ref('');
-const risk = ref<'ALL' | ClinicalTaskWire['risk_level']>('ALL'); const search = ref('');
-const collaborationTaskId = ref<string | null>(null); const collaborationReason = ref('临床班次与时限要求');
-const tasksQuery = useQuery({ queryKey: ['clinical', 'tasks', mode], queryFn: async () => { const lease = await issueClinicalTaskLease(mode.value); return { lease, tasks: await listClinicalTasks(lease, mode.value) }; }, retry: false, staleTime: 0, gcTime: 0 });
+type ViewKey = 'overview' | 'team' | 'collaboration' | 'notifications' | 'pathway' | 'rules';
+type ConfigKind = 'CLINICAL_TASK_RULE' | 'CLINICAL_PATHWAY';
+
+const activeView = ref<ViewKey>('overview');
+const mode = ref<'outpatient' | 'inpatient'>('inpatient');
+const busy = ref<string | null>(null);
+const notice = ref('');
+const risk = ref<'ALL' | ClinicalTaskWire['risk_level']>('ALL');
+const search = ref('');
+const selectedTaskId = ref('');
+const taskDialog = ref<'process' | 'collaborate' | 'enqueue' | 'notification' | null>(null);
+const queueDialog = ref<{ action: 'claim' | 'complete' | 'withdraw'; item: ClinicalTaskTeamQueueWire } | null>(null);
+const notificationDialog = ref<{ action: 'deliver' | 'fail' | 'recover'; item?: ClinicalTaskNotificationWire } | null>(null);
+const configDialog = ref<'create' | 'edit' | 'archive' | null>(null);
+const selectedConfig = ref<ConfigurationItemWire | null>(null);
+const collaboration = reactive({ action: 'delegations' as 'delegations' | 'transfers' | 'escalations', reason: '临床班次与时限要求' });
+const notificationForm = reactive({ kind: 'CREATED' as ClinicalTaskNotificationWire['kind'], channel: 'IN_APP' as ClinicalTaskNotificationWire['channel'], scheduledAt: '' });
+const failureReason = ref('院内消息通道暂时不可用，已转入可恢复队列。');
+const configForm = reactive({
+  kind: 'CLINICAL_TASK_RULE' as ConfigKind, key: '', name: '', specialty: '心血管内科', diagnosis: 'I50.9',
+  taskType: '危急值处置', riskLevel: 'CRITICAL', dueMinutes: 15, escalationMinutes: 5,
+  versionNo: 1, admissionCriteria: '主要诊断符合标准路径，已排除绝对禁忌证并完成患者知情。',
+});
+
+const tasksQuery = useQuery({
+  queryKey: ['clinical', 'tasks-center', mode],
+  queryFn: async () => {
+    const lease = await issueClinicalTaskLease(mode.value);
+    return { lease, tasks: await listClinicalTasks(lease, mode.value) };
+  }, retry: false, staleTime: 0, gcTime: 0,
+});
+const queueQuery = useQuery({
+  queryKey: ['clinical', 'task-team-queue'],
+  queryFn: async () => {
+    const lease = await issueContextLease(null, null, 'CLINICAL_TASK_WORKFLOW');
+    return { lease, items: await listClinicalTaskTeamQueue(lease) };
+  }, retry: false, staleTime: 0, gcTime: 0,
+});
+const pathwayQuery = useQuery({
+  queryKey: ['clinical', 'task-center-pathway'],
+  queryFn: async () => {
+    const lease = await issueInpatientLease();
+    return { lease, workspace: await loadInpatientPathwayWorkspace(lease) };
+  }, retry: false, staleTime: 0, gcTime: 0,
+});
+const configQuery = useQuery({
+  queryKey: ['clinical', 'task-center-config'],
+  queryFn: async () => {
+    const lease = await issueConfigurationLease();
+    const [rules, pathways] = await Promise.all([
+      listConfigurations(lease, 'CLINICAL_TASK_RULE'), listConfigurations(lease, 'CLINICAL_PATHWAY'),
+    ]);
+    return { lease, rules, pathways };
+  }, retry: false, staleTime: 0, gcTime: 0,
+});
+const notificationsQuery = useQuery({
+  queryKey: ['clinical', 'task-notifications', mode, selectedTaskId],
+  queryFn: async () => {
+    if (!tasksQuery.data.value || !selectedTaskId.value) return [];
+    return listClinicalTaskNotifications(tasksQuery.data.value.lease, mode.value, selectedTaskId.value);
+  }, enabled: computed(() => Boolean(tasksQuery.data.value && selectedTaskId.value)), retry: false, staleTime: 0, gcTime: 0,
+});
+
 const issue = computed(() => tasksQuery.error.value ? toClinicalIssue(tasksQuery.error.value) : null);
 const tasks = computed(() => tasksQuery.data.value?.tasks ?? []);
-const filtered = computed(() => tasks.value.filter((task) => { const needle = search.value.trim().toLowerCase(); return (risk.value === 'ALL' || task.risk_level === risk.value) && (!needle || `${task.title} ${task.task_type} ${task.source_type}`.toLowerCase().includes(needle)); }));
-const open = computed(() => tasks.value.filter((task) => !['COMPLETED', 'WITHDRAWN', 'EXPIRED'].includes(task.state)));
-const critical = computed(() => open.value.filter((task) => task.risk_level === 'CRITICAL'));
-const overdue = computed(() => open.value.filter((task) => task.due_at && new Date(task.due_at).getTime() < Date.now()));
-async function run(key: string, action: () => Promise<void>, success: string) { if (busy.value || !tasksQuery.data.value) return; busy.value = key; notice.value = ''; try { await action(); await tasksQuery.refetch(); notice.value = success; } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; } finally { busy.value = null; } }
-function command(task: ClinicalTaskWire, action: 'views' | 'claims') { const data = tasksQuery.data.value; if (!data) return; void run(`${action}:${task.task_id}`, async () => { await commandClinicalTask(data.lease, mode.value, task, action); }, action === 'views' ? '任务已标记查看，但来源业务仍未完成' : '任务已接手；完成状态仍由来源业务事实确认'); }
-function collaborate(task: ClinicalTaskWire, action: 'delegations' | 'transfers' | 'escalations') { const data = tasksQuery.data.value; if (!data || !clinicalContext.collaboratorUserId || collaborationReason.value.trim().length < 2) return; const messages = { delegations: '任务已限时委托，来源业务仍未完成', transfers: '任务责任已转派，原责任链已保留', escalations: '任务已显式升级，需目标人员接手且回来源闭环' }; void run(`${action}:${task.task_id}`, async () => { await collaborateClinicalTask(data.lease, mode.value, task, action, clinicalContext.collaboratorUserId, collaborationReason.value.trim()); collaborationTaskId.value = null; }, messages[action]); }
+const selectedTask = computed(() => tasks.value.find((task) => task.task_id === selectedTaskId.value) ?? tasks.value[0] ?? null);
+const filtered = computed(() => tasks.value.filter((task) => {
+  const needle = search.value.trim().toLowerCase();
+  return (risk.value === 'ALL' || task.risk_level === risk.value)
+    && !['WITHDRAWN', 'EXPIRED'].includes(task.state)
+    && (!needle || `${task.title} ${task.task_type} ${task.source_type} ${task.business_state}`.toLowerCase().includes(needle));
+}));
+const openTasks = computed(() => tasks.value.filter((task) => !['COMPLETED', 'WITHDRAWN', 'EXPIRED'].includes(task.state)));
+const highRisk = computed(() => openTasks.value.filter((task) => ['CRITICAL', 'HIGH'].includes(task.risk_level)));
+const overdue = computed(() => openTasks.value.filter(isOverdue));
+const pathwayInstance = computed(() => pathwayQuery.data.value?.workspace.instance ?? null);
+const currentStage = computed(() => pathwayInstance.value?.stages.find((stage) => stage.stage_code === pathwayInstance.value?.current_stage_code));
+const configKindLabel = computed(() => configForm.kind === 'CLINICAL_PATHWAY' ? '临床路径版本' : '任务规则');
+
+watch(tasks, (items) => {
+  if (!items.some((item) => item.task_id === selectedTaskId.value)) selectedTaskId.value = items[0]?.task_id ?? '';
+}, { immediate: true });
+
+function chooseView(view: ViewKey) { activeView.value = view; notice.value = ''; }
 function riskLabel(value: ClinicalTaskWire['risk_level']) { return value === 'CRITICAL' ? '危急' : value === 'HIGH' ? '高风险' : '常规'; }
-function stateLabel(value: ClinicalTaskWire['state']) { return ({ PENDING: '待处理', ASSIGNED: '已分派', DELIVERED: '已送达', VIEWED: '已查看', CLAIMED: '已接手', IN_PROGRESS: '处理中', COMPLETED: '已完成', WITHDRAWN: '已撤回', EXPIRED: '已过期', ESCALATED: '已升级' } as Record<string, string>)[value] || value; }
+function stateLabel(value: string) { return ({ PENDING: '待处理', ASSIGNED: '已分派', DELIVERED: '已送达', VIEWED: '已查看', CLAIMED: '已接手', IN_PROGRESS: '处理中', COMPLETED: '已完成', WITHDRAWN: '已撤回', EXPIRED: '已过期', ESCALATED: '已升级', ENQUEUED: '已入队', FAILED: '投递失败' } as Record<string, string>)[value] || value; }
 function isAssignee(task: ClinicalTaskWire) { return !task.assigned_user_id || task.assigned_user_id === clinicalContext.userId; }
 function canCollaborate(task: ClinicalTaskWire) { return task.claimed_by === clinicalContext.userId && ['CLAIMED', 'IN_PROGRESS'].includes(task.state); }
-function isOverdue(task: ClinicalTaskWire) { return Boolean(task.due_at && new Date(task.due_at).getTime() < Date.now() && !['COMPLETED','WITHDRAWN','EXPIRED'].includes(task.state)); }
-function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)); }
+function isOverdue(task: ClinicalTaskWire) { return Boolean(task.due_at && new Date(task.due_at).getTime() < Date.now() && !['COMPLETED', 'WITHDRAWN', 'EXPIRED'].includes(task.state)); }
+function formatDate(value?: string | null) { return value ? new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)) : '按来源业务'; }
+function taskTitle(id: string) { return tasks.value.find((task) => task.task_id === id)?.title ?? `任务 …${id.slice(-8)}`; }
+
+async function run(key: string, action: () => Promise<void>, success: string) {
+  if (busy.value) return;
+  busy.value = key; notice.value = '';
+  try { await action(); notice.value = success; }
+  catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = null; }
+}
+
+async function processTask(action: 'views' | 'claims') {
+  if (!selectedTask.value || !tasksQuery.data.value) return;
+  await run(`task:${action}`, async () => {
+    await commandClinicalTask(tasksQuery.data.value!.lease, mode.value, selectedTask.value!, action);
+    taskDialog.value = null; await tasksQuery.refetch();
+  }, action === 'views' ? '已查看通知；任务终态仍由来源业务确认。' : '已接手任务并写入责任轨迹。');
+}
+async function submitCollaboration() {
+  if (!selectedTask.value || !tasksQuery.data.value || !clinicalContext.collaboratorUserId) return;
+  await run('collaborate', async () => {
+    await collaborateClinicalTask(tasksQuery.data.value!.lease, mode.value, selectedTask.value!, collaboration.action, clinicalContext.collaboratorUserId, collaboration.reason.trim());
+    taskDialog.value = null; await tasksQuery.refetch();
+  }, collaboration.action === 'delegations' ? '已建立 8 小时限时委托。' : collaboration.action === 'transfers' ? '已转派且保留原责任链。' : '已升级到协作人员。');
+}
+async function submitEnqueue() {
+  if (!selectedTask.value || !queueQuery.data.value) return;
+  await run('enqueue', async () => {
+    await enqueueClinicalTask(queueQuery.data.value!.lease, selectedTask.value!.task_id);
+    taskDialog.value = null; await queueQuery.refetch();
+  }, '任务已进入心血管内科团队队列。');
+}
+async function submitQueueAction() {
+  if (!queueDialog.value || !queueQuery.data.value) return;
+  const { action, item } = queueDialog.value;
+  const endpoint = action === 'claim' ? 'claims' : action === 'complete' ? 'completions' : 'withdrawals';
+  await run(`queue:${action}`, async () => {
+    await transitionClinicalTaskTeamQueue(queueQuery.data.value!.lease, item, endpoint);
+    queueDialog.value = null; await queueQuery.refetch();
+  }, action === 'withdraw' ? '队列项已可审计撤回，不删除临床任务事实。' : action === 'claim' ? '已从团队队列领取任务。' : '队列协作已闭环。');
+}
+async function submitNotification() {
+  if (!selectedTask.value || !tasksQuery.data.value) return;
+  await run('notification:create', async () => {
+    await createClinicalTaskNotification(tasksQuery.data.value!.lease, mode.value, {
+      taskId: selectedTask.value!.task_id, recipientUserId: clinicalContext.collaboratorUserId,
+      kind: notificationForm.kind, channel: notificationForm.channel,
+      scheduledAt: notificationForm.scheduledAt ? new Date(notificationForm.scheduledAt).toISOString() : null,
+    });
+    taskDialog.value = null; await notificationsQuery.refetch();
+  }, '任务通知已进入实际投递队列。');
+}
+async function submitNotificationAction() {
+  if (!notificationDialog.value || !tasksQuery.data.value || !selectedTask.value) return;
+  const action = notificationDialog.value.action;
+  await run(`notification:${action}`, async () => {
+    if (action === 'recover') await recoverClinicalTaskNotifications(tasksQuery.data.value!.lease, mode.value, selectedTask.value!.task_id);
+    else await transitionClinicalTaskNotification(tasksQuery.data.value!.lease, mode.value, notificationDialog.value!.item!, action === 'deliver' ? 'deliveries' : 'failures', failureReason.value.trim());
+    notificationDialog.value = null; await notificationsQuery.refetch();
+  }, action === 'recover' ? '失败通知已恢复为待投递。' : action === 'deliver' ? '通知已送达，不等同于业务完成。' : '投递失败原因已留痕。');
+}
+
+function resetConfigForm(kind: ConfigKind, item?: ConfigurationItemWire) {
+  configForm.kind = kind;
+  configForm.key = item?.config_key ?? (kind === 'CLINICAL_PATHWAY' ? `hf-standard-v${(configQuery.data.value?.pathways.length ?? 0) + 2}` : `task-sla-${Date.now().toString().slice(-6)}`);
+  configForm.name = item?.display_name ?? (kind === 'CLINICAL_PATHWAY' ? '心力衰竭标准临床路径' : '危急值逐级升级规则');
+  const payload = item?.payload as Record<string, unknown> | undefined;
+  configForm.specialty = String(payload?.specialty_code ?? '心血管内科');
+  configForm.diagnosis = String(payload?.diagnosis_code ?? 'I50.9');
+  configForm.taskType = String(payload?.task_type ?? '危急值处置');
+  configForm.riskLevel = String(payload?.risk_level ?? 'CRITICAL');
+  configForm.dueMinutes = Number(payload?.due_minutes ?? 15);
+  configForm.escalationMinutes = Number(payload?.escalation_minutes ?? 5);
+  configForm.versionNo = Number(payload?.version_no ?? 1);
+  configForm.admissionCriteria = String(payload?.admission_criteria ?? '主要诊断符合标准路径，已排除绝对禁忌证并完成患者知情。');
+}
+function openCreateConfig(kind: ConfigKind) { selectedConfig.value = null; resetConfigForm(kind); configDialog.value = 'create'; }
+function openEditConfig(item: ConfigurationItemWire) { selectedConfig.value = item; resetConfigForm(item.config_type as ConfigKind, item); configDialog.value = item.status === 'DRAFT' ? 'edit' : 'create'; if (item.status !== 'DRAFT') { configForm.key = `${item.config_key}-v${item.row_version + 1}`; configForm.versionNo += 1; } }
+function openArchiveConfig(item: ConfigurationItemWire) { selectedConfig.value = item; configDialog.value = 'archive'; }
+function configPayload() {
+  return configForm.kind === 'CLINICAL_PATHWAY' ? {
+    schema_version: 1, pathway_code: configForm.key.trim().toUpperCase(), specialty_code: configForm.specialty.trim(), diagnosis_code: configForm.diagnosis.trim(), version_no: configForm.versionNo,
+    admission_criteria: configForm.admissionCriteria.trim(), stages: [
+      { code: 'ADMISSION_ASSESSMENT', name: '入院评估', days: '0-1', required_sources: ['入院记录', '首次病程'] },
+      { code: 'DIAGNOSIS_TREATMENT', name: '诊断治疗与监测', days: '1-7', required_sources: ['医嘱', '检验结果'] },
+      { code: 'DISCHARGE_PREPARATION', name: '稳定与出院准备', days: '3-14', required_sources: ['出院记录', '随访计划'] },
+    ], publication_scope: '江城大学附属医院本部', version_immutable_after_publish: true,
+  } : {
+    schema_version: 1, task_type: configForm.taskType.trim(), risk_level: configForm.riskLevel,
+    due_minutes: configForm.dueMinutes, escalation_minutes: configForm.escalationMinutes,
+    assignment_strategy: '患者主管医师 → 医疗组 → 科主任', completion_source: '权威业务对象终态',
+    channels: ['IN_APP', 'OUTBOX'], applies_to: ['门诊', '急诊', '住院'], enabled: true,
+  };
+}
+async function submitConfigDialog() {
+  if (!configQuery.data.value || !configDialog.value) return;
+  const operation = configDialog.value;
+  await run('config', async () => {
+    const lease = configQuery.data.value!.lease;
+    if (operation === 'archive' && selectedConfig.value) {
+      await transitionConfiguration(lease, selectedConfig.value.config_id, { action: 'ARCHIVE', expected_version: selectedConfig.value.row_version, reason: '停用当前配置并保留历史流程与审计证据' });
+    } else if (operation === 'edit' && selectedConfig.value) {
+      await updateConfiguration(lease, selectedConfig.value.config_id, { display_name: configForm.name.trim(), payload: configPayload(), expected_version: selectedConfig.value.row_version });
+    } else {
+      await defineConfiguration(lease, { config_type: configForm.kind, config_key: configForm.key.trim(), display_name: configForm.name.trim(), payload: configPayload() });
+    }
+    configDialog.value = null; await configQuery.refetch();
+  }, operation === 'archive' ? '配置已归档停用，新流程不再引用，历史证据保留。' : '配置草案已保存；通过校验、独立审批与发布后影响新流程。');
+}
+async function lifecycle(item: ConfigurationItemWire, action: 'VALIDATE' | 'SUBMIT') {
+  if (!configQuery.data.value) return;
+  await run(`config:${action}`, async () => {
+    await transitionConfiguration(configQuery.data.value!.lease, item.config_id, { action, expected_version: item.row_version, reason: action === 'VALIDATE' ? '上线前执行完整配置契约校验' : '提交临床与质控独立审批流程' });
+    await configQuery.refetch();
+  }, action === 'VALIDATE' ? '配置校验已执行。' : '配置已提交独立审批。');
+}
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page">
-    <div class="page-head">
-      <div class="page-title"><h1>统一临床任务中心</h1><p>统一呈现风险、责任、时限与来源 · 查看通知不等于完成任务，临床终态只能由来源业务确认</p></div>
-      <div class="head-actions"><div class="task-domain-switch" role="group" aria-label="工作域"><button :class="{ active: mode === 'outpatient' }" @click="mode = 'outpatient'">门诊</button><button :class="{ active: mode === 'inpatient' }" @click="mode = 'inpatient'">住院</button></div></div>
+  <section data-page-root class="content vue-native-page task-center-page">
+    <div class="page-head task-center-heading">
+      <div class="page-title"><h1>统一临床任务与临床路径</h1><p>跨门诊、急诊、住院汇聚风险、责任、时限与路径证据；正文仍在权威来源页实时鉴权</p></div>
+      <div class="head-actions"><button class="button" type="button" :disabled="!selectedTask" @click="chooseView('collaboration')">我的委托</button><button class="button" type="button" @click="chooseView('rules')">任务规则</button><button class="button primary" type="button" @click="openCreateConfig('CLINICAL_PATHWAY')">创建临床路径版本</button></div>
     </div>
-    <div class="metric-grid" aria-label="任务指标">
-      <div class="metric"><div class="name">当前未闭环</div><div class="value">{{ open.length }}</div><div class="trend">来源状态实时同步</div></div>
-      <div class="metric"><div class="name">危急/高风险</div><div class="value" :class="{ 'danger-text': critical.length > 0 }">{{ critical.length }}</div><div class="trend">不可普通批量完成</div></div>
-      <div class="metric"><div class="name">已逾期</div><div class="value" :class="{ 'danger-text': overdue.length > 0 }">{{ overdue.length }}</div><div class="trend">需升级但不伪造终态</div></div>
-      <div class="metric"><div class="name">已完成</div><div class="value">{{ tasks.filter((task) => task.state === 'COMPLETED').length }}</div><div class="trend">均有来源业务证据</div></div>
-    </div>
-    <section class="task-filters"><label>风险<select v-model="risk"><option value="ALL">全部风险</option><option value="CRITICAL">危急</option><option value="HIGH">高风险</option><option value="ROUTINE">常规</option></select></label><label class="task-search">搜索<input v-model="search" placeholder="任务、来源或类型" /></label><button class="button secondary" @click="tasksQuery.refetch()">刷新来源状态</button></section>
+    <nav class="task-center-tabs" aria-label="任务与临床路径子菜单"><button v-for="item in ([['overview','任务总览'],['team','团队队列'],['collaboration','委托协作'],['notifications','消息通知'],['pathway','临床路径'],['rules','任务规则']] as const)" :key="item[0]" type="button" :class="{ active: activeView === item[0] }" @click="chooseView(item[0])">{{ item[1] }}</button></nav>
+    <div class="metric-grid task-center-metrics" aria-label="任务与路径指标"><div class="metric"><div class="name">我的待处理</div><div class="value">{{ openTasks.length }}</div><div class="trend" :class="{ 'danger-text': overdue.length }">{{ overdue.length }} 项已逾期</div></div><div class="metric"><div class="name">危急 / 高风险</div><div class="value danger-text">{{ highRisk.length }}</div><div class="trend">必须回权威来源闭环</div></div><div class="metric"><div class="name">团队队列</div><div class="value">{{ queueQuery.data.value?.items.filter((item) => !['COMPLETED','WITHDRAWN'].includes(item.queue_status)).length ?? 0 }}</div><div class="trend">领取与撤回保留责任链</div></div><div class="metric"><div class="name">当前路径</div><div class="value">{{ pathwayInstance?.completion_percent ?? 0 }}%</div><div class="trend">{{ pathwayInstance ? `${pathwayInstance.display_name} v${pathwayInstance.version_no}` : '待入径评估' }}</div></div></div>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div><ClinicalPageState v-if="tasksQuery.isPending.value" kind="loading" message="正在汇聚当前工作域任务" /><ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="tasksQuery.refetch()" />
-    <section v-else class="clinical-task-list"><div v-if="filtered.length === 0" class="empty-state task-empty"><span>✓</span><p>当前筛选范围无任务</p><small>来源系统新增任务后将按幂等键汇聚。</small></div><article v-for="task in filtered" :key="task.task_id" class="clinical-task-card" :class="task.risk_level.toLowerCase()"><header><div><span class="task-risk" :class="task.risk_level.toLowerCase()">{{ riskLabel(task.risk_level) }}</span><strong>{{ task.title }}</strong><small>{{ task.task_type }} · 来源 {{ task.source_type }} …{{ task.source_id.slice(-8) }}</small></div><span class="task-state" :class="task.state.toLowerCase()">{{ stateLabel(task.state) }}</span></header><div class="clinical-task-body"><dl><div><dt>业务状态</dt><dd>{{ task.business_state }}</dd></div><div><dt>责任状态</dt><dd>{{ task.claimed_by ? `已由 …${task.claimed_by.slice(-6)} 接手` : task.assigned_user_id ? `已分派 …${task.assigned_user_id.slice(-6)}，待接手` : '待接手' }}</dd></div><div><dt>时限</dt><dd :class="{ overdue: isOverdue(task) }">{{ task.due_at ? formatDate(task.due_at) : '按来源业务' }}</dd></div><div><dt>任务版本</dt><dd>v{{ task.row_version }} · {{ task.data_watermark.slice(0, 10) }}…</dd></div></dl></div>
-      <footer><span>{{ task.risk_level === 'CRITICAL' ? '必须回来源完成高风险核验' : '来源业务状态是完成依据' }}</span><div class="toolbar-actions"><button v-if="['PENDING','ASSIGNED','DELIVERED'].includes(task.state) && isAssignee(task)" class="button secondary" :disabled="busy === `views:${task.task_id}`" @click="command(task, 'views')">标记查看</button><button v-if="['PENDING','ASSIGNED','DELIVERED','VIEWED','ESCALATED'].includes(task.state) && isAssignee(task)" class="button secondary" :disabled="busy === `claims:${task.task_id}`" @click="command(task, 'claims')">接手任务</button><a class="button primary task-source-link" :href="task.source_route">回到来源处理</a></div></footer>
-      <details v-if="canCollaborate(task)" class="task-collaboration" :open="collaborationTaskId === task.task_id" @toggle="collaborationTaskId = task.task_id"><summary>责任协作：委托、转派或升级</summary><div><label>目标人员<input :value="developmentCopy.collaboratorName" readonly /></label><label class="wide">原因<input v-model="collaborationReason" /></label><div class="toolbar-actions wide"><button class="button secondary" :disabled="Boolean(busy) || collaborationReason.trim().length < 2" @click="collaborate(task, 'delegations')">委托 8 小时</button><button v-if="task.state === 'CLAIMED'" class="button secondary" :disabled="Boolean(busy) || collaborationReason.trim().length < 2" @click="collaborate(task, 'transfers')">直接转派</button><button class="button danger" :disabled="Boolean(busy) || collaborationReason.trim().length < 2" @click="collaborate(task, 'escalations')">升级处理</button></div></div></details></article></section>
+    <template v-else>
+      <section v-if="activeView === 'overview'" class="task-overview-grid"><div class="card task-table-card"><div class="task-filters"><label>工作域<select v-model="mode"><option value="outpatient">门诊</option><option value="inpatient">住院</option></select></label><label>风险<select v-model="risk"><option value="ALL">全部风险</option><option value="CRITICAL">危急</option><option value="HIGH">高风险</option><option value="ROUTINE">常规</option></select></label><label class="task-search">搜索<input v-model="search" placeholder="患者 / 任务 / 路径" /></label><button class="button" @click="tasksQuery.refetch()">筛选并刷新</button></div><div class="task-table-wrap"><table class="table task-center-table"><thead><tr><th>类型</th><th>任务</th><th>业务状态</th><th>当前责任</th><th>时限</th><th>操作</th></tr></thead><tbody><tr v-for="task in filtered" :key="task.task_id" :class="{ selected: selectedTask?.task_id === task.task_id }" @click="selectedTaskId = task.task_id"><td><span class="task-risk" :class="task.risk_level.toLowerCase()">{{ riskLabel(task.risk_level) }}</span></td><td><b>{{ task.title }}</b><small>{{ task.task_type }} · {{ task.source_type }} …{{ task.source_id.slice(-8) }}</small></td><td><span class="task-state" :class="task.state.toLowerCase()">{{ stateLabel(task.state) }}</span><small>{{ task.business_state }}</small></td><td>{{ task.claimed_by ? `已接手 …${task.claimed_by.slice(-6)}` : task.assigned_user_id ? `已分派 …${task.assigned_user_id.slice(-6)}` : '本人或医疗组' }}</td><td :class="{ 'danger-text': isOverdue(task) }">{{ formatDate(task.due_at) }}</td><td><button class="button sm" type="button" @click.stop="selectedTaskId = task.task_id; taskDialog = 'process'">处理</button></td></tr></tbody></table><div v-if="!filtered.length" class="clinical-empty-state">当前筛选范围无可显示任务；已撤回和已过期项不再作为有效工作项展示。</div></div><div class="task-state-notice"><b>任务状态机</b><span>待分派 → 已查看 → 已接手 → 委托/转派/升级 → 由来源业务确认完成。通知已读不等于任务完成。</span></div></div><aside class="card current-path-card"><header><div><span>当前住院路径</span><h2>{{ pathwayInstance?.display_name ?? '待入径评估' }}</h2></div><span class="status amber">{{ pathwayInstance ? `v${pathwayInstance.version_no}` : '无实例' }}</span></header><div v-if="pathwayInstance" class="path-card-body"><dl><div><dt>当前阶段</dt><dd>{{ currentStage?.display_name }}</dd></div><div><dt>路径完成度</dt><dd>{{ pathwayInstance.completed_task_count }} / {{ pathwayInstance.required_task_count }} · {{ pathwayInstance.completion_percent }}%</dd></div><div><dt>版本事实</dt><dd>入径时固定 v{{ pathwayInstance.version_no }}</dd></div><div><dt>待审变异</dt><dd>{{ pathwayInstance.variances.filter((item) => item.status === 'REQUESTED').length }} 项</dd></div></dl><h3>{{ currentStage?.display_name }}任务</h3><article v-for="task in currentStage?.tasks" :key="task.pathway_task_id"><span>{{ task.display_name }}</span><b :class="task.state.toLowerCase()">{{ task.state === 'COMPLETED' ? '已完成' : task.state === 'WAIVED' ? '已审批豁免' : '待来源证据' }}</b></article><div class="pathway-rule-note"><b>退出 / 重入规则</b><span>退出不删除既有路径事实；重入创建新实例，不回写旧版本。</span></div><RouterLink class="button primary" to="/ip-pathway">进入路径执行中心</RouterLink></div><div v-else class="clinical-empty-state">当前患者尚未入径，可在住院路径执行中心评估。</div></aside></section>
+      <section v-else-if="activeView === 'team'" class="task-module-card card"><header><div><p class="eyebrow">TEAM QUEUE</p><h2>心血管内科团队队列</h2><p>入队、领取、闭环和撤回都写入证据链；终态临床任务不可入队。</p></div><button class="button primary" :disabled="!selectedTask" @click="taskDialog = 'enqueue'">新建入队</button></header><div class="module-table-wrap"><table class="table"><thead><tr><th>任务</th><th>队列状态</th><th>入队人</th><th>领取人</th><th>入队时间</th><th>操作</th></tr></thead><tbody><tr v-for="item in queueQuery.data.value?.items" :key="item.queue_id"><td><b>{{ taskTitle(item.clinical_task_id) }}</b><small>…{{ item.queue_id.slice(-8) }}</small></td><td><span class="task-state" :class="item.queue_status.toLowerCase()">{{ stateLabel(item.queue_status) }}</span></td><td>…{{ item.enqueued_by.slice(-6) }}</td><td>{{ item.claimed_by ? `…${item.claimed_by.slice(-6)}` : '待领取' }}</td><td>{{ formatDate(item.enqueued_at) }}</td><td><div class="toolbar-actions"><button v-if="item.queue_status === 'ENQUEUED'" class="button sm" @click="queueDialog = { action: 'claim', item }">编辑·领取</button><button v-if="item.queue_status === 'CLAIMED'" class="button sm primary" @click="queueDialog = { action: 'complete', item }">编辑·闭环</button><button v-if="item.queue_status === 'ENQUEUED'" class="button sm danger" @click="queueDialog = { action: 'withdraw', item }">删除·撤回</button></div></td></tr></tbody></table><div v-if="!queueQuery.data.value?.items.length" class="clinical-empty-state">团队队列暂无有效项。</div></div></section>
+      <section v-else-if="activeView === 'collaboration'" class="task-module-card card"><header><div><p class="eyebrow">RESPONSIBILITY</p><h2>委托、转派与升级</h2><p>仅已接手任务可变更责任链，变更不会伪造来源业务终态。</p></div><button class="button primary" :disabled="!selectedTask || !canCollaborate(selectedTask)" @click="taskDialog = 'collaborate'">新建协作</button></header><div class="collaboration-grid"><article v-for="task in tasks.filter(canCollaborate)" :key="task.task_id" :class="task.risk_level.toLowerCase()"><div><span class="task-risk" :class="task.risk_level.toLowerCase()">{{ riskLabel(task.risk_level) }}</span><h3>{{ task.title }}</h3><p>{{ task.business_state }} · 当前责任 …{{ task.claimed_by?.slice(-6) }}</p></div><button class="button" @click="selectedTaskId = task.task_id; taskDialog = 'collaborate'">编辑责任</button></article><div v-if="!tasks.some(canCollaborate)" class="clinical-empty-state">当前无可委托任务；请先在任务总览接手任务。</div></div></section>
+      <section v-else-if="activeView === 'notifications'" class="task-module-card card"><header><div><p class="eyebrow">DELIVERY</p><h2>临床任务消息通知</h2><p>送达、失败、恢复和尝试次数都可追溯；通知送达不等于任务完成。</p></div><div class="toolbar-actions"><select v-model="selectedTaskId" aria-label="选择任务"><option v-for="task in tasks" :key="task.task_id" :value="task.task_id">{{ task.title }}</option></select><button class="button primary" :disabled="!selectedTask" @click="taskDialog = 'notification'">新建通知</button></div></header><div class="module-table-wrap"><table class="table"><thead><tr><th>类型</th><th>渠道</th><th>状态</th><th>收件人</th><th>计划 / 送达</th><th>操作</th></tr></thead><tbody><tr v-for="item in notificationsQuery.data.value" :key="item.notification_id"><td>{{ item.kind }}</td><td>{{ item.channel }}</td><td><span class="task-state" :class="item.status.toLowerCase()">{{ stateLabel(item.status) }}</span><small>尝试 {{ item.attempt_count }} 次</small></td><td>…{{ item.recipient_user_id.slice(-6) }}</td><td>{{ formatDate(item.delivered_at ?? item.scheduled_at) }}</td><td><div class="toolbar-actions"><button v-if="item.status === 'PENDING'" class="button sm" @click="notificationDialog = { action: 'deliver', item }">编辑·标记送达</button><button v-if="item.status === 'PENDING'" class="button sm danger" @click="notificationDialog = { action: 'fail', item }">删除·转失败</button><button v-if="item.status === 'FAILED'" class="button sm" @click="notificationDialog = { action: 'recover', item }">编辑·恢复</button></div></td></tr></tbody></table><div v-if="!notificationsQuery.data.value?.length" class="clinical-empty-state">当前任务尚无通知证据。</div></div></section>
+      <section v-else-if="activeView === 'pathway'" class="task-module-card card"><header><div><p class="eyebrow">PATHWAY GOVERNANCE</p><h2>临床路径版本与执行</h2><p>配置版本在校验、独立审批和发布后仅影响新入径，在途实例继续绑定原版本。</p></div><button class="button primary" @click="openCreateConfig('CLINICAL_PATHWAY')">新建路径版本</button></header><div class="config-card-grid"><article v-for="item in configQuery.data.value?.pathways" :key="item.config_id"><header><div><span>{{ item.config_key }}</span><h3>{{ item.display_name }}</h3></div><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.status === 'DRAFT' ? 'gray' : 'amber'">{{ item.status }}</span></header><dl><div><dt>专科 / 诊断</dt><dd>{{ item.payload?.specialty_code }} · {{ item.payload?.diagnosis_code }}</dd></div><div><dt>版本</dt><dd>v{{ item.payload?.version_no }} · 配置 v{{ item.row_version }}</dd></div><div><dt>阶段数</dt><dd>{{ Array.isArray(item.payload?.stages) ? item.payload?.stages.length : 0 }}</dd></div><div><dt>发布范围</dt><dd>{{ item.payload?.publication_scope }}</dd></div></dl><div class="toolbar-actions"><button class="button sm" @click="openEditConfig(item)">{{ item.status === 'DRAFT' ? '编辑' : '复制新版本' }}</button><button v-if="item.status === 'DRAFT'" class="button sm" @click="lifecycle(item, item.validation_state === 'VALID' ? 'SUBMIT' : 'VALIDATE')">{{ item.validation_state === 'VALID' ? '提交审批' : '校验' }}</button><button class="button sm danger" @click="openArchiveConfig(item)">删除·停用</button></div></article><div v-if="!configQuery.data.value?.pathways.length" class="clinical-empty-state">暂无路径配置。</div></div></section>
+      <section v-else class="task-module-card card"><header><div><p class="eyebrow">TASK RULES</p><h2>三甲医院任务规则与升级时限</h2><p>任务来源、风险、责任、时限、升级和完成判定均版本化管理。</p></div><button class="button primary" @click="openCreateConfig('CLINICAL_TASK_RULE')">新建任务规则</button></header><div class="config-card-grid"><article v-for="item in configQuery.data.value?.rules" :key="item.config_id"><header><div><span>{{ item.config_key }}</span><h3>{{ item.display_name }}</h3></div><span class="status" :class="item.status === 'ACTIVE' ? 'green' : item.status === 'DRAFT' ? 'gray' : 'amber'">{{ item.status }}</span></header><dl><div><dt>任务类型</dt><dd>{{ item.payload?.task_type }}</dd></div><div><dt>风险等级</dt><dd>{{ item.payload?.risk_level }}</dd></div><div><dt>时限 / 升级</dt><dd>{{ item.payload?.due_minutes }} / {{ item.payload?.escalation_minutes }} 分钟</dd></div><div><dt>完成依据</dt><dd>{{ item.payload?.completion_source }}</dd></div></dl><div class="toolbar-actions"><button class="button sm" @click="openEditConfig(item)">{{ item.status === 'DRAFT' ? '编辑' : '复制新版本' }}</button><button v-if="item.status === 'DRAFT'" class="button sm" @click="lifecycle(item, item.validation_state === 'VALID' ? 'SUBMIT' : 'VALIDATE')">{{ item.validation_state === 'VALID' ? '提交审批' : '校验' }}</button><button class="button sm danger" @click="openArchiveConfig(item)">删除·停用</button></div></article><div v-if="!configQuery.data.value?.rules.length" class="clinical-empty-state">暂无任务规则配置。</div></div></section>
+    </template>
+    <AdminActionDialog :open="taskDialog === 'process'" title="处理临床任务" eyebrow="统一任务" :description="selectedTask?.title ?? ''" @update:open="taskDialog = $event ? 'process' : null"><div class="dialog-task-summary"><p><b>业务状态</b>{{ selectedTask?.business_state }}</p><p><b>安全边界</b>查看与接手只改变责任状态，不会伪造临床完成事实。</p></div><template #footer><button class="button" @click="taskDialog = null">取消</button><button v-if="selectedTask && ['PENDING','ASSIGNED','DELIVERED'].includes(selectedTask.state) && isAssignee(selectedTask)" class="button" :disabled="Boolean(busy)" @click="processTask('views')">标记查看</button><button v-if="selectedTask && ['PENDING','ASSIGNED','DELIVERED','VIEWED','ESCALATED'].includes(selectedTask.state) && isAssignee(selectedTask)" class="button primary" :disabled="Boolean(busy)" @click="processTask('claims')">接手任务</button><a v-if="selectedTask" class="button primary" :href="selectedTask.source_route">回来源处理</a></template></AdminActionDialog>
+    <BusinessActionDialog :open="taskDialog === 'collaborate'" title="新建 / 编辑责任协作" description="委托、转派或升级会改变任务责任链，但不改写来源业务终态。" :busy="busy === 'collaborate'" width="wide" @cancel="taskDialog = null" @confirm="submitCollaboration"><div class="dialog-grid"><label>操作<select v-model="collaboration.action"><option value="delegations">限时委托 8 小时</option><option value="transfers">转派责任</option><option value="escalations">风险升级</option></select></label><label>目标人员<input :value="developmentCopy.collaboratorName" readonly /></label></div><label>原因与交接说明<textarea v-model="collaboration.reason" minlength="2" rows="4" /></label></BusinessActionDialog>
+    <BusinessActionDialog :open="taskDialog === 'enqueue'" title="新建团队队列项" description="当前任务将进入心血管内科团队队列，终态任务会被服务端拒绝。" :busy="busy === 'enqueue'" @cancel="taskDialog = null" @confirm="submitEnqueue"><p class="dialog-warning">{{ selectedTask?.title }} · {{ selectedTask?.business_state }}</p></BusinessActionDialog>
+    <BusinessActionDialog :open="Boolean(queueDialog)" :title="queueDialog?.action === 'withdraw' ? '撤回团队队列项' : queueDialog?.action === 'claim' ? '领取团队任务' : '闭环团队协作'" :description="queueDialog?.action === 'withdraw' ? '撤回代替物理删除，原任务与队列证据继续可追溯。' : '本操作会实际改变团队队列状态。'" :danger="queueDialog?.action === 'withdraw'" :busy="Boolean(busy)" @cancel="queueDialog = null" @confirm="submitQueueAction"><p class="dialog-warning">{{ queueDialog ? taskTitle(queueDialog.item.clinical_task_id) : '' }}</p></BusinessActionDialog>
+    <BusinessActionDialog :open="taskDialog === 'notification'" title="新建任务通知" description="通知会进入实际投递状态机，不会把业务任务标记为完成。" :busy="busy === 'notification:create'" width="wide" @cancel="taskDialog = null" @confirm="submitNotification"><div class="dialog-grid"><label>通知类型<select v-model="notificationForm.kind"><option value="CREATED">新任务</option><option value="OVERDUE">逾期</option><option value="ESCALATED">已升级</option><option value="EXPIRED">已过期</option></select></label><label>投递渠道<select v-model="notificationForm.channel"><option value="IN_APP">站内消息</option><option value="OUTBOX">院内消息总线</option></select></label></div><label>计划投递时间（留空立即入队）<input v-model="notificationForm.scheduledAt" type="datetime-local" /></label></BusinessActionDialog>
+    <BusinessActionDialog :open="Boolean(notificationDialog)" :title="notificationDialog?.action === 'deliver' ? '标记通知送达' : notificationDialog?.action === 'fail' ? '记录投递失败' : '恢复失败通知'" :description="notificationDialog?.action === 'fail' ? '失败不会删除记录，可在修复通道后幂等恢复。' : '状态变更和尝试次数会被完整保留。'" :danger="notificationDialog?.action === 'fail'" :busy="Boolean(busy)" @cancel="notificationDialog = null" @confirm="submitNotificationAction"><label v-if="notificationDialog?.action === 'fail'">失败原因<textarea v-model="failureReason" minlength="2" rows="4" /></label><p v-else class="dialog-warning">请确认当前消息通道事实后继续。</p></BusinessActionDialog>
+    <BusinessActionDialog :open="Boolean(configDialog)" :title="configDialog === 'archive' ? `停用${configKindLabel}` : `${configDialog === 'edit' ? '编辑' : '新建'}${configKindLabel}`" :description="configDialog === 'archive' ? '停用仅影响新流程，历史任务、路径实例和版本证据保留。' : '新建与编辑均以草案保存，发布后才影响新流程。'" :confirm-label="configDialog === 'archive' ? '确认停用' : '保存草案'" :danger="configDialog === 'archive'" :busy="busy === 'config'" width="wide" @cancel="configDialog = null" @confirm="submitConfigDialog"><template v-if="configDialog !== 'archive'"><div class="dialog-grid"><label>配置键<input v-model="configForm.key" :readonly="configDialog === 'edit'" /></label><label>显示名称<input v-model="configForm.name" /></label></div><template v-if="configForm.kind === 'CLINICAL_TASK_RULE'"><div class="dialog-grid"><label>任务类型<input v-model="configForm.taskType" /></label><label>风险等级<select v-model="configForm.riskLevel"><option value="CRITICAL">危急</option><option value="HIGH">高风险</option><option value="ROUTINE">常规</option></select></label><label>处理时限（分钟）<input v-model.number="configForm.dueMinutes" type="number" min="1" /></label><label>升级提前量（分钟）<input v-model.number="configForm.escalationMinutes" type="number" min="1" /></label></div></template><template v-else><div class="dialog-grid"><label>专科<input v-model="configForm.specialty" /></label><label>主要诊断编码<input v-model="configForm.diagnosis" /></label><label>版本号<input v-model.number="configForm.versionNo" type="number" min="1" /></label><label>发布机构<input value="江城大学附属医院本部" readonly /></label></div><label>入径标准<textarea v-model="configForm.admissionCriteria" rows="4" minlength="4" /></label></template></template><p v-else class="dialog-warning">{{ selectedConfig?.display_name }} 将从新流程选项中移除，已发生的业务事实不会被删除。</p></BusinessActionDialog>
   </section>
 </template>
+
+<style scoped>
+.task-center-page{max-width:1660px;margin:0 auto}.task-center-heading{align-items:flex-start}.task-center-tabs{display:flex;gap:6px;overflow-x:auto;margin:-4px 0 14px;padding:5px;border:1px solid #d4e0ea;border-radius:10px;background:#fff}.task-center-tabs button{min-height:38px;padding:0 16px;border:0;border-radius:7px;background:transparent;color:#62768a;font-weight:650;white-space:nowrap;cursor:pointer}.task-center-tabs button.active{background:#1267ad;color:#fff;box-shadow:0 3px 9px rgba(18,103,173,.2)}.task-center-metrics{margin-bottom:14px}.task-overview-grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px}.task-table-card,.task-module-card,.current-path-card{overflow:hidden;border-color:#cedbea}.task-filters{grid-template-columns:145px 145px minmax(220px,1fr) auto;margin:0;border:0;border-bottom:1px solid #e2e9f1;border-radius:0}.task-table-wrap,.module-table-wrap{overflow:auto}.task-center-table{min-width:900px}.table tbody tr.selected{background:#eef6ff}.table td small{display:block;margin-top:5px;color:#74879a}.table .button.sm,.button.sm{min-height:30px;padding:0 9px}.task-state-notice{display:grid;gap:5px;margin:12px;padding:13px 15px;border:1px solid #cfe0f3;border-radius:8px;background:#f3f8fe;color:#49647e;font-size:12px}.task-state-notice b{color:#24496d}.current-path-card>header,.task-module-card>header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;border-bottom:1px solid #e2e9f1;background:#f8fbff}.current-path-card h2,.task-module-card h2{margin:3px 0 0;color:#263b53;font-size:17px}.task-module-card>header p:not(.eyebrow){margin:6px 0 0;color:#6d8093;font-size:12px}.path-card-body{display:grid;gap:12px;padding:16px}.path-card-body dl,.config-card-grid dl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}.path-card-body dl div,.config-card-grid dl div{display:grid;gap:4px}.path-card-body dt,.config-card-grid dt{color:#7a8c9e;font-size:10px}.path-card-body dd,.config-card-grid dd{margin:0;color:#263b53;font-size:11px}.path-card-body h3{margin:4px 0 0;font-size:12px}.path-card-body article{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #edf1f5;font-size:11px}.path-card-body article b{font-size:10px}.path-card-body article b.completed{color:#25835e}.path-card-body article b.pending{color:#b17013}.pathway-rule-note{display:grid;gap:5px;padding:12px;border:1px solid #ead6ae;border-radius:8px;background:#fff8e9;color:#715c31;font-size:11px}.task-module-card>header select{min-height:36px;max-width:300px;border:1px solid #c7d5e5;border-radius:7px;background:#fff}.collaboration-grid,.config-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}.collaboration-grid article,.config-card-grid article{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px;border:1px solid #d7e1ea;border-left:4px solid #8299b0;border-radius:9px;background:#fff}.collaboration-grid article.critical{border-left-color:#c63743}.collaboration-grid article.high{border-left-color:#d59a22}.collaboration-grid h3,.config-card-grid h3{margin:7px 0 4px;font-size:13px}.collaboration-grid p{margin:0;color:#718395;font-size:11px}.config-card-grid article{display:grid;align-items:initial}.config-card-grid article>header{display:flex;justify-content:space-between;gap:12px}.config-card-grid article>header span:first-child{color:#718395;font-size:10px}.config-card-grid .toolbar-actions{padding-top:12px;border-top:1px solid #edf1f5}.dialog-task-summary{display:grid;gap:12px}.dialog-task-summary p{display:grid;gap:4px;margin:0;padding:12px;border:1px solid #d9e2e9;border-radius:8px;color:#637488;font-size:12px}.dialog-task-summary b{color:#243a51}.danger-text{color:#b52f39!important;font-weight:700}.button.danger{border-color:#d8a8ab;color:#a33037;background:#fff}.clinical-empty-state{grid-column:1/-1;padding:32px;text-align:center;color:#77899b}
+@media(max-width:1120px){.task-overview-grid{grid-template-columns:1fr}.collaboration-grid,.config-card-grid{grid-template-columns:1fr}}@media(max-width:760px){.task-center-heading{display:grid;height:auto;min-height:0;gap:12px;margin-bottom:14px}.task-center-heading .head-actions{display:grid;width:100%;margin-left:0;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.task-center-heading .head-actions .button{min-width:0}.task-center-heading .head-actions .button.primary{grid-column:1/-1}.task-center-tabs{margin-top:0}.task-filters{grid-template-columns:1fr 1fr}.task-filters .task-search,.task-filters>button{grid-column:1/-1}.path-card-body dl,.config-card-grid dl{grid-template-columns:1fr}.collaboration-grid article{align-items:flex-start;flex-direction:column}}
+</style>
