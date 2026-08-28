@@ -13,6 +13,7 @@ import {
   appointmentWireSchema,
   emergencyNursingNoteCreateRequestWireSchema,
   emergencyNursingNoteWireSchema,
+  emergencyClinicalFactVoidRequestWireSchema,
   emergencyObservationCompleteRequestWireSchema,
   emergencyObservationStartRequestWireSchema,
   emergencyObservationWireSchema,
@@ -35,6 +36,7 @@ import {
   shiftHandoverCreateRequestWireSchema,
   shiftHandoverPatientCreateRequestWireSchema,
   shiftHandoverPatientWireSchema,
+  shiftHandoverVoidRequestWireSchema,
   shiftHandoverWireSchema,
   waitingQueueCallRequestWireSchema,
   waitingQueueEntryWireSchema,
@@ -141,6 +143,16 @@ export async function createEmergencyTriageAssessment(
   }));
 }
 
+export async function voidEmergencyTriageAssessment(lease: ContextLeaseWire, item: EmergencyTriageAssessmentWire, reason: string): Promise<EmergencyTriageAssessmentWire> {
+  return emergencyTriageAssessmentWireSchema.parse(await request(`/emergency-triage-assessments/${item.triage_assessment_id}/voids`, {
+    method: 'POST',
+    headers: { ...emergencyPatientHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(emergencyClinicalFactVoidRequestWireSchema.parse({
+      ...emergencyPatientEncounter(), expected_row_version: item.row_version, reason,
+    })),
+  }));
+}
+
 // ── 急诊抢救留观与去向（er-observation）─────────────────────
 export async function listEmergencyObservations(lease: ContextLeaseWire): Promise<EmergencyObservationWire[]> {
   return emergencyObservationWireSchema.array().parse(await request(
@@ -174,6 +186,16 @@ export async function completeEmergencyObservation(
       })),
     },
   ));
+}
+
+export async function voidEmergencyObservation(lease: ContextLeaseWire, item: EmergencyObservationWire, reason: string): Promise<EmergencyObservationWire> {
+  return emergencyObservationWireSchema.parse(await request(`/emergency-observations/${item.observation_id}/voids`, {
+    method: 'POST',
+    headers: { ...emergencyPatientHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(emergencyClinicalFactVoidRequestWireSchema.parse({
+      ...emergencyPatientEncounter(), expected_row_version: item.row_version, reason,
+    })),
+  }));
 }
 
 // ── 急诊抢救记录（er-record）────────────────────────────────
@@ -211,6 +233,16 @@ export async function completeEmergencyResuscitation(
   ));
 }
 
+export async function voidEmergencyResuscitation(lease: ContextLeaseWire, item: EmergencyResuscitationWire, reason: string): Promise<EmergencyResuscitationWire> {
+  return emergencyResuscitationWireSchema.parse(await request(`/emergency-resuscitations/${item.resuscitation_id}/voids`, {
+    method: 'POST',
+    headers: { ...emergencyPatientHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(emergencyClinicalFactVoidRequestWireSchema.parse({
+      ...emergencyPatientEncounter(), expected_row_version: item.row_version, reason,
+    })),
+  }));
+}
+
 // ── 急诊护理记录（er-nursing）───────────────────────────────
 export async function listEmergencyNursingNotes(lease: ContextLeaseWire): Promise<EmergencyNursingNoteWire[]> {
   return emergencyNursingNoteWireSchema.array().parse(await request(
@@ -227,6 +259,16 @@ export async function createEmergencyNursingNote(
     method: 'POST',
     headers: { ...emergencyPatientHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify(emergencyNursingNoteCreateRequestWireSchema.parse({ ...emergencyPatientEncounter(), ...input })),
+  }));
+}
+
+export async function voidEmergencyNursingNote(lease: ContextLeaseWire, item: EmergencyNursingNoteWire, reason: string): Promise<EmergencyNursingNoteWire> {
+  return emergencyNursingNoteWireSchema.parse(await request(`/emergency-nursing-notes/${item.note_id}/voids`, {
+    method: 'POST',
+    headers: { ...emergencyPatientHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(emergencyClinicalFactVoidRequestWireSchema.parse({
+      ...emergencyPatientEncounter(), expected_row_version: item.row_version, reason,
+    })),
   }));
 }
 
@@ -313,6 +355,22 @@ export async function completeShiftHandover(
       headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(shiftHandoverCompleteRequestWireSchema.parse({
         ...orgFacility(), ward_id: handover.ward_id, expected_row_version: handover.row_version,
+      })),
+    },
+  ));
+}
+
+export async function voidShiftHandover(
+  lease: ContextLeaseWire,
+  handover: ShiftHandoverWire,
+  reason: string,
+): Promise<ShiftHandoverWire> {
+  return shiftHandoverWireSchema.parse(await request(
+    `/shift-handovers/${handover.handover_id}/voids`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(shiftHandoverVoidRequestWireSchema.parse({
+        ...orgFacility(), ward_id: handover.ward_id, expected_row_version: handover.row_version, reason,
       })),
     },
   ));

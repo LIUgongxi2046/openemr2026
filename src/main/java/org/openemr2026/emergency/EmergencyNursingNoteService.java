@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyNursingNoteCreateRequestWire;
 import org.openemr2026.contracts.EmergencyNursingNoteWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,45 @@ final class EmergencyNursingNoteService {
     EmergencyNursingNoteService(JdbcClient jdbc, TransactionTemplate transactions) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+    }
+
+    EmergencyNursingNoteWire voidNote(
+            ClinicalIdentity identity, String idempotencyKey, UUID noteId,
+            EmergencyClinicalFactVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_NURSING_NOTE_VOID", idempotencyKey,
+                    sha256(noteId + "|" + request.expectedRowVersion() + "|" + reason));
+            NursingHead current = jdbc.sql("""
+                    select row_version, voided_at from emergency_nursing_note
+                    where tenant_id = :tenant and note_id = :note
+                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                    for update
+                    """).param("tenant", identity.tenantId()).param("note", noteId)
+                    .param("patient", request.patientId()).param("encounter", request.encounterId())
+                    .param("facility", request.facilityId())
+                    .query((rs, row) -> new NursingHead(rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(EmergencyNursingNoteService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new EmergencyNursingNoteException("EMERGENCY_NURSING_NOTE_VERSION_CONFLICT", 409,
+                        "The nursing note changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw new EmergencyNursingNoteException("EMERGENCY_NURSING_NOTE_STATE_INVALID", 409,
+                        "The nursing note is already voided");
+            }
+            jdbc.sql("""
+                    update emergency_nursing_note set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and note_id = :note and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("note", noteId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), noteId, current.rowVersion() + 1,
+                    "EMERGENCY_NURSING_NOTE_VOIDED", "EmergencyNursingNoteVoided");
+            completeCommand(identity, "EMERGENCY_NURSING_NOTE_VOID", idempotencyKey, noteId);
+            return note(identity.tenantId(), noteId, request.patientId());
+        });
     }
 
     EmergencyNursingNoteWire create(
@@ -71,7 +111,7 @@ final class EmergencyNursingNoteService {
     private EmergencyNursingNoteWire note(UUID tenantId, UUID noteId, UUID patientId) {
         return jdbc.sql("""
                 select note_id, patient_id, encounter_id, facility_id, assessment, intervention,
-                  risk_flag, recorded_at, row_version
+                  risk_flag, recorded_at, voided_at, void_reason, row_version
                 from emergency_nursing_note where tenant_id = :tenant and note_id = :note and patient_id = :patient
                 """).param("tenant", tenantId).param("note", noteId).param("patient", patientId)
                 .query((rs, row) -> new EmergencyNursingNoteWire(
@@ -80,6 +120,9 @@ final class EmergencyNursingNoteService {
                         rs.getString("assessment"), rs.getString("intervention"),
                         rs.getBoolean("risk_flag"),
                         rs.getObject("recorded_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(EmergencyNursingNoteService::contextDenied);
     }
@@ -177,4 +220,6 @@ final class EmergencyNursingNoteService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record NursingHead(long rowVersion, OffsetDateTime voidedAt) {}
 }

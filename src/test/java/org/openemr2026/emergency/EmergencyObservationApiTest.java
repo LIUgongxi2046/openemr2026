@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyObservationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyObservationStartRequestWire;
 import org.openemr2026.contracts.EmergencyObservationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +98,21 @@ final class EmergencyObservationApiTest {
                 .isInstanceOf(EmergencyObservationException.class)
                 .satisfies(e -> assertThat(((EmergencyObservationException) e).code())
                         .isEqualTo("EMERGENCY_OBSERVATION_VERSION_CONFLICT"));
+    }
+
+    @Test
+    void givenObservation_whenVoiding_thenReasonIsAuditedAndReplacementCanStart() {
+        Context context = seedContext();
+        EmergencyObservationWire started = start(context);
+        EmergencyObservationWire voided = observations.voidObservation(identity(), "void-" + UUID.randomUUID(),
+                started.observationId(), new EmergencyClinicalFactVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(),
+                        started.rowVersion(), "误为该患者开启留观"));
+        assertThat(voided.voidedAt()).isNotNull();
+        assertThat(voided.voidReason()).isEqualTo("误为该患者开启留观");
+        EmergencyObservationWire replacement = start(context);
+        assertThat(replacement.observationId()).isNotEqualTo(started.observationId());
+        assertThat(replacement.voidedAt()).isNull();
     }
 
     @Test

@@ -16,6 +16,7 @@ import org.openemr2026.contracts.ShiftHandoverCompleteRequestWire;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientWire;
+import org.openemr2026.contracts.ShiftHandoverVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
 import org.openemr2026.contracts.VitalSignRecordRequestWire;
 import org.openemr2026.contracts.VitalSignRecordWire;
@@ -162,6 +163,18 @@ final class NursingController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(nursing.completeHandover(identity, idempotencyKey, handoverId, command));
+    }
+
+    @PostMapping("/shift-handovers/{handover_id}/voids")
+    ResponseEntity<ShiftHandoverWire> voidHandover(
+            HttpServletRequest request,
+            @PathVariable("handover_id") UUID handoverId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ShiftHandoverVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(nursing.voidHandover(identity, idempotencyKey, handoverId, command));
     }
 
     @GetMapping("/shift-handover-patients")

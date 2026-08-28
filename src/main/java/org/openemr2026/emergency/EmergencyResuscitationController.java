@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyResuscitationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationStartRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.http.CacheControl;
@@ -64,5 +65,17 @@ final class EmergencyResuscitationController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(resuscitations.complete(identity, idempotencyKey, resuscitationId, command));
+    }
+
+    @PostMapping("/emergency-resuscitations/{resuscitation_id}/voids")
+    ResponseEntity<EmergencyResuscitationWire> voidResuscitation(
+            HttpServletRequest request,
+            @PathVariable("resuscitation_id") UUID resuscitationId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EmergencyClinicalFactVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(resuscitations.voidResuscitation(identity, idempotencyKey, resuscitationId, command));
     }
 }

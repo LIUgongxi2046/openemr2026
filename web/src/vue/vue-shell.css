@@ -574,6 +574,90 @@
   }
 }
 
+/* Emergency CRUD pages: keep actions separated, tables contained, and audit-only rows legible. */
+.emergency-crud-page { display: grid; gap: 14px; min-width: 0; }
+.emergency-crud-page .page-heading { margin-bottom: 0; }
+.emergency-crud-page .toolbar-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.emergency-crud-page .admin-panel { min-width: 0; overflow: hidden; }
+.emergency-crud-page .admin-table-wrap { max-width: 100%; overflow-x: auto; }
+.emergency-crud-page .admin-table { min-width: 760px; }
+.emergency-crud-page .inline-actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.emergency-crud-page .inline-actions .task-action { margin: 0; white-space: nowrap; }
+.emergency-crud-page tr.is-voided { color: #7d8997; background: #f7f9fb; }
+.emergency-crud-page tr.is-voided td:not(:last-child) { text-decoration: line-through; text-decoration-color: #bec7d1; }
+.emergency-record-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .7fr); gap: 14px; align-items: start; }
+.emergency-handoff-grid { display: grid; gap: 14px; min-width: 0; }
+.emergency-patient-strip { min-width: 0; gap: 16px; }
+.emergency-patient-strip > div { min-width: 0; }
+.emergency-patient-strip b, .emergency-patient-strip .meta { overflow-wrap: anywhere; }
+.emergency-patient-strip .emergency-chief-complaint { flex: 1 1 220px; }
+.emergency-patient-strip .risk { flex: 0 0 auto; white-space: nowrap; }
+.emergency-patient-strip .emergency-switch-patient { flex: 0 0 auto; margin-left: auto; white-space: nowrap; }
+.emergency-metrics { gap: 12px; margin-bottom: 14px; }
+.emergency-metrics .warning-text { color: #9a6300; }
+.emergency-grid { grid-template-columns: 270px minmax(0, 1fr) 315px; gap: 14px; align-items: start; min-width: 0; }
+.emergency-grid > * { min-width: 0; }
+.emergency-grid .scroll-card { height: 685px; }
+.emergency-queue-rail, .emergency-timeline-card, .emergency-right-rail { overflow: auto; }
+.emergency-queue-rail .queue-title, .emergency-right-rail .queue-title { min-width: 0; }
+.emergency-queue-rail .queue-title .status, .emergency-task-row .status { flex: 0 0 auto; margin-left: auto; white-space: nowrap; }
+.emergency-queue-rail .queue-meta { justify-content: space-between; flex-wrap: wrap; }
+.emergency-queue-notice { margin: 12px; }
+.emergency-timeline-card { display: flex; flex-direction: column; }
+.emergency-timeline-card > .card-body { flex: 1 0 auto; }
+.emergency-timeline-card .event-row > div:nth-child(3) { min-width: 0; }
+.emergency-timeline-card .event-row p { overflow-wrap: anywhere; }
+.emergency-summary-title { margin-top: 16px; }
+.emergency-clinical-summary > div { min-width: 0; }
+.emergency-clinical-summary b { overflow-wrap: anywhere; }
+.emergency-footer-actions { z-index: 2; flex-wrap: wrap; row-gap: 8px; }
+.emergency-footer-actions .btn { flex: 0 0 auto; margin: 0; white-space: nowrap; text-decoration: none; }
+.emergency-right-rail .card-body { min-width: 0; }
+.emergency-team-title { margin-top: 16px; }
+.emergency-task-row { display: block; color: inherit; text-decoration: none; }
+.emergency-task-row:hover { color: inherit; }
+.emergency-disposition-title { margin-top: 16px; }
+.emergency-disposition-stepper { min-width: 0; }
+.emergency-disposition-stepper .step { min-width: 0; overflow-wrap: anywhere; }
+.emergency-crud-page .admin-panel > header { flex-wrap: wrap; }
+.emergency-crud-page .admin-panel > header > div { min-width: min(100%, 260px); }
+.emergency-crud-page .admin-inline-tools { flex-wrap: wrap; gap: 10px; }
+.emergency-crud-page .admin-code-input { min-width: 0; }
+.emergency-crud-page .button, .emergency-crud-page .task-action { max-width: 100%; white-space: normal; text-align: center; }
+.admin-confirm-reason { display: grid; gap: 7px; margin-top: 14px; color: #5f3340; font-size: 12px; font-weight: 700; }
+.admin-confirm-reason textarea { width: 100%; min-height: 84px; padding: 10px 11px; border: 1px solid #d7aeb7; border-radius: 8px; color: #35242a; background: #fff; font: inherit; resize: vertical; }
+@media (max-width: 980px) {
+  .emergency-record-grid { grid-template-columns: minmax(0, 1fr); }
+  .emergency-grid { grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr); }
+  .emergency-right-rail { grid-column: 1 / -1; height: auto !important; }
+  .emergency-right-rail .card-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+  .emergency-right-rail .card-body > .notice:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 720px) {
+  .emergency-patient-strip { align-items: flex-start; flex-wrap: wrap; }
+  .emergency-patient-strip .divider { display: none; }
+  .emergency-patient-strip > div { flex: 1 1 210px; }
+  .emergency-patient-strip .emergency-switch-patient { margin-left: 0; }
+  .emergency-grid { grid-template-columns: minmax(0, 1fr); }
+  .emergency-grid .scroll-card { height: auto; max-height: none; }
+  .emergency-right-rail { grid-column: auto; }
+  .emergency-right-rail .card-body { display: block; }
+  .emergency-timeline-card .event-row { grid-template-columns: 58px 10px minmax(0, 1fr); }
+  .emergency-timeline-card .event-row .btn { grid-column: 3; justify-self: start; }
+  .emergency-footer-actions .save-state { flex: 1 0 100%; }
+  .emergency-crud-page .page-heading { align-items: flex-start; flex-direction: column; }
+  .emergency-crud-page .toolbar-actions { width: 100%; justify-content: flex-start; }
+  .emergency-crud-page .admin-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .emergency-metrics { grid-template-columns: minmax(0, 1fr); }
+  .emergency-footer-actions .btn { flex: 1 1 calc(50% - 8px); }
+  .emergency-disposition-stepper { overflow-x: auto; }
+  .emergency-disposition-stepper .step { min-width: 70px; }
+  .emergency-crud-page .admin-metrics { grid-template-columns: minmax(0, 1fr); }
+  .emergency-crud-page .toolbar-actions > * { flex: 1 1 140px; }
+}
+
 @media (max-height: 700px) {
   .global-ai-side-panel .global-ai-dialog-shell { grid-template-rows: auto minmax(145px,1fr) minmax(90px,.5fr) auto; }
   .global-ai-side-panel .global-ai-dialog-shell > header { gap: 4px 8px; padding: 8px 12px; }

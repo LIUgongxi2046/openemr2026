@@ -1273,6 +1273,8 @@ export const shiftHandoverWireSchema = z.object({
   "handover_summary": z.string(),
   "status": z.enum(["DRAFT","COMPLETED"]),
   "completed_at": z.string().nullable().optional(),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type ShiftHandoverWire = z.infer<typeof shiftHandoverWireSchema>;
@@ -1295,6 +1297,15 @@ export const shiftHandoverCompleteRequestWireSchema = z.object({
   "expected_row_version": z.number().int(),
 }).strict();
 export type ShiftHandoverCompleteRequestWire = z.infer<typeof shiftHandoverCompleteRequestWireSchema>;
+
+export const shiftHandoverVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "ward_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type ShiftHandoverVoidRequestWire = z.infer<typeof shiftHandoverVoidRequestWireSchema>;
 
 export const priceCatalogVersionWireSchema = z.object({
   "price_version_id": z.string().uuid(),
@@ -2516,6 +2527,16 @@ export const tcmFourExaminationsCreateRequestWireSchema = z.object({
 }).strict();
 export type TcmFourExaminationsCreateRequestWire = z.infer<typeof tcmFourExaminationsCreateRequestWireSchema>;
 
+export const emergencyClinicalFactVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type EmergencyClinicalFactVoidRequestWire = z.infer<typeof emergencyClinicalFactVoidRequestWireSchema>;
+
 export const emergencyTriageAssessmentWireSchema = z.object({
   "triage_assessment_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -2526,6 +2547,8 @@ export const emergencyTriageAssessmentWireSchema = z.object({
   "triaged_at": z.string(),
   "immediate_action_required": z.boolean(),
   "status": z.enum(["ACTIVE","SUPERSEDED"]),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type EmergencyTriageAssessmentWire = z.infer<typeof emergencyTriageAssessmentWireSchema>;
@@ -2572,6 +2595,8 @@ export const emergencyObservationWireSchema = z.object({
   "disposition": z.enum(["PENDING","DISCHARGED","ADMITTED","TRANSFERRED"]),
   "status": z.enum(["OBSERVING","COMPLETED"]),
   "completed_at": z.string().nullable().optional(),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type EmergencyObservationWire = z.infer<typeof emergencyObservationWireSchema>;
@@ -3214,6 +3239,8 @@ export const emergencyResuscitationWireSchema = z.object({
   "ended_at": z.string().nullable().optional(),
   "outcome": z.enum(["PENDING","ROSC","DEATH","TRANSFERRED"]),
   "status": z.enum(["IN_PROGRESS","COMPLETED"]),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type EmergencyResuscitationWire = z.infer<typeof emergencyResuscitationWireSchema>;
@@ -3423,6 +3450,8 @@ export const emergencyNursingNoteWireSchema = z.object({
   "intervention": z.string(),
   "risk_flag": z.boolean(),
   "recorded_at": z.string(),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type EmergencyNursingNoteWire = z.infer<typeof emergencyNursingNoteWireSchema>;

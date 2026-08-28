@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyObservationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyObservationStartRequestWire;
 import org.openemr2026.contracts.EmergencyObservationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -63,20 +64,21 @@ final class EmergencyObservationService {
             beginCommand(identity, "EMERGENCY_OBSERVATION_COMPLETE", idempotencyKey,
                     sha256(observationId + "|" + request.expectedRowVersion() + "|" + request.disposition()));
             ObservationHead current = jdbc.sql("""
-                    select status, row_version from emergency_observation
+                    select status, row_version, voided_at from emergency_observation
                     where tenant_id = :tenant and observation_id = :observation
                       and patient_id = :patient and encounter_id = :encounter
                       and facility_id = :facility for update
                     """).param("tenant", identity.tenantId()).param("observation", observationId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("facility", request.facilityId())
-                    .query((rs, row) -> new ObservationHead(rs.getString("status"), rs.getLong("row_version")))
+                    .query((rs, row) -> new ObservationHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
                     .optional().orElseThrow(EmergencyObservationService::contextDenied);
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new EmergencyObservationException(
                         "EMERGENCY_OBSERVATION_VERSION_CONFLICT", 409, "The observation changed; reload before retrying");
             }
-            if (!"OBSERVING".equals(current.status())) {
+            if (!"OBSERVING".equals(current.status()) || current.voidedAt() != null) {
                 throw new EmergencyObservationException(
                         "EMERGENCY_OBSERVATION_STATE_INVALID", 409, "Only an observing record can be completed");
             }
@@ -94,6 +96,45 @@ final class EmergencyObservationService {
         });
     }
 
+    EmergencyObservationWire voidObservation(
+            ClinicalIdentity identity, String idempotencyKey, UUID observationId,
+            EmergencyClinicalFactVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_OBSERVATION_VOID", idempotencyKey,
+                    sha256(observationId + "|" + request.expectedRowVersion() + "|" + reason));
+            ObservationHead current = jdbc.sql("""
+                    select status, row_version, voided_at from emergency_observation
+                    where tenant_id = :tenant and observation_id = :observation
+                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                    for update
+                    """).param("tenant", identity.tenantId()).param("observation", observationId)
+                    .param("patient", request.patientId()).param("encounter", request.encounterId())
+                    .param("facility", request.facilityId())
+                    .query((rs, row) -> new ObservationHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(EmergencyObservationService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new EmergencyObservationException("EMERGENCY_OBSERVATION_VERSION_CONFLICT", 409,
+                        "The observation changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw new EmergencyObservationException("EMERGENCY_OBSERVATION_STATE_INVALID", 409,
+                        "The observation is already voided");
+            }
+            jdbc.sql("""
+                    update emergency_observation set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and observation_id = :observation and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("observation", observationId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), observationId, current.rowVersion() + 1,
+                    "EMERGENCY_OBSERVATION_VOIDED", "EmergencyObservationVoided");
+            completeCommand(identity, "EMERGENCY_OBSERVATION_VOID", idempotencyKey, observationId);
+            return observation(identity.tenantId(), observationId, request.patientId());
+        });
+    }
+
     List<EmergencyObservationWire> listObservations(ClinicalIdentity identity, UUID patientId) {
         return jdbc.sql("""
                 select observation_id from emergency_observation
@@ -107,7 +148,7 @@ final class EmergencyObservationService {
     private EmergencyObservationWire observation(UUID tenantId, UUID observationId, UUID patientId) {
         return jdbc.sql("""
                 select observation_id, patient_id, encounter_id, facility_id, observation_started_at,
-                  disposition, status, completed_at, row_version
+                  disposition, status, completed_at, voided_at, void_reason, row_version
                 from emergency_observation
                 where tenant_id = :tenant and observation_id = :observation and patient_id = :patient
                 """).param("tenant", tenantId).param("observation", observationId).param("patient", patientId)
@@ -119,6 +160,9 @@ final class EmergencyObservationService {
                         EmergencyObservationWire.StatusValue.valueOf(rs.getString("status")),
                         rs.getObject("completed_at", OffsetDateTime.class) == null
                                 ? null : rs.getObject("completed_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(EmergencyObservationService::contextDenied);
     }
@@ -196,6 +240,13 @@ final class EmergencyObservationService {
         return new EmergencyObservationException("EMERGENCY_OBSERVATION_REQUEST_INVALID", 400, message);
     }
 
+    private static String requireText(String value, int minLength, String field) {
+        if (value == null || value.trim().length() < minLength) {
+            throw invalid(field + " must be at least " + minLength + " characters");
+        }
+        return value.trim();
+    }
+
     static EmergencyObservationException contextDenied() {
         return new EmergencyObservationException("CONTEXT_NOT_PERMITTED", 403,
                 "The requested emergency observation context is not permitted");
@@ -210,5 +261,5 @@ final class EmergencyObservationService {
         }
     }
 
-    private record ObservationHead(String status, long rowVersion) {}
+    private record ObservationHead(String status, long rowVersion, OffsetDateTime voidedAt) {}
 }

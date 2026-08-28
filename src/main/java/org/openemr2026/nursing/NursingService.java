@@ -22,6 +22,7 @@ import org.openemr2026.contracts.ShiftHandoverCompleteRequestWire;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientWire;
+import org.openemr2026.contracts.ShiftHandoverVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
 import org.openemr2026.contracts.VitalSignRecordRequestWire;
 import org.openemr2026.contracts.VitalSignRecordWire;
@@ -343,6 +344,7 @@ final class NursingService {
                     select status from shift_handover
                     where tenant_id = :tenant and handover_id = :handover
                       and ward_id = :ward and facility_id = :facility
+                      and voided_at is null
                     """).param("tenant", identity.tenantId()).param("handover", request.handoverId())
                     .param("ward", request.wardId()).param("facility", request.facilityId())
                     .query(String.class).optional().orElseThrow(() -> contextDenied());
@@ -430,7 +432,8 @@ final class NursingService {
             long openHandovers = jdbc.sql("""
                     select count(*) from shift_handover_patient p
                     join shift_handover h on h.tenant_id = p.tenant_id and h.handover_id = p.handover_id
-                    where p.tenant_id = :tenant and p.patient_id = :patient and h.status = 'DRAFT'
+                    where p.tenant_id = :tenant and p.patient_id = :patient
+                      and h.status = 'DRAFT' and h.voided_at is null
                     """).param("tenant", identity.tenantId()).param("patient", request.patientId())
                     .query(Long.class).single();
             if (openHandovers != 0) {
@@ -550,13 +553,15 @@ final class NursingService {
             beginCommand(identity, "SHIFT_HANDOVER_COMPLETE", idempotencyKey,
                     sha256(handoverId + "|" + request.expectedRowVersion()));
             HandoverHead current = jdbc.sql("""
-                    select status, row_version, incoming_user_id from shift_handover
+                    select status, row_version, incoming_user_id, voided_at from shift_handover
                     where tenant_id = :tenant and handover_id = :handover
                       and ward_id = :ward and facility_id = :facility for update
                     """).param("tenant", identity.tenantId()).param("handover", handoverId)
                     .param("ward", request.wardId()).param("facility", request.facilityId())
                     .query((rs, row) -> new HandoverHead(
-                            rs.getString("status"), rs.getLong("row_version"), rs.getObject("incoming_user_id", UUID.class)))
+                            rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("incoming_user_id", UUID.class),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
                     .optional().orElseThrow(() -> contextDenied());
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new NursingException(
@@ -565,6 +570,10 @@ final class NursingService {
             if (!"DRAFT".equals(current.status())) {
                 throw new NursingException(
                         "SHIFT_HANDOVER_STATE_INVALID", 409, "Only a draft handover can be completed");
+            }
+            if (current.voidedAt() != null) {
+                throw new NursingException(
+                        "SHIFT_HANDOVER_STATE_INVALID", 409, "A voided handover cannot be completed");
             }
             if (!identity.userId().equals(current.incomingUserId())) {
                 throw new NursingException(
@@ -583,10 +592,50 @@ final class NursingService {
         });
     }
 
+    ShiftHandoverWire voidHandover(
+            ClinicalIdentity identity, String idempotencyKey, UUID handoverId,
+            ShiftHandoverVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "SHIFT_HANDOVER_VOID", idempotencyKey,
+                    sha256(handoverId + "|" + request.expectedRowVersion() + "|" + reason));
+            HandoverHead current = jdbc.sql("""
+                    select status, row_version, incoming_user_id, voided_at from shift_handover
+                    where tenant_id = :tenant and handover_id = :handover
+                      and ward_id = :ward and facility_id = :facility for update
+                    """).param("tenant", identity.tenantId()).param("handover", handoverId)
+                    .param("ward", request.wardId()).param("facility", request.facilityId())
+                    .query((rs, row) -> new HandoverHead(
+                            rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("incoming_user_id", UUID.class),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(() -> contextDenied());
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new NursingException(
+                        "SHIFT_HANDOVER_VERSION_CONFLICT", 409, "The handover changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw new NursingException(
+                        "SHIFT_HANDOVER_STATE_INVALID", 409, "The handover is already voided");
+            }
+            jdbc.sql("""
+                    update shift_handover set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and handover_id = :handover and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("handover", handoverId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, null, handoverId, current.rowVersion() + 1,
+                    "SHIFT_HANDOVER_VOIDED", "ShiftHandoverVoided");
+            completeCommand(identity, "SHIFT_HANDOVER_VOID", idempotencyKey, handoverId);
+            return handover(identity.tenantId(), handoverId, request.facilityId());
+        });
+    }
+
     private ShiftHandoverWire handover(UUID tenantId, UUID handoverId, UUID facilityId) {
         return jdbc.sql("""
                 select handover_id, ward_id, facility_id, shift_from, shift_to,
-                  outgoing_user_id, incoming_user_id, handover_summary, status, completed_at, row_version
+                  outgoing_user_id, incoming_user_id, handover_summary, status, completed_at,
+                  voided_at, void_reason, row_version
                 from shift_handover
                 where tenant_id = :tenant and handover_id = :handover and facility_id = :facility
                 """).param("tenant", tenantId).param("handover", handoverId).param("facility", facilityId)
@@ -600,6 +649,9 @@ final class NursingService {
                         ShiftHandoverWire.StatusValue.valueOf(rs.getString("status")),
                         rs.getObject("completed_at", OffsetDateTime.class) == null
                                 ? null : rs.getObject("completed_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(() -> contextDenied());
     }
@@ -757,7 +809,7 @@ final class NursingService {
     private record ExecutionTarget(
             UUID orderId, UUID patientId, UUID encounterId, String drugCode,
             BigDecimal doseValue, String doseUnit, String routeCode) {}
-    private record HandoverHead(String status, long rowVersion, UUID incomingUserId) {}
+    private record HandoverHead(String status, long rowVersion, UUID incomingUserId, OffsetDateTime voidedAt) {}
 
     private static String sha256(String value) {
         try {

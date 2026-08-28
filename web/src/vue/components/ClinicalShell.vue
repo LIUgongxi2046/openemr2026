@@ -47,7 +47,7 @@ interface NavItem { id: string; label: string; icon: string; group: string; coun
 const navigation: NavItem[] = [
   { id: 'clinical', label: '临床业务门户', icon: '⌂', group: '临床工作域' },
   { id: 'outpatient', label: '门诊工作台', icon: '◫', group: '临床工作域', count: '6' },
-  { id: 'emergency', label: '急诊工作台', icon: '✚', group: '临床工作域', count: '4' },
+  { id: 'emergency', label: '急诊工作台', icon: '✚', group: '临床工作域', count: '6' },
   { id: 'inpatient', label: '住院工作站', icon: '▥', group: '临床工作域', count: '5' },
   { id: 'record', label: '病历中心', icon: '▤', group: '病历与质量', count: '3' },
   { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量', count: '7' },

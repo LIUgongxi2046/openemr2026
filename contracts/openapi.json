@@ -1774,6 +1774,44 @@
         }
       }
     },
+    "/shift-handovers/{handover_id}/voids": {
+      "post": {
+        "operationId": "voidShiftHandover",
+        "parameters": [
+          {
+            "name": "handover_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftHandoverVoidRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "shift handover logically voided with audit reason",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftHandover"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/price-catalogs": {
       "post": {
         "operationId": "createPriceCatalogVersion",
@@ -4512,6 +4550,27 @@
         }
       }
     },
+    "/emergency-triage-assessments/{triage_assessment_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyTriageAssessment",
+        "parameters": [{
+          "name": "triage_assessment_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyClinicalFactVoidRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "emergency triage assessment logically voided with audit evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyTriageAssessment" } } }
+          }
+        }
+      }
+    },
     "/shift-handover-patients": {
       "get": {
         "operationId": "listShiftHandoverPatients",
@@ -4658,6 +4717,27 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/emergency-observations/{observation_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyObservation",
+        "parameters": [{
+          "name": "observation_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyClinicalFactVoidRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "emergency observation logically voided with audit evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyObservation" } } }
           }
         }
       }
@@ -6654,6 +6734,27 @@
         }
       }
     },
+    "/emergency-resuscitations/{resuscitation_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyResuscitation",
+        "parameters": [{
+          "name": "resuscitation_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyClinicalFactVoidRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "emergency resuscitation logically voided with audit evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyResuscitation" } } }
+          }
+        }
+      }
+    },
     "/skill-registry": {
       "get": {
         "operationId": "listSkillRegistry",
@@ -7307,6 +7408,27 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/emergency-nursing-notes/{note_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyNursingNote",
+        "parameters": [{
+          "name": "note_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyClinicalFactVoidRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "emergency nursing note logically voided with audit evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyNursingNote" } } }
           }
         }
       }
@@ -19177,6 +19299,8 @@
           "incoming_user_id",
           "handover_summary",
           "status",
+          "voided_at",
+          "void_reason",
           "row_version"
         ],
         "properties": {
@@ -19225,6 +19349,20 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "voided_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
           },
           "row_version": {
             "type": "integer",
@@ -19302,6 +19440,41 @@
           "expected_row_version": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ShiftHandoverVoidRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "ward_id",
+          "expected_row_version",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "ward_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 1000
           }
         }
       },
@@ -25073,6 +25246,26 @@
           }
         }
       },
+      "EmergencyClinicalFactVoidRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "expected_row_version",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
       "EmergencyTriageAssessment": {
         "type": "object",
         "additionalProperties": false,
@@ -25086,6 +25279,8 @@
           "triaged_at",
           "immediate_action_required",
           "status",
+          "voided_at",
+          "void_reason",
           "row_version"
         ],
         "properties": {
@@ -25132,6 +25327,14 @@
               "ACTIVE",
               "SUPERSEDED"
             ]
+          },
+          "voided_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": ["string", "null"],
+            "maxLength": 1000
           },
           "row_version": {
             "type": "integer",
@@ -25286,6 +25489,8 @@
           "observation_started_at",
           "disposition",
           "status",
+          "voided_at",
+          "void_reason",
           "row_version"
         ],
         "properties": {
@@ -25331,6 +25536,14 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "voided_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": ["string", "null"],
+            "maxLength": 1000
           },
           "row_version": {
             "type": "integer",
@@ -28174,6 +28387,8 @@
           "started_at",
           "outcome",
           "status",
+          "voided_at",
+          "void_reason",
           "row_version"
         ],
         "properties": {
@@ -28219,6 +28434,14 @@
               "IN_PROGRESS",
               "COMPLETED"
             ]
+          },
+          "voided_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": ["string", "null"],
+            "maxLength": 1000
           },
           "row_version": {
             "type": "integer",
@@ -29039,6 +29262,8 @@
           "intervention",
           "risk_flag",
           "recorded_at",
+          "voided_at",
+          "void_reason",
           "row_version"
         ],
         "properties": {
@@ -29074,6 +29299,14 @@
           "recorded_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "voided_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": ["string", "null"],
+            "maxLength": 1000
           },
           "row_version": {
             "type": "integer",

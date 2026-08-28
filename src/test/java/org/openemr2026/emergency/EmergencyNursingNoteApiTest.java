@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyNursingNoteCreateRequestWire;
 import org.openemr2026.contracts.EmergencyNursingNoteWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -92,6 +93,19 @@ final class EmergencyNursingNoteApiTest {
                 .isInstanceOf(EmergencyNursingNoteException.class)
                 .satisfies(e -> assertThat(((EmergencyNursingNoteException) e).code())
                         .isEqualTo("EMERGENCY_NURSING_NOTE_REQUEST_INVALID"));
+    }
+
+    @Test
+    void givenNursingNote_whenVoiding_thenOriginalContentAndReasonRemainReadable() {
+        Context context = seedContext();
+        EmergencyNursingNoteWire created = create(context, "患者神志清楚，生命体征稳定", "继续心电监护", false);
+        EmergencyNursingNoteWire voided = notes.voidNote(identity(), "void-" + UUID.randomUUID(),
+                created.noteId(), new EmergencyClinicalFactVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(),
+                        created.rowVersion(), "记录时间选择错误"));
+        assertThat(voided.voidedAt()).isNotNull();
+        assertThat(voided.voidReason()).isEqualTo("记录时间选择错误");
+        assertThat(voided.assessment()).isEqualTo(created.assessment());
     }
 
     @Test

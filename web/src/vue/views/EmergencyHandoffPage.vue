@@ -14,7 +14,10 @@ import {
   listShiftHandoverPatients,
   listShiftHandovers,
   recordEncounterDomainSwitch,
+  voidShiftHandover,
 } from '../../api/emergency';
+import AdminActionDialog from '../components/AdminActionDialog.vue';
+import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -62,7 +65,9 @@ const handoverPatients = computed(() => handoverPatientsQuery.data.value ?? []);
 const switches = computed(() => switchesQuery.data.value ?? []);
 const selectedHandover = computed(() => handovers.value.find((h) => h.handover_id === selectedHandoverId.value) ?? null);
 watch(handovers, (items) => {
-  if (items.length && !items.some((item) => item.handover_id === selectedHandoverId.value)) selectedHandoverId.value = items[0].handover_id;
+  if (items.length && !items.some((item) => item.handover_id === selectedHandoverId.value && !item.voided_at)) {
+    selectedHandoverId.value = items.find((item) => !item.voided_at)?.handover_id ?? items[0].handover_id;
+  }
 }, { immediate: true });
 
 const handoverForm = reactive({ shift_from: '', shift_to: '', incoming_user_id: clinicalContext.collaboratorUserId, handover_summary: '' });
@@ -76,6 +81,12 @@ const switchForm = reactive({
 });
 const busy = ref<string>('');
 const notice = ref('');
+const createHandoverOpen = ref(false);
+const patientDialogOpen = ref(false);
+const switchDialogOpen = ref(false);
+const completeTarget = ref<ShiftHandoverWire | null>(null);
+const voidTarget = ref<ShiftHandoverWire | null>(null);
+const voidReason = ref('');
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)) : '—';
@@ -100,18 +111,22 @@ async function createHandover() {
     handoverForm.shift_from = ''; handoverForm.shift_to = ''; handoverForm.handover_summary = '';
     selectedHandoverId.value = created.handover_id;
     notice.value = '交接班已创建，可补充交接患者后完成交接。';
+    createHandoverOpen.value = false;
     await handoversQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
 
-async function completeHandover(handover: ShiftHandoverWire) {
+async function completeHandover() {
+  const handover = completeTarget.value;
+  if (!handover) return;
   if (busy.value || handover.status !== 'DRAFT') return;
   busy.value = handover.handover_id; notice.value = '';
   try {
     await completeShiftHandover(facilityLease.data.value!, handover);
     notice.value = '交接班已完成，交接摘要与患者清单进入审计链。';
+    completeTarget.value = null;
     await handoversQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -131,7 +146,22 @@ async function addHandoverPatient() {
     });
     patientForm.summary = ''; patientForm.risk_flag = false;
     notice.value = '交接患者已加入交接清单。';
+    patientDialogOpen.value = false;
     await handoverPatientsQuery.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = ''; }
+}
+
+async function confirmVoidHandover() {
+  const handover = voidTarget.value;
+  if (!handover || busy.value || voidReason.value.trim().length < 4) return;
+  busy.value = 'void'; notice.value = '';
+  try {
+    await voidShiftHandover(facilityLease.data.value!, handover, voidReason.value.trim());
+    notice.value = '交接班已删除（逻辑作废），原始交接证据继续只读保留。';
+    voidTarget.value = null; voidReason.value = '';
+    await handoversQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
@@ -151,6 +181,7 @@ async function recordSwitch() {
     });
     switchForm.reason = '';
     notice.value = '域切换已记录（先救治后补登 / 门急诊切换）。';
+    switchDialogOpen.value = false;
     await switchesQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
@@ -159,14 +190,14 @@ async function recordSwitch() {
 </script>
 
 <template>
-  <section data-page-root class="content admin-content vue-native-page">
+  <section data-page-root class="content admin-content vue-native-page emergency-crud-page">
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">临床工作域 / 急诊</p>
         <h1>急诊会诊、交接与转运</h1>
         <p>交接班按班次与接诊人闭环（草稿→完成），交接患者逐条登记风险；门急诊域切换记录转运去向与原因。</p>
       </div>
-      <RouterLink class="button secondary" to="/emergency">返回急诊工作台</RouterLink>
+      <div class="toolbar-actions"><RouterLink class="button secondary" to="/emergency">返回急诊工作台</RouterLink><button class="button primary" @click="createHandoverOpen=true">新建交接班</button><button class="button secondary" @click="switchDialogOpen=true">记录域切换</button></div>
     </div>
 
     <ClinicalPageState v-if="facilityLease.isPending.value || patientLease.isPending.value || handoverPatientLease.isPending.value || handoversQuery.isPending.value || switchesQuery.isPending.value" kind="loading" message="正在读取交接与转运记录" />
@@ -175,12 +206,12 @@ async function recordSwitch() {
     <template v-else>
       <section class="admin-metrics" aria-label="交接转运统计">
         <article><span>交接班</span><strong>{{ handovers.length }}</strong><small>病区 …{{ wardId.slice(-8) }}</small></article>
-        <article><span>待完成交接</span><strong>{{ handovers.filter((h) => h.status === 'DRAFT').length }}</strong><small>DRAFT</small></article>
+        <article><span>待完成交接</span><strong>{{ handovers.filter((h) => h.status === 'DRAFT' && !h.voided_at).length }}</strong><small>DRAFT</small></article>
         <article><span>域切换</span><strong>{{ switches.length }}</strong><small>门急诊</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 
-      <div class="admin-layout">
+      <div class="emergency-handoff-grid">
         <section class="admin-panel">
           <header><div><h2>交接班台账</h2><p>草稿状态可补充患者并完成。</p></div><button class="button secondary" @click="handoversQuery.refetch()">刷新</button></header>
           <div v-if="!handovers.length" class="admin-empty" role="status">暂无交接班，可在右侧新建。</div>
@@ -188,20 +219,20 @@ async function recordSwitch() {
             <table class="admin-table">
               <thead><tr><th>班次</th><th>摘要</th><th>状态</th><th>完成时间</th><th>操作</th></tr></thead>
               <tbody>
-                <tr v-for="handover in handovers" :key="handover.handover_id">
+                <tr v-for="handover in handovers" :key="handover.handover_id" :class="{'is-voided':handover.voided_at}">
                   <td><strong>{{ handover.shift_from }} → {{ handover.shift_to }}</strong></td>
                   <td>{{ handover.handover_summary }}</td>
-                  <td><span class="admin-status" :class="handover.status.toLowerCase()">{{ handover.status === 'DRAFT' ? '草稿' : '已完成' }}</span></td>
+                  <td><span class="admin-status" :class="handover.voided_at ? 'muted' : handover.status.toLowerCase()">{{ handover.voided_at ? '已作废' : handover.status === 'DRAFT' ? '草稿' : '已完成' }}</span></td>
                   <td>{{ formatDate(handover.completed_at) }}</td>
                   <td>
-                    <button class="task-action" :disabled="Boolean(busy) || handover.status !== 'DRAFT'" @click="completeHandover(handover)">{{ busy === handover.handover_id ? '处理中…' : '完成交接' }}</button>
+                    <span class="inline-actions"><button class="task-action" :disabled="Boolean(busy) || handover.status !== 'DRAFT' || Boolean(handover.voided_at)" @click="completeTarget=handover">编辑 / 完成交接</button><button class="task-action danger" :disabled="Boolean(busy) || Boolean(handover.voided_at)" @click="voidTarget=handover">删除</button></span>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <header class="panel-subhead"><div><h2>交接患者清单</h2><p>选择一个交接班后登记交接患者。</p></div></header>
+          <header class="panel-subhead"><div><h2>交接患者清单</h2><p>选择一个交接班后登记交接患者。</p></div><button class="button primary" :disabled="!selectedHandover || selectedHandover.status!=='DRAFT' || Boolean(selectedHandover.voided_at)" @click="patientDialogOpen=true">新增交接患者</button></header>
           <div class="admin-inline-tools">
             <label class="admin-code-input"><span>交接班</span>
               <select v-model="selectedHandoverId">
@@ -224,22 +255,6 @@ async function recordSwitch() {
               </tbody>
             </table>
           </div>
-          <form v-if="selectedHandover" class="admin-form" @submit.prevent="addHandoverPatient">
-            <label><span>交接患者摘要</span><textarea v-model="patientForm.summary" rows="2" required placeholder="病情、管路、用药与风险" /></label>
-            <label class="risk-confirm"><input v-model="patientForm.risk_flag" type="checkbox" /><span>存在危险信号</span></label>
-            <button class="button primary" :disabled="Boolean(busy) || !patientForm.summary.trim()">{{ busy === 'patient' ? '正在加入…' : '加入交接清单' }}</button>
-          </form>
-        </section>
-
-        <section class="admin-panel admin-form-panel">
-          <header><div><h2>新建交接班</h2><p>交班/接班班次与摘要必填。</p></div></header>
-          <form class="admin-form" @submit.prevent="createHandover">
-            <label><span>交班班次</span><input v-model="handoverForm.shift_from" required placeholder="例：白班" /></label>
-            <label><span>接班班次</span><input v-model="handoverForm.shift_to" required placeholder="例：夜班" /></label>
-            <label><span>接诊人</span><input v-model="handoverForm.incoming_user_id" required placeholder="用户 ID" /></label>
-            <label><span>交接摘要</span><textarea v-model="handoverForm.handover_summary" rows="3" required placeholder="整体病情与重点关注" /></label>
-            <button class="button primary full" :disabled="Boolean(busy) || !handoverForm.shift_from.trim() || !handoverForm.shift_to.trim() || !handoverForm.handover_summary.trim()">{{ busy === 'handover' ? '正在创建…' : '创建交接班' }}</button>
-          </form>
         </section>
       </div>
 
@@ -259,17 +274,13 @@ async function recordSwitch() {
             </tbody>
           </table>
         </div>
-        <form class="admin-form" @submit.prevent="recordSwitch">
-          <div class="form-row">
-            <label><span>来源域</span><select v-model="switchForm.from_domain"><option value="EMERGENCY">急诊</option><option value="OUTPATIENT">门诊</option></select></label>
-            <label><span>目标域</span><select v-model="switchForm.to_domain"><option value="OUTPATIENT">门诊</option><option value="EMERGENCY">急诊</option></select></label>
-          </div>
-          <label><span>来源就诊</span><input v-model="switchForm.from_encounter_id" required placeholder="就诊 ID" /></label>
-          <label><span>目标就诊</span><input v-model="switchForm.to_encounter_id" required placeholder="就诊 ID" /></label>
-          <label><span>切换原因</span><textarea v-model="switchForm.reason" rows="2" required placeholder="例：先救治后补登，门诊转入急诊" /></label>
-          <button class="button primary" :disabled="Boolean(busy) || !switchForm.reason.trim()">{{ busy === 'switch' ? '正在记录…' : '记录域切换' }}</button>
-        </form>
       </section>
     </template>
+
+    <AdminActionDialog v-model:open="createHandoverOpen" title="新建急诊交接班" description="班次、接诊人与摘要必填；创建后进入草稿流程。" eyebrow="急诊 / 会诊交接" :busy="busy==='handover'"><form class="admin-form" @submit.prevent="createHandover"><label><span>交班班次</span><input v-model="handoverForm.shift_from" autofocus required placeholder="例：白班" /></label><label><span>接班班次</span><input v-model="handoverForm.shift_to" required placeholder="例：夜班" /></label><label><span>接诊人</span><input v-model="handoverForm.incoming_user_id" required /></label><label><span>交接摘要</span><textarea v-model="handoverForm.handover_summary" rows="3" required /></label><button class="button primary" :disabled="Boolean(busy)||!handoverForm.shift_from.trim()||!handoverForm.shift_to.trim()||!handoverForm.handover_summary.trim()">{{ busy==='handover'?'正在创建…':'创建交接班' }}</button></form></AdminActionDialog>
+    <AdminActionDialog v-model:open="patientDialogOpen" title="新增交接患者" description="患者级摘要和风险标记会进入接班团队清单。" eyebrow="急诊 / 患者交接" :busy="busy==='patient'"><form class="admin-form" @submit.prevent="addHandoverPatient"><label><span>交接患者摘要</span><textarea v-model="patientForm.summary" rows="3" autofocus required placeholder="病情、管路、用药与风险" /></label><label class="risk-confirm"><input v-model="patientForm.risk_flag" type="checkbox" /><span>存在危险信号</span></label><button class="button primary" :disabled="Boolean(busy)||!patientForm.summary.trim()">{{ busy==='patient'?'正在加入…':'加入交接清单' }}</button></form></AdminActionDialog>
+    <AdminActionDialog :open="Boolean(completeTarget)" title="编辑并完成交接" description="确认后草稿转为已完成，摘要与患者清单进入不可逆审计链。" eyebrow="急诊 / 交接闭环" :busy="Boolean(busy)" @update:open="!$event&&(completeTarget=null)"><div class="admin-confirm-impact"><strong>{{ completeTarget?.shift_from }} → {{ completeTarget?.shift_to }}</strong><p>{{ completeTarget?.handover_summary }}</p></div><template #footer><button class="button secondary" @click="completeTarget=null">取消</button><button class="button primary" :disabled="Boolean(busy)" @click="completeHandover">{{ busy?'正在完成…':'确认完成交接' }}</button></template></AdminActionDialog>
+    <AdminActionDialog v-model:open="switchDialogOpen" title="记录转运 / 域切换" description="来源域与目标域必须不同，保存后影响门急诊流转追踪。" eyebrow="急诊 / 转运交接" size="large" :busy="busy==='switch'"><form class="admin-form" @submit.prevent="recordSwitch"><div class="form-row"><label><span>来源域</span><select v-model="switchForm.from_domain"><option value="EMERGENCY">急诊</option><option value="OUTPATIENT">门诊</option></select></label><label><span>目标域</span><select v-model="switchForm.to_domain"><option value="OUTPATIENT">门诊</option><option value="EMERGENCY">急诊</option></select></label></div><label><span>来源就诊</span><input v-model="switchForm.from_encounter_id" required /></label><label><span>目标就诊</span><input v-model="switchForm.to_encounter_id" required /></label><label><span>切换原因</span><textarea v-model="switchForm.reason" rows="3" required /></label><button class="button primary" :disabled="Boolean(busy)||!switchForm.reason.trim()">{{ busy==='switch'?'正在记录…':'记录域切换' }}</button></form></AdminActionDialog>
+    <AdminConfirmDialog :open="Boolean(voidTarget)" title="删除急诊交接班" description="删除执行为逻辑作废；该交接班将退出当前交接流程，历史证据不会被物理清除。" confirm-label="确认删除并作废" :busy="busy==='void'" @update:open="!$event&&(voidTarget=null)" @confirm="confirmVoidHandover"><label class="admin-confirm-reason"><span>作废原因（至少 4 字）</span><textarea v-model="voidReason" rows="3" required /></label></AdminConfirmDialog>
   </section>
 </template>

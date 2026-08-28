@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyObservationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyObservationStartRequestWire;
 import org.openemr2026.contracts.EmergencyObservationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.http.CacheControl;
@@ -64,5 +65,17 @@ final class EmergencyObservationController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(observations.completeObservation(identity, idempotencyKey, observationId, command));
+    }
+
+    @PostMapping("/emergency-observations/{observation_id}/voids")
+    ResponseEntity<EmergencyObservationWire> voidObservation(
+            HttpServletRequest request,
+            @PathVariable("observation_id") UUID observationId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EmergencyClinicalFactVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(observations.voidObservation(identity, idempotencyKey, observationId, command));
     }
 }

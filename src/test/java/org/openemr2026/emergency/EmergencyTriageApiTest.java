@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyTriageAssessmentCreateRequestWire;
 import org.openemr2026.contracts.EmergencyTriageAssessmentWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,29 @@ final class EmergencyTriageApiTest {
                 command(context, "LEVEL_1", "心跳呼吸骤停", true));
         assertThat(created.triageLevel()).isEqualTo(EmergencyTriageAssessmentWire.TriageLevelValue.LEVEL_1);
         assertThat(created.immediateActionRequired()).isTrue();
+    }
+
+    @Test
+    void givenActiveAssessment_whenReassessingAndVoiding_thenWorkflowUsesLatestNonVoidedVersion() {
+        Context context = seedContext();
+        EmergencyTriageAssessmentWire first = assessments.createAssessment(identity(), "triage-" + UUID.randomUUID(),
+                command(context, "LEVEL_3", "持续腹痛伴恶心", false));
+        EmergencyTriageAssessmentWire second = assessments.createAssessment(identity(), "triage-" + UUID.randomUUID(),
+                command(context, "LEVEL_2", "腹痛加重伴血压下降", true));
+
+        List<EmergencyTriageAssessmentWire> reassessed = assessments.listAssessments(identity(), context.patientId());
+        assertThat(reassessed).filteredOn(item -> item.triageAssessmentId().equals(first.triageAssessmentId()))
+                .extracting(EmergencyTriageAssessmentWire::status)
+                .containsExactly(EmergencyTriageAssessmentWire.StatusValue.SUPERSEDED);
+        assertThat(second.status()).isEqualTo(EmergencyTriageAssessmentWire.StatusValue.ACTIVE);
+
+        EmergencyTriageAssessmentWire voided = assessments.voidAssessment(identity(), "void-" + UUID.randomUUID(),
+                second.triageAssessmentId(), new EmergencyClinicalFactVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(),
+                        second.rowVersion(), "分诊对象选择错误"));
+        assertThat(voided.voidedAt()).isNotNull();
+        assertThat(voided.voidReason()).isEqualTo("分诊对象选择错误");
+        assertThat(voided.status()).isEqualTo(EmergencyTriageAssessmentWire.StatusValue.SUPERSEDED);
     }
 
     @Test

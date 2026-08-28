@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyTriageAssessmentCreateRequestWire;
 import org.openemr2026.contracts.EmergencyTriageAssessmentWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,13 @@ final class EmergencyTriageService {
             beginCommand(identity, "EMERGENCY_TRIAGE_CREATE", idempotencyKey,
                     sha256(request.patientId() + "|" + request.encounterId() + "|" + request.triageLevel()
                             + "|" + request.triagedAt()));
+            jdbc.sql("""
+                    update emergency_triage_assessment
+                    set status = 'SUPERSEDED', row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and patient_id = :patient and encounter_id = :encounter
+                      and status = 'ACTIVE' and voided_at is null
+                    """).param("tenant", identity.tenantId()).param("patient", request.patientId())
+                    .param("encounter", request.encounterId()).update();
             UUID assessmentId = UUID.randomUUID();
             jdbc.sql("""
                     insert into emergency_triage_assessment(
@@ -62,6 +70,46 @@ final class EmergencyTriageService {
         });
     }
 
+    EmergencyTriageAssessmentWire voidAssessment(
+            ClinicalIdentity identity, String idempotencyKey, UUID assessmentId,
+            EmergencyClinicalFactVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_TRIAGE_VOID", idempotencyKey,
+                    sha256(assessmentId + "|" + request.expectedRowVersion() + "|" + reason));
+            TriageHead current = jdbc.sql("""
+                    select row_version, voided_at from emergency_triage_assessment
+                    where tenant_id = :tenant and triage_assessment_id = :assessment
+                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                    for update
+                    """).param("tenant", identity.tenantId()).param("assessment", assessmentId)
+                    .param("patient", request.patientId()).param("encounter", request.encounterId())
+                    .param("facility", request.facilityId())
+                    .query((rs, row) -> new TriageHead(rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(EmergencyTriageService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new EmergencyTriageException("EMERGENCY_TRIAGE_VERSION_CONFLICT", 409,
+                        "The triage assessment changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw new EmergencyTriageException("EMERGENCY_TRIAGE_STATE_INVALID", 409,
+                        "The triage assessment is already voided");
+            }
+            jdbc.sql("""
+                    update emergency_triage_assessment
+                    set status = 'SUPERSEDED', voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and triage_assessment_id = :assessment and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("assessment", assessmentId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), assessmentId, current.rowVersion() + 1,
+                    "EMERGENCY_TRIAGE_VOIDED", "EmergencyTriageVoided");
+            completeCommand(identity, "EMERGENCY_TRIAGE_VOID", idempotencyKey, assessmentId);
+            return assessment(identity.tenantId(), assessmentId, request.patientId());
+        });
+    }
+
     List<EmergencyTriageAssessmentWire> listAssessments(ClinicalIdentity identity, UUID patientId) {
         return jdbc.sql("""
                 select triage_assessment_id from emergency_triage_assessment
@@ -75,7 +123,8 @@ final class EmergencyTriageService {
     private EmergencyTriageAssessmentWire assessment(UUID tenantId, UUID assessmentId, UUID patientId) {
         return jdbc.sql("""
                 select triage_assessment_id, patient_id, encounter_id, facility_id, triage_level,
-                  chief_complaint, triaged_at, immediate_action_required, status, row_version
+                  chief_complaint, triaged_at, immediate_action_required, status,
+                  voided_at, void_reason, row_version
                 from emergency_triage_assessment
                 where tenant_id = :tenant and triage_assessment_id = :assessment and patient_id = :patient
                 """).param("tenant", tenantId).param("assessment", assessmentId).param("patient", patientId)
@@ -87,6 +136,9 @@ final class EmergencyTriageService {
                         rs.getObject("triaged_at", OffsetDateTime.class).toInstant(),
                         rs.getBoolean("immediate_action_required"),
                         EmergencyTriageAssessmentWire.StatusValue.valueOf(rs.getString("status")),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(EmergencyTriageService::contextDenied);
     }
@@ -184,4 +236,6 @@ final class EmergencyTriageService {
             throw new IllegalStateException(impossible);
         }
     }
+
+    private record TriageHead(long rowVersion, OffsetDateTime voidedAt) {}
 }

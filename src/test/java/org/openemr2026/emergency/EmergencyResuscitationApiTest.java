@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyResuscitationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationStartRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,19 @@ final class EmergencyResuscitationApiTest {
                 .isInstanceOf(EmergencyResuscitationException.class)
                 .satisfies(e -> assertThat(((EmergencyResuscitationException) e).code())
                         .isEqualTo("EMERGENCY_RESUSCITATION_VERSION_CONFLICT"));
+    }
+
+    @Test
+    void givenResuscitation_whenVoiding_thenItStopsBlockingCorrectedRecord() {
+        Context context = seedContext();
+        EmergencyResuscitationWire started = start(context);
+        EmergencyResuscitationWire voided = resuscitations.voidResuscitation(identity(), "void-" + UUID.randomUUID(),
+                started.resuscitationId(), new EmergencyClinicalFactVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(),
+                        started.rowVersion(), "误触发抢救记录"));
+        assertThat(voided.voidedAt()).isNotNull();
+        EmergencyResuscitationWire replacement = start(context);
+        assertThat(replacement.resuscitationId()).isNotEqualTo(started.resuscitationId());
     }
 
     @Test

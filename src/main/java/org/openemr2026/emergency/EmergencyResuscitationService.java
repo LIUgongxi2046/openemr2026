@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.openemr2026.contracts.EmergencyResuscitationCompleteRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationStartRequestWire;
 import org.openemr2026.contracts.EmergencyResuscitationWire;
+import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -63,21 +64,22 @@ final class EmergencyResuscitationService {
             beginCommand(identity, "EMERGENCY_RESUSCITATION_COMPLETE", idempotencyKey,
                     sha256(resuscitationId + "|" + request.expectedRowVersion() + "|" + request.outcome()));
             ResuscitationHead current = jdbc.sql("""
-                    select status, row_version from emergency_resuscitation
+                    select status, row_version, voided_at from emergency_resuscitation
                     where tenant_id = :tenant and resuscitation_id = :resuscitation
                       and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
                       for update
                     """).param("tenant", identity.tenantId()).param("resuscitation", resuscitationId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("facility", request.facilityId())
-                    .query((rs, row) -> new ResuscitationHead(rs.getString("status"), rs.getLong("row_version")))
+                    .query((rs, row) -> new ResuscitationHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
                     .optional().orElseThrow(EmergencyResuscitationService::contextDenied);
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new EmergencyResuscitationException(
                         "EMERGENCY_RESUSCITATION_VERSION_CONFLICT", 409,
                         "The resuscitation changed; reload before retrying");
             }
-            if (!"IN_PROGRESS".equals(current.status())) {
+            if (!"IN_PROGRESS".equals(current.status()) || current.voidedAt() != null) {
                 throw new EmergencyResuscitationException(
                         "EMERGENCY_RESUSCITATION_STATE_INVALID", 409,
                         "Only an in-progress resuscitation can be completed");
@@ -96,6 +98,45 @@ final class EmergencyResuscitationService {
         });
     }
 
+    EmergencyResuscitationWire voidResuscitation(
+            ClinicalIdentity identity, String idempotencyKey, UUID resuscitationId,
+            EmergencyClinicalFactVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_RESUSCITATION_VOID", idempotencyKey,
+                    sha256(resuscitationId + "|" + request.expectedRowVersion() + "|" + reason));
+            ResuscitationHead current = jdbc.sql("""
+                    select status, row_version, voided_at from emergency_resuscitation
+                    where tenant_id = :tenant and resuscitation_id = :resuscitation
+                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                    for update
+                    """).param("tenant", identity.tenantId()).param("resuscitation", resuscitationId)
+                    .param("patient", request.patientId()).param("encounter", request.encounterId())
+                    .param("facility", request.facilityId())
+                    .query((rs, row) -> new ResuscitationHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(EmergencyResuscitationService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new EmergencyResuscitationException("EMERGENCY_RESUSCITATION_VERSION_CONFLICT", 409,
+                        "The resuscitation changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw new EmergencyResuscitationException("EMERGENCY_RESUSCITATION_STATE_INVALID", 409,
+                        "The resuscitation is already voided");
+            }
+            jdbc.sql("""
+                    update emergency_resuscitation set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and resuscitation_id = :resuscitation and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("resuscitation", resuscitationId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), resuscitationId, current.rowVersion() + 1,
+                    "EMERGENCY_RESUSCITATION_VOIDED", "EmergencyResuscitationVoided");
+            completeCommand(identity, "EMERGENCY_RESUSCITATION_VOID", idempotencyKey, resuscitationId);
+            return resuscitation(identity.tenantId(), resuscitationId, request.patientId());
+        });
+    }
+
     List<EmergencyResuscitationWire> listResuscitations(ClinicalIdentity identity, UUID patientId) {
         return jdbc.sql("""
                 select resuscitation_id from emergency_resuscitation
@@ -109,7 +150,7 @@ final class EmergencyResuscitationService {
     private EmergencyResuscitationWire resuscitation(UUID tenantId, UUID resuscitationId, UUID patientId) {
         return jdbc.sql("""
                 select resuscitation_id, patient_id, encounter_id, facility_id, started_at,
-                  ended_at, outcome, status, row_version
+                  ended_at, outcome, status, voided_at, void_reason, row_version
                 from emergency_resuscitation
                 where tenant_id = :tenant and resuscitation_id = :resuscitation and patient_id = :patient
                 """).param("tenant", tenantId).param("resuscitation", resuscitationId).param("patient", patientId)
@@ -121,6 +162,9 @@ final class EmergencyResuscitationService {
                                 ? null : rs.getObject("ended_at", OffsetDateTime.class).toInstant(),
                         EmergencyResuscitationWire.OutcomeValue.valueOf(rs.getString("outcome")),
                         EmergencyResuscitationWire.StatusValue.valueOf(rs.getString("status")),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(EmergencyResuscitationService::contextDenied);
     }
@@ -198,6 +242,13 @@ final class EmergencyResuscitationService {
         return new EmergencyResuscitationException("EMERGENCY_RESUSCITATION_REQUEST_INVALID", 400, message);
     }
 
+    private static String requireText(String value, int minLength, String field) {
+        if (value == null || value.trim().length() < minLength) {
+            throw invalid(field + " must be at least " + minLength + " characters");
+        }
+        return value.trim();
+    }
+
     static EmergencyResuscitationException contextDenied() {
         return new EmergencyResuscitationException("CONTEXT_NOT_PERMITTED", 403,
                 "The requested emergency resuscitation context is not permitted");
@@ -212,5 +263,5 @@ final class EmergencyResuscitationService {
         }
     }
 
-    private record ResuscitationHead(String status, long rowVersion) {}
+    private record ResuscitationHead(String status, long rowVersion, OffsetDateTime voidedAt) {}
 }
