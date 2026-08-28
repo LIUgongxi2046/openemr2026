@@ -321,7 +321,7 @@ async function closeAssistant() {
 </script>
 
 <template>
-  <div class="shell" :class="{ 'assistant-side-open': assistantOpen && assistantMode === 'side' }">
+  <div class="shell" :class="{ 'assistant-side-open': assistantOpen && assistantMode === 'side', 'mock-interface-shell': routeId === 'mock-interfaces' || routeId === 'mock-interface-workbench' }">
     <a class="skip-link" href="#main-content">跳到主要内容</a>
     <header class="topbar">
       <RouterLink class="brand" to="/clinical" aria-label="OpenEMR2026 首页">

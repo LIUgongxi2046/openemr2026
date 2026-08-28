@@ -519,7 +519,12 @@
   .auth-form-panel .split-fields { grid-template-columns: 1fr; }
 }
 
+.mock-interface-shell .center-nav { scrollbar-width: none; overscroll-behavior-inline: contain; }
+.mock-interface-shell .center-nav::-webkit-scrollbar { display: none; }
+
 @media (max-width: 600px) {
+  .mock-interface-shell .sidebar { scrollbar-width: none; overscroll-behavior-inline: contain; }
+  .mock-interface-shell .sidebar::-webkit-scrollbar { display: none; }
   .shell { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 58px auto minmax(0, 1fr); width: 100%; }
   .topbar { grid-column: 1; min-width: 0; padding-inline: 12px; gap: 8px; }
   .topbar .brand { min-width: 0; flex: 0 0 auto; }

@@ -55,7 +55,7 @@ function systemTypeLabel(value: string) {
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page">
+  <section data-page-root class="content vue-native-page mock-interface-page">
     <div class="page-head">
       <div class="page-title"><h1>模拟接口</h1><p>依赖外部系统的接口统一注册：确定性合成数据 + 对接标准接口 + 对接文档 · 仅供 dev-synthetic 验证，不进入真实临床事实</p></div>
       <div class="head-actions"><button class="btn" type="button" @click="interfacesQuery.refetch()">刷新</button></div>
@@ -104,7 +104,7 @@ function systemTypeLabel(value: string) {
         <aside class="admin-panel">
           <header><div><h2>对接标准接口</h2><p>{{ selected ? selected.display_name : '从左侧点选接口查看' }}</p></div></header>
           <div v-if="!selected" class="empty-state"><span>⇄</span><p>尚未选择接口</p><small>点选左侧接口查看对接标准与文档</small></div>
-          <div v-else class="card-body">
+          <div v-else class="card-body interface-document-body">
             <div class="folder-row">模拟调用地址<span><code>POST /api/v1/mock-interfaces/{{ selected.code }}/invoke</code></span></div>
             <div class="folder-row">对接标准<span><code>{{ selected.standard_interface ?? '—' }}</code></span></div>
             <div class="folder-row">认证与上下文<span>Bearer + 机构/院区上下文</span></div>
@@ -123,12 +123,12 @@ function systemTypeLabel(value: string) {
         </aside>
       </div>
 
-      <section v-if="lastResult" class="admin-panel" style="margin-top:14px">
+      <section v-if="lastResult" class="admin-panel recent-result-panel">
         <header><div><h2>最近调用结果</h2><p>接口 {{ lastResult.mock_interface_code }} 的确定性合成响应。</p></div></header>
         <div class="card-body">
           <div class="folder-row">请求 ID<span><code>…{{ lastResult.request_id.slice(-8) }}</code></span></div>
           <div class="folder-row">产生时间<span>{{ new Date(lastResult.produced_at).toLocaleString('zh-CN', { hour12: false }) }}</span></div>
-          <div class="notice info" style="margin-top:12px"><div class="notice-title">提示</div>{{ lastResult.notice }}</div>
+          <div class="notice info recent-result-notice"><div class="notice-title">提示</div>{{ lastResult.notice }}</div>
           <pre class="mock-payload">{{ JSON.stringify(lastResult.payload, null, 2) }}</pre>
         </div>
       </section>
@@ -137,17 +137,44 @@ function systemTypeLabel(value: string) {
 </template>
 
 <style scoped>
-.mock-payload { margin: 8px 0 0; padding: 12px; max-height: 280px; overflow: auto; color: #26384d; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; font-size: 11px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+.mock-interface-page { display: grid; gap: 18px; width: min(100%, 1280px); margin-inline: auto; }
+.mock-interface-page > * { min-width: 0; }
+.mock-interface-page .page-head { height: auto; min-height: 64px; margin: 0; padding: 10px 0; }
+.mock-interface-page .page-title { min-width: 0; }
+.mock-interface-page .page-title p { max-width: 1040px; line-height: 1.55; overflow-wrap: anywhere; }
+.mock-interface-page .head-actions { flex: 0 0 auto; gap: 10px; }
+.mock-interface-page .metric-grid { gap: 12px; }
+.mock-interface-page .metric { display: grid; align-content: center; min-height: 92px; padding: 13px 14px; }
+.mock-interface-page .metric .trend { line-height: 1.45; overflow-wrap: anywhere; }
+.mock-payload { margin: 8px 0 0; padding: 12px; max-height: 260px; overflow: auto; color: #26384d; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; font-size: 11px; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
 .link-button { padding: 0; border: 0; background: transparent; text-align: left; cursor: pointer; }
 .selected-row td { background: #f0f6ff; }
-.submenu-catalog { margin-top: 16px; }
-.submenu-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 16px; }
-.submenu-card { display: grid; gap: 7px; min-width: 0; padding: 14px; color: inherit; border: 1px solid var(--line); border-radius: 10px; background: #fff; text-decoration: none; }
+.submenu-catalog { margin-top: 0; }
+.submenu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; padding: 16px; }
+.submenu-card { display: grid; align-content: start; gap: 6px; min-width: 0; padding: 13px 14px; color: inherit; border: 1px solid var(--line); border-radius: 10px; background: #fff; text-decoration: none; overflow-wrap: anywhere; }
 .submenu-card:hover { border-color: #83ace0; background: #f7fbff; }
 .submenu-card > span { width: max-content; padding: 3px 7px; color: #245493; border-radius: 999px; background: #eaf3ff; font-size: 10px; }
 .submenu-card > small { min-height: 34px; color: var(--muted); line-height: 1.55; }
 .submenu-card > b { color: var(--blue); font-size: 11px; }
+.mock-interface-page .admin-layout { gap: 16px; }
+.mock-interface-page .admin-table { min-width: 760px; }
+.interface-document-body { min-width: 0; }
+.interface-document-body .folder-row { gap: 14px; }
+.interface-document-body .folder-row > span { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.interface-document-body .folder-row code { white-space: normal; overflow-wrap: anywhere; }
 .api-errors { display: grid; grid-template-columns: minmax(160px, auto) 1fr; gap: 8px 12px; margin-top: 8px; line-height: 1.5; }
-@media (max-width: 1050px) { .submenu-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .submenu-grid, .api-errors { grid-template-columns: minmax(0, 1fr); } }
+.recent-result-panel, .recent-result-notice { margin-top: 0; }
+
+@media (max-width: 760px) {
+  .mock-interface-page { gap: 16px; }
+  .mock-interface-page .page-head { align-items: flex-start; flex-direction: column; gap: 12px; padding: 12px 0; }
+  .mock-interface-page .head-actions { margin-left: 0; }
+  .mock-interface-page .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .mock-interface-page .metric { min-height: 96px; padding: 12px; }
+  .submenu-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 14px; }
+  .api-errors { grid-template-columns: minmax(0, 1fr); }
+  .mock-interface-page .admin-table { min-width: 680px; }
+  .interface-document-body .folder-row { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .interface-document-body .folder-row > span { text-align: left; }
+}
 </style>
