@@ -23,15 +23,299 @@ final class TertiaryBusinessConfigurationCatalog {
                 new ConfigurationSeed(id("c101"), id("c321"), "WORKFLOW",
                         "syn-workflow-closed-loop-v1", "runtime-workflow-consult-v1",
                         "三级医院门急住一体化闭环流程", workflowPayload()),
+                configuration("WORKFLOW", "workflow-emergency-green-channel-v1",
+                        "急诊胸痛卒中创伤绿色通道",
+                        workflowProfilePayload("emergency-green-channel", "覆盖急诊预检、专病绿色通道、抢救、检查、专科接诊和转运交接。",
+                                List.of(
+                                        step("triage", "预检分诊与生命体征采集", "急诊分诊护士", 5),
+                                        step("activation", "绿色通道判定与启动", "急诊主班医师", 5),
+                                        step("resuscitation", "抢救与专病量表评估", "急诊抢救团队", 10),
+                                        step("diagnostics", "床旁检查与危急结果审核", "急诊医技联合组", 30),
+                                        step("specialist", "胸痛卒中创伤专科决策", "专病中心值班组", 30),
+                                        step("transfer", "介入手术入院转运交接", "急诊与接收科室", 20)),
+                                "I 级立即处置；II 级 10 分钟；胸痛首份心电图 10 分钟；卒中影像 25 分钟逐级升级",
+                                List.of("STEMI 直接 PCI", "缺血性卒中溶栓评估", "多发伤一体化救治"))),
+                configuration("WORKFLOW", "workflow-inpatient-care-transfer-v1",
+                        "住院诊疗、转科与床旁交接流程",
+                        workflowProfilePayload("inpatient-care-transfer", "覆盖入院评估、风险筛查、医嘱执行、护理、会诊、转科和出院准备。",
+                                List.of(
+                                        step("admission", "入院接诊与首次评估", "住院经治医生", 60),
+                                        step("risk", "VTE 跌倒压疮营养风险筛查", "责任护士与经治医生", 240),
+                                        step("plan", "诊疗计划与医嘱审核", "医疗组与临床药师", 120),
+                                        step("execution", "治疗护理与结果跟踪", "医护药技团队", 480),
+                                        step("consult", "跨科会诊与疑难讨论", "会诊专家组", 120),
+                                        step("transfer", "转科转床与 SBAR 交接", "转出转入医护团队", 30),
+                                        step("discharge-readiness", "出院准备与连续照护评估", "医疗组与责任护士", 240)),
+                                "首次病程 8 小时；急会诊 30 分钟；普通会诊 24 小时；转科交接 30 分钟",
+                                List.of("高龄多病共存入院", "ICU 转普通病房", "跨院区转科"))),
+                configuration("WORKFLOW", "workflow-perioperative-safety-v1",
+                        "围手术期安全与麻醉闭环流程",
+                        workflowProfilePayload("perioperative-safety", "覆盖手术指征、术前讨论、麻醉评估、三方核查、术中记录、复苏和术后交接。",
+                                List.of(
+                                        step("indication", "手术指征与分级确认", "手术医师与上级医师", 240),
+                                        step("discussion", "术前讨论与知情同意", "手术团队", 480),
+                                        step("anesthesia", "麻醉评估与风险分层", "麻醉科医师", 240),
+                                        step("check", "患者部位术式三方核查", "手术医师麻醉医师巡回护士", 10),
+                                        step("operation", "手术麻醉与植入物记录", "手术麻醉护理团队", 360),
+                                        step("pacu", "复苏评估与离室判定", "麻醉复苏团队", 120),
+                                        step("postop", "术后医嘱与病区交接", "手术医师与责任护士", 30)),
+                                "术前核查未通过禁止开台；手术记录 24 小时；麻醉记录离室前完成",
+                                List.of("急诊剖腹探查", "择期关节置换", "日间手术异常留观"))),
+                configuration("WORKFLOW", "workflow-critical-result-loop-v1",
+                        "检验影像危急值闭环处置流程",
+                        workflowProfilePayload("critical-result-loop", "覆盖结果审核、危急值识别、双通道通知、临床确认、处置、复查和质控复盘。",
+                                List.of(
+                                        step("verification", "结果复核与危急值识别", "检验影像审核人员", 5),
+                                        step("notification", "双通道通知责任团队", "医技值班人员", 5),
+                                        step("acknowledge", "临床接收确认", "经治医生或值班医生", 5),
+                                        step("action", "临床评估与处置记录", "经治医疗组", 10),
+                                        step("repeat", "复查申请与趋势确认", "经治医生与医技科室", 60),
+                                        step("closure", "患者通知与闭环确认", "经治医生与责任护士", 30)),
+                                "危急值发布后 10 分钟内确认；未确认 5/10/15 分钟升级到科主任和医务处",
+                                List.of("高钾危急值", "影像主动脉夹层", "血培养阳性"))),
+                configuration("WORKFLOW", "workflow-mdt-consult-v1",
+                        "疑难病例会诊与 MDT 决策流程",
+                        workflowProfilePayload("mdt-consult", "覆盖申请准入、资料质控、专家邀请、讨论、意见签署、执行反馈和复评。",
+                                List.of(
+                                        step("request", "会诊申请与问题定义", "申请科室经治医生", 60),
+                                        step("materials", "病历影像病理资料质控", "MDT 秘书", 240),
+                                        step("triage", "普通急会诊分级", "医务处会诊中心", 30),
+                                        step("experts", "专家邀请与冲突校验", "MDT 召集人", 120),
+                                        step("meeting", "多学科讨论与异议记录", "MDT 专家组", 120),
+                                        step("decision", "综合意见签署", "MDT 召集人与申请医师", 60),
+                                        step("feedback", "执行反馈与必要时复评", "经治医疗组", 1440)),
+                                "急会诊 30 分钟到场；普通会诊 24 小时；MDT 意见会后 2 小时签署",
+                                List.of("肿瘤 MDT", "疑难感染会诊", "复杂危重孕产妇联合会诊"))),
+                configuration("WORKFLOW", "workflow-discharge-followup-v1",
+                        "出院准备、未回结果与随访闭环",
+                        workflowProfilePayload("discharge-followup", "覆盖出院标准、用药重整、未回结果、出院记录、健康教育、预约和异常回访。",
+                                List.of(
+                                        step("readiness", "出院标准与风险评估", "经治医生与责任护士", 240),
+                                        step("medication", "出院用药重整与药学教育", "经治医生与临床药师", 120),
+                                        step("pending", "未回重要结果责任绑定", "经治医疗组", 60),
+                                        step("summary", "出院记录与诊断编码", "经治医生与上级医师", 1440),
+                                        step("education", "患者教育与红旗症状确认", "责任护士", 60),
+                                        step("appointment", "复诊预约与随访任务创建", "随访中心", 120),
+                                        step("followup", "结果通知与异常回访", "经治团队与随访中心", 4320)),
+                                "出院记录 24 小时；重要未回结果回报后 30 分钟通知；高风险患者 72 小时回访",
+                                List.of("抗凝患者出院", "病理结果出院后回报", "心衰高风险随访"))),
+                configuration("WORKFLOW", "workflow-record-quality-archive-v1",
+                        "病案质控、编码与封存归档流程",
+                        workflowProfilePayload("record-quality-archive", "覆盖完整性校验、首页编码、缺陷退回、医师修订、终末质控、电子签名和封存。",
+                                List.of(
+                                        step("completeness", "病历完整性自动校验", "病案质控系统", 30),
+                                        step("coding", "首页诊断手术编码", "病案编码员", 480),
+                                        step("defect", "缺陷分级与责任派发", "病案质控员", 120),
+                                        step("revision", "临床缺陷修订与说明", "责任医师", 1440),
+                                        step("review", "终末质控与 DRG 校验", "病案室与质控办", 480),
+                                        step("archive", "签名验真与病案封存", "病案管理员", 120)),
+                                "出院病历 3 个工作日归档；甲级病案率月度监测；封存后更正走留痕流程",
+                                List.of("主要诊断选择复核", "手术编码冲突", "超时未归档升级"))),
                 new ConfigurationSeed(id("c102"), id("c322"), "FORM_TEMPLATE",
                         "syn-medical-record-v1", "runtime-form-record-v1",
                         "三级医院结构化病历模板集", formPayload()),
+                configuration("FORM_TEMPLATE", "form-outpatient-record-v1", "门诊结构化病历模板",
+                        formProfilePayload("outpatient-record", "覆盖门诊主诉、现病史、过敏、诊断、处置和复诊计划。",
+                                List.of(
+                                        field("chief_complaint", "主诉", "TEXTAREA", "content", true, false, "SNOMED-CT", null),
+                                        field("present_illness", "现病史", "TEXTAREA", "content", true, false, "SNOMED-CT", null),
+                                        field("allergies", "过敏史", "CODE", "safety", true, false, "SNOMED-CT", null),
+                                        field("primary_diagnosis", "主要诊断", "CODE", "content", true, true, "ICD-10-CN", null),
+                                        field("treatment_plan", "诊疗计划", "TEXTAREA", "content", true, false, null, null),
+                                        field("followup_plan", "复诊与随访计划", "TEXTAREA", "safety", false, false, null, null)),
+                                "A4-门诊结构化病历-v4", List.of("普通门诊", "专家门诊", "专病门诊"))),
+                configuration("FORM_TEMPLATE", "form-emergency-resuscitation-v1", "急诊抢救与留观记录模板",
+                        formProfilePayload("emergency-resuscitation", "覆盖分诊级别、生命体征、抢救措施、用药、检查、去向和交接。",
+                                List.of(
+                                        field("triage_level", "分诊级别", "CODE", "safety", true, true, "EMERGENCY-TRIAGE", null),
+                                        field("symptom_onset", "症状起始时间", "DATETIME", "content", true, false, null, null),
+                                        field("vital_signs", "首组生命体征", "TEXTAREA", "safety", true, true, "LOINC", null),
+                                        field("resuscitation_actions", "抢救措施与时间轴", "TEXTAREA", "content", true, false, null, null),
+                                        field("emergency_medications", "急救用药记录", "TEXTAREA", "content", true, false, "ATC", null),
+                                        field("emergency_diagnosis", "急诊诊断", "CODE", "content", true, true, "ICD-10-CN", null),
+                                        field("disposition", "急诊去向", "CODE", "safety", true, true, "ENCOUNTER-DISPOSITION", null)),
+                                "A4-急诊抢救留观记录-v3", List.of("急诊抢救", "急诊留观", "院前院内交接"))),
+                configuration("FORM_TEMPLATE", "form-inpatient-first-course-v1", "住院首次病程与入院评估模板",
+                        formProfilePayload("inpatient-first-course", "覆盖入院原因、病史、查体、风险评估、诊断依据和诊疗计划。",
+                                List.of(
+                                        field("admission_reason", "入院原因", "TEXTAREA", "content", true, false, null, null),
+                                        field("history_summary", "病史摘要", "TEXTAREA", "content", true, false, "SNOMED-CT", null),
+                                        field("physical_exam", "专科体格检查", "TEXTAREA", "content", true, false, null, null),
+                                        field("vte_risk", "VTE 风险评分", "CALCULATED", "safety", true, true, null, "VTE_SCORE(age,diagnosis,mobility,surgery)"),
+                                        field("nutrition_risk", "营养风险评分", "NUMBER", "safety", true, false, null, null),
+                                        field("admission_diagnosis", "入院诊断", "CODE", "content", true, true, "ICD-10-CN", null),
+                                        field("diagnostic_basis", "诊断依据与鉴别", "TEXTAREA", "content", true, false, null, null),
+                                        field("care_plan", "诊疗计划", "TEXTAREA", "safety", true, false, null, null)),
+                                "A4-住院首次病程-v5", List.of("入院记录", "首次病程", "阶段小结"))),
+                configuration("FORM_TEMPLATE", "form-perioperative-anesthesia-v1", "手术麻醉与安全核查模板",
+                        formProfilePayload("perioperative-anesthesia", "覆盖术式部位、知情同意、ASA、麻醉计划、三方核查、植入物和术后去向。",
+                                List.of(
+                                        field("procedure_name", "拟行手术", "CODE", "content", true, true, "ICD-9-CM-3", null),
+                                        field("surgical_site", "手术部位与侧别", "TEXT", "safety", true, true, null, null),
+                                        field("consent_status", "知情同意状态", "CODE", "safety", true, true, "CONSENT-STATUS", null),
+                                        field("asa_class", "ASA 分级", "CODE", "safety", true, true, "ASA-CLASS", null),
+                                        field("anesthesia_plan", "麻醉计划", "TEXTAREA", "content", true, false, null, null),
+                                        field("time_out", "三方核查记录", "TEXTAREA", "safety", true, true, null, null),
+                                        field("implant_trace", "植入物追溯信息", "TEXTAREA", "content", false, true, "UDI", null),
+                                        field("postop_destination", "术后去向", "CODE", "safety", true, false, "ENCOUNTER-DISPOSITION", null)),
+                                "A4-围手术期安全核查-v4", List.of("术前评估", "麻醉记录", "手术记录", "PACU 记录"))),
+                configuration("FORM_TEMPLATE", "form-nursing-assessment-handoff-v1", "护理入院评估与交接班模板",
+                        formProfilePayload("nursing-assessment-handoff", "覆盖自理能力、跌倒压疮、管路、用药、疼痛和 SBAR 交接。",
+                                List.of(
+                                        field("self_care", "自理能力评分", "NUMBER", "content", true, false, null, null),
+                                        field("fall_risk", "跌倒风险评分", "CALCULATED", "safety", true, true, null, "MORSE_SCORE(history,mobility,medication)"),
+                                        field("pressure_injury", "压疮风险评分", "CALCULATED", "safety", true, true, null, "BRADEN_SCORE(sensation,moisture,mobility,nutrition)"),
+                                        field("pain_score", "疼痛评分", "NUMBER", "content", true, false, null, null),
+                                        field("lines_tubes", "管路与导管", "TEXTAREA", "safety", false, false, "SNOMED-CT", null),
+                                        field("medication_handoff", "重点用药交接", "TEXTAREA", "safety", false, false, "ATC", null),
+                                        field("sbar_handoff", "SBAR 交接摘要", "TEXTAREA", "content", true, false, null, null)),
+                                "A4-护理评估交接-v4", List.of("入院护理评估", "转科交接", "床旁交接班"))),
+                configuration("FORM_TEMPLATE", "form-mdt-consult-v1", "会诊与 MDT 讨论记录模板",
+                        formProfilePayload("mdt-consult", "覆盖会诊目的、材料、专科意见、异议、共识和执行责任。",
+                                List.of(
+                                        field("consult_question", "会诊目的与问题", "TEXTAREA", "content", true, false, null, null),
+                                        field("diagnosis_summary", "诊断与分期摘要", "TEXTAREA", "content", true, false, "ICD-10-CN", null),
+                                        field("evidence_summary", "影像病理检验证据", "TEXTAREA", "content", true, false, "LOINC", null),
+                                        field("specialist_opinions", "各专科意见", "TEXTAREA", "content", true, false, null, null),
+                                        field("dissent", "异议与保留意见", "TEXTAREA", "safety", false, true, null, null),
+                                        field("consensus", "综合会诊意见", "TEXTAREA", "content", true, true, null, null),
+                                        field("owner_and_due", "执行责任人与时限", "TEXT", "safety", true, true, null, null)),
+                                "A4-会诊MDT记录-v3", List.of("院内会诊", "院际会诊", "肿瘤 MDT", "疑难病例讨论"))),
+                configuration("FORM_TEMPLATE", "form-discharge-followup-v1", "出院记录与连续照护模板",
+                        formProfilePayload("discharge-followup", "覆盖出院诊断、手术操作、用药重整、未回结果、患者教育和随访计划。",
+                                List.of(
+                                        field("discharge_diagnoses", "出院诊断", "CODE", "content", true, true, "ICD-10-CN", null),
+                                        field("procedures", "手术与操作", "CODE", "content", false, true, "ICD-9-CM-3", null),
+                                        field("hospital_course", "住院经过", "TEXTAREA", "content", true, false, null, null),
+                                        field("medication_reconciliation", "出院用药重整", "TEXTAREA", "safety", true, true, "ATC", null),
+                                        field("pending_results", "未回重要结果", "TEXTAREA", "safety", false, true, "LOINC", null),
+                                        field("patient_education", "健康教育与红旗症状", "TEXTAREA", "content", true, false, null, null),
+                                        field("followup_schedule", "复诊与随访安排", "TEXTAREA", "safety", true, false, null, null)),
+                                "A4-出院记录连续照护-v4", List.of("出院记录", "出院小结", "患者指导", "随访计划"))),
                 new ConfigurationSeed(id("c103"), id("c323"), "RULE",
                         "syn-clinical-safety-v1", "runtime-rule-safety-v1",
                         "三级医院临床安全与时限规则集", rulePayload()),
+                configuration("RULE", "rule-medication-safety-v1", "处方审核与用药安全规则集",
+                        ruleProfilePayload("medication-safety", "覆盖过敏、重复用药、肾功能、儿科剂量和高警示药双核对。",
+                                List.of(
+                                        rule("med-allergy", "严重过敏处方阻断", "PLATFORM_HARD", 1200, "过敏反应严重且药物成分命中", "阻断处方并要求选择替代药", "国家药品不良反应监测规范"),
+                                        rule("med-duplicate", "同成分重复用药阻断", "PLATFORM_HARD", 1150, "活动医嘱存在同成分或治疗重复", "阻断新增医嘱并展示冲突", "处方管理办法"),
+                                        rule("med-renal", "肾功能剂量校验", "INSTITUTION_HARD", 1050, "eGFR 低于药品剂量阈值", "阻断超剂量并要求药师复核", "院内肾功能剂量规范"),
+                                        rule("med-pediatric", "儿科体重剂量校验", "INSTITUTION_HARD", 1000, "年龄小于 14 岁且已记录体重", "超出 mg/kg 范围时阻断", "院内儿科用药目录"),
+                                        rule("med-high-alert", "高警示药双人核对", "INSTITUTION_HARD", 950, "命中高警示药品目录", "要求医师药师或双护士复核", "院内高警示药品管理制度")),
+                                "严重青霉素过敏且肾功能不全患者开具抗菌药物")),
+                configuration("RULE", "rule-emergency-critical-care-v1", "急诊抢救与脓毒症规则集",
+                        ruleProfilePayload("emergency-critical-care", "覆盖急诊分级、胸痛卒中时限、脓毒症筛查和抢救任务升级。",
+                                List.of(
+                                        rule("ed-triage", "急诊 I/II 级立即处置", "INSTITUTION_HARD", 1100, "分诊等级为 I 或 II 级", "立即创建抢救任务并通知急诊主班", "急诊预检分诊制度"),
+                                        rule("ed-ecg", "胸痛十分钟心电图", "INSTITUTION_HARD", 1000, "胸痛或疑似急性冠脉综合征", "10 分钟内完成首份心电图", "胸痛中心救治流程"),
+                                        rule("ed-stroke", "卒中影像时限升级", "INSTITUTION_HARD", 950, "卒中筛查阳性且发病时间窗内", "启动卒中通道并在 25 分钟内完成影像", "卒中中心救治流程"),
+                                        rule("ed-sepsis", "脓毒症早期筛查", "INSTITUTION_HARD", 900, "qSOFA 或 NEWS2 达到阈值", "启动脓毒症路径和乳酸复查", "脓毒症院内路径"),
+                                        rule("ed-timeout", "抢救任务超时升级", "REMINDER", 600, "关键抢救任务接近时限", "提醒主班医师并升级科主任", "急诊抢救质量管理制度")),
+                                "高热低血压患者进入急诊抢救区")),
+                configuration("RULE", "rule-inpatient-quality-v1", "住院风险与核心制度规则集",
+                        ruleProfilePayload("inpatient-quality", "覆盖首次病程、三级查房、VTE、跌倒压疮和会诊时限。",
+                                List.of(
+                                        rule("ip-first-course", "首次病程时限", "INSTITUTION_HARD", 1050, "患者入院且首次病程未完成", "8 小时临近时限时逐级升级", "病历书写基本规范"),
+                                        rule("ip-vte", "住院 VTE 风险评估", "INSTITUTION_HARD", 1000, "入院或术后 24 小时未完成 VTE 评估", "阻断病程提交并创建评估任务", "国家医疗质量安全改进目标"),
+                                        rule("ip-fall", "高跌倒风险护理措施", "INSTITUTION_HARD", 900, "跌倒风险评分达到高危", "要求防跌倒措施和患者宣教记录", "护理安全管理制度"),
+                                        rule("ip-round", "三级查房完整性", "REMINDER", 650, "住院患者缺少规定层级查房记录", "提醒医疗组并纳入科室质控", "医疗质量安全核心制度"),
+                                        rule("ip-consult", "会诊超时升级", "REMINDER", 600, "急会诊 30 分钟或普通会诊 24 小时未响应", "升级科主任和医务处", "会诊制度")),
+                                "高龄骨折患者入院并计划手术")),
+                configuration("RULE", "rule-perioperative-transfusion-v1", "围手术期与输血安全规则集",
+                        ruleProfilePayload("perioperative-transfusion", "覆盖手术分级、术前核查、抗菌药时点、植入物和输血双核对。",
+                                List.of(
+                                        rule("op-grade", "手术分级授权校验", "PLATFORM_HARD", 1200, "术式等级超过术者授权", "阻断排台并要求重新授权", "手术分级管理制度"),
+                                        rule("op-timeout", "三方安全核查", "INSTITUTION_HARD", 1100, "患者进入手术间且核查未完成", "禁止开始手术和麻醉关键步骤", "手术安全核查制度"),
+                                        rule("op-antibiotic", "预防用抗菌药时点", "INSTITUTION_HARD", 950, "需要预防用药且切皮前未给药", "提醒麻醉与手术团队并记录原因", "围手术期抗菌药物管理规范"),
+                                        rule("op-implant", "植入物 UDI 追溯", "INSTITUTION_HARD", 900, "使用植入物且 UDI 未绑定", "阻断手术记录终签", "医疗器械唯一标识管理制度"),
+                                        rule("op-transfusion", "输血床旁双核对", "PLATFORM_HARD", 1150, "血液制品准备执行", "要求患者血袋医嘱三方匹配并双签", "临床输血技术规范")),
+                                "关节置换患者术中备血并使用植入物")),
+                configuration("RULE", "rule-antimicrobial-stewardship-v1", "抗菌药物分级与复评规则集",
+                        ruleProfilePayload("antimicrobial-stewardship", "覆盖分级授权、特殊级审批、培养送检、72 小时复评和降阶梯。",
+                                List.of(
+                                        rule("abx-authority", "抗菌药物分级授权", "PLATFORM_HARD", 1150, "处方药品等级超过医师权限", "阻断处方并要求有权限医师开具", "抗菌药物临床应用管理办法"),
+                                        rule("abx-special", "特殊使用级会诊审批", "INSTITUTION_HARD", 1050, "开具特殊使用级抗菌药物", "要求感染或药学专家会诊审批", "院内抗菌药物分级目录"),
+                                        rule("abx-culture", "治疗前微生物送检", "REMINDER", 700, "重症感染首次经验治疗", "提醒用药前完成合格标本送检", "抗菌药物临床应用指导原则"),
+                                        rule("abx-review", "抗菌药物 72 小时复评", "REMINDER", 650, "抗菌药物使用达到 72 小时", "结合培养和疗效完成复评与降阶梯", "抗菌药物专项管理制度")),
+                                "重症肺炎经验性联合抗菌治疗")),
+                configuration("RULE", "rule-critical-result-v1", "危急值与重要结果规则集",
+                        ruleProfilePayload("critical-result", "覆盖危急值识别、通知确认、处置记录、复查和出院未回结果追踪。",
+                                List.of(
+                                        rule("result-threshold", "危急值阈值识别", "PLATFORM_HARD", 1200, "最终结果命中院级危急值阈值", "创建不可静默关闭的危急值事件", "危急值报告制度"),
+                                        rule("result-notify", "危急值双通道通知", "INSTITUTION_HARD", 1100, "危急值事件生成", "同时通知经治医生和病区值班人员", "危急值闭环管理制度"),
+                                        rule("result-ack", "十分钟确认升级", "INSTITUTION_HARD", 1000, "危急值 10 分钟未确认", "升级科主任医务处并保留通知证据", "危急值报告制度"),
+                                        rule("result-action", "处置和复查完整性", "INSTITUTION_HARD", 900, "危急值已确认但无处置或复查", "阻断事件关闭并要求补充记录", "检查检验结果闭环制度"),
+                                        rule("result-pending", "出院未回重要结果", "REMINDER", 650, "出院时存在未回重要结果", "绑定责任人并在回报后通知患者", "患者安全目标")),
+                                "出院患者病理结果回报恶性诊断")),
+                configuration("RULE", "rule-record-timeliness-v1", "病历时限与终末质控规则集",
+                        ruleProfilePayload("record-timeliness", "覆盖病历完成时限、签名、诊断编码、缺陷整改和封存更正。",
+                                List.of(
+                                        rule("record-required", "必填病历完整性", "PLATFORM_HARD", 1100, "病历终签前存在必填项缺失", "阻断签署并定位缺失字段", "病历书写基本规范"),
+                                        rule("record-signature", "签名与责任层级", "INSTITUTION_HARD", 1000, "签名人权限或上级审核不满足", "阻断终签并要求正确责任人签署", "电子病历应用管理规范"),
+                                        rule("record-diagnosis", "主要诊断与手术编码一致性", "INSTITUTION_HARD", 900, "首页编码与病程手术记录冲突", "创建编码复核任务", "病案首页数据质量规范"),
+                                        rule("record-timeout", "出院病历归档时限", "REMINDER", 650, "出院后接近归档时限", "提醒责任医师科主任和病案室", "病历管理制度"),
+                                        rule("record-amend", "封存病历更正留痕", "PLATFORM_HARD", 1050, "封存后申请更正", "只允许追加更正记录并保留原文", "电子病历档案管理制度")),
+                                "出院病案主要诊断与手术记录存在冲突")),
                 new ConfigurationSeed(id("c104"), id("c324"), "SCOPE",
                         "syn-role-scope-v1", "runtime-scope-clinical-v1",
-                        "三级医院角色职责与数据范围", scopePayload()));
+                        "三级医院角色职责与数据范围", scopePayload()),
+                configuration("SCOPE", "scope-outpatient-clinician-v1", "门诊诊疗职责与患者关系范围",
+                        scopeProfilePayload("outpatient-clinician", "按接诊关系、门诊科室、签署状态和复诊任务限定门诊访问。",
+                                List.of(
+                                        permission("门诊经治医生", "门诊病历草稿", "读写", "本人当前接诊患者", "ALLOW", 0, "终签后更正需上级复核"),
+                                        permission("门诊上级医师", "门诊病历", "审核签署", "本科室待审核病历", "ALLOW", 0, "不能审核本人起草记录"),
+                                        permission("门诊护士", "分诊与护理记录", "读写", "当班诊区患者", "ALLOW", 0, "无诊断和处方修改权"),
+                                        permission("非接诊医生", "门诊病历全文", "读取", "无接诊关系患者", "DENY", 0, "需发起会诊或临时授权"),
+                                        permission("门诊医生", "批量病历导出", "导出", "全部门诊患者", "DENY", 0, "保护性拒绝优先")))),
+                configuration("SCOPE", "scope-emergency-break-glass-v1", "急诊抢救与破窗授权范围",
+                        scopeProfilePayload("emergency-break-glass", "按急诊在诊、抢救团队和短时破窗授权开放最小必要病历。",
+                                List.of(
+                                        permission("急诊经治医生", "急诊病历与医嘱", "读写", "当前急诊责任患者", "ALLOW", 0, "抢救结束后自动收窄"),
+                                        permission("急诊抢救护士", "急救执行与护理记录", "读写", "当前抢救区患者", "ALLOW", 0, "医嘱核对与执行人分离"),
+                                        permission("急救破窗人员", "急救最小病历", "只读", "破窗授权患者", "ALLOW", 2, "强制理由通知和 24 小时复核"),
+                                        permission("急诊会诊医生", "急诊病历全文", "只读", "会诊授权患者", "ALLOW", 4, "禁止导出和转授权"),
+                                        permission("破窗人员", "科研与批量数据", "读取", "全部患者", "DENY", 0, "破窗仅限直接救治")))),
+                configuration("SCOPE", "scope-inpatient-care-team-v1", "住院医疗组、病区与转科范围",
+                        scopeProfilePayload("inpatient-care-team", "按医疗组、病区、值班班次、会诊和转科交接计算住院权限。",
+                                List.of(
+                                        permission("住院经治医生", "住院病历与医嘱", "读写", "本人医疗组患者", "ALLOW", 0, "上级医师完成最终审核"),
+                                        permission("医疗组上级医师", "住院病历", "审核签署", "本医疗组患者", "ALLOW", 0, "作者与审核人分离"),
+                                        permission("病区值班医生", "住院病历与急救医嘱", "读写", "当班病区患者", "ALLOW", 12, "交班后自动失效"),
+                                        permission("会诊医生", "住院病历全文", "只读", "会诊授权患者", "ALLOW", 8, "只能形成会诊意见"),
+                                        permission("转出科室人员", "转科后病历", "写入", "已完成转科患者", "DENY", 0, "仅允许补签既有记录")))),
+                configuration("SCOPE", "scope-nursing-ward-v1", "护理病区与医嘱执行职责范围",
+                        scopeProfilePayload("nursing-ward", "按病区、责任床位、班次和护理审核关系限定护理记录与医嘱执行。",
+                                List.of(
+                                        permission("责任护士", "护理记录与医嘱执行", "读写", "本人责任床位患者", "ALLOW", 0, "执行需关联医嘱和患者核对"),
+                                        permission("当班护士", "护理任务队列", "执行", "当班病区患者", "ALLOW", 12, "班次结束自动失效"),
+                                        permission("护士长", "护理记录", "审核", "本病区患者", "ALLOW", 0, "作者与审核人分离"),
+                                        permission("护理部质控员", "护理质量数据", "审核", "授权抽检病区", "ALLOW", 8, "只能创建质控问题"),
+                                        permission("护理人员", "医师诊断与处方", "修改", "本病区患者", "DENY", 0, "职责分离")))),
+                configuration("SCOPE", "scope-pharmacy-medtech-v1", "药学与医技任务队列职责范围",
+                        scopeProfilePayload("pharmacy-medtech", "按处方审核、标本、检查申请、报告审核和危急值任务队列限定访问。",
+                                List.of(
+                                        permission("临床药师", "处方与用药相关病历", "审核", "药学服务患者", "ALLOW", 8, "不得修改诊断和医生原始医嘱"),
+                                        permission("调剂药师", "已审核处方", "调剂", "本人药房任务队列", "ALLOW", 0, "审核与调剂按高风险规则分离"),
+                                        permission("检验技师", "标本与检验结果草稿", "读写", "本科室任务队列", "ALLOW", 0, "采集人与审核人分离"),
+                                        permission("影像医师", "影像检查与报告", "审核", "本科室任务队列", "ALLOW", 0, "报告审核后更正需留痕"),
+                                        permission("医技人员", "非本科任务和病历全文", "读取", "全部患者", "DENY", 0, "最小必要原则")))),
+                configuration("SCOPE", "scope-record-quality-v1", "病案、编码与医疗质量职责范围",
+                        scopeProfilePayload("record-quality", "按出院状态、抽检任务、编码责任和封存状态限定病案质控访问。",
+                                List.of(
+                                        permission("病案编码员", "病案首页与编码", "编辑", "本人编码任务队列", "ALLOW", 0, "不得修改临床正文"),
+                                        permission("病案管理员", "已出院病案", "归档封存", "病案室待归档队列", "ALLOW", 0, "封存后仅允许追加更正"),
+                                        permission("科室质控医师", "病历与缺陷", "审核", "本科室抽检病历", "ALLOW", 8, "只能创建和关闭质控问题"),
+                                        permission("院级质控专家", "病历与质量指标", "审核", "授权专项抽检范围", "ALLOW", 8, "访问全量留痕"),
+                                        permission("病案人员", "在诊患者医嘱", "修改", "全部患者", "DENY", 0, "病案职责与临床职责分离")))),
+                configuration("SCOPE", "scope-research-data-v1", "科研数据、伦理与脱敏访问范围",
+                        scopeProfilePayload("research-data", "按伦理批件、数据集、用途、有效期和脱敏级别限定科研访问。",
+                                List.of(
+                                        permission("课题负责人", "脱敏科研数据集", "申请读取", "伦理批准课题队列", "ALLOW", 24, "用途和有效期必须匹配"),
+                                        permission("科研数据管理员", "科研数据集", "生成脱敏", "已批准数据申请", "ALLOW", 8, "生成与审批人分离"),
+                                        permission("伦理审查人员", "数据申请与方案", "审核", "本人审查任务", "ALLOW", 8, "不得直接提取患者级数据"),
+                                        permission("研究成员", "脱敏数据集", "只读", "本人课题授权数据集", "ALLOW", 24, "禁止反识别和转授权"),
+                                        permission("科研人员", "可识别临床病历", "批量导出", "全部患者", "DENY", 0, "必须走特批与独立审计")))));
     }
 
     static List<CapabilityPackSeed> capabilityPacks() {
@@ -90,6 +374,103 @@ final class TertiaryBusinessConfigurationCatalog {
                 specialty("c420", "admin:REHABILITATION", "c410", "REHABILITATION", "康复医学科", "BASIC_CLOSED_LOOP", "SYN-SP-REHABILITATION", List.of("assessment", "plan", "therapy", "outcome")));
     }
 
+    private static ConfigurationSeed configuration(
+            String type, String key, String name, Map<String, Object> payload) {
+        String namespace = "openemr2026:tertiary-business-configuration:" + type + ":" + key;
+        return new ConfigurationSeed(
+                UUID.nameUUIDFromBytes((namespace + ":draft").getBytes(StandardCharsets.UTF_8)),
+                UUID.nameUUIDFromBytes((namespace + ":runtime").getBytes(StandardCharsets.UTF_8)),
+                type, "syn-" + key, "runtime-" + key, name, payload);
+    }
+
+    private static WorkflowStep step(String id, String name, String owner, int minutes) {
+        return new WorkflowStep(id, name, owner, minutes);
+    }
+
+    private static Map<String, Object> workflowProfilePayload(
+            String profileCode, String description, List<WorkflowStep> steps,
+            String timeoutPolicy, List<String> syntheticCases) {
+        List<Map<String, Object>> nodes = new ArrayList<>();
+        nodes.add(node(profileCode + "-start", "业务事件受理", "START", "系统与业务受理岗", 1, false, false));
+        for (WorkflowStep step : steps) {
+            nodes.add(node(profileCode + "-" + step.id(), step.name(), "TASK",
+                    step.owner(), step.minutes(), false, false));
+        }
+        nodes.add(node(profileCode + "-sign", "业务记录签署", "SIGN",
+                "经办人与上级审核人", 30, true, false));
+        nodes.add(node(profileCode + "-audit", "质控与审计复核", "AUDIT",
+                "医务处/质量管理部门", 240, true, false));
+        nodes.add(node(profileCode + "-complete", "业务闭环完成", "END", "系统", 1, true, true));
+
+        List<Map<String, Object>> edges = new ArrayList<>();
+        for (int index = 0; index < nodes.size() - 1; index++) {
+            Map<String, Object> from = nodes.get(index);
+            Map<String, Object> to = nodes.get(index + 1);
+            edges.add(edge(String.valueOf(from.get("id")), String.valueOf(to.get("id")),
+                    String.valueOf(from.get("name")) + "完成", false));
+        }
+        edges.add(edge(profileCode + "-audit", profileCode + "-" + steps.getFirst().id(),
+                "质控发现阻断缺陷，退回责任环节整改", true));
+        return base(description).with(
+                "profile_code", profileCode,
+                "service_line", steps.stream().map(WorkflowStep::owner).distinct().toList(),
+                "nodes", List.copyOf(nodes), "edges", List.copyOf(edges),
+                "protected_nodes", List.of(profileCode + "-sign", profileCode + "-audit", profileCode + "-complete"),
+                "timeout_policy", timeoutPolicy,
+                "escalation_chain", List.of("责任岗位", "科室负责人", "医务处/护理部值班", "院级质量安全委员会"),
+                "synthetic_cases", syntheticCases);
+    }
+
+    private static Map<String, Object> formProfilePayload(
+            String profileCode, String description, List<Map<String, Object>> specialtyFields,
+            String printTemplate, List<String> templateProfiles) {
+        List<Map<String, Object>> fields = new ArrayList<>(List.of(
+                field("patient_name", "患者姓名", "TEXT", "identity", true, true, null, null),
+                field("encounter_no", "就诊号", "TEXT", "identity", true, true, null, null),
+                field("department", "责任科室", "CODE", "identity", true, false, "OPENEMR-DEPARTMENT", null),
+                field("recorded_at", "记录时间", "DATETIME", "identity", true, true, null, null)));
+        fields.addAll(specialtyFields);
+        fields.add(field("author_signature", "经办人数字签名", "SIGNATURE", "signature", true, true, null, null));
+        fields.add(field("reviewer_signature", "审核人数字签名", "SIGNATURE", "signature", true, true, null, null));
+        List<Map<String, Object>> terminology = fields.stream()
+                .filter(item -> item.get("terminology") != null)
+                .map(item -> object("field", item.get("id"), "system", item.get("terminology")))
+                .toList();
+        return base(description).with(
+                "profile_code", profileCode,
+                "groups", List.of(
+                        group("identity", "患者与就诊", 2), group("content", "业务记录", 2),
+                        group("safety", "风险与安全", 2), group("signature", "签署与审核", 2)),
+                "fields", List.copyOf(fields), "terminology_mapping", terminology,
+                "print_template", printTemplate, "template_profiles", templateProfiles,
+                "version_binding", "已生成临床文书永久绑定发布时版本；后续升级不覆盖历史病历");
+    }
+
+    private static Map<String, Object> ruleProfilePayload(
+            String profileCode, String description, List<Map<String, Object>> rules, String scenario) {
+        return base(description).with(
+                "profile_code", profileCode,
+                "conditions", List.of("患者上下文", "就诊状态", "医嘱与结果", "任务时限", "责任人与科室"),
+                "actions", List.of("失败关闭", "阻断并解释", "创建任务", "逐级升级", "保留审计证据"),
+                "rule_layer", "PLATFORM_AND_INSTITUTION", "rules", rules,
+                "sample_case", object("case_id", "SYN-" + profileCode.toUpperCase().replace('-', '_') + "-01", "scenario", scenario),
+                "precedence", List.of("平台安全硬门", "机构硬规则", "业务提醒", "AI 人工确认建议"));
+    }
+
+    private static Map<String, Object> scopeProfilePayload(
+            String profileCode, String description, List<Map<String, Object>> permissions) {
+        return base(description).with(
+                "profile_code", profileCode,
+                "roles", permissions.stream().map(item -> String.valueOf(item.get("role"))).distinct().toList(),
+                "data_scopes", permissions.stream().map(item -> String.valueOf(item.get("scope"))).distinct().toList(),
+                "permissions", permissions,
+                "separation_of_duties", "申请人!=审批人；作者!=审核人；业务执行、质量复核和系统管理职责分离",
+                "temporary_grant_hours", 8,
+                "deny_overrides_allow", true,
+                "break_glass_review_hours", 24,
+                "decision_context", List.of("机构", "院区", "科室", "病区", "医疗组", "患者关系", "班次", "任务"));
+    }
+
     static Map<String, Object> compositionPayload(CapabilityPackSeed pack) {
         List<Map<String, Object>> dependencies = new ArrayList<>();
         for (String module : pack.modules()) {
@@ -110,7 +491,7 @@ final class TertiaryBusinessConfigurationCatalog {
 
     private static Map<String, Object> workflowPayload() {
         return base("覆盖门诊、急诊、住院、医技、会诊、转科、出院和病案归档的三级医院闭环流程。")
-                .with("nodes", List.of(
+                .with("profile_code", "integrated-clinical-closed-loop", "nodes", List.of(
                         node("registration", "实名建档与就诊登记", "START", "门诊部/急诊预检", 5, false, false),
                         node("triage", "分诊与风险分级", "TASK", "分诊护士", 10, false, false),
                         node("resuscitation", "急危重症抢救", "TASK", "急诊抢救团队", 15, false, false),
@@ -185,7 +566,7 @@ final class TertiaryBusinessConfigurationCatalog {
                 field("clinician_signature", "医生数字签名", "SIGNATURE", "consent", true, true, null, null),
                 field("supervisor_signature", "上级医师签名", "SIGNATURE", "consent", false, true, null, null));
         return base("覆盖门诊病历、急诊记录、住院首次病程、会诊、交接、出院和知情同意的结构化模板集。")
-                .with("groups", groups, "fields", fields,
+                .with("profile_code", "integrated-medical-record-set", "groups", groups, "fields", fields,
                         "terminology_mapping", List.of(
                                 object("field", "primary_diagnosis", "system", "ICD-10-CN"),
                                 object("field", "chief_complaint", "system", "SNOMED-CT"),
@@ -213,7 +594,7 @@ final class TertiaryBusinessConfigurationCatalog {
                 rule("antimicrobial-review", "抗菌药物 72 小时复评", "REMINDER", 450, "限制级抗菌药物使用达到 72 小时", "提醒感染评估与降阶梯", "抗菌药物临床应用管理办法"),
                 rule("ai-summary", "AI 病情摘要建议", "AI_ADVICE", 100, "资料完整度达到 80%", "生成带来源的摘要候选供医生确认", "clinical-ai-golden-v1"));
         return base("覆盖用药安全、危急值、脓毒症、VTE、抗菌药物、会诊和病历时限的三级医院规则集。")
-                .with("conditions", List.of("患者特征", "诊断与过敏", "医嘱", "检验检查", "任务时限"),
+                .with("profile_code", "integrated-clinical-safety", "conditions", List.of("患者特征", "诊断与过敏", "医嘱", "检验检查", "任务时限"),
                         "actions", List.of("阻断", "双签", "创建任务", "逐级提醒", "人工确认建议"),
                         "rule_layer", "MIXED", "rules", rules,
                         "sample_case", object("case_id", "SYN-TERTIARY-RULE-01", "scenario", "急诊胸痛患者合并严重青霉素过敏和肾功能不全"));
@@ -236,7 +617,7 @@ final class TertiaryBusinessConfigurationCatalog {
                 permission("跨科医生", "批量病历导出", "导出", "全部患者", "DENY", 0, "保护性拒绝优先"),
                 permission("AI 医助", "最小必要临床上下文", "生成候选", "当前患者与任务", "ALLOW", 1, "不得直接写入或签署"));
         return base("按机构、院区、科室、病区、医疗组、患者关系、班次和临时授权组合计算最终权限。")
-                .with("roles", List.of("门诊经治医生", "急诊医生", "住院经治医生", "会诊医生", "责任护士", "临床药师", "医技审核人员", "病案管理员", "质控专家", "科研人员", "系统管理员", "AI 医助"),
+                .with("profile_code", "integrated-role-scope", "roles", List.of("门诊经治医生", "急诊医生", "住院经治医生", "会诊医生", "责任护士", "临床药师", "医技审核人员", "病案管理员", "质控专家", "科研人员", "系统管理员", "AI 医助"),
                         "data_scopes", List.of("本人接诊", "医疗组", "病区", "会诊授权", "任务队列", "脱敏科研", "急救破窗"),
                         "permissions", permissions,
                         "separation_of_duties", "作者!=审批人；采集人!=报告审核人；配置作者!=发布审批人；系统管理员无临床正文权限",
@@ -248,13 +629,17 @@ final class TertiaryBusinessConfigurationCatalog {
     private static Payload base(String description) {
         return new Payload(object(
                 "schema_version", 2,
+                "fixture_source", "tertiary-hospital-business-config-v2",
+                "hospital_level", "三级甲等",
+                "organization", "江城大学附属医院",
                 "description", description,
                 "environment", "dev-synthetic",
+                "data_policy", "确定性仿真配置；不包含真实患者信息；结构和治理约束按三级医院业务设计",
                 "owner", "三级医院配置管理委员会",
                 "effective_scope", List.of("江城大学附属医院", "总院区", "门诊/急诊/住院/医技/科研"),
                 "controls", List.of("双人审批", "最小权限", "审计留痕", "失败关闭", "灰度发布", "可验证回退"),
-                "evidence", object("dataset", "tertiary-hospital-business-config-v1", "case_count", 128,
-                        "last_verified", "2026-08-26", "standards", List.of("医疗核心制度", "病历书写基本规范", "三级医院评审标准"))));
+                "evidence", object("dataset", "tertiary-hospital-business-config-v2", "case_count", 256,
+                        "last_verified", "2026-08-28", "standards", List.of("医疗质量安全核心制度要点", "病历书写基本规范", "三级医院评审标准"))));
     }
 
     private static CapabilityPackSeed pack(
@@ -345,6 +730,8 @@ final class TertiaryBusinessConfigurationCatalog {
     record ConfigurationSeed(
             UUID draftId, UUID runtimeId, String configType, String draftKey,
             String runtimeKey, String displayName, Map<String, Object> payload) { }
+
+    record WorkflowStep(String id, String name, String owner, int minutes) { }
 
     record CapabilityPackSeed(
             UUID packId, UUID compositionId, UUID releaseId, String packCode,

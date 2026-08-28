@@ -98,7 +98,7 @@ final class TertiaryBusinessConfigurationImportTest {
 
     @Test
     void catalogPayloadsRemainInternallyCompleteAndDeterministic() {
-        assertThat(TertiaryBusinessConfigurationCatalog.configurations()).hasSize(4)
+        assertThat(TertiaryBusinessConfigurationCatalog.configurations()).hasSize(32)
                 .allSatisfy(seed -> assertThat(seed.payload())
                         .containsKeys("schema_version", "description", "controls", "evidence"));
         assertThat(TertiaryBusinessConfigurationCatalog.capabilityPacks()).hasSize(15)
