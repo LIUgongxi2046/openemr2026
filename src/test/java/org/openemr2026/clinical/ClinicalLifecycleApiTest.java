@@ -218,6 +218,57 @@ final class ClinicalLifecycleApiTest {
     }
 
     @Test
+    void givenDraftDocument_whenVoided_thenItLeavesTheEditableFlowAndKeepsImmutableEvidence()
+            throws Exception {
+        Lease patientLease = issueLease(PATIENT, null);
+        String encounterKey = "document-void-" + UUID.randomUUID();
+        HttpResponse<String> encounterResponse = send("POST", "/api/v1/encounters", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_type":"OUTPATIENT","started_at":"2026-08-30T01:00:00Z","source_system":"SYNTHETIC-DOCUMENT-VOID","source_key":"%s"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterKey), patientLease, PATIENT, null,
+                UUID.randomUUID().toString());
+        assertThat(encounterResponse.statusCode()).isEqualTo(201);
+        String encounterId = objectMapper.readTree(encounterResponse.body()).path("encounter_id").stringValue();
+        Lease encounterLease = issueLease(PATIENT, encounterId);
+
+        HttpResponse<String> createResponse = send("POST", "/api/v1/documents", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s","document_type_code":"WS445.2.OUTPATIENT_RECORD","sections":{"chief_complaint":"待作废草稿"}}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterId), encounterLease, PATIENT, encounterId,
+                UUID.randomUUID().toString());
+        assertThat(createResponse.statusCode()).isEqualTo(201);
+        JsonNode created = objectMapper.readTree(createResponse.body());
+        String documentId = created.path("document_id").stringValue();
+        String firstVersionId = created.path("document_version_id").stringValue();
+
+        HttpResponse<String> voidResponse = send("POST", "/api/v1/documents/" + documentId + "/voids", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s","expected_row_version":1,"reason":"重复建立的草稿"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterId), encounterLease, PATIENT, encounterId,
+                UUID.randomUUID().toString());
+        assertThat(voidResponse.statusCode()).isEqualTo(200);
+        JsonNode voided = objectMapper.readTree(voidResponse.body());
+        assertThat(voided.path("status").stringValue()).isEqualTo("VOID");
+        assertThat(voided.path("version_no").intValue()).isEqualTo(2);
+        assertThat(voided.path("row_version").longValue()).isEqualTo(2L);
+        assertThat(voided.path("document_version_id").stringValue()).isNotEqualTo(firstVersionId);
+
+        HttpResponse<String> staleEdit = send("PUT", "/api/v1/documents/" + documentId + "/draft", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s","expected_row_version":2,"sections":{"chief_complaint":"作废后覆盖"}}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterId), encounterLease, PATIENT, encounterId,
+                UUID.randomUUID().toString());
+        assertThat(staleEdit.statusCode()).isEqualTo(409);
+        assertThat(staleEdit.body()).contains("INVALID_DOCUMENT_STATE");
+        assertThat(jdbc.sql("""
+                select count(*) from audit_event where tenant_id = :tenant
+                  and resource_id = :document and action_code = 'DOCUMENT_VOIDED'
+                """).param("tenant", UUID.fromString(TENANT)).param("document", UUID.fromString(documentId))
+                .query(Long.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("""
+                select count(*) from outbox_event where tenant_id = :tenant
+                  and aggregate_id = :document and event_type = 'DocumentVoided'
+                """).param("tenant", UUID.fromString(TENANT)).param("document", UUID.fromString(documentId))
+                .query(Long.class).single()).isEqualTo(1);
+    }
+
+    @Test
     void givenDeterministicQualityRules_whenSigning_thenBlockingFindingsStopAndSignedContentIsImmutable()
             throws Exception {
         String chainHeadBefore = jdbc.sql("""

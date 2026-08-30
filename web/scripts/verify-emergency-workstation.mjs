@@ -5,20 +5,21 @@ import { chromium } from 'playwright';
 
 const webDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const projectDir = resolve(webDir, '..');
-const outputDir = resolve(projectDir, 'output/playwright/emergency-workstation-20260828');
+const outputDir = resolve(projectDir, process.env.OPENEMR2026_BROWSER_OUTPUT_DIR || 'output/playwright/emergency-workstation-20260830');
 const baseUrl = (process.env.OPENEMR2026_BROWSER_BASE_URL || 'http://127.0.0.1:4177').replace(/\/$/, '');
 const prototypeUrl = (process.env.OPENEMR2026_PROTOTYPE_BASE_URL || 'http://127.0.0.1:4180').replace(/\/$/, '');
 const credentials = {
   username: process.env.OPENEMR2026_BROWSER_USERNAME || 'linwei',
   password: process.env.OPENEMR2026_BROWSER_PASSWORD || 'OpenEMR2026-dev!',
 };
+const mutationEnabled = process.env.OPENEMR2026_MUTATION_TEST === '1';
 const routes = [
   { id: 'emergency', heading: '急诊工作台', dataText: '时间关键诊疗轴' },
-  { id: 'er-triage', heading: '急诊预检分诊', dataText: '分诊台账', dialogs: ['新建分诊'] },
-  { id: 'er-record', heading: '急诊病历与抢救记录', dataText: '急诊病历文档', dialogs: ['新建抢救记录'] },
-  { id: 'er-observation', heading: '急诊抢救留观与去向', dataText: '留观台账', dialogs: ['新建留观'] },
-  { id: 'er-nursing', heading: '急诊护理、输液与执行', dataText: '护理记录台账', dialogs: ['新建护理记录'] },
-  { id: 'er-handoff', heading: '急诊会诊、交接与转运', dataText: '交接班台账', dialogs: ['新建交接班', '记录域切换'] },
+  { id: 'er-triage', heading: '急诊预检分诊与分区', dataText: '急诊患者队列', dialogs: ['新增急诊患者'] },
+  { id: 'er-record', heading: '急诊病历与抢救记录', dataText: '时间轴与文书', dialogs: ['新增抢救事件'] },
+  { id: 'er-observation', heading: '急诊抢救留观与去向', dataText: '留观患者与去向台账', dialogs: ['新建留观'] },
+  { id: 'er-nursing', heading: '急诊护理、输液与执行', dataText: '急诊护理执行轴', dialogs: ['新增护理记录'] },
+  { id: 'er-handoff', heading: '急诊会诊、交接与转运', dataText: '导管室交接单', dialogs: ['新建交接班', '记录域切换'] },
 ];
 
 await mkdir(outputDir, { recursive: true });
@@ -149,6 +150,54 @@ async function openAndCancelDialog(page, buttonName, routeId) {
   return `${buttonName} 弹窗可打开、可关闭、不越界`;
 }
 
+async function runNursingCrudLifecycle(page) {
+  const tag = `急诊护理CRUD验收-${Date.now()}`;
+  const correctedTag = `${tag}-更正`;
+  await openRoute(page, routes.find((item) => item.id === 'er-nursing'));
+  const activeRiskRows = page.locator('tbody tr:not(.is-voided)').filter({ hasText: '高危' });
+  const baselineRiskCount = await activeRiskRows.count();
+
+  await page.getByRole('button', { name: '新增护理记录', exact: true }).click();
+  let dialog = page.locator('dialog.admin-action-dialog[open]');
+  await dialog.getByLabel('危重评估').fill(tag);
+  await dialog.getByLabel('护理干预 / 输液执行').fill('建立静脉通路并持续心电监护');
+  await dialog.getByLabel('存在危险信号（需交接与复核）').check();
+  await dialog.getByRole('button', { name: '验证并保存', exact: true }).click();
+  const createNotice = page.locator('.admin-notice');
+  await createNotice.waitFor({ timeout: 15_000 });
+  const createNoticeText = (await createNotice.innerText()).trim();
+  if (createNoticeText !== '高危护理记录已保存并驱动交接复核。') {
+    throw new Error(`新建护理记录失败：${createNoticeText}`);
+  }
+  await page.waitForFunction(({ text, expected }) => {
+    const rows = [...document.querySelectorAll('tbody tr:not(.is-voided)')];
+    return rows.some((item) => (item.textContent || '').includes(text))
+      && rows.filter((item) => (item.textContent || '').includes('高危')).length === expected;
+  }, { text: tag, expected: baselineRiskCount + 1 }, { timeout: 15_000 });
+
+  let row = page.locator('tbody tr').filter({ hasText: tag }).first();
+  await row.getByRole('button', { name: '编辑/更正', exact: true }).click();
+  dialog = page.locator('dialog.admin-action-dialog[open]');
+  await dialog.getByLabel('危重评估').fill(correctedTag);
+  await dialog.getByLabel('护理干预 / 输液执行').fill('复核静脉通路、监护设备与转运交接');
+  await dialog.getByRole('button', { name: '验证并保存', exact: true }).click();
+  await page.getByText('护理记录已在单一事务中生成更正版本，原记录已逻辑作废。', { exact: true }).waitFor({ timeout: 15_000 });
+
+  row = page.locator('tbody tr').filter({ hasText: correctedTag }).first();
+  await row.getByRole('button', { name: '删除', exact: true }).click();
+  dialog = page.locator('dialog.admin-action-dialog[open]');
+  await dialog.locator('textarea').fill('自动化验收完成后逻辑作废');
+  await dialog.getByRole('button', { name: '确认删除并作废', exact: true }).click();
+  await page.getByText('护理记录已逻辑作废，不再计入风险与交接流程。', { exact: true }).waitFor({ timeout: 15_000 });
+  await page.waitForFunction((text) => [...document.querySelectorAll('tbody tr')]
+    .some((item) => (item.textContent || '').includes(text) && (item.textContent || '').includes('已作废')), correctedTag, { timeout: 15_000 });
+  row = page.locator('tbody tr').filter({ hasText: correctedTag }).first();
+  if (!await row.innerText().then((text) => text.includes('已作废'))) throw new Error('删除后护理记录未显示逻辑作废状态');
+  await page.waitForFunction((expected) => [...document.querySelectorAll('tbody tr:not(.is-voided)')]
+    .filter((item) => (item.textContent || '').includes('高危')).length === expected, baselineRiskCount, { timeout: 15_000 });
+  return '护理记录新建→更正版本→逻辑删除完整通过，风险统计先增加后恢复';
+}
+
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 const page = await context.newPage();
 page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
@@ -203,6 +252,10 @@ try {
     return details;
   });
 
+  if (mutationEnabled) {
+    await check('nursing-crud-lifecycle-and-workflow-impact', () => runNursingCrudLifecycle(page));
+  }
+
   await check('mobile-six-routes-and-dialog-layout', async () => {
     const mobileContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const mobile = await mobileContext.newPage();
@@ -220,7 +273,7 @@ try {
         if (route.id === 'emergency') await assertEmergencyWorkspaceStructure(mobile, true);
       }
       await openRoute(mobile, routes.find((item) => item.id === 'er-nursing'));
-      await openAndCancelDialog(mobile, '新建护理记录', 'er-nursing/mobile');
+      await openAndCancelDialog(mobile, '新增护理记录', 'er-nursing/mobile');
       await mobile.screenshot({ path: resolve(outputDir, 'er-nursing-390x844.png'), fullPage: true });
       return '6/6 路由在 390px 无页面溢出，业务弹窗不越界';
     } finally {
@@ -250,6 +303,7 @@ const result = {
   run_at: new Date().toISOString(),
   base_url: baseUrl,
   prototype_url: prototypeUrl,
+  mutation_test: mutationEnabled,
   passed: checks.length,
   failed: failures.length,
   checks,

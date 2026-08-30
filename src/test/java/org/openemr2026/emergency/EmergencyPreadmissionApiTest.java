@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyPreadmissionLinkRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionRegisterRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionUpdateRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionVoidRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -106,5 +108,25 @@ final class EmergencyPreadmissionApiTest {
                 where tenant_id = cast(:tenant as uuid) and preadmission_id = :preadmission
                 """).param("tenant", TENANT).param("preadmission", registered.preadmissionId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenUnregisteredPreadmission_whenCorrectingAndVoiding_thenActiveQueueChanges() {
+        EmergencyPreadmissionWire created = register();
+        EmergencyPreadmissionWire corrected = preadmissions.update(identity(), "pread-u-" + UUID.randomUUID(),
+                created.preadmissionId(), new EmergencyPreadmissionUpdateRequestWire(
+                        organization, facility, "TEMP-CORRECTED-" + UUID.randomUUID().toString().substring(0, 6),
+                        "急诊身份信息复核后更正", created.rowVersion()));
+        assertThat(corrected.preadmissionId()).isNotEqualTo(created.preadmissionId());
+        assertThat(preadmissions.listPreadmissions(identity(), facility))
+                .extracting(EmergencyPreadmissionWire::preadmissionId)
+                .contains(corrected.preadmissionId()).doesNotContain(created.preadmissionId());
+
+        preadmissions.voidPreadmission(identity(), "pread-v-" + UUID.randomUUID(), corrected.preadmissionId(),
+                new EmergencyPreadmissionVoidRequestWire(
+                        organization, facility, corrected.rowVersion(), "重复临时登记删除"));
+        assertThat(preadmissions.listPreadmissions(identity(), facility))
+                .extracting(EmergencyPreadmissionWire::preadmissionId)
+                .doesNotContain(corrected.preadmissionId());
     }
 }

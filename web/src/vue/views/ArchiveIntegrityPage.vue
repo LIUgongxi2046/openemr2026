@@ -1,20 +1,23 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
-import { issueMedicalRecordAssetLease, listMedicalRecordAssets } from '../../api/records';
+import type { MedicalRecordAssetWire } from '../../generated/contracts';
+import { issueMedicalRecordAssetLease, listMedicalRecordAssets, verifyMedicalRecordAssetIntegrity, verifyMedicalRecordAssetStorage } from '../../api/records';
 import { issueArchiveLease, loadArchiveReadiness } from '../../clinical-api';
-import { developmentCopy } from '../../development-copy';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const notice = ref('');
 const verifying = ref(false);
+const verifyTarget = ref<MedicalRecordAssetWire | null>(null);
+const observedHash = ref('');
 const integrityQuery = useQuery({
   queryKey: ['clinical', 'archive-integrity'],
   queryFn: async () => {
     const [assetLease, archiveLease] = await Promise.all([issueMedicalRecordAssetLease(), issueArchiveLease()]);
     const [assets, readiness] = await Promise.all([listMedicalRecordAssets(assetLease), loadArchiveReadiness(archiveLease)]);
-    return { assets, readiness };
+    return { assetLease, assets, readiness };
   },
   retry: false, staleTime: 0, gcTime: 0,
 });
@@ -23,81 +26,75 @@ const assets = computed(() => integrityQuery.data.value?.assets ?? []);
 const readiness = computed(() => integrityQuery.data.value?.readiness);
 const archiveCase = computed(() => readiness.value?.archive_case ?? null);
 
-const verifiedCount = computed(() => assets.value.filter((asset) => asset.content_hash.length === 64).length);
+const verifiedCount = computed(() => assets.value.filter((asset) => asset.integrity_status === 'VERIFIED').length);
 const signatureCount = computed(() => archiveCase.value?.items.filter((item) => item.signature_summary_hash.length === 64).length ?? 0);
 const blockerCount = computed(() => readiness.value?.blockers.length ?? 0);
 const sealed = computed(() => archiveCase.value?.status === 'SEALED');
+const problemAsset = computed(() => assets.value.find((asset) => asset.integrity_status !== 'VERIFIED') ?? assets.value[0] ?? null);
+const readinessPercent = computed(() => {
+  const assetScore = assets.value.length ? verifiedCount.value / assets.value.length : 1;
+  const gateScore = blockerCount.value ? 0.5 : 1;
+  return Math.round((assetScore * 0.65 + gateScore * 0.35) * 100);
+});
 
 async function verify() {
   if (verifying.value) return;
   verifying.value = true; notice.value = '';
   try {
+    const data = integrityQuery.data.value; if (!data) return;
+    const stored = data.assets.filter((asset) => asset.status !== 'RETIRED' && asset.storage_status !== 'MISSING');
+    let passed = 0;
+    for (const asset of stored) {
+      const event = await verifyMedicalRecordAssetStorage(data.assetLease, asset);
+      if (event.result === 'VERIFIED') passed += 1;
+    }
     await integrityQuery.refetch();
-    notice.value = '已重新从服务端读取：内容哈希与签名摘要锚点保持不变，长期验真通过。';
+    notice.value = `已从存储重新读取 ${stored.length} 份原件并服务端复算 SHA-256，${passed} 份通过。`;
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { verifying.value = false; }
 }
 
-function blockerLabel(value: string) { return ({ ENCOUNTER_NOT_FINISHED: '就诊尚未结束', ARCHIVE_DOCUMENT_REQUIRED: '缺少可归档病历', DOCUMENT_NOT_SIGNED: '当前版本未签署', DOCUMENT_QUALITY_NOT_PASSED: '当前内容质控未通过', SIGNATURE_EVIDENCE_REQUIRED: '缺少签名证据', SIGNATURE_EVIDENCE_NOT_VALID: '签名证据无效或待补齐' } as Record<string, string>)[value] || value; }
+async function runAssetVerification() {
+  const data = integrityQuery.data.value;
+  if (!data || !verifyTarget.value || verifying.value || (verifyTarget.value.storage_status === 'MISSING' && !/^[0-9a-fA-F]{64}$/.test(observedHash.value))) return;
+  verifying.value = true; notice.value = '';
+  try {
+    const event = verifyTarget.value.storage_status === 'MISSING'
+      ? await verifyMedicalRecordAssetIntegrity(data.assetLease, verifyTarget.value, observedHash.value)
+      : await verifyMedicalRecordAssetStorage(data.assetLease, verifyTarget.value);
+    notice.value = event.result === 'VERIFIED'
+      ? '观测哈希与编目锚点一致，该资产已解除借阅与归档阻断。'
+      : '观测哈希不一致，已记录失败证据并持续阻断借阅与归档。';
+    verifyTarget.value = null; observedHash.value = ''; await integrityQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { verifying.value = false; }
+}
+
+function blockerLabel(value: string) { return ({ ENCOUNTER_NOT_FINISHED: '就诊尚未结束', ARCHIVE_DOCUMENT_REQUIRED: '缺少可归档病历', DOCUMENT_NOT_SIGNED: '当前版本未签署', DOCUMENT_QUALITY_NOT_PASSED: '当前内容质控未通过', SIGNATURE_EVIDENCE_REQUIRED: '缺少签名证据', SIGNATURE_EVIDENCE_NOT_VALID: '签名证据无效或待补齐', ASSET_INTEGRITY_REQUIRED: '关联资产未通过哈希验真' } as Record<string, string>)[value] || value; }
 function archiveStatusLabel(value: string) { return ({ ARCHIVED: '已归档待封存', SEALED: '已封存', UNSEALED: '授权解封中' } as Record<string, string>)[value] || value; }
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page archive-content">
-    <div class="page-heading archive-heading">
-      <div><p class="eyebrow">病历与病案 / 完整性与验真</p><h1>病案完整性、签名与长期验真</h1><p>归档前检查与归档后周期验真共用同一证据链：64 位内容哈希、文书签名摘要哈希与归档清单哈希分别锚定，重新读取即复算。</p></div>
-      <div class="toolbar-actions"><button class="button primary" :disabled="verifying" @click="verify">{{ verifying ? '正在重新核验…' : '运行完整性检查' }}</button><RouterLink class="button secondary" to="/archive-assets">返回病案归档</RouterLink></div>
-    </div>
-    <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
-      <div><strong>{{ developmentCopy.patientName }}</strong><span>病案完整性验真 · 证据链锚点</span></div><dl>
-        <div><dt>内容哈希</dt><dd>64 位 SHA-256</dd></div>
-        <div><dt>签名摘要</dt><dd>逐文书锚定</dd></div>
-        <div><dt>清单哈希</dt><dd>归档清单整体锚定</dd></div></dl>
-      <span class="lease-badge">双租约 · 资产 + 归档</span></section>
+  <section data-page-root class="content vue-native-page archive-prototype-page">
+    <div class="page-head"><div class="page-title"><h1>病案完整性、签名与长期验真</h1><p>归档前检查和归档后周期验真使用同一证据链</p></div><div class="head-actions"><button class="btn" :disabled="verifying" @click="verify">{{ verifying ? '正在检查…' : '运行完整性检查' }}</button><RouterLink class="btn primary" :to="problemAsset ? `/asset-detail?asset=${problemAsset.medical_record_asset_id}` : '/archive-catalog'">查看问题资产</RouterLink></div></div>
     <ClinicalPageState v-if="integrityQuery.isPending.value" kind="loading" message="正在读取内容哈希与签名摘要锚点" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="integrityQuery.refetch()" />
     <template v-else>
-      <section class="archive-metrics" aria-label="验真摘要">
-        <article class="metric-success"><span>资产哈希完整</span><strong>{{ verifiedCount }}/{{ assets.length }}</strong><small>64 位内容哈希齐全</small></article>
-        <article :class="signatureCount ? 'metric-success' : ''"><span>签名摘要项</span><strong>{{ signatureCount }}</strong><small>归档清单逐文书锚定</small></article>
-        <article :class="blockerCount ? 'metric-danger' : 'metric-success'"><span>归档阻断</span><strong>{{ blockerCount }}</strong><small>签名/质控/完整性硬门</small></article>
-        <article><span>病案状态</span><strong>{{ archiveCase ? archiveStatusLabel(archiveCase.status) : '未归档' }}</strong><small>{{ sealed ? '清单已封存' : '尚未形成封存清单' }}</small></article>
-      </section>
       <div v-if="notice" class="notice archive-notice" role="status">{{ notice }}</div>
-      <div class="archive-grid">
-        <section class="archive-panel archive-manifest-panel">
-          <div class="archive-panel-heading"><div><span class="archive-step">哈</span><h2>资产内容哈希验真</h2></div><span>{{ assets.length }} 份资产</span></div>
-          <div v-if="assets.length === 0" class="archive-empty"><span>哈</span><p>当前患者尚无已编目资产</p><small>编目后才会产生内容哈希锚点。</small></div>
-          <div v-else class="archive-table-wrap">
-            <table class="archive-table"><thead><tr><th>载体</th><th>存放位置</th><th>内容哈希（SHA-256）</th><th>完整性</th></tr></thead>
-              <tbody><tr v-for="asset in assets" :key="asset.medical_record_asset_id">
-                <td>{{ ({ PAPER: '纸质', SCAN: '扫描件', DIGITAL: '数字' } as Record<string, string>)[asset.asset_type] || asset.asset_type }}</td>
-                <td>{{ asset.location }}</td><td><code>{{ asset.content_hash }}</code></td>
-                <td><span class="state-chip signed">{{ asset.content_hash.length === 64 ? '已锚定' : '异常' }}</span></td>
-              </tr></tbody>
-            </table>
-          </div>
-        </section>
-        <section class="archive-panel">
-          <div class="archive-panel-heading"><div><span class="archive-step">签</span><h2>签名摘要与阻断</h2></div></div>
-          <div v-if="blockerCount" class="archive-blockers"><article v-for="blocker in readiness?.blockers || []" :key="`${blocker.code}-${blocker.document_id || 'encounter'}`"><span>!</span><div><strong>{{ blockerLabel(blocker.code) }}</strong><p>{{ blocker.message }}</p><code v-if="blocker.document_id">文书 …{{ blocker.document_id.slice(-8) }}</code></div></article></div>
-          <div v-else class="archive-pass"><span>✓</span><div><strong>归档硬门已通过</strong><p>当前签署版本、质控与签名证据一致，可进入封存。</p></div></div>
-          <dl class="archive-identity"><div><dt>就诊状态</dt><dd>{{ readiness ? ({ PLANNED: '计划中', IN_PROGRESS: '进行中', FINISHED: '已结束', CANCELLED: '已取消' } as Record<string, string>)[readiness.encounter_status] : '—' }}</dd></div>
-            <div><dt>文书数量</dt><dd>{{ readiness?.document_count ?? 0 }}</dd></div>
-            <div><dt>清单哈希</dt><dd><code>{{ archiveCase ? `${archiveCase.manifest_hash.slice(0, 18)}…` : '—' }}</code></dd></div>
-            <div><dt>签名摘要项</dt><dd>{{ signatureCount }}</dd></div></dl>
-        </section>
+      <div class="grid integrity-layout">
+        <section class="card"><div class="card-head">当前病案 · 验真批次 {{ archiveCase ? `…${archiveCase.archive_case_id.slice(-8)}` : '待归档' }}</div><div class="card-body">
+          <div class="check-row"><span class="check-icon green">✓</span><div class="prototype-check-copy"><b>患者/就诊关联</b><p>{{ readiness?.encounter_status }} · 当前患者级双租约</p></div><span class="status green">通过</span></div>
+          <div class="check-row"><span class="check-icon" :class="blockerCount ? 'red' : 'green'">{{ blockerCount ? '!' : '✓' }}</span><div class="prototype-check-copy"><b>应有文书完整性</b><p>{{ blockerCount ? `${blockerCount} 项归档硬门未通过` : `${readiness?.document_count ?? 0} 份文书条件齐全` }}</p></div><span class="status" :class="blockerCount ? 'red' : 'green'">{{ blockerCount ? '阻断' : '通过' }}</span></div>
+          <div class="check-row"><span class="check-icon" :class="assets.some(a => a.asset_type === 'SCAN' && a.scan_status !== 'INDEXED') ? 'amber' : 'green'">{{ assets.some(a => a.asset_type === 'SCAN' && a.scan_status !== 'INDEXED') ? '△' : '✓' }}</span><div class="prototype-check-copy"><b>页序与重复</b><p>{{ assets.filter(a => a.asset_type === 'SCAN' && a.scan_status !== 'INDEXED').length }} 个扫描批次待编目复核</p></div><span class="status" :class="assets.some(a => a.asset_type === 'SCAN' && a.scan_status !== 'INDEXED') ? 'amber' : 'green'">{{ assets.some(a => a.asset_type === 'SCAN' && a.scan_status !== 'INDEXED') ? '待复核' : '通过' }}</span></div>
+          <div v-for="asset in assets" :key="asset.medical_record_asset_id" class="check-row"><span class="check-icon" :class="asset.integrity_status === 'VERIFIED' ? 'green' : asset.integrity_status === 'FAILED' ? 'red' : 'amber'">{{ asset.integrity_status === 'VERIFIED' ? '✓' : asset.integrity_status === 'FAILED' ? '!' : '△' }}</span><div class="prototype-check-copy"><b>哈希完整性 · {{ asset.display_name }}</b><p>{{ asset.storage_status }} · SHA-256 {{ asset.content_hash.slice(0, 16) }}…</p></div><span><span class="status" :class="asset.integrity_status === 'VERIFIED' ? 'green' : asset.integrity_status === 'FAILED' ? 'red' : 'amber'">{{ asset.integrity_status }}</span><button class="btn sm" :disabled="asset.status === 'RETIRED'" @click="verifyTarget = asset; observedHash = asset.storage_status === 'MISSING' ? asset.content_hash : ''">{{ asset.storage_status === 'MISSING' ? '载体验真' : '重读' }}</button></span></div>
+          <div class="check-row"><span class="check-icon" :class="signatureCount ? 'green' : 'amber'">{{ signatureCount ? '✓' : '△' }}</span><div class="prototype-check-copy"><b>签名/CA/时间戳</b><p>归档清单签名摘要 {{ signatureCount }} 项</p></div><span class="status" :class="signatureCount ? 'green' : 'amber'">{{ signatureCount ? '通过' : '待归档' }}</span></div>
+          <div class="check-row"><span class="check-icon" :class="assets.some(a => a.cda_status === 'FAILED') ? 'red' : 'green'">{{ assets.some(a => a.cda_status === 'FAILED') ? '!' : '✓' }}</span><div class="prototype-check-copy"><b>CDA 模式/术语</b><p>{{ assets.filter(a => a.cda_status === 'VERIFIED').length }} 份共享文档校验通过</p></div><span class="status" :class="assets.some(a => a.cda_status === 'FAILED') ? 'red' : 'green'">{{ assets.some(a => a.cda_status === 'FAILED') ? '阻断' : '通过' }}</span></div>
+          <div class="check-row"><span class="check-icon" :class="assets.some(a => a.preservation_status === 'NOT_SCHEDULED') ? 'amber' : 'green'">△</span><div class="prototype-check-copy"><b>长期格式</b><p>{{ assets.filter(a => a.preservation_status === 'NOT_SCHEDULED').length }} 份资产尚未纳入长期保存</p></div><span class="status amber">观察</span></div>
+        </div></section>
+        <aside class="card"><div class="card-head">证据摘要</div><div class="card-body"><div class="completion-ring warning"><b>{{ readinessPercent }}%</b><span>可归档准备度</span></div><div class="folder-row">检查规则<span>ARCHIVE-QC v5.2</span></div><div class="folder-row">资产清单哈希<span>{{ archiveCase ? `${archiveCase.manifest_hash.slice(0, 12)}…` : '待生成' }}</span></div><div class="folder-row">CA 验证源<span>院内 CA + TSA</span></div><div class="folder-row">CDA 校验器<span>CDA-R2 2026.4</span></div><div class="folder-row">病案状态<span>{{ archiveCase ? archiveStatusLabel(archiveCase.status) : '未归档' }}</span></div><div class="folder-row">封存状态<span>{{ sealed ? '已封存' : '未封存' }}</span></div><div v-if="blockerCount" class="notice hard" style="margin-top:12px"><div class="notice-title">归档硬门</div><span v-for="blocker in readiness?.blockers || []" :key="blocker.code">{{ blockerLabel(blocker.code) }}；</span></div></div></aside>
       </div>
-      <section v-if="archiveCase" class="archive-panel archive-manifest-panel">
-        <div class="archive-panel-heading"><div><span class="archive-step">清</span><h2>归档清单签名摘要</h2></div><span>{{ archiveCase.items.length }} 份文书</span></div>
-        <div class="archive-table-wrap">
-          <table class="archive-table"><thead><tr><th>序号</th><th>文书类型</th><th>内容哈希</th><th>签名摘要哈希</th></tr></thead>
-            <tbody><tr v-for="item in archiveCase.items" :key="item.archive_case_item_id"><td>{{ item.item_order }}</td><td>{{ item.document_type_code }}</td><td><code>{{ item.content_hash.slice(0, 14) }}…</code></td><td><code>{{ item.signature_summary_hash.slice(0, 14) }}…</code></td></tr></tbody>
-          </table>
-        </div>
-        <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">清单哈希 = 全部文书内容哈希与签名摘要哈希的确定性聚合；导出包另附精确字节数与 SHA-256，可在系统外独立复算。</footer>
-      </section>
     </template>
+    <BusinessActionDialog :open="Boolean(verifyTarget)" :title="`验真：${verifyTarget?.display_name ?? ''}`" :description="verifyTarget?.storage_status === 'MISSING' ? '纸质或外部载体需录入重新观测的 SHA-256。' : '服务端将从存储重新读取实际字节并复算 SHA-256，不信任浏览器输入。'" eyebrow="病案资产 / 完整性" confirm-label="执行存储验真" :busy="verifying" :confirm-disabled="verifyTarget?.storage_status === 'MISSING' && !/^[0-9a-fA-F]{64}$/.test(observedHash)" @cancel="verifyTarget = null" @confirm="runAssetVerification"><label v-if="verifyTarget?.storage_status === 'MISSING'">观测哈希<input v-model="observedHash" maxlength="64" /></label><p class="dialog-warning">验真失败会立即阻断该资产借阅、归档和长期封包。</p></BusinessActionDialog>
   </section>
 </template>

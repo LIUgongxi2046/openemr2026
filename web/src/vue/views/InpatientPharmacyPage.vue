@@ -3,9 +3,13 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { PharmacyDispensingWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
-import { issueInpatientExecutionLease, issueInpatientExecutionPatientLease, listInpatientPharmacyDispensings, prepareInpatientPharmacyDispensing, transitionInpatientPharmacyDispensing } from '../../api/execution';
+import {
+  issueInpatientExecutionLease, issueInpatientExecutionPatientLease, listInpatientPharmacyDispensings,
+  prepareInpatientPharmacyDispensing, transitionInpatientPharmacyDispensing,
+  updateInpatientPharmacyDispensing, voidInpatientPharmacyDispensing,
+} from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
-import AdminActionDialog from '../components/AdminActionDialog.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -31,12 +35,19 @@ const dispensingsQuery = useQuery({
 const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value)
   ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value) : null);
 const dispensings = computed(() => dispensingsQuery.data.value ?? []);
-const pendingCount = computed(() => dispensings.value.filter((d) => d.status !== 'DISPENSED').length);
+const pendingCount = computed(() => dispensings.value.filter((d) => d.status !== 'DISPENSED' && !d.voided_at).length);
+const voidedCount = computed(() => dispensings.value.filter((d) => Boolean(d.voided_at)).length);
 
 const form = reactive({ drugCode: '', batchNumber: '', quantity: 1, quantityUnit: '片' });
 const busy = ref('');
 const notice = ref('');
 const createDialogOpen = ref(false);
+const editTarget = ref<PharmacyDispensingWire | null>(null);
+const voidTarget = ref<PharmacyDispensingWire | null>(null);
+const transitionTarget = ref<PharmacyDispensingWire | null>(null);
+const transitionAction = ref<'VERIFY' | 'DISPENSE'>('VERIFY');
+const voidReason = ref('');
+const editForm = reactive({ drugCode: '', batchNumber: '', quantity: 1, quantityUnit: '片' });
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
@@ -68,7 +79,53 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
   busy.value = `${action}:${dispensing.dispensing_id}`; notice.value = '';
   try {
     await transitionInpatientPharmacyDispensing(lease, dispensing, action);
+    transitionTarget.value = null;
     notice.value = action === 'VERIFY' ? '已第二人核验摆药，可发往病区。' : '已发药，床旁给药请前往诊疗执行中心。';
+    await dispensingsQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
+
+function openEdit(dispensing: PharmacyDispensingWire) {
+  editForm.drugCode = dispensing.drug_code;
+  editForm.batchNumber = dispensing.batch_number;
+  editForm.quantity = dispensing.quantity;
+  editForm.quantityUnit = dispensing.quantity_unit;
+  editTarget.value = dispensing;
+}
+
+function openTransition(dispensing: PharmacyDispensingWire, action: 'VERIFY' | 'DISPENSE') {
+  transitionTarget.value = dispensing;
+  transitionAction.value = action;
+}
+
+async function updateDispensing() {
+  const lease = writeLeaseQuery.data.value;
+  const dispensing = editTarget.value;
+  if (!lease || !dispensing || busy.value || !editForm.drugCode.trim() || !editForm.batchNumber.trim()
+    || editForm.quantity <= 0 || !editForm.quantityUnit.trim()) return;
+  busy.value = `update:${dispensing.dispensing_id}`; notice.value = '';
+  try {
+    await updateInpatientPharmacyDispensing(lease, dispensing, {
+      drug_code: editForm.drugCode.trim(), batch_number: editForm.batchNumber.trim(),
+      quantity: editForm.quantity, quantity_unit: editForm.quantityUnit.trim(),
+    });
+    editTarget.value = null;
+    notice.value = '摆药信息已更正并生成新版本；核验必须基于更正后的批次与数量。';
+    await dispensingsQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
+
+async function voidDispensing() {
+  const lease = writeLeaseQuery.data.value;
+  const dispensing = voidTarget.value;
+  if (!lease || !dispensing || busy.value || voidReason.value.trim().length < 4) return;
+  busy.value = `void:${dispensing.dispensing_id}`; notice.value = '';
+  try {
+    await voidInpatientPharmacyDispensing(lease, dispensing, voidReason.value.trim());
+    voidTarget.value = null; voidReason.value = '';
+    notice.value = '摆药记录已作废并保留审计证据，后续核验和发药已被阻断。';
     await dispensingsQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
@@ -92,7 +149,8 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
       <section class="admin-metrics" aria-label="住院药房统计">
         <article><span>摆药笔数</span><strong>{{ dispensings.length }}</strong><small>当前患者</small></article>
         <article><span>未发药</span><strong>{{ pendingCount }}</strong><small>待核验 / 待发</small></article>
-        <article><span>已发药</span><strong>{{ dispensings.length - pendingCount }}</strong><small>DISPENSED</small></article>
+        <article><span>已发药</span><strong>{{ dispensings.filter((item) => item.status === 'DISPENSED').length }}</strong><small>DISPENSED</small></article>
+        <article><span>已作废</span><strong>{{ voidedCount }}</strong><small>保留审计证据</small></article>
       </section>
 
       <section class="admin-panel">
@@ -107,11 +165,14 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
                   <td>{{ dispensing.batch_number }}</td>
                   <td>{{ dispensing.quantity }} {{ dispensing.quantity_unit }}</td>
                   <td>{{ dispensing.verified_by ? `…${dispensing.verified_by.slice(-8)}` : '—' }}</td>
-                  <td><span class="admin-status" :class="dispensing.status.toLowerCase()">{{ statusLabels[dispensing.status] }}</span></td>
+                  <td><span class="admin-status" :class="dispensing.voided_at ? 'voided' : dispensing.status.toLowerCase()">{{ dispensing.voided_at ? '已作废' : statusLabels[dispensing.status] }}</span><small v-if="dispensing.void_reason">{{ dispensing.void_reason }}</small></td>
                   <td>{{ formatDate(dispensing.dispensed_at ?? dispensing.verified_at ?? dispensing.prepared_at) }}</td>
                   <td class="admin-actions">
-                    <button v-if="dispensing.status === 'PREPARED'" class="task-action" :disabled="Boolean(busy)" @click="transition(dispensing, 'VERIFY')">第二人核验</button>
-                    <button v-if="dispensing.status === 'VERIFIED'" class="task-action" :disabled="Boolean(busy)" @click="transition(dispensing, 'DISPENSE')">发往病区</button>
+                    <button v-if="dispensing.status === 'PREPARED' && !dispensing.voided_at" class="task-action" :disabled="Boolean(busy)" @click="openEdit(dispensing)">编辑</button>
+                    <button v-if="dispensing.status === 'PREPARED' && !dispensing.voided_at" class="task-action" :disabled="Boolean(busy)" @click="openTransition(dispensing, 'VERIFY')">第二人核验</button>
+                    <button v-if="dispensing.status === 'VERIFIED' && !dispensing.voided_at" class="task-action" :disabled="Boolean(busy)" @click="openTransition(dispensing, 'DISPENSE')">发往病区</button>
+                    <button v-if="dispensing.status !== 'DISPENSED' && !dispensing.voided_at" class="task-action danger" :disabled="Boolean(busy)" @click="voidTarget = dispensing; voidReason = ''">作废</button>
+                    <span v-if="dispensing.status === 'DISPENSED'" class="review-wait">已发药不可直接删除</span>
                   </td>
                 </tr>
               </tbody>
@@ -119,15 +180,23 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
           </div>
       </section>
 
-      <AdminActionDialog v-model:open="createDialogOpen" title="新增住院摆药" description="药品编码、批次与数量必填；摆药后需第二人核验。" eyebrow="诊疗执行 / 住院药房" :busy="busy === 'prepare'">
-        <form class="admin-form" @submit.prevent="prepare">
+      <BusinessActionDialog :open="createDialogOpen" title="新增住院摆药" description="药品编码、批次与数量必填；摆药后需第二人核验。" eyebrow="诊疗执行 / 住院药房" confirm-label="确认摆药" :busy="busy === 'prepare'" @cancel="createDialogOpen = false" @confirm="prepare">
+        <div class="admin-form">
           <label><span>药品编码</span><input v-model="form.drugCode" maxlength="64" required placeholder="例：DRUG-CEFTRIAXONE" /></label>
           <label><span>批次号</span><input v-model="form.batchNumber" maxlength="64" required placeholder="例：BATCH-2026-0812" /></label>
           <label><span>数量</span><input v-model.number="form.quantity" type="number" min="0.01" step="0.01" required /></label>
           <label><span>单位</span><input v-model="form.quantityUnit" maxlength="16" required /></label>
-          <button class="button primary full" :disabled="Boolean(busy)">{{ busy === 'prepare' ? '正在摆药…' : '摆药并待核验' }}</button>
-        </form>
-      </AdminActionDialog>
+        </div>
+      </BusinessActionDialog>
+      <BusinessActionDialog :open="Boolean(editTarget)" title="编辑待核验摆药" description="只允许修改尚未核验且未作废的摆药；修改后行版本递增并写入审计链。" confirm-label="保存更正" :busy="busy.startsWith('update:')" @cancel="editTarget = null" @confirm="updateDispensing">
+        <div class="dialog-grid"><label>药品编码<input v-model="editForm.drugCode" maxlength="128" required /></label><label>批次号<input v-model="editForm.batchNumber" maxlength="128" required /></label><label>数量<input v-model.number="editForm.quantity" type="number" min="0.01" step="0.01" required /></label><label>单位<input v-model="editForm.quantityUnit" maxlength="32" required /></label></div>
+      </BusinessActionDialog>
+      <BusinessActionDialog :open="Boolean(transitionTarget)" :title="transitionAction === 'VERIFY' ? '确认第二人核验' : '确认发往病区'" :description="transitionAction === 'VERIFY' ? '核验将锁定药品、批次和数量，核验人与摆药人必须分离。' : '发药后不可直接作废；退药需进入独立退药流程。'" :confirm-label="transitionAction === 'VERIFY' ? '确认核验' : '确认发药'" :busy="busy.startsWith(`${transitionAction}:`)" @cancel="transitionTarget = null" @confirm="transitionTarget && transition(transitionTarget, transitionAction)">
+        <p v-if="transitionTarget" class="dialog-warning">{{ transitionTarget.drug_code }} · {{ transitionTarget.batch_number }} · {{ transitionTarget.quantity }} {{ transitionTarget.quantity_unit }}</p>
+      </BusinessActionDialog>
+      <BusinessActionDialog :open="Boolean(voidTarget)" title="作废摆药记录" description="不会物理删除记录；作废原因、人员、时间和行版本会永久留痕，并阻断后续核验与发药。" confirm-label="确认作废" :busy="busy.startsWith('void:')" danger @cancel="voidTarget = null; voidReason = ''" @confirm="voidDispensing">
+        <p v-if="voidTarget" class="dialog-warning">{{ voidTarget.drug_code }} · {{ voidTarget.batch_number }} · {{ voidTarget.quantity }} {{ voidTarget.quantity_unit }}</p><label>作废原因（至少 4 字）<textarea v-model="voidReason" maxlength="1000" required rows="4" placeholder="说明录入错误或流程终止原因" /></label>
+      </BusinessActionDialog>
     </template>
   </section>
 </template>

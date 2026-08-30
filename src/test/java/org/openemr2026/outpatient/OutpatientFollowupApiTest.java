@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.UUID;
+import org.openemr2026.contracts.OutpatientFollowupCancelRequestWire;
 import org.junit.jupiter.api.Test;
 import org.openemr2026.contracts.OutpatientFollowupCompleteRequestWire;
 import org.openemr2026.contracts.OutpatientFollowupCreateRequestWire;
 import org.openemr2026.contracts.OutpatientFollowupWire;
+import org.openemr2026.contracts.OutpatientFollowupUpdateRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -46,5 +48,28 @@ final class OutpatientFollowupApiTest {
 
         List<OutpatientFollowupWire> listed = followups.list(identity(), patientId);
         assertThat(listed).extracting(OutpatientFollowupWire::followupId).contains(created.followupId());
+    }
+
+    @Test
+    void givenPendingFollowup_whenEditingAndCancelling_thenPendingFlowStopsWithAuditVersion() {
+        UUID patientId = UUID.randomUUID();
+        UUID encounterId = UUID.randomUUID();
+        OutpatientFollowupWire created = followups.create(identity(), "fup-" + UUID.randomUUID(),
+                new OutpatientFollowupCreateRequestWire(patientId, encounterId,
+                        OutpatientFollowupCreateRequestWire.FollowupTypeValue.REVISIT, "一周后复诊", null));
+
+        OutpatientFollowupWire edited = followups.update(identity(), patientId, encounterId,
+                "fup-u-" + UUID.randomUUID(), created.followupId(),
+                new OutpatientFollowupUpdateRequestWire(
+                        OutpatientFollowupUpdateRequestWire.FollowupTypeValue.FOLLOWUP,
+                        "三日内电话随访血压", null, created.rowVersion()));
+        assertThat(edited.content()).isEqualTo("三日内电话随访血压");
+        assertThat(edited.rowVersion()).isEqualTo(created.rowVersion() + 1);
+
+        OutpatientFollowupWire cancelled = followups.cancel(identity(), patientId, encounterId,
+                "fup-c-" + UUID.randomUUID(), edited.followupId(),
+                new OutpatientFollowupCancelRequestWire("计划录入错误", edited.rowVersion()));
+        assertThat(cancelled.status()).isEqualTo(OutpatientFollowupWire.StatusValue.CANCELLED);
+        assertThat(cancelled.outcome()).contains("计划录入错误");
     }
 }

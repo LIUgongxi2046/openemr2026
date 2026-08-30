@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ReferralCreateRequestWire;
 import org.openemr2026.contracts.ReferralTransitionRequestWire;
+import org.openemr2026.contracts.ReferralUpdateRequestWire;
 import org.openemr2026.contracts.ReferralWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -101,6 +102,23 @@ final class ReferralApiTest {
         ReferralWire sent = transition(context, draft, "SEND");
         ReferralWire rejected = transition(context, sent, "REJECT");
         assertThat(rejected.status()).isEqualTo(ReferralWire.StatusValue.REJECTED);
+    }
+
+    @Test
+    void givenDraftReferral_whenEditingAndCancelling_thenDownstreamWorkIsNotCreated() {
+        Context context = seedContext();
+        ReferralWire draft = create(context, "INTERNAL", "心内科", null);
+        ReferralWire edited = referrals.update(identity(), "ref-u-" + UUID.randomUUID(), draft.referralId(),
+                new ReferralUpdateRequestWire(organization, facility, context.patientId(), context.encounterId(),
+                        ReferralUpdateRequestWire.ReferralTypeValue.INTERNAL, "肾内科", null,
+                        "肾功能异常需协同评估", "肌酐升高，已完成复查，申请肾内科评估后续方案", draft.rowVersion()));
+        assertThat(edited.targetDepartment()).isEqualTo("肾内科");
+        assertThat(edited.rowVersion()).isEqualTo(draft.rowVersion() + 1);
+
+        ReferralWire cancelled = transition(context, edited, "CANCEL");
+        assertThat(cancelled.status()).isEqualTo(ReferralWire.StatusValue.CANCELLED);
+        assertThat(cancelled.sentAt()).isNull();
+        assertThat(cancelled.resolvedAt()).isNotNull();
     }
 
     @Test

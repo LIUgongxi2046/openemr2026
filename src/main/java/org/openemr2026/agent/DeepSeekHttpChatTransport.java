@@ -15,7 +15,7 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 @Profile("prod")
 @ConditionalOnProperty(name = "openemr2026.production.ai.enabled", havingValue = "true")
-final class DeepSeekHttpChatTransport implements DeepSeekChatTransport {
+public final class DeepSeekHttpChatTransport implements DeepSeekChatTransport {
 
     private final URI endpoint;
     private final String apiKeyReference;
@@ -38,6 +38,12 @@ final class DeepSeekHttpChatTransport implements DeepSeekChatTransport {
         this.objectMapper = objectMapper;
         this.http = http;
         this.secrets = new SecretReferenceResolver();
+    }
+
+    public static DeepSeekHttpChatTransport create(
+            String baseUri, String apiKeyReference, ObjectMapper objectMapper) {
+        return new DeepSeekHttpChatTransport(baseUri, apiKeyReference, objectMapper,
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build());
     }
 
     @Override

@@ -1,0 +1,52 @@
+{
+  "scope": "全院病历中心七个二级页面",
+  "implementationUrl": "http://127.0.0.1:4179/#/record",
+  "sourceUrl": "http://127.0.0.1:4173/#record",
+  "viewportCoverage": [
+    "1440x1000",
+    "390x844"
+  ],
+  "checks": [
+    {
+      "page": "病历工作台",
+      "result": "passed",
+      "evidence": "新建病历草稿、编辑不可变版本、作废业务动作弹窗均可打开；展开至 15 行可用。"
+    },
+    {
+      "page": "专注编辑",
+      "result": "passed",
+      "evidence": "章节编辑、保存新版本确认、来源核验、签署前检查及四个关联中心路由可用。"
+    },
+    {
+      "page": "来源证据",
+      "result": "passed",
+      "evidence": "新建来源、新建附件证据、更正、撤销、替换与作废均使用业务弹窗。"
+    },
+    {
+      "page": "质控审签",
+      "result": "passed",
+      "evidence": "全量质控与缺陷定位可用；未满足门禁时签署按钮按规则禁用。"
+    },
+    {
+      "page": "版本证据",
+      "result": "passed",
+      "evidence": "批量验签、版本比较、依法更正与签名治理入口可用。"
+    },
+    {
+      "page": "LIS 报告",
+      "result": "passed",
+      "evidence": "报告明细、趋势、证据链与引用到病历弹窗可用。"
+    },
+    {
+      "page": "PACS 影像",
+      "result": "passed",
+      "evidence": "窗宽窗位、测量、关键帧、序列切换与引用关键结论弹窗可用。"
+    }
+  ],
+  "consoleErrors": 0,
+  "notes": [
+    "浏览器验收未提交会产生医疗法律效力的最终签名、撤签或作废动作。",
+    "不可逆业务写入由现有端到端写入回归脚本覆盖；本轮重点验证原型一致性、弹窗入口与门禁状态。"
+  ],
+  "result": "passed"
+}

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.PharmacyDispensingPrepareRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingTransitionRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingUpdateRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingVoidRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -12,6 +14,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -64,5 +67,29 @@ final class PharmacyDispensingController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(dispensings.transition(identity, idempotencyKey, dispensingId, command));
+    }
+
+    @PatchMapping("/pharmacy-dispensings/{dispensing_id}")
+    ResponseEntity<PharmacyDispensingWire> update(
+            HttpServletRequest request,
+            @PathVariable("dispensing_id") UUID dispensingId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody PharmacyDispensingUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(dispensings.update(identity, idempotencyKey, dispensingId, command));
+    }
+
+    @PostMapping("/pharmacy-dispensings/{dispensing_id}/voids")
+    ResponseEntity<PharmacyDispensingWire> voidDispensing(
+            HttpServletRequest request,
+            @PathVariable("dispensing_id") UUID dispensingId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody PharmacyDispensingVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(dispensings.voidDispensing(identity, idempotencyKey, dispensingId, command));
     }
 }

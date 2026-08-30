@@ -1,0 +1,139 @@
+- generic: 交互原型 · 合成数据 · 非生产系统
+- banner:
+  - generic: +
+  - text: openemr2026
+  - generic: OPEN MEDICAL RECORD
+  - generic: 江城大学附属医院⌄
+  - generic: 管理与治理工作台⌄
+  - text: ⌕
+  - textbox "搜索患者、任务或功能"
+  - button "✦"
+  - button "?"
+  - button "♢"
+  - generic: 林
+  - text: 林医生
+  - text: 今日 08:00–17:00
+- complementary:
+  - generic: 临床工作域
+  - button "⌂ 临床业务门户":
+    - generic: ⌂
+    - generic: 临床业务门户
+  - button "◫ 门诊工作台 6":
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - button "✚ 急诊工作台 6":
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "6"
+  - button "▥ 住院工作站 5":
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - button "专 核心专科工作台 10":
+    - generic: 专
+    - generic: 核心专科工作台
+    - generic: "10"
+  - generic: 病历与质量
+  - button "▤ 全院病历中心 3":
+    - generic: ▤
+    - generic: 全院病历中心
+    - generic: "3"
+  - button "◈ 医疗质量中心 7":
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - button "▣ 病案资产中心 3":
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - generic: 业务协同
+  - button "✚ 诊疗执行中心 12":
+    - generic: ✚
+    - generic: 诊疗执行中心
+    - generic: "12"
+  - button "☑ 任务与临床路径 9":
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - generic: 平台中心
+  - button "⌁ 数据中心 6":
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - button "✦ AI 中心 4":
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - generic: 管理与配置
+  - button "⌘ 业务配置":
+    - generic: ⌘
+    - generic: 业务配置
+  - button "⚙ 系统管理 7":
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: 医疗质量中心
+  - button "质量总览"
+  - button "院科质控"
+  - button "评级取证"
+  - button "院感事件"
+  - button "临床资质"
+  - heading "医疗质量中心" [level=1]
+  - paragraph: 院科病历质量、评级证据、院感事件和临床资质统一治理
+  - button "角色工作台"
+  - button "查看全部待办"
+  - text: QUALITY & SAFETY
+  - heading "把每个质量指标落回患者、文书、规则、缺陷和整改证据" [level=2]
+  - paragraph: 功能存在不等于有效应用；中心同时呈现覆盖范围、数据质量、问题工单、整改复核与评级取证快照。具体病历和病案证据使用明确跨域入口查看。
+  - generic: 39/39
+  - generic: 评价项目映射
+  - button "质 院科病历质控 运行与终末质控、抽查、整改和复核 进入 →":
+    - generic: 质
+    - generic: 院科病历质控
+    - paragraph: 运行与终末质控、抽查、整改和复核
+    - generic: 进入 →
+  - button "级 评级取证 39 项功能、应用范围、质量和证据快照 进入 →":
+    - generic: 级
+    - generic: 评级取证
+    - paragraph: 39 项功能、应用范围、质量和证据快照
+    - generic: 进入 →
+  - button "感 院感与不良事件 线索、排除、上报、重试和闭环 进入 →":
+    - generic: 感
+    - generic: 院感与不良事件
+    - paragraph: 线索、排除、上报、重试和闭环
+    - generic: 进入 →
+  - button "权 临床资质 处方、手术、技术和临时授权 进入 →":
+    - generic: 权
+    - generic: 临床资质
+    - paragraph: 处方、手术、技术和临时授权
+    - generic: 进入 →
+  - button "历 跨域：病历中心 进入患者病历创作、来源、审签和版本 进入 →":
+    - generic: 历
+    - generic: 跨域：病历中心
+    - paragraph: 进入患者病历创作、来源、审签和版本
+    - generic: 进入 →
+  - button "案 跨域：病案资产中心 进入目录、扫描、验真、借阅和长期保存 进入 →":
+    - generic: 案
+    - generic: 跨域：病案资产中心
+    - paragraph: 进入目录、扫描、验真、借阅和长期保存
+    - generic: 进入 →
+- generic: ✦ OPENEMR AI
+- generic: AI医助小南
+- generic: 未选择患者 · 不读取病历正文
+- button "×"
+- generic: 安全空上下文
+- text: 选择患者和就诊后才会组装最小必要临床资料。当前可以询问功能使用、配置解释和任务导航。
+- button "我能做什么？"
+- button "解释当前页面"
+- button "查找功能入口"
+- generic: AI 建议始终显示来源、版本和失效条件，不会自动签署、开药或执行医嘱。
+- textbox "询问当前页面或当前患者……"
+- button "🎙"
+- button "完整工作区"
+- button "发送"
+- button "打开 AI医助小南":
+  - generic: ✦
+  - generic: AI医助小南
+  - generic: "3"

@@ -1,0 +1,1001 @@
+{
+  "url": "http://127.0.0.1:4173/#record-sources",
+  "dom": "- generic: 交互原型 · 合成数据 · 非生产系统\n- banner:\n  - generic: +\n  - generic: 江城大学附属医院⌄\n  - generic: 病历中心 · 当前门诊就诊⌄\n  - text: ⌕\n  - textbox \"搜索当前患者病历、文书、来源或版本\"\n  - button \"✦\"\n  - button \"?\"\n  - button \"♢\"\n  - generic: 林\n  - text: 林医生\n  - text: 今日 08:00–17:00\n- complementary:\n  - button \"⌂\":\n    - generic: ⌂\n  - button \"◫ 6\":\n    - generic: ◫\n    - generic: \"6\"\n  - button \"✚ 6\":\n    - generic: ✚\n    - generic: \"6\"\n  - button \"▥ 5\":\n    - generic: ▥\n    - generic: \"5\"\n  - button \"专 10\":\n    - generic: 专\n    - generic: \"10\"\n  - button \"▤ 3\":\n    - generic: ▤\n    - generic: \"3\"\n  - button \"◈ 7\":\n    - generic: ◈\n    - generic: \"7\"\n  - button \"▣ 3\":\n    - generic: ▣\n    - generic: \"3\"\n  - button \"✚ 12\":\n    - generic: ✚\n    - generic: \"12\"\n  - button \"☑ 9\":\n    - generic: ☑\n    - generic: \"9\"\n  - button \"⌁ 6\":\n    - generic: ⌁\n    - generic: \"6\"\n  - button \"✦ 4\":\n    - generic: ✦\n    - generic: \"4\"\n  - button \"⌘\":\n    - generic: ⌘\n  - button \"⚙ 7\":\n    - generic: ⚙\n    - generic: \"7\"\n- main:\n  - generic: 当前患者病历\n  - button \"病历工作台\"\n  - button \"专注编辑\"\n  - button \"来源证据\"\n  - button \"质控审签\"\n  - button \"版本证据\"\n  - button \"LIS 报告\"\n  - button \"PACS 影像\"\n  - heading \"病历来源与证据中心\" [level=1]\n  - paragraph: 逐条确认病历事实、报告版本、引用位置和过期状态\n  - button \"刷新外部来源\"\n  - button \"返回编辑\"\n  - generic: 陈建国\n  - generic: 男 · 68岁 · 患者号 10028451\n  - text: 门诊号 OP20260813-0842\n  - generic: 心内科 · 专家号 · 08:42 到诊 · 诊疗中\n  - text: 主诉：头晕、血压升高 1 周\n  - generic: 医保职工 · 预约复诊 · 林医生\n  - generic: 严重过敏：青霉素\n  - generic: 跌倒风险\n  - button \"切换门诊患者\"\n  - combobox:\n    - option \"全部来源类型\" [selected]\n  - combobox:\n    - option \"全部核验状态\" [selected]\n  - textbox \"来源、业务号或引用内容\"\n  - table:\n    - rowgroup:\n      - row \"来源 系统/业务号 时间 被引用内容 状态\":\n        - columnheader \"来源\"\n        - columnheader \"系统/业务号\"\n        - columnheader \"时间\"\n        - columnheader \"被引用内容\"\n        - columnheader \"状态\"\n    - rowgroup:\n      - row \"家庭血压记录 患者上传 08-13 08:42 血压最高 168/96 已确认\":\n        - cell \"家庭血压记录\"\n        - cell \"患者上传\"\n        - cell \"08-13 08:42\"\n        - cell \"血压最高 168/96\"\n        - cell \"已确认\":\n          - generic: 已确认\n      - row \"门诊问诊转写 本次问诊 08-13 09:13 偶有漏服氨氯地平 待确认\":\n        - cell \"门诊问诊转写\"\n        - cell \"本次问诊\"\n        - cell \"08-13 09:13\"\n        - cell \"偶有漏服氨氯地平\"\n        - cell \"待确认\":\n          - generic: 待确认\n      - row \"肾功能报告 LIS/LAB-82017 08-06 10:21 Cr 78；eGFR 78 已引用\":\n        - cell \"肾功能报告\"\n        - cell \"LIS/LAB-82017\"\n        - cell \"08-06 10:21\"\n        - cell \"Cr 78；eGFR 78\"\n        - cell \"已引用\":\n          - generic: 已引用\n      - row \"血钾报告 LIS/LAB-88231 08-13 09:36 K 3.4 mmol/L 新到结果\":\n        - cell \"血钾报告\"\n        - cell \"LIS/LAB-88231\"\n        - cell \"08-13 09:36\"\n        - cell \"K 3.4 mmol/L\"\n        - cell \"新到结果\":\n          - generic: 新到结果\n      - row \"颈动脉超声 PACS/ACC-7721 08-06 11:04 斑块形成，无明显狭窄 已引用\":\n        - cell \"颈动脉超声\"\n        - cell \"PACS/ACC-7721\"\n        - cell \"08-06 11:04\"\n        - cell \"斑块形成，无明显狭窄\"\n        - cell \"已引用\":\n          - generic: 已引用\n  - generic: 来源更正影响\n  - text: 新回血钾 3.4 mmol/L 与治疗计划有关；引用前需医生确认，已签文书不会自动改写。\n  - complementary:\n    - generic: 血钾报告 · LAB-88231\n    - generic: LIS · 生化检验 · 报告 v1\n    - generic: 血钾 K 3.4 mmol/L ↓\n    - paragraph:\n      - text: 参考范围 3.5–5.3 mmol/L\n      - text: 采集 09:12 · 报告 09:36 · 审核 张技师\n    - text: 患者/就诊\n    - generic: 陈建国 / OP0842\n    - text: 申请/标本\n    - generic: REQ-7812 / SPM-55109\n    - text: 来源连接器\n    - generic: LIS-CORE v3.2\n    - text: 报告版本\n    - generic: v1 · 当前有效\n    - text: 完整性\n    - generic: 消息与业务对象已对账\n    - button \"完整报告\"\n    - button \"确认并引用\"\n- generic: ✦ OPENEMR AI\n- generic: 当前患者AI医助小南\n- generic: 陈建国 · 门诊 OP0842 · 当前页面已纳入上下文\n- button \"×\"\n- text: 现在提醒 · 签署前\n- paragraph: 分诊记录提到“一过性胸闷”，与当前现病史需要核对。\n- button \"查看 2 条来源\"\n- generic: 你还可以问\n- button \"总结近 3 个月病情变化\"\n- button \"检查当前病历遗漏\"\n- button \"解释异常检验结果\"\n- button \"生成复诊计划草稿\"\n- generic: AI 建议始终显示来源、版本和失效条件，不会自动签署、开药或执行医嘱。\n- textbox \"询问当前页面或当前患者……\"\n- button \"🎙\"\n- button \"完整工作区\"\n- button \"发送\"\n- button \"打开 AI医助小南\":\n  - generic: ✦\n  - generic: AI医助小南\n  - generic: \"3\"",
+  "metrics": {
+    "bodyText": "交互原型 · 合成数据 · 非生产系统\n+\n江城大学附属医院⌄\n病历中心 · 当前门诊就诊⌄\n✦\n?\n♢\n林\n林医生\n今日 08:00–17:00\n⌂\n◫\n6\n✚\n6\n▥\n5\n专\n10\n▤\n3\n◈\n7\n▣\n3\n✚\n12\n☑\n9\n⌁\n6\n✦\n4\n⌘\n⚙\n7\n当前患者病历\n病历工作台\n专注编辑\n来源证据\n质控审签\n版本证据\nLIS 报告\nPACS 影像\n病历来源与证据中心\n\n逐条确认病历事实、报告版本、引用位置和过期状态\n\n刷新外部来源\n返回编辑\n陈建国\n男 · 68岁 · 患者号 10028451\n门诊号 OP20260813-0842\n心内科 · 专家号 · 08:42 到诊 · 诊疗中\n主诉：头晕、血压升高 1 周\n医保职工 · 预约复诊 · 林医生\n严重过敏：青霉素\n跌倒风险\n切换门诊患者\n全部来源类型\n全部核验状态\n来源\t系统/业务号\t时间\t被引用内容\t状态\n家庭血压记录\t患者上传\t08-13 08:42\t血压最高 168/96\t已确认\n门诊问诊转写\t本次问诊\t08-13 09:13\t偶有漏服氨氯地平\t待确认\n肾功能报告\tLIS/LAB-82017\t08-06 10:21\tCr 78；eGFR 78\t已引用\n血钾报告\tLIS/LAB-88231\t08-13 09:36\tK 3.4 mmol/L\t新到结果\n颈动脉超声\tPACS/ACC-7721\t08-06 11:04\t斑块形成，无明显狭窄\t已引用\n来源更正影响\n新回血钾 3.4 mmol/L 与治疗计划有关；引用前需医生确认，已签文书不会自动改写。\n血钾报告 · LAB-88231\nLIS · 生化检验 · 报告 v1\n血钾 K　3.4 mmol/L ↓\n\n参考范围 3.5–5.3 mmol/L\n采集 09:12 · 报告 09:36 · 审核 张技师\n\n患者/就诊\n陈建国 / OP0842\n申请/标本\nREQ-7812 / SPM-55109\n来源连接器\nLIS-CORE v3.2\n报告版本\nv1 · 当前有效\n完整性\n消息与业务对象已对账\n完整报告\n确认并引用\n✦ OPENEMR AI\n当前患者AI医助小南\n陈建国 · 门诊 OP0842 · 当前页面已纳入上下文\n×\n现在提醒 · 签署前\n\n分诊记录提到“一过性胸闷”，与当前现病史需要核对。\n\n查看 2 条来源\n你还可以问\n总结近 3 个月病情变化\n检查当前病历遗漏\n解释异常检验结果\n生成复诊计划草稿\nAI 建议始终显示来源、版本和失效条件，不会自动签署、开药或执行医嘱。\n🎙\n完整工作区\n发送\n✦\nAI医助小南\n3",
+    "document": {
+      "height": 1927,
+      "width": 525
+    },
+    "overflow": {
+      "body": "visible",
+      "html": "visible"
+    },
+    "styles": [
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "",
+        "borderRadius": "0px",
+        "class": "topbar",
+        "color": "rgb(23, 34, 53)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "18px",
+        "padding": "0px 20px",
+        "position": "sticky",
+        "rect": {
+          "height": 58,
+          "width": 375,
+          "x": 0,
+          "y": 0
+        },
+        "tag": "HEADER",
+        "text": "+openemr2026OPEN MEDICAL RECORD江城大学附属医院⌄病历中心 · 当前门诊就诊⌄✦?♢林林医生今日 08:00–17:00"
+      },
+      {
+        "background": "rgb(249, 251, 252)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "9px",
+        "class": "",
+        "color": "rgb(0, 0, 0)",
+        "display": "inline-block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "9px 12px 9px 34px",
+        "position": "static",
+        "rect": {
+          "height": 37,
+          "width": 48,
+          "x": 176,
+          "y": 10
+        },
+        "tag": "INPUT",
+        "text": ""
+      },
+      {
+        "background": "rgb(247, 243, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "9px",
+        "class": "icon-btn ai-top-trigger",
+        "color": "rgb(104, 67, 187)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "position": "static",
+        "rect": {
+          "height": 34,
+          "width": 28.046875,
+          "x": 242,
+          "y": 11.5
+        },
+        "tag": "BUTTON",
+        "text": "✦"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "9px",
+        "class": "icon-btn",
+        "color": "rgb(64, 83, 107)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "position": "static",
+        "rect": {
+          "height": 34,
+          "width": 28.03125,
+          "x": 279.046875,
+          "y": 11.5
+        },
+        "tag": "BUTTON",
+        "text": "?"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "9px",
+        "class": "icon-btn",
+        "color": "rgb(64, 83, 107)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "position": "static",
+        "rect": {
+          "height": 34,
+          "width": 28.046875,
+          "x": 316.078125,
+          "y": 11.5
+        },
+        "tag": "BUTTON",
+        "text": "♢"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "0px",
+        "class": "sidebar",
+        "color": "rgb(200, 213, 228)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "12px 7px",
+        "position": "sticky",
+        "rect": {
+          "height": 786,
+          "width": 64,
+          "x": 0,
+          "y": 58
+        },
+        "tag": "ASIDE",
+        "text": "临床工作域⌂临床业务门户◫门诊工作台6✚急诊工作台6▥住院工作站5专核心专科工作台10病历与质量▤全院病历中心3◈医疗质量中心7▣病案资产中心3业务协同✚诊疗执"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 39,
+          "width": 50,
+          "x": 7,
+          "y": 72
+        },
+        "tag": "BUTTON",
+        "text": "⌂临床业务门户"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 39,
+          "width": 50,
+          "x": 7,
+          "y": 113
+        },
+        "tag": "BUTTON",
+        "text": "◫门诊工作台6"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 154
+        },
+        "tag": "BUTTON",
+        "text": "✚急诊工作台6"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 194
+        },
+        "tag": "BUTTON",
+        "text": "▥住院工作站5"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 42,
+          "width": 50,
+          "x": 7,
+          "y": 234
+        },
+        "tag": "BUTTON",
+        "text": "专核心专科工作台10"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(255, 255, 255)",
+        "borderRadius": "9px",
+        "class": "nav-item active",
+        "color": "rgb(255, 255, 255)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 278
+        },
+        "tag": "BUTTON",
+        "text": "▤全院病历中心3"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 318
+        },
+        "tag": "BUTTON",
+        "text": "◈医疗质量中心7"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 358
+        },
+        "tag": "BUTTON",
+        "text": "▣病案资产中心3"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 398
+        },
+        "tag": "BUTTON",
+        "text": "✚诊疗执行中心12"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 438
+        },
+        "tag": "BUTTON",
+        "text": "☑任务与临床路径9"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 39,
+          "width": 50,
+          "x": 7,
+          "y": 478
+        },
+        "tag": "BUTTON",
+        "text": "⌁数据中心6"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 519
+        },
+        "tag": "BUTTON",
+        "text": "✦AI 中心4"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 50,
+          "x": 7,
+          "y": 559
+        },
+        "tag": "BUTTON",
+        "text": "⌘业务配置"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(200, 213, 228)",
+        "borderRadius": "9px",
+        "class": "nav-item ",
+        "color": "rgb(200, 213, 228)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "10px",
+        "padding": "10px 11px",
+        "position": "static",
+        "rect": {
+          "height": 39,
+          "width": 50,
+          "x": 7,
+          "y": 599
+        },
+        "tag": "BUTTON",
+        "text": "⚙系统管理7"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(23, 34, 53)",
+        "borderRadius": "0px",
+        "class": "main",
+        "color": "rgb(23, 34, 53)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "0px 22px 28px",
+        "position": "static",
+        "rect": {
+          "height": 1869,
+          "width": 311,
+          "x": 64,
+          "y": 58
+        },
+        "tag": "MAIN",
+        "text": "当前患者病历病历工作台专注编辑来源证据质控审签版本证据LIS 报告PACS 影像病历来源与证据中心逐条确认病历事实、报告版本、引用位置和过期状态刷新外部来源返回"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 92,
+          "x": 203,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "病历工作台"
+      },
+      {
+        "background": "rgb(243, 247, 251)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 78,
+          "x": 300,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "专注编辑"
+      },
+      {
+        "background": "rgb(239, 246, 255)",
+        "border": "0px none rgb(23, 105, 224)",
+        "borderRadius": "7px",
+        "class": "active",
+        "color": "rgb(23, 105, 224)",
+        "display": "block",
+        "font": "700 14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 78,
+          "x": 383,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "来源证据"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 78,
+          "x": 466,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "质控审签"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 78,
+          "x": 549,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "版本证据"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 73.953125,
+          "x": 637,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "LIS 报告"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(82, 102, 124)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(82, 102, 124)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 11px",
+        "position": "static",
+        "rect": {
+          "height": 36,
+          "width": 89.375,
+          "x": 715.953125,
+          "y": 66
+        },
+        "tag": "BUTTON",
+        "text": "PACS 影像"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "btn",
+        "color": "rgb(49, 68, 92)",
+        "display": "block",
+        "font": "600 14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 13px",
+        "position": "static",
+        "rect": {
+          "height": 138,
+          "width": 53.609375,
+          "x": 246.328125,
+          "y": 104
+        },
+        "tag": "BUTTON",
+        "text": "刷新外部来源"
+      },
+      {
+        "background": "rgb(23, 105, 224)",
+        "border": "1px solid rgb(23, 105, 224)",
+        "borderRadius": "8px",
+        "class": "btn primary",
+        "color": "rgb(255, 255, 255)",
+        "display": "block",
+        "font": "600 14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 13px",
+        "position": "static",
+        "rect": {
+          "height": 138,
+          "width": 45.0625,
+          "x": 307.9375,
+          "y": 104
+        },
+        "tag": "BUTTON",
+        "text": "返回编辑"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "btn sm",
+        "color": "rgb(49, 68, 92)",
+        "display": "block",
+        "font": "600 12px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "6px 9px",
+        "position": "static",
+        "rect": {
+          "height": 116,
+          "width": 32,
+          "x": 492.828125,
+          "y": 292.5
+        },
+        "tag": "BUTTON",
+        "text": "切换门诊患者"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "select",
+        "color": "rgb(64, 83, 107)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px",
+        "position": "static",
+        "rect": {
+          "height": 37,
+          "width": 122,
+          "x": 100,
+          "y": 517
+        },
+        "tag": "SELECT",
+        "text": "全部来源类型"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "select",
+        "color": "rgb(64, 83, 107)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px",
+        "position": "static",
+        "rect": {
+          "height": 37,
+          "width": 122,
+          "x": 229,
+          "y": 517
+        },
+        "tag": "SELECT",
+        "text": "全部核验状态"
+      },
+      {
+        "background": "rgb(250, 252, 253)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "search",
+        "color": "rgb(0, 0, 0)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 10px",
+        "position": "static",
+        "rect": {
+          "height": 35,
+          "width": 22,
+          "x": 358,
+          "y": 518
+        },
+        "tag": "INPUT",
+        "text": ""
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(23, 34, 53)",
+        "borderRadius": "0px",
+        "class": "table",
+        "color": "rgb(23, 34, 53)",
+        "display": "table",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "0px",
+        "position": "static",
+        "rect": {
+          "height": 598,
+          "width": 276.171875,
+          "x": 87,
+          "y": 565
+        },
+        "tag": "TABLE",
+        "text": "来源系统/业务号时间被引用内容状态家庭血压记录患者上传08-13 08:42血压最高 168/96已确认门诊问诊转写本次问诊08-13 09:13偶有漏服氨氯地"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "12px",
+        "class": "card",
+        "color": "rgb(23, 34, 53)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "0px",
+        "position": "static",
+        "rect": {
+          "height": 1393,
+          "width": 350,
+          "x": 100,
+          "y": 506
+        },
+        "tag": "ASIDE",
+        "text": "血钾报告 · LAB-88231LIS · 生化检验 · 报告 v1血钾 K　3.4 mmol/L ↓参考范围 3.5–5.3 mmol/L采集 09:12 ·"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "8px",
+        "class": "btn",
+        "color": "rgb(49, 68, 92)",
+        "display": "block",
+        "font": "600 14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 13px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 84,
+          "x": 130,
+          "y": 779
+        },
+        "tag": "BUTTON",
+        "text": "完整报告"
+      },
+      {
+        "background": "rgb(23, 105, 224)",
+        "border": "1px solid rgb(23, 105, 224)",
+        "borderRadius": "8px",
+        "class": "btn primary",
+        "color": "rgb(255, 255, 255)",
+        "display": "block",
+        "font": "600 14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "8px 13px",
+        "position": "static",
+        "rect": {
+          "height": 38,
+          "width": 98,
+          "x": 222,
+          "y": 779
+        },
+        "tag": "BUTTON",
+        "text": "确认并引用"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(94, 102, 128)",
+        "borderRadius": "0px",
+        "class": "",
+        "color": "rgb(94, 102, 128)",
+        "display": "block",
+        "font": "22px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "position": "static",
+        "rect": {
+          "height": 55,
+          "width": 25.3125,
+          "x": 727.6875,
+          "y": 83
+        },
+        "tag": "BUTTON",
+        "text": "×"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(216, 201, 255)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(94, 66, 156)",
+        "display": "inline-block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 8px",
+        "position": "static",
+        "rect": {
+          "height": 30,
+          "width": 80.015625,
+          "x": 424,
+          "y": 228.59375
+        },
+        "tag": "BUTTON",
+        "text": "查看 2 条来源"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(216, 201, 255)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(94, 66, 156)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 8px",
+        "position": "static",
+        "rect": {
+          "height": 30,
+          "width": 120.25,
+          "x": 409,
+          "y": 306.59375
+        },
+        "tag": "BUTTON",
+        "text": "总结近 3 个月病情变化"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(216, 201, 255)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(94, 66, 156)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 8px",
+        "position": "static",
+        "rect": {
+          "height": 30,
+          "width": 98,
+          "x": 535.25,
+          "y": 306.59375
+        },
+        "tag": "BUTTON",
+        "text": "检查当前病历遗漏"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(216, 201, 255)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(94, 66, 156)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 8px",
+        "position": "static",
+        "rect": {
+          "height": 30,
+          "width": 98,
+          "x": 639.25,
+          "y": 306.59375
+        },
+        "tag": "BUTTON",
+        "text": "解释异常检验结果"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(216, 201, 255)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(94, 66, 156)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 8px",
+        "position": "static",
+        "rect": {
+          "height": 30,
+          "width": 98,
+          "x": 409,
+          "y": 342.59375
+        },
+        "tag": "BUTTON",
+        "text": "生成复诊计划草稿"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(0, 0, 0)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 9px",
+        "position": "static",
+        "rect": {
+          "height": 33,
+          "width": 33,
+          "x": 406,
+          "y": 713
+        },
+        "tag": "BUTTON",
+        "text": "🎙"
+      },
+      {
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 227, 235)",
+        "borderRadius": "7px",
+        "class": "",
+        "color": "rgb(0, 0, 0)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 9px",
+        "position": "static",
+        "rect": {
+          "height": 33,
+          "width": 70,
+          "x": 445,
+          "y": 713
+        },
+        "tag": "BUTTON",
+        "text": "完整工作区"
+      },
+      {
+        "background": "rgb(104, 67, 187)",
+        "border": "1px solid rgb(104, 67, 187)",
+        "borderRadius": "7px",
+        "class": "primary",
+        "color": "rgb(255, 255, 255)",
+        "display": "block",
+        "font": "10px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "7px 9px",
+        "position": "static",
+        "rect": {
+          "height": 33,
+          "width": 40,
+          "x": 718,
+          "y": 713
+        },
+        "tag": "BUTTON",
+        "text": "发送"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(255, 255, 255)",
+        "borderRadius": "24px",
+        "class": "ai-fab",
+        "color": "rgb(255, 255, 255)",
+        "display": "flex",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "8px",
+        "padding": "10px 15px",
+        "position": "fixed",
+        "rect": {
+          "height": 41,
+          "width": 138.890625,
+          "x": 214.109375,
+          "y": 766
+        },
+        "tag": "BUTTON",
+        "text": "✦AI医助小南3"
+      },
+      {
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px none rgb(136, 148, 163)",
+        "borderRadius": "0px",
+        "class": "",
+        "color": "rgb(136, 148, 163)",
+        "display": "block",
+        "font": "14px -apple-system, \"system-ui\", \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+        "gap": "normal",
+        "padding": "1px 6px",
+        "position": "absolute",
+        "rect": {
+          "height": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        "tag": "BUTTON",
+        "text": "×"
+      }
+    ],
+    "viewport": {
+      "height": 844,
+      "width": 390
+    }
+  }
+}

@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyNursingNoteCreateRequestWire;
+import org.openemr2026.contracts.EmergencyNursingNoteCorrectionRequestWire;
 import org.openemr2026.contracts.EmergencyNursingNoteWire;
 import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
@@ -64,5 +65,17 @@ final class EmergencyNursingNoteController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(notes.voidNote(identity, idempotencyKey, noteId, command));
+    }
+
+    @PostMapping("/emergency-nursing-notes/{note_id}/corrections")
+    ResponseEntity<EmergencyNursingNoteWire> correct(
+            HttpServletRequest request,
+            @PathVariable("note_id") UUID noteId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EmergencyNursingNoteCorrectionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(notes.correct(identity, idempotencyKey, noteId, command));
     }
 }

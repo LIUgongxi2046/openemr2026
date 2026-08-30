@@ -1,0 +1,72 @@
+[
+  {
+    "route": "record",
+    "dialogs": 0,
+    "docH": 1076,
+    "docW": 1440,
+    "h1": "全院病历中心",
+    "hash": "#/record",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "record-editor",
+    "dialogs": 0,
+    "docH": 1207,
+    "docW": 1440,
+    "h1": "门诊病历 · 专注编辑",
+    "hash": "#/record-editor",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "record-sources",
+    "dialogs": 0,
+    "docH": 1076,
+    "docW": 1440,
+    "h1": "病历来源与证据中心",
+    "hash": "#/record-sources",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "record-qc",
+    "dialogs": 0,
+    "docH": 1076,
+    "docW": 1440,
+    "h1": "病历质控与审签中心",
+    "hash": "#/record-qc",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "record-versions",
+    "dialogs": 0,
+    "docH": 1114,
+    "docW": 1440,
+    "h1": "病历版本与法律证据",
+    "hash": "#/record-versions",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "lis-report",
+    "dialogs": 0,
+    "docH": 1076,
+    "docW": 1440,
+    "h1": "LIS 检验报告调阅",
+    "hash": "#/lis-report",
+    "innerH": 1000,
+    "innerW": 1440
+  },
+  {
+    "route": "pacs-viewer",
+    "dialogs": 0,
+    "docH": 1336,
+    "docW": 1440,
+    "h1": "PACS 影像调阅",
+    "hash": "#/pacs-viewer",
+    "innerH": 1000,
+    "innerW": 1440
+  }
+]

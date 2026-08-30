@@ -46,6 +46,7 @@ final class DocumentEvidenceApiTest {
     private final List<String> storageKeys = new ArrayList<>();
     private UUID documentId;
     private UUID orderId;
+    private UUID lifecycleOrderId;
 
     @AfterEach
     void cleanup() {
@@ -53,11 +54,14 @@ final class DocumentEvidenceApiTest {
         if (documentId != null) {
             jdbc.sql("alter table clinical_document_attachment disable trigger clinical_document_attachment_immutable").update();
             jdbc.sql("alter table clinical_document_source_reference disable trigger clinical_document_source_reference_immutable").update();
+            jdbc.sql("alter table clinical_document_evidence_lifecycle_event disable trigger clinical_document_evidence_lifecycle_immutable").update();
             jdbc.sql("alter table document_quality_run disable trigger document_quality_run_immutable").update();
             try {
                 jdbc.sql("delete from outbox_event where tenant_id=:tenant and payload->>'document_id'=:document")
                         .param("tenant", TENANT).param("document", documentId.toString()).update();
                 jdbc.sql("delete from audit_event where tenant_id=:tenant and resource_id=:document")
+                        .param("tenant", TENANT).param("document", documentId).update();
+                jdbc.sql("delete from clinical_document_evidence_lifecycle_event where tenant_id=:tenant and document_id=:document")
                         .param("tenant", TENANT).param("document", documentId).update();
                 jdbc.sql("delete from clinical_document_source_reference where tenant_id=:tenant and document_id=:document")
                         .param("tenant", TENANT).param("document", documentId).update();
@@ -77,12 +81,103 @@ final class DocumentEvidenceApiTest {
                 jdbc.sql("alter table document_quality_run enable trigger document_quality_run_immutable").update();
                 jdbc.sql("alter table clinical_document_source_reference enable trigger clinical_document_source_reference_immutable").update();
                 jdbc.sql("alter table clinical_document_attachment enable trigger clinical_document_attachment_immutable").update();
+                jdbc.sql("alter table clinical_document_evidence_lifecycle_event enable trigger clinical_document_evidence_lifecycle_immutable").update();
             }
         }
         if (orderId != null) jdbc.sql("delete from clinical_order where tenant_id=:tenant and order_id=:order")
                 .param("tenant", TENANT).param("order", orderId).update();
+        if (lifecycleOrderId != null) jdbc.sql("delete from clinical_order where tenant_id=:tenant and order_id=:order")
+                .param("tenant", TENANT).param("order", lifecycleOrderId).update();
         for (String key : keys) jdbc.sql("delete from idempotency_record where tenant_id=:tenant and idempotency_key=:key")
                 .param("tenant", TENANT).param("key", key).update();
+    }
+
+    @Test
+    void givenImmutableEvidence_whenCorrectedReplacedRevokedAndVoided_thenLifecycleIsAppendOnly()
+            throws Exception {
+        Lease lease = issueLease();
+        HttpResponse<String> created = post("/api/v1/documents", lease, key(), """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "document_type_code":"WS445.2.OUTPATIENT_RECORD",
+                 "sections":{"chief_complaint":"证据生命周期测试","present_illness":"现病史完整",
+                   "assessment":"临床评估完整","treatment_plan":"治疗计划完整"}}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER));
+        assertThat(created.statusCode()).as(created.body()).isEqualTo(201);
+        JsonNode document = objectMapper.readTree(created.body());
+        documentId = UUID.fromString(document.path("document_id").stringValue());
+        UUID versionId = UUID.fromString(document.path("document_version_id").stringValue());
+
+        byte[] originalBytes = "original evidence".getBytes(StandardCharsets.UTF_8);
+        JsonNode original = objectMapper.readTree(post("/api/v1/documents/" + documentId + "/attachments",
+                lease, key(), attachmentBody(versionId, "original.txt", "text/plain", originalBytes,
+                        sha256(originalBytes))).body());
+        UUID originalId = UUID.fromString(original.path("attachment_id").stringValue());
+        storageKeys.add(storageKey(originalId));
+
+        byte[] replacementBytes = "replacement evidence".getBytes(StandardCharsets.UTF_8);
+        HttpResponse<String> replacementResponse = post("/api/v1/documents/" + documentId + "/attachments",
+                lease, key(), """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "document_version_id":"%s","original_filename":"replacement.txt","media_type":"text/plain",
+                 "content_base64":"%s","expected_sha256":"%s","target_field_path":"sections.present_illness",
+                 "replaces_attachment_id":"%s","replacement_reason":"原附件内容需要以新文件依法替换"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, versionId,
+                        Base64.getEncoder().encodeToString(replacementBytes), sha256(replacementBytes), originalId));
+        assertThat(replacementResponse.statusCode()).as(replacementResponse.body()).isEqualTo(201);
+        JsonNode replacement = objectMapper.readTree(replacementResponse.body());
+        UUID replacementId = UUID.fromString(replacement.path("attachment_id").stringValue());
+        storageKeys.add(storageKey(replacementId));
+
+        JsonNode afterReplacement = objectMapper.readTree(get(
+                "/api/v1/documents/" + documentId + "/sources?document_version_id=" + versionId, lease).body());
+        JsonNode originalState = findById(afterReplacement.path("attachments"), "attachment_id", originalId);
+        assertThat(originalState.path("evidence_state").stringValue()).isEqualTo("SUPERSEDED");
+        assertThat(originalState.path("superseded_by_attachment_id").stringValue())
+                .isEqualTo(replacementId.toString());
+
+        HttpResponse<String> voided = post("/api/v1/documents/" + documentId + "/attachments/"
+                + replacementId + "/voids", lease, key(), lifecycleBody(versionId, "复核后确认替换附件不应继续使用"));
+        assertThat(voided.statusCode()).as(voided.body()).isEqualTo(200);
+        assertThat(voided.body()).contains("\"evidence_state\":\"VOID\"");
+
+        lifecycleOrderId = UUID.randomUUID();
+        insertOrder(lifecycleOrderId, "来源引用生命周期测试");
+        JsonNode reference = objectMapper.readTree(post("/api/v1/documents/" + documentId
+                + "/source-references", lease, key(), """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "document_version_id":"%s","source_type":"ORDER","source_resource_id":"%s",
+                 "target_field_path":"sections.treatment_plan","excerpt":"原始引用摘要"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, versionId, lifecycleOrderId)).body());
+        UUID referenceId = UUID.fromString(reference.path("source_reference_id").stringValue());
+
+        HttpResponse<String> corrected = post("/api/v1/documents/" + documentId + "/source-references/"
+                + referenceId + "/corrections", lease, key(), """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "document_version_id":"%s","target_field_path":"sections.assessment",
+                 "excerpt":"更正后的摘要","reason":"原引用目标字段选择错误，需要更正"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, versionId));
+        assertThat(corrected.statusCode()).as(corrected.body()).isEqualTo(200);
+        assertThat(corrected.body()).contains("\"evidence_state\":\"CORRECTED\"",
+                "\"target_field_path\":\"sections.assessment\"");
+
+        HttpResponse<String> revoked = post("/api/v1/documents/" + documentId + "/source-references/"
+                + referenceId + "/revocations", lease, key(), lifecycleBody(versionId,
+                        "进一步复核后确认该来源引用不适用于本病历"));
+        assertThat(revoked.statusCode()).as(revoked.body()).isEqualTo(200);
+        assertThat(revoked.body()).contains("\"evidence_state\":\"REVOKED\"");
+
+        assertThatThrownBy(() -> jdbc.sql("""
+                update clinical_document_evidence_lifecycle_event set reason='tampered'
+                where tenant_id=:tenant and document_id=:document
+                """).param("tenant", TENANT).param("document", documentId).update())
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("document evidence lifecycle events are immutable");
+        assertThat(jdbc.sql("""
+                select count(*) from audit_event where tenant_id=:tenant and resource_id=:document
+                  and action_code in ('DOCUMENT_ATTACHMENT_VOIDED','DOCUMENT_SOURCE_REFERENCE_CORRECTED',
+                    'DOCUMENT_SOURCE_REFERENCE_REVOKED')
+                """).param("tenant", TENANT).param("document", documentId).query(Long.class).single())
+                .isEqualTo(3);
     }
 
     @Test
@@ -174,6 +269,33 @@ final class DocumentEvidenceApiTest {
                 """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, versionId));
         assertThat(sign.statusCode()).as(sign.body()).isEqualTo(409);
         assertThat(sign.body()).contains("QUALITY_SOURCE_CHECK_REQUIRED");
+    }
+
+    private void insertOrder(UUID id, String indication) {
+        jdbc.sql("""
+                insert into clinical_order(tenant_id,order_id,patient_id,encounter_id,facility_id,order_scope,
+                  status,clinical_indication,author_user_id)
+                values (:tenant,:order,:patient,:encounter,:facility,'TEMPORARY','DRAFT',:indication,:author)
+                """).param("tenant", TENANT).param("order", id).param("patient", PATIENT)
+                .param("encounter", ENCOUNTER).param("facility", FACILITY).param("indication", indication)
+                .param("author", USER).update();
+    }
+
+    private String storageKey(UUID attachmentId) {
+        return jdbc.sql("select storage_key from clinical_document_attachment where tenant_id=:tenant and attachment_id=:attachment")
+                .param("tenant", TENANT).param("attachment", attachmentId).query(String.class).single();
+    }
+
+    private JsonNode findById(JsonNode values, String field, UUID id) {
+        for (JsonNode value : values) if (id.toString().equals(value.path(field).stringValue())) return value;
+        throw new AssertionError("Missing " + field + " " + id);
+    }
+
+    private String lifecycleBody(UUID versionId, String reason) {
+        return """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "document_version_id":"%s","reason":"%s"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, ENCOUNTER, versionId, reason);
     }
 
     private String attachmentBody(UUID version, String filename, String mediaType, byte[] bytes, String hash) {

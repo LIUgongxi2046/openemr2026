@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyPreadmissionLinkRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionRegisterRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionUpdateRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionVoidRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -59,7 +61,7 @@ final class EmergencyPreadmissionService {
             PreadmissionHead current = jdbc.sql("""
                     select status, row_version from emergency_preadmission
                     where tenant_id = :tenant and preadmission_id = :preadmission
-                      and facility_id = :facility for update
+                      and facility_id = :facility and voided_at is null for update
                     """).param("tenant", identity.tenantId()).param("preadmission", preadmissionId)
                     .param("facility", request.facilityId())
                     .query((rs, row) -> new PreadmissionHead(rs.getString("status"), rs.getLong("row_version")))
@@ -89,14 +91,92 @@ final class EmergencyPreadmissionService {
         });
     }
 
+    EmergencyPreadmissionWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID preadmissionId,
+            EmergencyPreadmissionUpdateRequestWire request) {
+        String temporaryIdentifier = requireText(request.temporaryIdentifier(), 2, "temporary_identifier");
+        String reason = requireText(request.reason(), 2, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_PREADMISSION_UPDATE", idempotencyKey,
+                    sha256(preadmissionId + "|" + request.expectedRowVersion() + "|" + temporaryIdentifier + "|" + reason));
+            PreadmissionHead current = lockActive(identity.tenantId(), preadmissionId, request.facilityId());
+            requireMutable(current, request.expectedRowVersion());
+            String correctionReason = "急诊临时登记更正";
+            jdbc.sql("""
+                    update emergency_preadmission set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and preadmission_id = :preadmission and row_version = :expected
+                    """).param("reason", correctionReason).param("tenant", identity.tenantId())
+                    .param("preadmission", preadmissionId).param("expected", current.rowVersion()).update();
+            UUID replacementId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into emergency_preadmission(
+                      tenant_id, preadmission_id, facility_id, temporary_identifier, reason,
+                      status, supersedes_preadmission_id)
+                    values (:tenant, :preadmission, :facility, :identifier, :reason,
+                      'UNREGISTERED', :supersedes)
+                    """).param("tenant", identity.tenantId()).param("preadmission", replacementId)
+                    .param("facility", request.facilityId()).param("identifier", temporaryIdentifier)
+                    .param("reason", reason).param("supersedes", preadmissionId).update();
+            appendEvidence(identity, preadmissionId, "EMERGENCY_PREADMISSION_SUPERSEDED", "EmergencyPreadmissionSuperseded");
+            appendEvidence(identity, replacementId, "EMERGENCY_PREADMISSION_UPDATED", "EmergencyPreadmissionUpdated");
+            completeCommand(identity, "EMERGENCY_PREADMISSION_UPDATE", idempotencyKey, replacementId);
+            return preadmission(identity.tenantId(), replacementId);
+        });
+    }
+
+    EmergencyPreadmissionWire voidPreadmission(
+            ClinicalIdentity identity, String idempotencyKey, UUID preadmissionId,
+            EmergencyPreadmissionVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "EMERGENCY_PREADMISSION_VOID", idempotencyKey,
+                    sha256(preadmissionId + "|" + request.expectedRowVersion() + "|" + reason));
+            PreadmissionHead current = lockActive(identity.tenantId(), preadmissionId, request.facilityId());
+            requireMutable(current, request.expectedRowVersion());
+            jdbc.sql("""
+                    update emergency_preadmission set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and preadmission_id = :preadmission and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("preadmission", preadmissionId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, preadmissionId, "EMERGENCY_PREADMISSION_VOIDED", "EmergencyPreadmissionVoided");
+            completeCommand(identity, "EMERGENCY_PREADMISSION_VOID", idempotencyKey, preadmissionId);
+            return preadmission(identity.tenantId(), preadmissionId);
+        });
+    }
+
     List<EmergencyPreadmissionWire> listPreadmissions(ClinicalIdentity identity, UUID facilityId) {
         return jdbc.sql("""
                 select preadmission_id from emergency_preadmission
                 where tenant_id = :tenant and facility_id = :facility
+                  and voided_at is null
                 order by created_at desc, preadmission_id desc limit 100
                 """).param("tenant", identity.tenantId()).param("facility", facilityId)
                 .query(UUID.class).list().stream()
                 .map(id -> preadmission(identity.tenantId(), id)).toList();
+    }
+
+    private PreadmissionHead lockActive(UUID tenantId, UUID preadmissionId, UUID facilityId) {
+        return jdbc.sql("""
+                select status, row_version from emergency_preadmission
+                where tenant_id = :tenant and preadmission_id = :preadmission
+                  and facility_id = :facility and voided_at is null for update
+                """).param("tenant", tenantId).param("preadmission", preadmissionId)
+                .param("facility", facilityId)
+                .query((rs, row) -> new PreadmissionHead(rs.getString("status"), rs.getLong("row_version")))
+                .optional().orElseThrow(EmergencyPreadmissionService::contextDenied);
+    }
+
+    private static void requireMutable(PreadmissionHead current, Long expectedRowVersion) {
+        if (expectedRowVersion == null || current.rowVersion() != expectedRowVersion) {
+            throw new EmergencyPreadmissionException("EMERGENCY_PREADMISSION_VERSION_CONFLICT", 409,
+                    "The preadmission changed; reload before retrying");
+        }
+        if (!"UNREGISTERED".equals(current.status())) {
+            throw new EmergencyPreadmissionException("EMERGENCY_PREADMISSION_STATE_INVALID", 409,
+                    "A registered preadmission cannot be edited or voided");
+        }
     }
 
     private EmergencyPreadmissionWire preadmission(UUID tenantId, UUID preadmissionId) {

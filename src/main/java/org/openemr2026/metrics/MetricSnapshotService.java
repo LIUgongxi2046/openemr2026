@@ -90,18 +90,32 @@ final class MetricSnapshotService {
                         metric("已输出研究集", count(tenantId, "research_dataset_request", "status = 'EXPORTED'"), "份", "research_dataset_request", "count where status=EXPORTED"));
             }
             case "DEPARTMENT_QC" -> List.of(
-                    metric("质控运行", count(tenantId, "document_quality_run", null), "次", "document_quality_run", "count immutable quality runs"),
-                    metric("阻断运行", count(tenantId, "document_quality_run", "outcome = 'BLOCKED'"), "次", "document_quality_run", "count where outcome=BLOCKED"),
-                    metric("开放问题", count(tenantId, "quality_finding", "state in ('OPEN','ACKNOWLEDGED')"), "项", "quality_finding", "count open or acknowledged"),
-                    metric("已整改问题", count(tenantId, "quality_finding", "state = 'RESOLVED'"), "项", "quality_finding", "count where state=RESOLVED"));
+                    metric("质控运行", count(tenantId, "document_quality_run", null)
+                                    + qualityOperationCount(tenantId, "config_type = 'DEPARTMENT_QC_CASE'"),
+                            "次", "document_quality_run + config_item", "immutable runs + registered department QC cases"),
+                    metric("阻断运行", count(tenantId, "document_quality_run", "outcome = 'BLOCKED'")
+                                    + qualityOperationCount(tenantId, "config_type = 'DEPARTMENT_QC_CASE' and payload->>'severity' = 'BLOCKING' and payload->>'workflow_status' <> 'CLOSED'"),
+                            "次", "document_quality_run + config_item", "blocked runs + open BLOCKING QC cases"),
+                    metric("开放问题", count(tenantId, "quality_finding", "state in ('OPEN','ACKNOWLEDGED')")
+                                    + qualityOperationCount(tenantId, "config_type = 'DEPARTMENT_QC_CASE' and payload->>'workflow_status' <> 'CLOSED'"),
+                            "项", "quality_finding + config_item", "open findings + non-terminal QC cases"),
+                    metric("已整改问题", count(tenantId, "quality_finding", "state = 'RESOLVED'")
+                                    + qualityOperationCount(tenantId, "config_type = 'DEPARTMENT_QC_CASE' and payload->>'workflow_status' = 'CLOSED'"),
+                            "项", "quality_finding + config_item", "resolved findings + closed QC cases"));
             case "QUALITY_CENTER" -> {
                 double runs = count(tenantId, "document_quality_run", null);
                 double passed = count(tenantId, "document_quality_run", "outcome = 'PASSED'");
                 yield List.of(
                         metric("病历质控通过率", runs == 0 ? 0 : passed * 100d / runs, "%", "document_quality_run", "PASSED / all runs * 100"),
-                        metric("阻断问题", count(tenantId, "quality_finding", "severity = 'BLOCKING' and state in ('OPEN','ACKNOWLEDGED')"), "项", "quality_finding", "open BLOCKING findings"),
-                        metric("质控警告", count(tenantId, "quality_finding", "severity = 'WARNING' and state in ('OPEN','ACKNOWLEDGED')"), "项", "quality_finding", "open WARNING findings"),
-                        metric("整改闭环", count(tenantId, "quality_finding", "state = 'RESOLVED'"), "项", "quality_finding", "resolved findings"));
+                        metric("阻断问题", count(tenantId, "quality_finding", "severity = 'BLOCKING' and state in ('OPEN','ACKNOWLEDGED')")
+                                        + qualityOperationCount(tenantId, "payload->>'severity' = 'BLOCKING' and coalesce(payload->>'workflow_status','') not in ('CLOSED','VERIFIED','REVOKED')"),
+                                "项", "quality_finding + config_item", "open BLOCKING findings and quality operations"),
+                        metric("质控警告", count(tenantId, "quality_finding", "severity = 'WARNING' and state in ('OPEN','ACKNOWLEDGED')")
+                                        + qualityOperationCount(tenantId, "payload->>'severity' = 'WARNING' and coalesce(payload->>'workflow_status','') not in ('CLOSED','VERIFIED','REVOKED')"),
+                                "项", "quality_finding + config_item", "open WARNING findings and quality operations"),
+                        metric("整改闭环", count(tenantId, "quality_finding", "state = 'RESOLVED'")
+                                        + qualityOperationCount(tenantId, "payload->>'workflow_status' in ('CLOSED','VERIFIED','REVOKED')"),
+                                "项", "quality_finding + config_item", "resolved findings + terminal quality operations"));
             }
             default -> throw new MetricSnapshotException(
                     "METRIC_TYPE_UNSUPPORTED", 422, "未登记的指标目录：" + metricType);
@@ -112,6 +126,11 @@ final class MetricSnapshotService {
         String sql = "select count(*) from " + table + " where tenant_id = :tenant"
                 + (predicate == null ? "" : " and " + predicate);
         return jdbc.sql(sql).param("tenant", tenantId).query(Long.class).single().doubleValue();
+    }
+
+    private double qualityOperationCount(UUID tenantId, String predicate) {
+        String qualityTypes = "config_type in ('QUALITY_INITIATIVE','DEPARTMENT_QC_CASE','QUALITY_RATING_EVIDENCE','INFECTION_CONTROL_CASE','CLINICAL_CREDENTIAL_GRANT')";
+        return count(tenantId, "config_item", "status <> 'ARCHIVED' and " + qualityTypes + " and " + predicate);
     }
 
     private MetricDefinition metric(String name, double value, String unit, String source, String formula) {

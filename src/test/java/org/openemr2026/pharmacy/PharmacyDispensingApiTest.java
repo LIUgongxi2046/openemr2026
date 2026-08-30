@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.PharmacyDispensingPrepareRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingTransitionRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingUpdateRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingVoidRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -124,13 +126,74 @@ final class PharmacyDispensingApiTest {
     }
 
     @Test
+    void givenPreparedDispensing_whenEditing_thenFactsAndVersionAreUpdated() {
+        Context context = seedContext();
+        PharmacyDispensingWire prepared = prepare(context);
+
+        PharmacyDispensingWire updated = dispensings.update(dispenser(), "pharm-u-" + UUID.randomUUID(),
+                prepared.dispensingId(), new PharmacyDispensingUpdateRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), prepared.rowVersion(),
+                        "DRUG-SYN-CORRECTED", "BATCH-CORRECTED", 12.0, "支"));
+
+        assertThat(updated.drugCode()).isEqualTo("DRUG-SYN-CORRECTED");
+        assertThat(updated.batchNumber()).isEqualTo("BATCH-CORRECTED");
+        assertThat(updated.quantity()).isEqualTo(12.0);
+        assertThat(updated.quantityUnit()).isEqualTo("支");
+        assertThat(updated.rowVersion()).isEqualTo(prepared.rowVersion() + 1);
+    }
+
+    @Test
+    void givenPreparedDispensing_whenVoiding_thenEvidenceRetainedAndTransitionBlocked() {
+        Context context = seedContext();
+        PharmacyDispensingWire prepared = prepare(context);
+
+        PharmacyDispensingWire voided = dispensings.voidDispensing(dispenser(), "pharm-v-" + UUID.randomUUID(),
+                prepared.dispensingId(), new PharmacyDispensingVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), prepared.rowVersion(),
+                        "摆药批次录入错误，停止后重新摆药"));
+
+        assertThat(voided.voidedAt()).isNotNull();
+        assertThat(voided.voidReason()).contains("批次");
+        assertThat(dispensings.listDispensings(dispenser(), context.patientId()))
+                .extracting(PharmacyDispensingWire::dispensingId).contains(prepared.dispensingId());
+        assertThatThrownBy(() -> transition(verifier(), context, voided, "VERIFY"))
+                .isInstanceOf(PharmacyDispensingException.class)
+                .satisfies(e -> assertThat(((PharmacyDispensingException) e).code())
+                        .isEqualTo("PHARMACY_DISPENSING_STATE_INVALID"));
+    }
+
+    @Test
+    void givenVerifiedDispensing_whenEditingOrVoidingDispensed_thenStateRulesReject() {
+        Context context = seedContext();
+        PharmacyDispensingWire prepared = prepare(context);
+        PharmacyDispensingWire verified = transition(verifier(), context, prepared, "VERIFY");
+        assertThatThrownBy(() -> dispensings.update(dispenser(), "pharm-u-" + UUID.randomUUID(),
+                verified.dispensingId(), new PharmacyDispensingUpdateRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), verified.rowVersion(),
+                        verified.drugCode(), verified.batchNumber(), verified.quantity(), verified.quantityUnit())))
+                .isInstanceOf(PharmacyDispensingException.class);
+        PharmacyDispensingWire dispensed = transition(verifier(), context, verified, "DISPENSE");
+        assertThatThrownBy(() -> dispensings.voidDispensing(dispenser(), "pharm-v-" + UUID.randomUUID(),
+                dispensed.dispensingId(), new PharmacyDispensingVoidRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), dispensed.rowVersion(),
+                        "已发药记录不能直接作废")))
+                .isInstanceOf(PharmacyDispensingException.class);
+    }
+
+    @Test
     void givenDispensingIdentity_whenTampered_thenDatabaseRejectsMutation() {
         Context context = seedContext();
         PharmacyDispensingWire prepared = prepare(context);
+        PharmacyDispensingWire verified = transition(verifier(), context, prepared, "VERIFY");
         assertThatThrownBy(() -> jdbc.sql("""
                 update pharmacy_dispensing set batch_number = '篡改'
                 where tenant_id = cast(:tenant as uuid) and dispensing_id = :dispensing
-                """).param("tenant", TENANT).param("dispensing", prepared.dispensingId()).update())
+                """).param("tenant", TENANT).param("dispensing", verified.dispensingId()).update())
+                .isInstanceOf(DataAccessException.class);
+        assertThatThrownBy(() -> jdbc.sql("""
+                delete from pharmacy_dispensing
+                where tenant_id = cast(:tenant as uuid) and dispensing_id = :dispensing
+                """).param("tenant", TENANT).param("dispensing", verified.dispensingId()).update())
                 .isInstanceOf(DataAccessException.class);
     }
 

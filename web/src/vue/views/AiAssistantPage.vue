@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
 
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
-import { createMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog } from '../../api/medical-agents';
+import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import EvaComposerControls from '../components/EvaComposerControls.vue';
@@ -11,12 +11,13 @@ import EvaPatientPicker from '../components/EvaPatientPicker.vue';
 import XiaonanAgentTeamRail from '../components/XiaonanAgentTeamRail.vue';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
+import { medicalAgentRunStateLabel, presentMedicalAgentEvents, presentMedicalAgentResult } from '../medical-agent-run-presenter';
 import { evaDefaultPatientContexts, useEvaClinicalContext } from '../use-eva-clinical-context';
 
 type AuthorizationLevel = 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
 type ContextScope = 'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS';
 interface TaskEvent { id: string; label: string; detail: string; status: 'running' | 'done' | 'waiting' | 'failed' }
-interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; modelName?: string }
+interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number; modelName?: string }
 
 const messages = ref<ChatMessage[]>([]);
 const draft = ref('');
@@ -69,16 +70,35 @@ function initialEvents(agent: MedicalAgentFamilyWire, child: MedicalAgentRelease
 }
 
 function mapRunEvents(run: MedicalAgentRunWire): TaskEvent[] {
-  const labels: Record<string, string> = { RunCreated: '任务与授权范围已记录', MainAgentStarted: '主医助开始规划', ChildAgentStarted: '诊疗环节医助开始处理', ChildContributionReady: '诊疗环节结果已生成', ChildHandoffReceived: 'Eva 已接收医助结果', RunReadyForReview: '结果已完成核对', BudgetConsumptionRecorded: '本次模型用量已记录' };
-  return run.events.map((event) => ({
-    id: `${run.run_id}-${event.sequence}`,
-    label: labels[event.event_type] ?? '任务状态已更新',
-    detail: event.event_type === 'RunCreated' ? `${selectedModel.value?.display_name ?? '机构默认模型'} · ${contextScopes.value.map(scopeLabel).join('、')}` : event.event_type === 'ChildAgentStarted' ? String(event.payload.current_action ?? `运行记录 #${event.sequence}`) : `运行记录 #${event.sequence}`,
-    status: 'done',
-  }));
+  return presentMedicalAgentEvents(run, `${selectedModel.value?.display_name ?? '机构默认模型'} · ${contextScopes.value.map(scopeLabel).join('、')}`);
 }
 
-function runSummary(run: MedicalAgentRunWire) { return doctorFacingAiText(typeof run.output.summary === 'string' ? run.output.summary : 'Eva 已汇总医助结果，可以开始审阅。'); }
+const terminalRunStates = new Set<MedicalAgentRunWire['state']>(['WAITING_FOR_REVIEW', 'COMPLETED', 'PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
+const retryableRunStates = new Set<MedicalAgentRunWire['state']>(['PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
+const delay = (duration: number) => new Promise((resolve) => window.setTimeout(resolve, duration));
+
+function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildName = '诊疗环节医助') {
+  message.runId = run.run_id;
+  message.runState = run.state;
+  message.rowVersion = run.row_version;
+  message.events = mapRunEvents(run);
+  if (terminalRunStates.has(run.state)) {
+    const participants = run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(fallbackChildName);
+    message.text = `${presentMedicalAgentResult(run)}\n\n参与医助：${participants}。本次读取 ${contextScopes.value.map(scopeLabel).join('、')}，使用${authorizationLabel(authorizationLevel.value)}授权。`;
+  } else {
+    message.text = presentMedicalAgentResult(run);
+  }
+}
+
+async function pollRun(message: ChatMessage, lease: NonNullable<typeof runLeaseQuery.data.value>, patientId: string, encounterId: string, fallbackChildName: string) {
+  for (let poll = 0; poll < 300; poll += 1) {
+    if (!message.runId || terminalRunStates.has(message.runState!)) return;
+    await delay(800);
+    const run = await getMedicalAgentRun(lease, patientId, encounterId, message.runId);
+    applyRun(message, run, fallbackChildName);
+  }
+  message.text = '任务仍在后台处理，运行记录已保存，稍后可继续查看。';
+}
 
 async function send() {
   const text = draft.value.trim();
@@ -93,10 +113,12 @@ async function send() {
   draft.value = '';
   await nextTick();
   try {
-    const run = await createMedicalAgentRun(lease, { patientId: patient.current.value.patientId, encounterId: patient.current.value.encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const patientId = patient.current.value.patientId;
+    const encounterId = patient.current.value.encounterId;
+    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
     const message = messages.value.find((item) => item.id === responseId)!;
-    message.events = mapRunEvents(run); message.runId = run.run_id;
-    message.text = `${runSummary(run)}\n\n参与医助：${run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(child.display_name)}。本次读取 ${contextScopes.value.map(scopeLabel).join('、')}，使用${authorizationLabel(authorizationLevel.value)}授权。`;
+    applyRun(message, run, child.display_name);
+    await pollRun(message, lease, patientId, encounterId, child.display_name);
   } catch (error) {
     const next = toClinicalIssue(error);
     const message = messages.value.find((item) => item.id === responseId)!;
@@ -104,6 +126,33 @@ async function send() {
     message.events = (message.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' });
     notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = false; }
+}
+
+async function cancelRun(message: ChatMessage) {
+  const lease = runLeaseQuery.data.value;
+  if (!lease || !message.runId || !message.runState || !['QUEUED', 'RUNNING'].includes(message.runState)) return;
+  try {
+    const patientId = patient.current.value.patientId;
+    const encounterId = patient.current.value.encounterId;
+    const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId);
+    if (!['QUEUED', 'RUNNING'].includes(latest.state)) { applyRun(message, latest); return; }
+    applyRun(message, await cancelMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version));
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+}
+
+async function retryRun(message: ChatMessage) {
+  if (!message.runId || !message.runState || !retryableRunStates.has(message.runState) || busy.value) return;
+  busy.value = true; notice.value = '';
+  try {
+    const patientId = patient.current.value.patientId;
+    const encounterId = patient.current.value.encounterId;
+    const lease = await issueMedicalAgentRunLease(patientId, encounterId);
+    const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId);
+    const run = await retryMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version);
+    applyRun(message, run);
+    await pollRun(message, lease, patientId, encounterId, '诊疗环节医助');
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = false; }
 }
 
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedMainAgentCode.value = agent.main_agent.agent_code; }
@@ -136,6 +185,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
             <header><b>{{ message.role === 'user' ? '医生' : (message.agentName || 'Eva') }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `任务 …${message.runId.slice(-8)}` : busy ? '正在执行' : '执行结果' }}</span></header>
             <ol v-if="message.events?.length" class="eva-inline-events"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span><em>{{ event.status === 'done' ? '完成' : event.status === 'failed' ? '失败' : event.status === 'running' ? '进行中' : '等待' }}</em></li></ol>
             <p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'" class="eva-running-copy">Eva 正在继续处理，请稍候…</p>
+            <footer v-if="message.role === 'assistant' && message.runId" class="eva-message-actions"><span v-if="message.runState">状态：{{ medicalAgentRunStateLabel(message.runState) }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消任务</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重新执行</button></footer>
           </article>
         </section>
         <form class="eva-agent-composer" @submit.prevent="send">
@@ -159,6 +209,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
 .eva-session-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; padding: 9px 14px; border-bottom: 1px solid #d8e3ef; }.eva-session-head > div { display: flex; align-items: center; gap: 8px; min-width: 0; }.eva-session-head > div > div { display: grid; gap: 2px; min-width: 0; }.eva-session-head strong { color: #2d455d; font-size: 12px; }.eva-session-head small, .eva-session-head > span { color: #758699; font-size: 8px; }.eva-live-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; background: #14a487; box-shadow: 0 0 0 4px #dff6f1; }
 .eva-agent-thread { display: grid; align-content: start; gap: 12px; min-height: 0; padding: 16px; overflow-y: auto; background: #fbfcfe; }.eva-agent-empty { display: grid; align-self: center; justify-items: center; gap: 8px; max-width: 680px; margin: auto; text-align: center; }.eva-agent-empty img { width: min(100%,520px); max-height: 230px; object-fit: contain; border-radius: 12px; mix-blend-mode: multiply; }.eva-agent-empty strong { color: #29435d; font-size: 15px; }.eva-agent-empty p { max-width: 560px; margin: 0; color: #708195; font-size: 10px; line-height: 1.65; }
 .eva-agent-message { display: grid; gap: 9px; width: min(88%,720px); padding: 11px 13px; border: 1px solid #d6e1eb; border-radius: 12px; background: #fff; }.eva-agent-message.user { justify-self: end; width: min(76%,620px); border-color: #a9cbea; background: #edf6ff; }.eva-agent-message header { display: flex; justify-content: space-between; gap: 8px; }.eva-agent-message header b { color: #185b83; font-size: 10px; }.eva-agent-message header span { color: #8694a2; font-size: 8px; }.eva-agent-message > p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #3c5268; font-size: 10px; line-height: 1.65; }.eva-running-copy { color: #72869a !important; }
+.eva-message-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 7px; border-top: 1px solid #edf1f5; }.eva-message-actions span { margin-right: auto; color: #7b8998; font-size: 8px; }.eva-message-actions .btn { min-height: 28px; padding: 4px 9px; font-size: 9px; }
 .eva-inline-events { display: grid; gap: 1px; padding: 1px; margin: 0; overflow: hidden; border: 1px solid #dbe4ec; border-radius: 9px; background: #e7edf3; list-style: none; }.eva-inline-events li { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: center; gap: 7px; padding: 8px 9px; background: #fff; }.eva-inline-events i { display: grid; place-items: center; width: 20px; height: 20px; color: #fff; border-radius: 50%; background: #8497aa; font-size: 8px; font-style: normal; }.eva-inline-events li.done i { background: #159783; }.eva-inline-events li.running i { background: #1769e0; }.eva-inline-events li.failed i { background: #c43d45; }.eva-inline-events li > span { display: grid; gap: 2px; min-width: 0; }.eva-inline-events b { overflow: hidden; color: #344d65; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.eva-inline-events small { overflow: hidden; color: #7b8b9a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }.eva-inline-events em { color: #748596; font-size: 7px; font-style: normal; }
 .eva-agent-composer { display: grid; gap: 8px; padding: 12px 14px max(12px,env(safe-area-inset-bottom)); border-top: 1px solid #d8e3ef; background: #fff; }.eva-agent-composer textarea { width: 100%; min-height: 86px; max-height: 190px; padding: 11px 12px; resize: vertical; border: 1px solid #bfcfdd; border-radius: 11px; outline: none; font: inherit; font-size: 11px; line-height: 1.55; }.eva-agent-composer textarea:focus { border-color: #4f91d5; box-shadow: 0 0 0 3px rgb(23 105 224 / 10%); }.eva-agent-composer footer { display: flex; align-items: center; gap: 10px; }.eva-agent-composer footer > :first-child { flex: 1 1 auto; min-width: 0; }.eva-agent-composer footer > button { flex: 0 0 auto; min-width: 92px; }
 @media (max-width: 1100px) { .eva-harness-shell { grid-template-columns: auto minmax(0,1fr); height: auto; max-height: none; } :deep(.eva-patient-picker) { grid-column: 1 / -1; } }

@@ -3,16 +3,31 @@ package org.openemr2026.archive;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
+import org.openemr2026.contracts.MedicalRecordAssetActionRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetBorrowRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetBorrowUpdateRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionCreateRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionDeliveryRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionPackageWire;
+import org.openemr2026.contracts.MedicalRecordAssetIngestRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetIntegrityCheckRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetIntegrityEventWire;
 import org.openemr2026.contracts.MedicalRecordAssetRegisterRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetRetireRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetReturnRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetUpdateRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -55,6 +70,17 @@ final class MedicalRecordAssetController {
                 .body(assets.register(identity, idempotencyKey, command));
     }
 
+    @PostMapping("/medical-record-assets/ingestions")
+    ResponseEntity<MedicalRecordAssetWire> ingest(
+            HttpServletRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetIngestRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(assets.ingest(identity, idempotencyKey, command));
+    }
+
     @PostMapping("/medical-record-assets/{asset_id}/borrows")
     ResponseEntity<MedicalRecordAssetWire> borrow(
             HttpServletRequest request,
@@ -77,5 +103,161 @@ final class MedicalRecordAssetController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(assets.returnAsset(identity, idempotencyKey, assetId, command));
+    }
+
+    @PatchMapping("/medical-record-assets/{asset_id}/borrow")
+    ResponseEntity<MedicalRecordAssetWire> updateBorrow(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetBorrowUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.updateBorrow(identity, idempotencyKey, assetId, command));
+    }
+
+    @PatchMapping("/medical-record-assets/{asset_id}")
+    ResponseEntity<MedicalRecordAssetWire> update(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.update(identity, idempotencyKey, assetId, command));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/retirements")
+    ResponseEntity<MedicalRecordAssetWire> retire(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetRetireRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.retire(identity, idempotencyKey, assetId, command));
+    }
+
+    @GetMapping("/medical-record-assets/{asset_id}/integrity-events")
+    ResponseEntity<List<MedicalRecordAssetIntegrityEventWire>> integrityEvents(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.listIntegrityEvents(identity, patientId, assetId));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/integrity-events")
+    ResponseEntity<MedicalRecordAssetIntegrityEventWire> verifyIntegrity(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetIntegrityCheckRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(assets.verifyIntegrity(identity, idempotencyKey, assetId, command));
+    }
+
+    @GetMapping("/medical-record-assets/{asset_id}/content")
+    ResponseEntity<byte[]> content(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
+        MedicalRecordAssetService.AssetBinary binary = assets.content(identity, patientId, assetId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .contentType(MediaType.parseMediaType(binary.mediaType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(binary.filename(), StandardCharsets.UTF_8).build().toString())
+                .header("X-Content-SHA256", binary.contentHash()).contentLength(binary.content().length)
+                .body(binary.content());
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/ocr-runs")
+    ResponseEntity<MedicalRecordAssetWire> runOcr(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetActionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.runOcr(identity, idempotencyKey, assetId, command));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/storage-verifications")
+    ResponseEntity<MedicalRecordAssetIntegrityEventWire> verifyStorage(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetActionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(assets.verifyStoredContent(identity, idempotencyKey, assetId, command));
+    }
+
+    @GetMapping("/medical-record-assets/{asset_id}/distribution-packages")
+    ResponseEntity<List<MedicalRecordAssetDistributionPackageWire>> listDistributions(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.listDistributions(identity, patientId, assetId));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/distribution-packages")
+    ResponseEntity<MedicalRecordAssetDistributionPackageWire> createDistribution(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetDistributionCreateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(assets.createDistribution(identity, idempotencyKey, assetId, command));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/distribution-packages/{package_id}/deliveries")
+    ResponseEntity<MedicalRecordAssetDistributionPackageWire> deliverDistribution(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @PathVariable("package_id") UUID packageId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetDistributionDeliveryRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.deliverDistribution(identity, idempotencyKey, assetId, packageId, command));
+    }
+
+    @GetMapping("/medical-record-assets/{asset_id}/distribution-packages/{package_id}/content")
+    ResponseEntity<byte[]> distributionContent(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @PathVariable("package_id") UUID packageId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
+        MedicalRecordAssetService.DistributionBinary binary =
+                assets.distributionContent(identity, patientId, assetId, packageId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(binary.filename(), StandardCharsets.UTF_8).build().toString())
+                .header("X-Content-SHA256", binary.contentHash()).contentLength(binary.content().length)
+                .body(binary.content());
     }
 }

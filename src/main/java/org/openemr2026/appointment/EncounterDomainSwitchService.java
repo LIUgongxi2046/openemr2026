@@ -9,6 +9,8 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EncounterDomainSwitchRecordRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchCorrectionRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchVoidRequestWire;
 import org.openemr2026.contracts.EncounterDomainSwitchWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -73,10 +75,101 @@ final class EncounterDomainSwitchService {
         return jdbc.sql("""
                 select domain_switch_id from encounter_domain_switch
                 where tenant_id = :tenant and patient_id = :patient
+                  and voided_at is null
                 order by switched_at desc, domain_switch_id desc limit 100
                 """).param("tenant", identity.tenantId()).param("patient", patientId)
                 .query(UUID.class).list().stream()
                 .map(id -> domainSwitch(identity.tenantId(), id, patientId)).toList();
+    }
+
+    EncounterDomainSwitchWire correct(
+            ClinicalIdentity identity, String idempotencyKey, UUID switchId,
+            EncounterDomainSwitchCorrectionRequestWire request) {
+        String reason = requireText(request.reason(), 2, "reason");
+        String correctionReason = requireText(request.correctionReason(), 4, "correction_reason");
+        if (request.fromEncounterId() == null || request.toEncounterId() == null || request.fromDomain() == null
+                || request.toDomain() == null || request.switchedAt() == null
+                || request.fromDomain().name().equals(request.toDomain().name())
+                || request.fromEncounterId().equals(request.toEncounterId())) {
+            throw invalid("valid, different from/to encounters and domains are required");
+        }
+        requireBothEncountersSamePatient(identity.tenantId(), request.patientId(),
+                request.fromEncounterId(), request.toEncounterId());
+        return transactions.execute(status -> {
+            beginCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_CORRECT", idempotencyKey,
+                    sha256(switchId + "|" + request.expectedRowVersion() + "|" + reason));
+            DomainSwitchHead current = lockActive(identity.tenantId(), switchId, request.patientId());
+            requireCurrentVersion(current, request.expectedRowVersion());
+            jdbc.sql("""
+                    update encounter_domain_switch set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1
+                    where tenant_id = :tenant and domain_switch_id = :switch and row_version = :expected
+                    """).param("reason", correctionReason).param("tenant", identity.tenantId())
+                    .param("switch", switchId).param("expected", current.rowVersion()).update();
+            UUID replacementId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into encounter_domain_switch(
+                      tenant_id, domain_switch_id, patient_id, from_encounter_id, to_encounter_id,
+                      from_domain, to_domain, reason, switched_at, switched_by, supersedes_domain_switch_id)
+                    values (:tenant, :switch, :patient, :from_encounter, :to_encounter,
+                      :from_domain, :to_domain, :reason, :switched_at, :actor, :supersedes)
+                    """).param("tenant", identity.tenantId()).param("switch", replacementId)
+                    .param("patient", request.patientId()).param("from_encounter", request.fromEncounterId())
+                    .param("to_encounter", request.toEncounterId()).param("from_domain", request.fromDomain().name())
+                    .param("to_domain", request.toDomain().name()).param("reason", reason)
+                    .param("switched_at", request.switchedAt().atOffset(ZoneOffset.UTC))
+                    .param("actor", identity.userId()).param("supersedes", switchId).update();
+            appendEvidence(identity, request.patientId(), switchId,
+                    "ENCOUNTER_DOMAIN_SWITCH_SUPERSEDED", "EncounterDomainSwitchSuperseded");
+            appendEvidence(identity, request.patientId(), replacementId,
+                    "ENCOUNTER_DOMAIN_SWITCH_CORRECTED", "EncounterDomainSwitchCorrected");
+            completeCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_CORRECT", idempotencyKey, replacementId);
+            return domainSwitch(identity.tenantId(), replacementId, request.patientId());
+        });
+    }
+
+    EncounterDomainSwitchWire voidSwitch(
+            ClinicalIdentity identity, String idempotencyKey, UUID switchId,
+            EncounterDomainSwitchVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_VOID", idempotencyKey,
+                    sha256(switchId + "|" + request.expectedRowVersion() + "|" + reason));
+            DomainSwitchHead current = lockActive(identity.tenantId(), switchId, request.patientId());
+            requireCurrentVersion(current, request.expectedRowVersion());
+            jdbc.sql("""
+                    update encounter_domain_switch set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1
+                    where tenant_id = :tenant and domain_switch_id = :switch and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("switch", switchId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), switchId,
+                    "ENCOUNTER_DOMAIN_SWITCH_VOIDED", "EncounterDomainSwitchVoided");
+            completeCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_VOID", idempotencyKey, switchId);
+            return domainSwitch(identity.tenantId(), switchId, request.patientId());
+        });
+    }
+
+    private DomainSwitchHead lockActive(UUID tenantId, UUID switchId, UUID patientId) {
+        return jdbc.sql("""
+                select row_version, voided_at from encounter_domain_switch
+                where tenant_id = :tenant and domain_switch_id = :switch
+                  and patient_id = :patient for update
+                """).param("tenant", tenantId).param("switch", switchId).param("patient", patientId)
+                .query((rs, row) -> new DomainSwitchHead(rs.getLong("row_version"),
+                        rs.getObject("voided_at", OffsetDateTime.class)))
+                .optional().orElseThrow(EncounterDomainSwitchService::contextDenied);
+    }
+
+    private static void requireCurrentVersion(DomainSwitchHead current, Long expectedRowVersion) {
+        if (expectedRowVersion == null || current.rowVersion() != expectedRowVersion) {
+            throw new EncounterDomainSwitchException("ENCOUNTER_DOMAIN_SWITCH_VERSION_CONFLICT", 409,
+                    "The domain switch changed; reload before retrying");
+        }
+        if (current.voidedAt() != null) {
+            throw new EncounterDomainSwitchException("ENCOUNTER_DOMAIN_SWITCH_STATE_INVALID", 409,
+                    "A voided domain switch cannot be changed");
+        }
     }
 
     private EncounterDomainSwitchWire domainSwitch(UUID tenantId, UUID switchId, UUID patientId) {
@@ -184,6 +277,8 @@ final class EncounterDomainSwitchService {
         return new EncounterDomainSwitchException(
                 "CONTEXT_NOT_PERMITTED", 403, "The requested encounter domain switch context is not permitted");
     }
+
+    private record DomainSwitchHead(long rowVersion, OffsetDateTime voidedAt) {}
 
     private static String sha256(String value) {
         try {

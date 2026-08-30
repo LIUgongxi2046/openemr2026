@@ -8,11 +8,14 @@ import org.openemr2026.agent.MedicalAgentHarnessService.AgentFamilyView;
 import org.openemr2026.agent.MedicalAgentHarnessService.CreateRunCommand;
 import org.openemr2026.agent.MedicalAgentHarnessService.RunContext;
 import org.openemr2026.agent.MedicalAgentHarnessService.RunView;
+import org.openemr2026.agent.MedicalAgentHarnessService.RetryRunCommand;
 import org.openemr2026.contracts.MedicalAgentChildRunWire;
 import org.openemr2026.contracts.MedicalAgentFamilyWire;
 import org.openemr2026.contracts.MedicalAgentReleaseWire;
 import org.openemr2026.contracts.MedicalAgentRunCreateRequestWire;
+import org.openemr2026.contracts.MedicalAgentRunCancelRequestWire;
 import org.openemr2026.contracts.MedicalAgentRunEventWire;
+import org.openemr2026.contracts.MedicalAgentRunRetryRequestWire;
 import org.openemr2026.contracts.MedicalAgentRunWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -96,6 +99,46 @@ final class MedicalAgentHarnessController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(wire(harness.run(identity.tenantId(), runId)));
     }
 
+    @PostMapping("/runs/{runId}/cancellations")
+    ResponseEntity<MedicalAgentRunWire> cancel(
+            HttpServletRequest request,
+            @PathVariable UUID runId,
+            @RequestBody MedicalAgentRunCancelRequestWire requestWire) {
+        ClinicalIdentity preliminary = security.authenticate(request);
+        RunContext context = harness.context(preliminary.tenantId(), runId);
+        ClinicalIdentity identity = security.authorize(request, context.organizationId(), context.facilityId(),
+                context.patientId(), context.encounterId());
+        RunView run = harness.requestCancellation(
+                identity, runId, requestWire.expectedRowVersion(), requestWire.reason());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(wire(run));
+    }
+
+    @PostMapping("/runs/{runId}/retries")
+    ResponseEntity<MedicalAgentRunWire> retry(
+            HttpServletRequest request,
+            @PathVariable UUID runId,
+            @RequestHeader("X-Context-Lease-Id") UUID leaseHeader,
+            @RequestBody MedicalAgentRunRetryRequestWire requestWire) {
+        if (!leaseHeader.equals(requestWire.contextLeaseId())) {
+            throw new AgentRunException("CONTEXT_NOT_PERMITTED", 403,
+                    "The requested medical-agent context is not permitted");
+        }
+        ClinicalIdentity preliminary = security.authenticate(request);
+        RunContext context = harness.context(preliminary.tenantId(), runId);
+        if (!context.organizationId().equals(requestWire.organizationId())
+                || !context.facilityId().equals(requestWire.facilityId())) {
+            throw new AgentRunException("CONTEXT_NOT_PERMITTED", 403,
+                    "The requested medical-agent context is not permitted");
+        }
+        ClinicalIdentity identity = security.authorize(request, context.organizationId(), context.facilityId(),
+                context.patientId(), context.encounterId());
+        RunView run = harness.retry(identity, runId, new RetryRunCommand(
+                requestWire.organizationId(), requestWire.facilityId(), requestWire.contextLeaseId(),
+                requestWire.expectedRowVersion()));
+        return ResponseEntity.accepted().location(URI.create("/api/v1/medical-agents/runs/" + run.runId()))
+                .cacheControl(CacheControl.noStore()).body(wire(run));
+    }
+
     private static MedicalAgentFamilyWire wire(AgentFamilyView family) {
         return new MedicalAgentFamilyWire(wire(family.mainAgent()),
                 family.childAgents().stream().map(MedicalAgentHarnessController::wire).toList());
@@ -116,7 +159,9 @@ final class MedicalAgentHarnessController {
                 run.patientId(), run.encounterId(), run.targetType(), run.targetId(), run.objective(),
                 MedicalAgentRunWire.StateValue.valueOf(run.state()), run.sequence(), run.output(),
                 run.createdAt().toInstant(), run.completedAt() == null ? null : run.completedAt().toInstant(),
-                run.rowVersion(), run.childRuns().stream().map(child -> new MedicalAgentChildRunWire(
+                run.rowVersion(), run.attempt(), run.maxAttempts(),
+                run.cancelRequestedAt() == null ? null : run.cancelRequestedAt().toInstant(), run.failureCode(),
+                run.childRuns().stream().map(child -> new MedicalAgentChildRunWire(
                         child.childRunId(), child.childAgentCode(), child.displayName(), child.displayRole(),
                         child.currentAction(), child.contributionLabel(),
                         MedicalAgentChildRunWire.StateValue.valueOf(child.state()), child.critical(),

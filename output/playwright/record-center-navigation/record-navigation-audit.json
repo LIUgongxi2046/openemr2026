@@ -1,0 +1,71 @@
+{
+  "run_at": "2026-08-30T15:03:32.809Z",
+  "checks": [
+    {
+      "name": "desktop-position-and-name",
+      "status": "PASS",
+      "topbarBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 58
+      },
+      "navBox": {
+        "x": 220,
+        "y": 58,
+        "width": 1220,
+        "height": 48
+      },
+      "headingBox": {
+        "x": 242,
+        "y": 126.5,
+        "width": 462,
+        "height": 29
+      }
+    },
+    {
+      "name": "route-record",
+      "status": "PASS",
+      "active": "病历工作台"
+    },
+    {
+      "name": "route-record-editor",
+      "status": "PASS",
+      "active": "专注编辑"
+    },
+    {
+      "name": "route-record-sources",
+      "status": "PASS",
+      "active": "来源与附件"
+    },
+    {
+      "name": "route-record-qc",
+      "status": "PASS",
+      "active": "质控与审签"
+    },
+    {
+      "name": "route-record-versions",
+      "status": "PASS",
+      "active": "版本证据"
+    },
+    {
+      "name": "route-lis-report",
+      "status": "PASS",
+      "active": "LIS 报告"
+    },
+    {
+      "name": "route-pacs-viewer",
+      "status": "PASS",
+      "active": "PACS 影像"
+    },
+    {
+      "name": "mobile-scrollable-navigation",
+      "status": "PASS",
+      "clientWidth": 390,
+      "scrollWidth": 651,
+      "overflowX": "auto"
+    }
+  ],
+  "findings": [],
+  "passed": true
+}

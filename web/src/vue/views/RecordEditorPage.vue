@@ -2,8 +2,9 @@
 import { computed, ref, watch } from 'vue';
 import type { QualityFindingWire } from '../../generated/contracts';
 import { runQualityChecks, saveDocumentDraft, signDocument } from '../../clinical-api';
-import { developmentCopy } from '../../development-copy';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import RecordPatientStrip from '../components/RecordPatientStrip.vue';
 import { toClinicalIssue } from '../clinical-error';
 import { useCurrentDocument } from '../composables/use-current-document';
 
@@ -21,6 +22,20 @@ const busy = ref<string | null>(null);
 const notice = ref('');
 const savedAt = ref('');
 const saveState = ref<'idle' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'signed'>('idle');
+const saveDialogOpen = ref(false);
+const signDialogOpen = ref(false);
+const activeSection = ref('present_illness');
+
+const outlineSections = [
+  ['chief_complaint', '主诉', '完成', 'green'],
+  ['present_illness', '现病史', '当前', 'blue'],
+  ['present_illness', '既往史', '已纳入', 'green'],
+  ['assessment', '体格检查', '待确认', 'amber'],
+  ['assessment', '辅助检查', '待引用', 'amber'],
+  ['assessment', '诊断评估', '完成', 'green'],
+  ['treatment_plan', '治疗计划', '待确认', 'amber'],
+  ['treatment_plan', '复诊计划', '待完善', 'red'],
+] as const;
 
 const issue = computed(() => current.error.value ? toClinicalIssue(current.error.value) : null);
 const document = computed(() => current.data.value?.document);
@@ -44,12 +59,17 @@ function updateSection(field: string, event: Event) {
   saveState.value = document.value?.status === 'DRAFT' ? 'dirty' : saveState.value;
 }
 
-async function save() {
+function save() {
+  if (saveState.value === 'dirty') saveDialogOpen.value = true;
+}
+
+async function confirmSave() {
   const snapshot = current.data.value;
   if (!snapshot || busy.value || snapshot.document.status !== 'DRAFT') return;
   busy.value = 'save'; notice.value = ''; saveState.value = 'saving';
   try {
     await saveDocumentDraft(snapshot.lease, snapshot.document, sections.value);
+    saveDialogOpen.value = false;
     await current.refetch();
     saveState.value = 'saved';
     savedAt.value = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date());
@@ -75,12 +95,22 @@ function checkQuality() {
 }
 
 function sign() {
+  signDialogOpen.value = true;
+}
+
+function focusSection(field: string) {
+  activeSection.value = field;
+  window.document.getElementById(`record-field-${field}`)?.focus();
+}
+
+function confirmSign() {
   const snapshot = current.data.value;
   if (!snapshot || busy.value) return;
   busy.value = 'sign'; notice.value = '';
   signDocument(snapshot.lease, snapshot.document, '医生在专注编辑器中复核后签署')
     .then(async (evidence) => {
       notice.value = `签署证据已创建：${evidence.signature_status}`;
+      signDialogOpen.value = false;
       await current.refetch();
     })
     .catch((error) => { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; })
@@ -90,41 +120,20 @@ function sign() {
 
 <template>
   <section data-page-root class="content vue-native-page">
-    <div class="page-heading"><div><p class="eyebrow">门诊 / 专注编辑</p><h1>门诊病历 · 专注编辑</h1></div>
-      <div class="status-legend" :class="`save-${saveState}`"><span class="dot" :class="saveState === 'saved' || saveState === 'signed' ? 'success' : saveState === 'conflict' ? 'danger' : 'warning'" />{{ saveStateLabel }}<small v-if="savedAt"> · {{ savedAt }}</small></div></div>
-    <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
-      <div><strong>{{ developmentCopy.patientName }}</strong><span>{{ developmentCopy.contextNotice }}</span></div><dl>
-        <div><dt>患者标识</dt><dd>…{{ current.data.value?.lease.patient_id?.slice(-6) }}</dd></div>
-        <div><dt>就诊类型</dt><dd>门诊 · 进行中</dd></div>
-        <div><dt>数据范围</dt><dd>当前患者 / 当前就诊</dd></div></dl>
-      <span v-if="current.data.value" class="lease-badge">受控租约</span></section>
+    <div class="page-heading"><div><h1>门诊病历 · 专注编辑</h1><p>{{ document ? `草稿 v${document.version_no}` : '当前版本' }} · 心内科门诊模板 · {{ saveStateLabel }}</p></div>
+      <div class="toolbar-actions"><RouterLink class="btn" to="/record-sources">来源证据</RouterLink><button class="btn" type="button" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">质控 {{ findings.length }}</button><button class="btn primary" type="button" :disabled="Boolean(busy) || document?.status !== 'DRAFT' || saveState === 'dirty'" @click="sign">提交审签</button></div></div>
+    <RecordPatientStrip />
     <ClinicalPageState v-if="current.isPending.value" kind="loading" message="正在加载当前病历版本" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="current.refetch()" />
-    <div v-else-if="document && current.data.value" class="clinical-grid">
-      <section class="editor-card" aria-label="专注编辑器">
-        <div class="card-toolbar"><div><h2>门诊病历</h2>
-          <span class="state-chip" :class="{ signed: document.status === 'SIGNED' }">{{ document.status === 'SIGNED' ? '已签署' : `草稿 v${document.version_no}` }}</span></div>
-          <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">运行质控</button>
-            <button class="button primary" :disabled="Boolean(busy) || document.status === 'SIGNED' || saveState === 'saving' || saveState === 'conflict'" @click="save">{{ saveState === 'saving' ? '保存中…' : '立即保存' }}</button></div></div>
-        <div v-if="notice" class="notice" role="status">{{ notice }}</div>
-        <div v-if="saveState === 'conflict'" class="draft-conflict-panel" style="margin: 14px; padding: 14px; color: #8e2626; border: 1px solid #efb6bb; border-radius: 8px; background: #fff7f7;" role="alert"><strong>版本冲突：系统已禁止覆盖</strong><p style="margin: 6px 0 0; color: #6f4650; font-size: 12px;">其他工作站已保存新版本，本地编辑基于旧版本，请刷新后基于当前版本继续。</p></div>
-        <div v-if="filledSections === 0" class="empty-state" style="padding: 18px"><span>章</span><p>当前版本尚无已填写章节</p><small>在下方章节中开始书写，保存会形成不可变草稿版本。</small></div>
-        <div class="document-meta"><span>文书类型：{{ document.document_type_code }}</span><span>内容哈希：{{ document.content_hash.slice(0, 12) }}…</span><span>当前版本 v{{ document.version_no }} · 行版本 {{ document.row_version }}</span><span>自动合并：禁用</span></div>
-        <form class="record-form" @submit.prevent><label v-for="field in sectionFields" :key="field[0]" class="field-group"><span>{{ field[1] }}</span>
-          <textarea :value="String(sections[field[0]] ?? '')" :rows="field[2]" :readonly="document.status === 'SIGNED' || saveState === 'conflict'" @input="updateSection(field[0], $event)" />
-          <small>保存形成不可变草稿版本；签署后不可修改。</small></label></form>
-      </section>
-      <aside class="right-rail" aria-label="质控与签署"><section class="side-card"><div class="side-card-title"><h2>病历质控</h2><span>{{ findings.length }}</span></div>
-        <div v-if="findings.length === 0" class="empty-state"><span>✓</span><p>尚无未处理发现</p><small>保存后运行确定性质控</small></div>
-        <article v-for="finding in findings" v-else :key="finding.finding_id" class="finding" :class="finding.severity.toLowerCase()"><strong>{{ finding.severity }}</strong><p>{{ finding.message }}</p><code>{{ finding.field_path }}</code></article>
-        <button class="button danger full" :disabled="Boolean(busy) || document.status === 'SIGNED' || saveState === 'dirty' || saveState === 'saving' || saveState === 'conflict'" @click="sign">{{ document.status === 'SIGNED' ? '病历已签署' : '签署当前版本' }}</button>
-        <RouterLink class="record-governance-link" style="display: block; margin-top: 12px; color: #1769e0; font-size: 11px; font-weight: 700;" to="/record-qc">查看完整质控与签名证据</RouterLink></section>
-        <section class="side-card"><div class="side-card-title"><h2>编辑边界</h2><span>3</span></div>
-          <ul style="padding-left: 18px; margin: 12px 0 0; color: #526275; font-size: 12px; line-height: 1.75;">
-            <li>只编辑当前患者 / 当前就诊的当前版本。</li>
-            <li>每次保存形成新版本，已签内容不可覆盖。</li>
-            <li>来源证据与 AI 候选在完整编辑工作台查看。</li>
-          </ul></section></aside>
+    <div v-else-if="document && current.data.value" class="focus-editor record-real-focus">
+      <aside class="focus-outline card"><div class="card-head">文书章节 <span class="sub">{{ Math.round((filledSections / sectionFields.length) * 100) }}%</span></div><button v-for="(item, index) in outlineSections" :key="`${item[0]}-${index}`" class="outline-item" :class="{ active: activeSection === item[0] && item[1] === '现病史' }" type="button" @click="focusSection(item[0])"><span>{{ index + 1 }}</span><b>{{ item[1] }}</b><em class="status" :class="item[3]">{{ item[2] }}</em></button></aside>
+      <section class="card focus-canvas" aria-label="专注编辑器"><div class="editor-ribbon"><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；加粗不进入临床正文。'"><b>B</b></button><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；斜体不进入临床正文。'"><i>I</i></button><button class="btn sm" type="button" @click="focusSection('assessment')">结构化字段</button><RouterLink class="btn sm" to="/record-sources">插入来源</RouterLink><button class="btn sm" type="button" @click="notice = 'AI 续写必须从 AI 医助发起并保留来源，当前未自动改写正文。'">AI 续写</button><span class="grow" /><span class="status green">● {{ savedAt || '当前版本已载入' }}</span></div>
+        <div v-if="notice" class="notice record-editor-notice" role="status">{{ notice }}</div><div v-if="saveState === 'conflict'" class="notice hard" role="alert"><div class="notice-title">版本冲突：系统已禁止覆盖</div>其他工作站已保存新版本，请刷新后基于当前版本继续。</div>
+        <article class="document-sheet"><h2>门诊病历</h2><p class="document-meta">当前患者 · 心血管内科 · {{ document.document_type_code }}</p><div v-for="field in sectionFields" :key="field[0]" class="doc-section"><b>{{ field[1] }}</b><textarea :id="`record-field-${field[0]}`" class="field textarea" :class="{ 'warning-field': field[0] === 'treatment_plan', 'source-field': field[0] === 'assessment' }" :value="String(sections[field[0]] ?? '')" :rows="field[2]" :readonly="document.status !== 'DRAFT' || saveState === 'conflict'" @focus="activeSection = field[0]" @input="updateSection(field[0], $event)" /></div></article>
+        <div class="footer-actions"><RouterLink class="btn" to="/record">退出并保存</RouterLink><span class="grow" /><RouterLink class="btn" to="/record-sources">核验来源</RouterLink><button class="btn" type="button" :disabled="Boolean(busy) || saveState !== 'dirty'" @click="save">{{ saveState === 'saving' ? '保存中…' : '保存新版本' }}</button><button class="btn primary" type="button" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">签署前检查</button></div></section>
+      <aside class="assist-rail"><RouterLink to="/record-sources"><b>源</b><span>来源</span></RouterLink><RouterLink to="/record-qc"><b>{{ findings.length }}</b><span>质控</span></RouterLink><RouterLink to="/record-versions"><b>v{{ document.version_no }}</b><span>版本</span></RouterLink><RouterLink to="/pacs-viewer"><b>影</b><span>影像</span></RouterLink></aside>
     </div>
+    <BusinessActionDialog :open="saveDialogOpen" title="保存病历编辑" description="编辑会以新的不可变草稿版本保存，旧版本不被覆盖。" eyebrow="病历 / 编辑确认" confirm-label="确认保存新版本" :busy="busy === 'save'" @cancel="saveDialogOpen = false" @confirm="confirmSave"><p class="dialog-warning">当前已填 {{ filledSections }} 个章节；保存后已有质控结果将按新内容重新计算。</p></BusinessActionDialog>
+    <BusinessActionDialog :open="signDialogOpen" title="签署当前不可变版本" description="服务端会重新校验质控、版本和签名策略。" eyebrow="病历 / 签署确认" confirm-label="确认签署并留存证据" danger :busy="busy === 'sign'" @cancel="signDialogOpen = false" @confirm="confirmSign"><p class="dialog-warning">签署后正文不可覆盖；修改只能通过更正/补记弹窗生成新版本。</p></BusinessActionDialog>
   </section>
 </template>

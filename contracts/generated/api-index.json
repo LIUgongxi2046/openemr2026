@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 449,
+  "operation_count": 488,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -238,6 +238,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:cancelClinicalOrder",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "cancelMedicalAgentRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-agents/runs/{run_id}/cancellations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalAgentRunCancelRequest",
+      "output_schema": "MedicalAgentRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:cancelMedicalAgentRun",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "cancelOutpatientFollowup",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/outpatient-followups/{followup_id}/cancellations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "OutpatientFollowupCancelRequest",
+      "output_schema": "OutpatientFollowup",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:cancelOutpatientFollowup",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -599,6 +633,57 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "correctDocumentSourceReference",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/documents/{document_id}/source-references/{source_reference_id}/corrections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DocumentSourceReferenceCorrectionRequest",
+      "output_schema": "DocumentSourceReference",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:correctDocumentSourceReference",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "correctEmergencyNursingNote",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-nursing-notes/{note_id}/corrections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyNursingNoteCorrectionRequest",
+      "output_schema": "EmergencyNursingNote",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:correctEmergencyNursingNote",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "correctEncounterDomainSwitch",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/encounter-domain-switches/{domain_switch_id}/corrections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EncounterDomainSwitchCorrectionRequest",
+      "output_schema": "EncounterDomainSwitch",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:correctEncounterDomainSwitch",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "correctPatientIdentity",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -612,6 +697,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:correctPatientIdentity",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "correctShiftHandover",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/shift-handovers/{handover_id}/corrections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ShiftHandoverCorrectionRequest",
+      "output_schema": "ShiftHandover",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:correctShiftHandover",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "correctShiftHandoverPatient",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/shift-handover-patients/{shift_handover_patient_id}/corrections",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ShiftHandoverPatientCorrectionRequest",
+      "output_schema": "ShiftHandoverPatient",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:correctShiftHandoverPatient",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -1320,6 +1439,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createMedicalRecordAssetDistributionPackage",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/distribution-packages",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetDistributionCreateRequest",
+      "output_schema": "MedicalRecordAssetDistributionPackage",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createMedicalRecordAssetDistributionPackage",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createMentalHealthEvidence",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -1622,6 +1758,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createPediatricTreatment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createPractitionerCredential",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/credentials",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PractitionerCredentialWriteRequest",
+      "output_schema": "PractitionerCredential",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createPractitionerCredential",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2172,6 +2325,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "deliverMedicalRecordAssetDistributionPackage",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/distribution-packages/{package_id}/deliveries",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetDistributionDeliveryRequest",
+      "output_schema": "MedicalRecordAssetDistributionPackage",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:deliverMedicalRecordAssetDistributionPackage",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "destroyResearchDatasetRequest",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2287,6 +2457,40 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:downloadArchiveExportContent",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "downloadMedicalRecordAssetContent",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-record-assets/{asset_id}/content",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "HTTP_200",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:downloadMedicalRecordAssetContent",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "downloadMedicalRecordAssetDistributionPackage",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-record-assets/{asset_id}/distribution-packages/{package_id}/content",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "HTTP_200",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:downloadMedicalRecordAssetDistributionPackage",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2712,6 +2916,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:getSystemReadiness",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "ingestMedicalRecordAsset",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/ingestions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetIngestRequest",
+      "output_schema": "MedicalRecordAsset",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:ingestMedicalRecordAsset",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3991,6 +4212,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listMedicalRecordAssetDistributionPackages",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-record-assets/{asset_id}/distribution-packages",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MedicalRecordAssetDistributionPackage[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMedicalRecordAssetDistributionPackages",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listMedicalRecordAssetIntegrityEvents",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/medical-record-assets/{asset_id}/integrity-events",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MedicalRecordAssetIntegrityEvent[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMedicalRecordAssetIntegrityEvents",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listMedicalRecordAssets",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -4786,6 +5041,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listPharmacyDispensings",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listPractitionerCredentials",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/admin/credentials",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "PractitionerCredential[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listPractitionerCredentials",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -6698,6 +6970,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "rescheduleAppointment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/appointments/{appointment_id}/reschedules",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "AppointmentRescheduleRequest",
+      "output_schema": "Appointment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:rescheduleAppointment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "resolveInfectionMonitoringEvent",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -6749,6 +7038,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "retireMedicalRecordAsset",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/retirements",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetRetireRequest",
+      "output_schema": "MedicalRecordAsset",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:retireMedicalRecordAsset",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "retirePromptRelease",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -6796,6 +7102,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:retryDocumentCorrectionPropagation",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "retryMedicalAgentRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-agents/runs/{run_id}/retries",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalAgentRunRetryRequest",
+      "output_schema": "MedicalAgentRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:retryMedicalAgentRun",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -6902,6 +7225,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "revokeDocumentSourceReference",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/documents/{document_id}/source-references/{source_reference_id}/revocations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DocumentEvidenceLifecycleRequest",
+      "output_schema": "DocumentSourceReference",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:revokeDocumentSourceReference",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "revokePractitionerCredential",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/credentials/{credential_id}/revoke",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PractitionerCredentialRevokeRequest",
+      "output_schema": "PractitionerCredential",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:revokePractitionerCredential",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "rollbackCapabilityPackRelease",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -6952,6 +7309,23 @@
       "rate_limit": "policy:runDocumentQualityChecks",
       "version": "0.1.0",
       "status": "EXPLICIT_S005"
+    },
+    {
+      "operation_id": "runMedicalRecordAssetOcr",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/ocr-runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetActionRequest",
+      "output_schema": "MedicalRecordAsset",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:runMedicalRecordAssetOcr",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
     },
     {
       "operation_id": "saveDocumentDraft",
@@ -7298,6 +7672,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "testModelDeploymentConnection",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/model-deployments/{model_deployment_id}/connection-tests",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ModelDeploymentConnectionTestRequest",
+      "output_schema": "ModelDeployment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:testModelDeploymentConnection",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "transferClinicalTask",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7485,6 +7876,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "updateClinicalOrderDraft",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/orders/{order_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ClinicalOrderCreateRequest",
+      "output_schema": "ClinicalOrder",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateClinicalOrderDraft",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "updateConfiguration",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "PUT",
@@ -7498,6 +7906,57 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:updateConfiguration",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateEmergencyPreadmission",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/emergency-preadmissions/{preadmission_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyPreadmissionUpdateRequest",
+      "output_schema": "EmergencyPreadmission",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateEmergencyPreadmission",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateMedicalRecordAsset",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/medical-record-assets/{asset_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetUpdateRequest",
+      "output_schema": "MedicalRecordAsset",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateMedicalRecordAsset",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateMedicalRecordAssetBorrow",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/medical-record-assets/{asset_id}/borrow",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetBorrowUpdateRequest",
+      "output_schema": "MedicalRecordAsset",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateMedicalRecordAssetBorrow",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7519,6 +7978,74 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "updateOutpatientFollowup",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/outpatient-followups/{followup_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "OutpatientFollowupUpdateRequest",
+      "output_schema": "OutpatientFollowup",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateOutpatientFollowup",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updatePharmacyDispensing",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/pharmacy-dispensings/{dispensing_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PharmacyDispensingUpdateRequest",
+      "output_schema": "PharmacyDispensing",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updatePharmacyDispensing",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updatePractitionerCredential",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/admin/credentials/{credential_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PractitionerCredentialWriteRequest",
+      "output_schema": "PractitionerCredential",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updatePractitionerCredential",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateReferralDraft",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PATCH",
+      "path": "/referrals/{referral_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ReferralUpdateRequest",
+      "output_schema": "Referral",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateReferralDraft",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "uploadDocumentAttachment",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7536,6 +8063,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "verifyMedicalRecordAssetIntegrity",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/integrity-events",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetIntegrityCheckRequest",
+      "output_schema": "MedicalRecordAssetIntegrityEvent",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:verifyMedicalRecordAssetIntegrity",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "verifyMedicalRecordAssetStorage",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/medical-record-assets/{asset_id}/storage-verifications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "MedicalRecordAssetActionRequest",
+      "output_schema": "MedicalRecordAssetIntegrityEvent",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:verifyMedicalRecordAssetStorage",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "viewClinicalTask",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7549,6 +8110,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:viewClinicalTask",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidDocument",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/documents/{document_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DocumentVoidRequest",
+      "output_schema": "DocumentVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidDocument",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidDocumentAttachment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/documents/{document_id}/attachments/{attachment_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DocumentEvidenceLifecycleRequest",
+      "output_schema": "DocumentAttachment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidDocumentAttachment",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7587,6 +8182,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "voidEmergencyPreadmission",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-preadmissions/{preadmission_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyPreadmissionVoidRequest",
+      "output_schema": "EmergencyPreadmission",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyPreadmission",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "voidEmergencyResuscitation",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7621,6 +8233,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "voidEncounterDomainSwitch",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/encounter-domain-switches/{domain_switch_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EncounterDomainSwitchVoidRequest",
+      "output_schema": "EncounterDomainSwitch",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEncounterDomainSwitch",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidPharmacyDispensing",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pharmacy-dispensings/{dispensing_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PharmacyDispensingVoidRequest",
+      "output_schema": "PharmacyDispensing",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidPharmacyDispensing",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "voidShiftHandover",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7634,6 +8280,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:voidShiftHandover",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidShiftHandoverPatient",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/shift-handover-patients/{shift_handover_patient_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ShiftHandoverPatientVoidRequest",
+      "output_schema": "ShiftHandoverPatient",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidShiftHandoverPatient",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

@@ -1,0 +1,173 @@
+- generic: 交互原型 · 合成数据 · 非生产系统
+- banner:
+  - generic: +
+  - text: openemr2026
+  - generic: OPEN MEDICAL RECORD
+  - generic: 江城大学附属医院⌄
+  - generic: 管理与治理工作台⌄
+  - text: ⌕
+  - textbox "搜索患者、任务或功能"
+  - button "✦"
+  - button "?"
+  - button "♢"
+  - generic: 林
+  - text: 林医生
+  - text: 今日 08:00–17:00
+- complementary:
+  - generic: 临床工作域
+  - button "⌂ 临床业务门户":
+    - generic: ⌂
+    - generic: 临床业务门户
+  - button "◫ 门诊工作台 6":
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - button "✚ 急诊工作台 6":
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "6"
+  - button "▥ 住院工作站 5":
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - button "专 核心专科工作台 10":
+    - generic: 专
+    - generic: 核心专科工作台
+    - generic: "10"
+  - generic: 病历与质量
+  - button "▤ 全院病历中心 3":
+    - generic: ▤
+    - generic: 全院病历中心
+    - generic: "3"
+  - button "◈ 医疗质量中心 7":
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - button "▣ 病案资产中心 3":
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - generic: 业务协同
+  - button "✚ 诊疗执行中心 12":
+    - generic: ✚
+    - generic: 诊疗执行中心
+    - generic: "12"
+  - button "☑ 任务与临床路径 9":
+    - generic: ☑
+    - generic: 任务与临床路径
+    - generic: "9"
+  - generic: 平台中心
+  - button "⌁ 数据中心 6":
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - button "✦ AI 中心 4":
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "4"
+  - generic: 管理与配置
+  - button "⌘ 业务配置":
+    - generic: ⌘
+    - generic: 业务配置
+  - button "⚙ 系统管理 7":
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - generic: 医疗质量中心
+  - button "质量总览"
+  - button "院科质控"
+  - button "评级取证"
+  - button "院感事件"
+  - button "临床资质"
+  - heading "医疗质量与电子病历评级看板" [level=1]
+  - paragraph: 39 项评价的功能、应用范围、四维数据质量和证据快照
+  - button "导出清单"
+  - button "生成本期证据快照"
+  - generic: 项目映射
+  - generic: 39/39
+  - generic: 可下钻到业务对象
+  - generic: 有效应用达标
+  - generic: "31"
+  - generic: 可下钻到业务对象
+  - generic: 待整改
+  - generic: "8"
+  - generic: 可下钻到业务对象
+  - generic: 证据缺口
+  - generic: "3"
+  - generic: 可下钻到业务对象
+  - text: 当前工作队列
+  - generic: 合成业务数据
+  - table:
+    - rowgroup:
+      - row "对象 关键资料 进度/来源 状态":
+        - columnheader "对象"
+        - columnheader "关键资料"
+        - columnheader "进度/来源"
+        - columnheader "状态"
+    - rowgroup:
+      - row "高风险待办 7 较昨日 +2 需处理":
+        - cell "高风险待办"
+        - cell "7"
+        - cell "较昨日 +2"
+        - cell "需处理":
+          - generic: 需处理
+      - row "规则覆盖率 98.6% 3 个来源延迟 降级":
+        - cell "规则覆盖率"
+        - cell "98.6%"
+        - cell "3 个来源延迟"
+        - cell "降级":
+          - generic: 降级
+      - row "本月闭环率 94.2% 目标 ≥96% 观察":
+        - cell "本月闭环率"
+        - cell "94.2%"
+        - cell "目标 ≥96%"
+        - cell "观察":
+          - generic: 观察
+  - generic: "1"
+  - text: 选择业务对象
+  - generic: ›
+  - generic: "2"
+  - text: 核验上下文
+  - generic: ›
+  - generic: "3"
+  - text: 执行处理
+  - generic: ›
+  - generic: "4"
+  - text: 复核结果
+  - generic: ›
+  - generic: "5"
+  - text: 完成或恢复
+  - complementary:
+    - generic: 安全与恢复
+    - generic: 发现 1 项需要人工核验的高风险差异
+    - text: 系统保留原对象与处理证据，不以页面操作直接覆盖临床事实。
+    - text: 责任角色
+    - generic: 已按岗位授权
+    - text: 当前范围
+    - generic: 本机构 / 当前业务对象
+    - text: 版本
+    - generic: v2026.08
+    - text: 审计
+    - generic: 完整
+    - text: 失败恢复
+    - generic: 可重试/回退
+    - button "进入处理详情"
+- generic: ✦ OPENEMR AI
+- generic: AI医助小南
+- generic: 未选择患者 · 不读取病历正文
+- button "×"
+- generic: 安全空上下文
+- text: 选择患者和就诊后才会组装最小必要临床资料。当前可以询问功能使用、配置解释和任务导航。
+- button "我能做什么？"
+- button "解释当前页面"
+- button "查找功能入口"
+- generic: AI 建议始终显示来源、版本和失效条件，不会自动签署、开药或执行医嘱。
+- textbox "询问当前页面或当前患者……"
+- button "🎙"
+- button "完整工作区"
+- button "发送"
+- button "打开 AI医助小南":
+  - generic: ✦
+  - generic: AI医助小南
+  - generic: "3"

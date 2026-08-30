@@ -9,6 +9,7 @@ import {
   searchPatientsForAdmission, selectInpatientContext,
 } from '../../clinical-api';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const router = useRouter();
@@ -36,6 +37,7 @@ const candidates = ref<PatientSummaryWire[]>([]);
 const selectedPatient = ref<PatientSummaryWire | null>(null);
 const selectedBedId = ref('');
 const pendingEncounterId = ref('');
+const admissionDialogOpen = ref(false);
 const admittedAtLocal = ref(toLocalInput(new Date()));
 const registration = reactive({
   admissionSource: 'OUTPATIENT' as 'OUTPATIENT' | 'EMERGENCY' | 'TRANSFER' | 'OTHER',
@@ -54,6 +56,10 @@ const occupiedBeds = computed(() => beds.value.filter((bed) => bed.occupancy_sta
 const occupancyPercent = computed(() => beds.value.length ? Math.round(occupiedBeds.value.length / beds.value.length * 100) : 0);
 const pendingTasks = computed(() => worklist.value.reduce((total, item) => total + item.pending_task_count, 0));
 const selectedBed = computed(() => beds.value.find((bed) => bed.bed_id === selectedBedId.value) ?? null);
+const admissionReady = computed(() => Boolean(selectedPatient.value && selectedBed.value && admittedAtLocal.value
+  && registration.diagnosisText.trim() && registration.contactName.trim()
+  && registration.contactRelationship.trim() && registration.contactPhone.trim()
+  && (registration.admissionSource !== 'TRANSFER' || registration.transferFrom.trim())));
 
 async function search() {
   if (busy.value || searchQuery.value.trim().length < 1) return;
@@ -108,6 +114,7 @@ async function admit() {
       },
     );
     notice.value = `${overview.patient_display_name} 已入住 ${overview.ward_display_name} ${overview.bed_label}床；入院任务、审计与事件已同事务建立。`;
+    admissionDialogOpen.value = false;
     await desk.refetch();
     await router.push('/inpatient-overview');
   } catch (error) {
@@ -134,7 +141,7 @@ function formatDate(value?: string | null) {
   <section data-page-root class="content vue-native-page admission-bed-page">
     <div class="page-heading admission-heading">
       <div><p class="eyebrow">住院 / 入院与床位</p><h1>入院、病区与床位管理</h1><p>患者身份核验、住院就诊、床位占用、入院任务与审计证据在服务端完成一致性校验。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="desk.isFetching.value" @click="desk.refetch()">刷新床位</button><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="desk.isFetching.value" @click="desk.refetch()">刷新床位</button><button class="button primary" @click="admissionDialogOpen = true">办理新入院</button><RouterLink class="button secondary" to="/inpatient">返回住院工作站</RouterLink></div>
     </div>
 
     <ClinicalPageState v-if="desk.isPending.value" kind="loading" message="正在核验病区岗位、床位占用与住院队列" />
@@ -171,8 +178,15 @@ function formatDate(value?: string | null) {
         </section>
 
         <aside class="admission-panel">
-          <header><div><p class="eyebrow">身份核验后入床</p><h2>办理新入院</h2></div><span>两步可恢复</span></header>
-          <form @submit.prevent="admit">
+          <header><div><p class="eyebrow">身份核验后入床</p><h2>办理新入院</h2></div><span>弹窗登记</span></header>
+          <section class="admission-safety"><strong>真实入院流程</strong><ul><li>在床位图先选择空床，再通过弹窗检索并核验患者</li><li>住院就诊、床位占用和入院任务由后端同事务建立</li><li>并发抢床由数据库唯一约束阻断</li><li>已占床患者点击后切换为明确患者上下文</li></ul></section>
+          <div class="admission-selection" :class="{ ready: selectedBed }"><strong>{{ selectedBed ? `${selectedBed.display_bed_no}床已选择` : '尚未选择空床' }}</strong><small>{{ selectedBed ? `${selectedBed.facility_name} · ${selectedBed.ward_name}` : '请在左侧床位图选择可用床位' }}</small></div>
+          <button class="button primary full" :disabled="!selectedBed" @click="admissionDialogOpen = true">打开入院登记弹窗</button>
+        </aside>
+      </div>
+
+      <BusinessActionDialog :open="admissionDialogOpen" title="办理新入院" description="患者身份核验、住院就诊、床位占用、文书任务、审计和 Outbox 将形成真实业务闭环。" confirm-label="核验并确认入院" :busy="busy === 'admit'" :confirm-disabled="!admissionReady" width="wide" @cancel="admissionDialogOpen = false" @confirm="admit">
+          <div class="admission-dialog-form">
             <label>检索患者
               <div class="admission-search"><input v-model="searchQuery" maxlength="80" placeholder="姓名或患者标识" /><button class="button secondary" type="button" :disabled="busy === 'search' || !searchQuery.trim()" @click="search">{{ busy === 'search' ? '检索中…' : '检索' }}</button></div>
             </label>
@@ -196,11 +210,9 @@ function formatDate(value?: string | null) {
             <label v-if="registration.admissionSource === 'TRANSFER'">转出医疗机构<input v-model="registration.transferFrom" maxlength="256" required /></label>
             <label>登记备注<textarea v-model="registration.remarks" maxlength="1000" rows="2"></textarea></label>
             <div v-if="pendingEncounterId" class="admission-recovery"><strong>住院就诊已建立</strong><small>…{{ pendingEncounterId.slice(-8) }}；如入床冲突，可选择其他空床后重试，不重复建就诊。</small></div>
-            <button class="button primary" :disabled="Boolean(busy) || !selectedPatient || !selectedBed || !admittedAtLocal || !registration.diagnosisText.trim() || !registration.contactName.trim() || !registration.contactRelationship.trim() || !registration.contactPhone.trim()">{{ busy === 'admit' ? '正在创建住院事实…' : '核验并确认入院' }}</button>
-          </form>
-          <section class="admission-safety"><strong>安全与恢复</strong><ul><li>患者搜索不返回未授权病历正文</li><li>住院就诊创建后入床失败可继续重试</li><li>已占床患者点击后切换为明确患者上下文</li><li>入院成功后自动进入住院患者总览</li></ul></section>
-        </aside>
-      </div>
+            <p class="dialog-warning">确认按钮仅在患者、空床、诊断与联系人信息完整时生效；缺少必填信息时后端仍会拒绝提交。</p>
+          </div>
+      </BusinessActionDialog>
     </template>
   </section>
 </template>

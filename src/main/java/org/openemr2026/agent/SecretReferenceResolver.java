@@ -6,12 +6,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
 
-final class SecretReferenceResolver {
+public final class SecretReferenceResolver {
 
     private static final Pattern ENV_KEY = Pattern.compile("[A-Z][A-Z0-9_]{2,127}");
     private static final long MAX_SECRET_FILE_BYTES = 65_536;
 
-    String resolve(String reference) {
+    public String resolve(String reference) {
         if (reference == null || reference.isBlank()) {
             throw new ModelProviderUnavailableException("MODEL_PROVIDER_SECRET_UNAVAILABLE");
         }

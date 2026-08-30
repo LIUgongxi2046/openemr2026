@@ -11,6 +11,7 @@ import org.openemr2026.contracts.AppointmentBookRequestWire;
 import org.openemr2026.contracts.AppointmentCancelRequestWire;
 import org.openemr2026.contracts.AppointmentCheckInRequestWire;
 import org.openemr2026.contracts.AppointmentConsultRequestWire;
+import org.openemr2026.contracts.AppointmentRescheduleRequestWire;
 import org.openemr2026.contracts.AppointmentWire;
 import org.openemr2026.contracts.ScheduleSlotCreateRequestWire;
 import org.openemr2026.contracts.ScheduleSlotWire;
@@ -127,6 +128,64 @@ final class AppointmentSchedulingApiTest {
                 new AppointmentBookRequestWire(organization, facility, patient, slot.scheduleSlotId(),
                         AppointmentBookRequestWire.SourceValue.APPOINTMENT));
         assertThat(rebooked.status()).isEqualTo(AppointmentWire.StatusValue.BOOKED);
+    }
+
+    @Test
+    void givenBookedAppointment_whenRescheduled_thenCapacityMovesAtomicallyAndEventIsPreserved() {
+        ScheduleSlotWire original = createSlot(1);
+        ScheduleSlotWire replacement = createSlot(1);
+        AppointmentWire booked = appointments.bookAppointment(identity(), "book-" + UUID.randomUUID(),
+                new AppointmentBookRequestWire(organization, facility, patient, original.scheduleSlotId(),
+                        AppointmentBookRequestWire.SourceValue.APPOINTMENT));
+
+        AppointmentWire moved = appointments.rescheduleAppointment(identity(), "reschedule-" + UUID.randomUUID(),
+                booked.appointmentId(), new AppointmentRescheduleRequestWire(
+                        organization, facility, patient, replacement.scheduleSlotId(), booked.rowVersion(),
+                        "患者时间冲突，改约下一时段"));
+
+        assertThat(moved.scheduleSlotId()).isEqualTo(replacement.scheduleSlotId());
+        assertThat(moved.status()).isEqualTo(AppointmentWire.StatusValue.BOOKED);
+        assertThat(moved.rowVersion()).isEqualTo(booked.rowVersion() + 1);
+        assertThat(jdbc.sql("""
+                select booked_count from schedule_slot
+                where tenant_id = cast(:tenant as uuid) and schedule_slot_id = :slot
+                """).param("tenant", TENANT).param("slot", original.scheduleSlotId())
+                .query(Integer.class).single()).isZero();
+        assertThat(jdbc.sql("""
+                select booked_count from schedule_slot
+                where tenant_id = cast(:tenant as uuid) and schedule_slot_id = :slot
+                """).param("tenant", TENANT).param("slot", replacement.scheduleSlotId())
+                .query(Integer.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("""
+                select count(*) from appointment_event
+                where tenant_id = cast(:tenant as uuid) and appointment_id = :appointment
+                  and event_type = 'RESCHEDULED'
+                """).param("tenant", TENANT).param("appointment", booked.appointmentId())
+                .query(Long.class).single()).isEqualTo(1);
+    }
+
+    @Test
+    void givenCheckedInAppointment_whenRescheduled_thenWorkflowRejectsTheEdit() {
+        ScheduleSlotWire original = createSlot(1);
+        ScheduleSlotWire replacement = createSlot(1);
+        AppointmentWire booked = appointments.bookAppointment(identity(), "book-" + UUID.randomUUID(),
+                new AppointmentBookRequestWire(organization, facility, patient, original.scheduleSlotId(),
+                        AppointmentBookRequestWire.SourceValue.APPOINTMENT));
+        appointments.checkIn(identity(), "checkin-" + UUID.randomUUID(), booked.appointmentId(),
+                new AppointmentCheckInRequestWire(organization, facility, patient, booked.rowVersion()));
+
+        assertThatThrownBy(() -> appointments.rescheduleAppointment(identity(), "reschedule-" + UUID.randomUUID(),
+                booked.appointmentId(), new AppointmentRescheduleRequestWire(
+                        organization, facility, patient, replacement.scheduleSlotId(), booked.rowVersion() + 1,
+                        "尝试跨过报到状态改约")))
+                .isInstanceOf(AppointmentException.class)
+                .satisfies(error -> assertThat(((AppointmentException) error).code())
+                        .isEqualTo("APPOINTMENT_STATE_INVALID"));
+        assertThat(jdbc.sql("""
+                select booked_count from schedule_slot
+                where tenant_id = cast(:tenant as uuid) and schedule_slot_id = :slot
+                """).param("tenant", TENANT).param("slot", replacement.scheduleSlotId())
+                .query(Integer.class).single()).isZero();
     }
 
     @Test

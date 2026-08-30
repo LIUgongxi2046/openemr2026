@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
-import type { ArchiveCaseWire } from '../../generated/contracts';
+import type { ArchiveCaseWire, MedicalRecordAssetWire } from '../../generated/contracts';
+import { issueMedicalRecordAssetLease, listMedicalRecordAssets } from '../../api/records';
 import { createArchiveCase, createArchiveExport, issueArchiveLease, loadArchiveReadiness, transitionArchiveCase } from '../../clinical-api';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -10,14 +12,38 @@ const busy = ref('');
 const notice = ref('');
 const reason = ref('病案管理复核完成');
 const purpose = ref('病案复印与院内复核');
+const actionDialog = ref<'create' | 'seal' | 'unseal' | 'export' | null>(null);
+const selectedAssetId = ref('');
+const searchText = ref('');
+const mediaFilter = ref('ALL');
+const integrityFilter = ref('ALL');
+
 const archiveQuery = useQuery({
   queryKey: ['clinical', 'archive-readiness'],
   queryFn: async () => { const lease = await issueArchiveLease(); return { lease, readiness: await loadArchiveReadiness(lease) }; },
   retry: false, staleTime: 0, gcTime: 0,
 });
-const issue = computed(() => archiveQuery.error.value ? toClinicalIssue(archiveQuery.error.value) : null);
+const assetsQuery = useQuery({
+  queryKey: ['clinical', 'medical-record-assets', 'overview'],
+  queryFn: async () => { const lease = await issueMedicalRecordAssetLease(); return { lease, assets: await listMedicalRecordAssets(lease) }; },
+  retry: false, staleTime: 0, gcTime: 0,
+});
+const issue = computed(() => archiveQuery.error.value ? toClinicalIssue(archiveQuery.error.value) : assetsQuery.error.value ? toClinicalIssue(assetsQuery.error.value) : null);
 const readiness = computed(() => archiveQuery.data.value?.readiness);
 const archiveCase = computed(() => readiness.value?.archive_case ?? null);
+const assets = computed(() => (assetsQuery.data.value?.assets ?? []).filter((asset) => asset.status !== 'RETIRED'));
+const filteredAssets = computed(() => assets.value.filter((asset) => {
+  const needle = searchText.value.trim().toLowerCase();
+  const matchesText = !needle || `${asset.display_name} ${asset.source_system} ${asset.medical_record_asset_id} ${asset.media_type}`.toLowerCase().includes(needle);
+  const matchesMedia = mediaFilter.value === 'ALL' || asset.asset_type === mediaFilter.value;
+  const matchesIntegrity = integrityFilter.value === 'ALL' || asset.integrity_status === integrityFilter.value;
+  return matchesText && matchesMedia && matchesIntegrity;
+}));
+const selectedAsset = computed<MedicalRecordAssetWire | null>(() => filteredAssets.value.find((asset) => asset.medical_record_asset_id === selectedAssetId.value) ?? filteredAssets.value[0] ?? null);
+const unavailableCount = computed(() => assets.value.filter((asset) => asset.storage_status === 'MISSING' || asset.integrity_status === 'FAILED').length);
+const cdaAssets = computed(() => assets.value.filter((asset) => asset.cda_status !== 'NOT_APPLICABLE'));
+const cdaRate = computed(() => cdaAssets.value.length ? Math.round(cdaAssets.value.filter((asset) => asset.cda_status === 'VERIFIED').length / cdaAssets.value.length * 1000) / 10 : 100);
+const fidelityRate = computed(() => assets.value.length ? Math.round(assets.value.filter((asset) => asset.storage_status !== 'MISSING').length / assets.value.length * 1000) / 10 : 100);
 
 async function execute(label: string, action: (archive: ArchiveCaseWire | null) => Promise<void>) {
   if (busy.value || !archiveQuery.data.value) return;
@@ -26,31 +52,45 @@ async function execute(label: string, action: (archive: ArchiveCaseWire | null) 
   catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
 }
-function createCase() { const data = archiveQuery.data.value; if (!data) return; void execute('archive', async () => { await createArchiveCase(data.lease); notice.value = '不可变病案清单已生成'; }); }
-function transition(action: 'seals' | 'unseals') { const data = archiveQuery.data.value; if (!data) return; void execute(action, async (current) => { if (current) await transitionArchiveCase(data.lease, current, action, reason.value); notice.value = action === 'seals' ? '病案已由独立岗位封存' : '病案已授权解封'; }); }
-function createExport() { const data = archiveQuery.data.value; if (!data) return; void execute('export', async (current) => { if (current) await createArchiveExport(data.lease, current, purpose.value); notice.value = '独立可读导出包已固化'; }); }
-function encounterLabel(value: string) { return ({ PLANNED: '计划中', IN_PROGRESS: '进行中', FINISHED: '已结束', CANCELLED: '已取消' } as Record<string, string>)[value] || value; }
+function openArchiveAction() {
+  if (!archiveCase.value) actionDialog.value = 'create';
+  else if (archiveCase.value.status !== 'SEALED') actionDialog.value = 'seal';
+  else actionDialog.value = 'export';
+}
+function createCase() { const data = archiveQuery.data.value; if (!data) return; void execute('archive', async () => { await createArchiveCase(data.lease); actionDialog.value = null; notice.value = '不可变病案清单已生成'; }); }
+function transition(action: 'seals' | 'unseals') { const data = archiveQuery.data.value; if (!data) return; void execute(action, async (current) => { if (current) await transitionArchiveCase(data.lease, current, action, reason.value); actionDialog.value = null; notice.value = action === 'seals' ? '病案已由独立岗位封存' : '病案已授权解封'; }); }
+function createExport() { const data = archiveQuery.data.value; if (!data) return; void execute('export', async (current) => { if (current) await createArchiveExport(data.lease, current, purpose.value); actionDialog.value = null; notice.value = '独立可读导出包已固化'; }); }
 function archiveStatusLabel(value: string) { return ({ ARCHIVED: '已归档待封存', SEALED: '已封存', UNSEALED: '授权解封中' } as Record<string, string>)[value] || value; }
-function blockerLabel(value: string) { return ({ ENCOUNTER_NOT_FINISHED: '就诊尚未结束', ARCHIVE_DOCUMENT_REQUIRED: '缺少可归档病历', DOCUMENT_NOT_SIGNED: '当前版本未签署', DOCUMENT_QUALITY_NOT_PASSED: '当前内容质控未通过', SIGNATURE_EVIDENCE_REQUIRED: '缺少签名证据', SIGNATURE_EVIDENCE_NOT_VALID: '签名证据无效或待补齐' } as Record<string, string>)[value] || value; }
-function eventLabel(value: string) { return ({ ARCHIVED: '形成归档清单', SEALED: '完成职责分离封存', UNSEALED: '授权解封', EXPORT_CREATED: '固化独立导出包' } as Record<string, string>)[value] || value; }
-function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)); }
-function formatBytes(value: number) { return value < 1024 ? `${value} B` : `${(value / 1024).toFixed(1)} KB`; }
+function typeLabel(value: string) { return ({ PAPER: '纸质原件', SCAN: '扫描件', DIGITAL: '电子文书' } as Record<string, string>)[value] || value; }
+function integrityLabel(value: string) { return ({ PENDING: '待验真', VERIFIED: '验真通过', FAILED: '隔离' } as Record<string, string>)[value] || value; }
+function integrityClass(value: string) { return value === 'VERIFIED' ? 'green' : value === 'FAILED' ? 'red' : 'amber'; }
+function cdaLabel(value: string) { return ({ NOT_APPLICABLE: '不适用', PENDING: '待校验', VERIFIED: '模式+语义通过', FAILED: '校验失败' } as Record<string, string>)[value] || value; }
+function cdaClass(value: string) { return value === 'VERIFIED' || value === 'NOT_APPLICABLE' ? 'green' : value === 'FAILED' ? 'red' : 'amber'; }
 </script>
 
 <template>
-  <section data-page-root class="content archive-content vue-native-page"><div class="page-heading archive-heading"><div><p class="eyebrow">病历中心 / 病案资产</p><h1>病案归档与法律证据</h1><p>按当前签署版本形成不可变清单，并通过职责分离完成封存；导出包可脱离系统独立读取和校验。</p></div><RouterLink class="button secondary" to="/record">返回病历中心</RouterLink></div>
-    <ClinicalPageState v-if="archiveQuery.isPending.value" kind="loading" message="正在核验当前版本、质控与签名证据" />
-    <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="archiveQuery.refetch()" />
+  <section data-page-root class="content vue-native-page archive-prototype-page">
+    <div class="page-head">
+      <div class="page-title"><h1>病案资产与共享文档中心</h1><p>患者级电子文书、附件、扫描签字件、原格式和 CDA 的统一资产清单</p></div>
+      <div class="head-actions"><RouterLink class="btn" to="/archive-integrity">批量验真</RouterLink><RouterLink class="btn" to="/archive-integrity?scope=cda">CDA 校验报告</RouterLink><button class="btn primary" :disabled="Boolean(busy) || (!archiveCase && !readiness?.ready)" @click="openArchiveAction">创建归档包</button></div>
+    </div>
+    <ClinicalPageState v-if="archiveQuery.isPending.value || assetsQuery.isPending.value" kind="loading" message="正在读取病案资产与归档证据" />
+    <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="archiveQuery.refetch(); assetsQuery.refetch()" />
     <template v-else-if="readiness">
-      <section class="archive-metrics" aria-label="归档状态摘要"><article><span>就诊状态</span><strong>{{ encounterLabel(readiness.encounter_status) }}</strong><small>归档前必须为已结束</small></article><article><span>当前病历</span><strong>{{ readiness.document_count }}</strong><small>按当前版本生成清单</small></article><article :class="readiness.blockers.length ? 'metric-danger' : 'metric-success'"><span>硬性阻断</span><strong>{{ readiness.blockers.length }}</strong><small>确定性门禁，不由 AI 改写</small></article><article><span>病案状态</span><strong>{{ archiveCase ? archiveStatusLabel(archiveCase.status) : '未归档' }}</strong><small>{{ archiveCase ? `版本 ${archiveCase.row_version}` : '尚未形成病案号' }}</small></article></section>
+      <div class="metric-grid" style="margin-bottom:14px"><div class="metric"><div class="name">待归档病案</div><div class="value">{{ archiveCase ? 0 : readiness.document_count }}</div><div class="trend">当前病历 {{ readiness.document_count }} 份</div></div><div class="metric"><div class="name">缺失/隔离资产</div><div class="value" style="color:var(--red)">{{ unavailableCount }}</div><div class="trend">阻断归档 {{ readiness.blockers.length }}</div></div><div class="metric"><div class="name">CDA 校验通过率</div><div class="value">{{ cdaRate }}%</div><div class="trend">模式+术语+关联</div></div><div class="metric"><div class="name">历史原件保真</div><div class="value">{{ fidelityRate }}%</div><div class="trend">原格式与存储对象可重读</div></div></div>
       <div v-if="notice" class="notice archive-notice" role="status">{{ notice }}</div>
-      <div class="archive-grid"><section class="archive-panel archive-gate-panel"><div class="archive-panel-heading"><div><span class="archive-step">01</span><h2>归档资格核验</h2></div><span class="state-chip" :class="{ signed: readiness.ready }">{{ readiness.ready ? '可归档' : archiveCase ? '已形成清单' : '存在阻断' }}</span></div><p class="archive-panel-intro">只认可服务端事实：就诊结束、当前版本已签署、最新质控通过且内容哈希一致、所有签名证据有效。</p>
-        <div v-if="readiness.blockers.length" class="archive-blockers"><article v-for="blocker in readiness.blockers" :key="`${blocker.code}-${blocker.document_id || 'encounter'}`"><span>!</span><div><strong>{{ blockerLabel(blocker.code) }}</strong><p>{{ blocker.message }}</p><code v-if="blocker.document_id">文书 …{{ blocker.document_id.slice(-8) }}</code></div></article></div><div v-else class="archive-pass"><span>✓</span><div><strong>归档硬性条件已通过</strong><p>{{ archiveCase ? '不可变清单已经生成，后续操作不会覆盖原始病历版本。' : '可以由病案岗位生成不可变归档清单。' }}</p></div></div>
-        <button v-if="!archiveCase" class="button primary" :disabled="!readiness.ready || Boolean(busy)" @click="createCase">{{ busy === 'archive' ? '正在形成清单…' : '生成病案归档清单' }}</button><div class="archive-truth-note"><strong>当前能力边界</strong><span>已覆盖电子病历清单、封存、解封、JSON 独立导出；纸质扫描、借阅审批、长期保存介质迁移仍属于后续切片。</span></div></section>
-        <section class="archive-panel archive-action-panel"><div class="archive-panel-heading"><div><span class="archive-step">02</span><h2>封存与调阅控制</h2></div></div><div v-if="!archiveCase" class="archive-empty"><span>封</span><p>生成归档清单后，才会开放职责分离封存。</p></div><template v-else><dl class="archive-identity"><div><dt>病案号</dt><dd>{{ archiveCase.archive_no }}</dd></div><div><dt>清单哈希</dt><dd><code>{{ archiveCase.manifest_hash.slice(0, 18) }}…</code></dd></div><div><dt>归档人</dt><dd>…{{ archiveCase.archived_by.slice(-8) }}</dd></div><div><dt>当前状态</dt><dd>{{ archiveStatusLabel(archiveCase.status) }}</dd></div></dl><label class="archive-field"><span>{{ archiveCase.status === 'SEALED' ? '解封理由' : '复核说明' }}</span><textarea v-model="reason" rows="3" /></label><button v-if="archiveCase.status !== 'SEALED'" class="button primary full" :disabled="Boolean(busy)" @click="transition('seals')">{{ busy === 'seals' ? '封存中…' : '由独立岗位封存' }}</button><button v-else class="button secondary full" :disabled="Boolean(busy) || reason.trim().length < 4" @click="transition('unseals')">{{ busy === 'unseals' ? '解封中…' : '授权解封' }}</button><small class="archive-action-hint">归档人与首次封存人必须不同；解封仅允许临床管理员并永久保留理由。</small></template></section></div>
-      <section class="archive-panel archive-manifest-panel"><div class="archive-panel-heading"><div><span class="archive-step">03</span><h2>不可变病历清单</h2></div><span>{{ archiveCase?.items.length || 0 }} 份文书</span></div><div v-if="!archiveCase" class="archive-empty horizontal"><span>清</span><p>尚未生成清单。这里不会用前端示例伪造已归档数据。</p></div><div v-else class="archive-table-wrap"><table class="archive-table"><thead><tr><th>序号</th><th>文书类型</th><th>文书 / 版本</th><th>内容哈希</th><th>签名摘要哈希</th></tr></thead><tbody><tr v-for="item in archiveCase.items" :key="item.archive_case_item_id"><td>{{ item.item_order }}</td><td>{{ item.document_type_code }}</td><td><code>…{{ item.document_id.slice(-8) }} / …{{ item.document_version_id.slice(-8) }}</code></td><td><code>{{ item.content_hash.slice(0, 14) }}…</code></td><td><code>{{ item.signature_summary_hash.slice(0, 14) }}…</code></td></tr></tbody></table></div></section>
-      <div class="archive-grid archive-lower-grid"><section class="archive-panel"><div class="archive-panel-heading"><div><span class="archive-step">04</span><h2>证据事件时间轴</h2></div></div><div v-if="!archiveCase" class="archive-empty"><span>证</span><p>归档后显示不可变事件。</p></div><ol v-else class="archive-timeline"><li v-for="event in archiveCase.events" :key="event.archive_case_event_id"><span class="archive-event-dot" :class="event.event_type.toLowerCase()" /><div><strong>{{ eventLabel(event.event_type) }}</strong><small>{{ event.actor_display_name }} · {{ formatDate(event.occurred_at) }}</small><p v-if="event.reason">{{ event.reason }}</p></div><code>#{{ event.event_no }}</code></li></ol></section>
-        <section class="archive-panel archive-export-panel"><div class="archive-panel-heading"><div><span class="archive-step">05</span><h2>独立可读导出</h2></div><span>JSON v1</span></div><p class="archive-panel-intro">导出正文包含病历段落、质控证据、签名证据和清单完整性信息；响应返回精确 UTF-8 字节数与 SHA-256。</p><label class="archive-field"><span>导出用途</span><input v-model="purpose" /></label><button class="button primary full" :disabled="!archiveCase || archiveCase.status !== 'SEALED' || Boolean(busy) || purpose.trim().length < 2" @click="createExport">{{ busy === 'export' ? '正在固化导出包…' : '生成带校验值的导出包' }}</button><small v-if="archiveCase && archiveCase.status !== 'SEALED'" class="archive-action-hint">只有封存状态允许生成或下载导出包。</small><div class="archive-exports"><article v-for="item in archiveCase?.export_packages || []" :key="item.export_package_id"><div><strong>{{ item.purpose }}</strong><small>{{ formatDate(item.created_at) }} · {{ formatBytes(item.byte_count) }}</small></div><code>SHA-256 {{ item.content_hash.slice(0, 16) }}…</code><span class="state-chip signed">{{ item.status }}</span></article></div></section></div>
+      <div class="grid archive-overview-layout">
+        <section class="card scroll-card">
+          <div class="toolbar"><input v-model="searchText" class="search" placeholder="病案号 / 资产 ID / 文书类型"><select v-model="mediaFilter" class="select"><option value="ALL">全部载体</option><option value="PAPER">纸质</option><option value="SCAN">扫描件</option><option value="DIGITAL">电子文书</option></select><select v-model="integrityFilter" class="select"><option value="ALL">全部校验状态</option><option value="PENDING">待验真</option><option value="VERIFIED">已通过</option><option value="FAILED">隔离</option></select></div>
+          <div class="archive-table-wrap"><table class="table"><thead><tr><th>资产 ID</th><th>临床对象</th><th>载体/格式</th><th>版本/页数</th><th>完整性/签名</th><th>CDA</th></tr></thead><tbody><tr v-for="asset in filteredAssets" :key="asset.medical_record_asset_id" :class="{ 'prototype-row-active': selectedAsset?.medical_record_asset_id === asset.medical_record_asset_id }" @click="selectedAssetId = asset.medical_record_asset_id"><td><b>…{{ asset.medical_record_asset_id.slice(-8) }}</b></td><td>{{ asset.display_name }}</td><td>{{ typeLabel(asset.asset_type) }}/{{ asset.media_type }}</td><td>{{ asset.page_count }} 页</td><td><span class="status" :class="integrityClass(asset.integrity_status)">{{ integrityLabel(asset.integrity_status) }}</span></td><td><span class="status" :class="cdaClass(asset.cda_status)">{{ cdaLabel(asset.cda_status) }}</span></td></tr><tr v-if="!filteredAssets.length"><td colspan="6" class="prototype-empty">没有符合当前筛选条件的病案资产</td></tr></tbody></table></div>
+          <div class="card-body"><div class="notice info"><div class="notice-title">资产不可变事实</div>来源系统、源标识、原格式、转换版本、页数、校验值、签名/验签、保管期限、归档包和访问审计始终可追溯。</div></div>
+        </section>
+        <aside class="card scroll-card"><div class="card-head">{{ selectedAsset ? `…${selectedAsset.medical_record_asset_id.slice(-8)} · ${selectedAsset.display_name}` : '资产详情' }} <span v-if="selectedAsset" class="status" :class="integrityClass(selectedAsset.integrity_status)">{{ integrityLabel(selectedAsset.integrity_status) }}</span></div><div v-if="selectedAsset" class="card-body"><div class="form-row" style="grid-template-columns:95px 1fr"><div class="label">源对象</div><div class="field">{{ selectedAsset.source_system }}/{{ selectedAsset.original_filename || selectedAsset.location }}</div></div><div class="form-row" style="grid-template-columns:95px 1fr"><div class="label">原格式</div><div class="field">{{ selectedAsset.media_type }} · {{ selectedAsset.byte_size ?? '—' }} B</div></div><div class="form-row" style="grid-template-columns:95px 1fr"><div class="label">内容哈希</div><div class="field archive-detail-code">{{ selectedAsset.content_hash }}</div></div><div v-if="selectedAsset.integrity_status !== 'VERIFIED' || selectedAsset.storage_status === 'MISSING'" class="notice hard"><div class="notice-title">当前资产阻断归档</div>{{ selectedAsset.storage_status === 'MISSING' ? '原始存储对象不可重读。' : '内容哈希尚未通过服务端重读验真。' }} 禁止以派生件替代原件归档。</div><div v-else class="notice info"><div class="notice-title">原件可重读且哈希一致</div>最近验真 {{ selectedAsset.last_verified_at ? new Date(selectedAsset.last_verified_at).toLocaleString('zh-CN') : '已记录' }}。</div><div class="section-title" style="margin-top:16px">外部调阅与复制</div><div class="queue-item"><div class="queue-title">复制申请<span class="status" :class="selectedAsset.status === 'BORROWED' ? 'amber' : 'green'">{{ selectedAsset.status === 'BORROWED' ? '借出中' : '可申请' }}</span></div></div><div class="queue-item"><div class="queue-title">脱敏范围<span class="status green">患者级授权</span></div></div><div class="queue-item"><div class="queue-title">水印与访问码<span class="status blue">生成复制包时固化</span></div></div><div class="queue-item"><div class="queue-title">依法封存<span class="status" :class="selectedAsset.object_lock_status === 'LOCKED' ? 'green' : 'gray'">{{ selectedAsset.object_lock_status === 'LOCKED' ? 'WORM 已锁定' : '未封存' }}</span></div></div><RouterLink class="btn" style="width:100%;margin-top:10px;text-align:center" :to="`/asset-detail?asset=${selectedAsset.medical_record_asset_id}`">打开原件与转换件对照</RouterLink></div><div v-else class="prototype-empty">尚无可展示资产</div></aside>
+      </div>
+      <div class="grid archive-workflow-grid"><section class="card"><div class="card-head">真实归档流程 <span class="status" :class="archiveCase?.status === 'SEALED' ? 'green' : 'amber'">{{ archiveCase ? archiveStatusLabel(archiveCase.status) : readiness.ready ? '可归档' : '存在阻断' }}</span></div><div class="card-body"><div class="prototype-action-row"><button v-if="!archiveCase" class="btn primary" :disabled="!readiness.ready || Boolean(busy)" @click="actionDialog = 'create'">生成不可变清单</button><button v-else-if="archiveCase.status !== 'SEALED'" class="btn primary" :disabled="Boolean(busy)" @click="actionDialog = 'seal'">由独立岗位封存</button><button v-else class="btn" :disabled="Boolean(busy)" @click="actionDialog = 'unseal'">授权解封</button><button class="btn" :disabled="!archiveCase || archiveCase.status !== 'SEALED' || Boolean(busy)" @click="actionDialog = 'export'">生成独立可读导出包</button></div><p class="prototype-data-note">归档、封存、解封与导出均调用服务端状态机；未通过验真的资产会真实阻断归档。</p></div></section><aside class="card"><div class="card-head">清单证据</div><div class="card-body"><div class="folder-row">病案号<span>{{ archiveCase?.archive_no ?? '尚未生成' }}</span></div><div class="folder-row">清单文书<span>{{ archiveCase?.items.length ?? 0 }}</span></div><div class="folder-row">审计事件<span>{{ archiveCase?.events.length ?? 0 }}</span></div><div class="folder-row">导出包<span>{{ archiveCase?.export_packages.length ?? 0 }}</span></div></div></aside></div>
     </template>
+    <BusinessActionDialog :open="actionDialog === 'create'" title="新建病案归档清单" description="将当前已签且质控通过的版本固化为不可变清单。" eyebrow="病案资产 / 归档" confirm-label="生成清单" :busy="Boolean(busy)" @cancel="actionDialog = null" @confirm="createCase"><p class="dialog-warning">关联资产验真失败或未验真时，服务端会拒绝归档。</p></BusinessActionDialog>
+    <BusinessActionDialog :open="actionDialog === 'seal' || actionDialog === 'unseal'" :title="actionDialog === 'seal' ? '封存病案' : '授权解封病案'" description="操作将生成不可变事件，不覆盖原始清单。" eyebrow="病案资产 / 封存" :confirm-label="actionDialog === 'seal' ? '确认封存' : '确认解封'" :danger="actionDialog === 'unseal'" :busy="Boolean(busy)" :confirm-disabled="reason.trim().length < 4" @cancel="actionDialog = null" @confirm="transition(actionDialog === 'seal' ? 'seals' : 'unseals')"><label>{{ actionDialog === 'seal' ? '复核说明' : '解封理由' }}<textarea v-model="reason" rows="4" /></label></BusinessActionDialog>
+    <BusinessActionDialog :open="actionDialog === 'export'" title="新建独立可读导出包" description="导出包带精确字节数和 SHA-256，可脱离系统复算。" eyebrow="病案资产 / 导出" confirm-label="生成导出包" :busy="Boolean(busy)" :confirm-disabled="purpose.trim().length < 2" @cancel="actionDialog = null" @confirm="createExport"><label>导出用途<input v-model="purpose" /></label></BusinessActionDialog>
   </section>
 </template>

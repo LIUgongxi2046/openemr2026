@@ -309,7 +309,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   status, evaluation_status, row_version)
                 select :tenant, seed.model_deployment_id::uuid, seed.model_code, seed.provider_code,
                   seed.display_name, seed.residency_policy, seed.endpoint_url,
-                  'env://TERTIARY_HOSPITAL_AI_GATEWAY_TOKEN', 'READY', 'ACTIVE', 'APPROVED', 1
+                  null, 'NOT_CONFIGURED', 'INACTIVE', 'REJECTED', 1
                 from (values
                   ('018f0000-0000-7000-8000-00000000f001', 'DEEPSEEK-V3-CLINICAL-LOCAL', 'DEEPSEEK',
                    'DeepSeek V3 临床综合主模型', 'ON_PREM_ONLY', 'https://ai-gateway.tertiary-hospital.example/v1'),
@@ -326,10 +326,21 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 ) as seed(model_deployment_id, model_code, provider_code, display_name, residency_policy, endpoint_url)
                 on conflict (tenant_id, model_code) do update
                 set display_name = excluded.display_name,
-                    endpoint_url = excluded.endpoint_url,
-                    api_key_ref = excluded.api_key_ref,
-                    connection_status = 'READY',
-                    status = 'ACTIVE', evaluation_status = 'APPROVED', updated_at = now()
+                    api_key_ref = null,
+                    connection_status = 'NOT_CONFIGURED',
+                    status = 'INACTIVE', evaluation_status = 'REJECTED',
+                    last_connection_tested_at = null,
+                    last_connection_latency_ms = null,
+                    last_connection_error_code = 'SYNTHETIC_CONFIGURATION_RETIRED',
+                    row_version = model_deployment.row_version + 1, updated_at = now()
+                where model_deployment.endpoint_url like 'https://%.example/%'
+                  and (model_deployment.api_key_ref is not null
+                    or model_deployment.connection_status <> 'NOT_CONFIGURED'
+                    or model_deployment.status <> 'INACTIVE'
+                    or model_deployment.evaluation_status <> 'REJECTED'
+                    or model_deployment.last_connection_tested_at is not null
+                    or model_deployment.last_connection_latency_ms is not null
+                    or model_deployment.last_connection_error_code is distinct from 'SYNTHETIC_CONFIGURATION_RETIRED')
                 """).param("tenant", TENANT_ID).update();
 
         jdbc.sql("""

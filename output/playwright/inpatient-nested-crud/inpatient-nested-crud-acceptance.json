@@ -1,0 +1,34 @@
+{
+  "run_at": "2026-08-30T09:13:05.250Z",
+  "base_url": "http://127.0.0.1:4178",
+  "passed": 4,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "nested-routes-desktop-layout",
+      "status": "PASS",
+      "detail": "5/5 个住院二级与三级入口在桌面宽度无横向溢出"
+    },
+    {
+      "name": "nested-create-and-edit-dialogs",
+      "status": "PASS",
+      "detail": "入院、文书版本保存与住院摆药的新建/编辑入口均打开统一业务弹窗"
+    },
+    {
+      "name": "pharmacy-create-edit-void-flow",
+      "status": "PASS",
+      "detail": "IP-DRUG-81172976 已完成新增、编辑、作废，且作废记录仍显示在台账"
+    },
+    {
+      "name": "nested-routes-mobile-layout",
+      "status": "PASS",
+      "detail": "5/5 个入口在 390px 无横向溢出，业务弹窗未越界"
+    }
+  ],
+  "api_response_count": 45,
+  "api_statuses": [
+    200,
+    201
+  ],
+  "failures": []
+}

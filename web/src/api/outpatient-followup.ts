@@ -1,6 +1,8 @@
 import {
   outpatientFollowupCompleteRequestWireSchema,
+  outpatientFollowupCancelRequestWireSchema,
   outpatientFollowupCreateRequestWireSchema,
+  outpatientFollowupUpdateRequestWireSchema,
   outpatientFollowupWireSchema,
   type ContextLeaseWire,
   type OutpatientFollowupWire,
@@ -47,6 +49,38 @@ export async function completeOutpatientFollowup(
       headers: { ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(outpatientFollowupCompleteRequestWireSchema.parse({
         outcome,
+        expected_row_version: followup.row_version,
+      })),
+    },
+  ));
+}
+
+export async function updateOutpatientFollowup(
+  lease: ContextLeaseWire,
+  followup: OutpatientFollowupWire,
+  input: { followup_type: string; content: string; due_at?: string | null },
+): Promise<OutpatientFollowupWire> {
+  return outpatientFollowupWireSchema.parse(await request(`/outpatient-followups/${followup.followup_id}`, {
+    method: 'PATCH',
+    headers: { ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(outpatientFollowupUpdateRequestWireSchema.parse({
+      ...input,
+      expected_row_version: followup.row_version,
+    })),
+  }));
+}
+
+export async function cancelOutpatientFollowup(
+  lease: ContextLeaseWire,
+  followup: OutpatientFollowupWire,
+  reason: string,
+): Promise<OutpatientFollowupWire> {
+  return outpatientFollowupWireSchema.parse(await request(
+    `/outpatient-followups/${followup.followup_id}/cancellations`, {
+      method: 'POST',
+      headers: { ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(outpatientFollowupCancelRequestWireSchema.parse({
+        reason,
         expected_row_version: followup.row_version,
       })),
     },

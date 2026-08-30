@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
+import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
@@ -49,7 +50,7 @@ final class ModelDeploymentApiTest {
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode,
                         "LOCAL-INFER", "本地推理模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY,
-                        null, null));
+                        null, null, null));
         assertThat(registered.status()).isEqualTo(ModelDeploymentWire.StatusValue.ACTIVE);
         assertThat(registered.residencyPolicy()).isEqualTo(ModelDeploymentWire.ResidencyPolicyValue.ON_PREM_ONLY);
 
@@ -67,10 +68,10 @@ final class ModelDeploymentApiTest {
         String modelCode = "MODEL-" + UUID.randomUUID();
         models.register(identity(), "model-" + UUID.randomUUID(), new ModelDeploymentRegisterRequestWire(
                 organization, facility, modelCode, "PROV-A", "模型A",
-                ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null));
+                ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null, null));
         assertThatThrownBy(() -> models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode, "PROV-B", "模型B",
-                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null)))
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null, null)))
                 .isInstanceOf(DataAccessException.class);
     }
 
@@ -79,7 +80,7 @@ final class ModelDeploymentApiTest {
         String modelCode = "MODEL-" + UUID.randomUUID();
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode, "PROV-A", "模型A",
-                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null));
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null, null));
         assertThatThrownBy(() -> jdbc.sql("""
                 update model_deployment set model_code = 'TAMPERED'
                 where tenant_id = cast(:tenant as uuid) and model_deployment_id = :deployment
@@ -92,12 +93,50 @@ final class ModelDeploymentApiTest {
         ModelDeploymentWire registered = models.register(identity(), "model-api-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
                         "DeepSeek 医疗模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
-                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY"));
+                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY", null));
 
-        assertThat(registered.connectionStatus()).isEqualTo(ModelDeploymentWire.ConnectionStatusValue.READY);
+        assertThat(registered.connectionStatus()).isEqualTo(ModelDeploymentWire.ConnectionStatusValue.UNVERIFIED);
         assertThat(registered.credentialConfigured()).isTrue();
         assertThat(registered.credentialHint()).isEqualTo("环境变量 · TEST_DEEPSEEK_API_KEY");
+        assertThat(registered.lastConnectionTestedAt()).isNull();
         assertThat(registered.toString()).doesNotContain("sk-");
+    }
+
+    @Test
+    void givenPlainApiKey_whenRegistering_thenSecretIsManagedAndOnlySuffixIsReturned() {
+        String rawApiKey = "test-managed-secret-ABCD";
+        ModelDeploymentWire registered = models.register(identity(), "model-managed-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
+                        "DEEPSEEK", "DeepSeek 托管密钥模型",
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.CLOUD_ALLOWED,
+                        "https://api.deepseek.com", null, rawApiKey));
+
+        String storedReference = jdbc.sql("""
+                select api_key_ref from model_deployment
+                where tenant_id = :tenant and model_deployment_id = :deployment
+                """).param("tenant", tenant).param("deployment", registered.modelDeploymentId())
+                .query(String.class).single();
+        assertThat(storedReference).startsWith("file://").doesNotContain(rawApiKey);
+        assertThat(registered.credentialHint()).isEqualTo("已配置 · ••••ABCD");
+        assertThat(registered.toString()).doesNotContain(rawApiKey);
+    }
+
+    @Test
+    void givenAnUnavailableSecret_whenTestingConnection_thenFailureIsRecordedInsteadOfClaimingReady() {
+        ModelDeploymentWire registered = models.register(identity(), "model-api-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
+                        "DEEPSEEK", "DeepSeek 连接验证模型",
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
+                        "https://api.deepseek.com/v1", "env://OPENEMR2026_TEST_SECRET_THAT_MUST_NOT_EXIST", null));
+
+        ModelDeploymentWire tested = models.testConnection(identity(), "model-test-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), new ModelDeploymentConnectionTestRequestWire(
+                        organization, facility, registered.rowVersion()));
+
+        assertThat(tested.connectionStatus()).isEqualTo(ModelDeploymentWire.ConnectionStatusValue.FAILED);
+        assertThat(tested.lastConnectionTestedAt()).isNotNull();
+        assertThat(tested.lastConnectionLatencyMs()).isGreaterThanOrEqualTo(0);
+        assertThat(tested.lastConnectionErrorCode()).isNotBlank();
     }
 
     @Test
@@ -106,12 +145,12 @@ final class ModelDeploymentApiTest {
                 new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
                         "DEEPSEEK", "DeepSeek 医疗模型",
                         ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
-                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY"));
+                        "https://api.deepseek.com/v1", "env://TEST_DEEPSEEK_API_KEY", null));
         ModelDeploymentWire updated = models.update(identity(), "model-update-" + UUID.randomUUID(),
                 registered.modelDeploymentId(), new ModelDeploymentUpdateRequestWire(
                         organization, facility, "DeepSeek 临床模型",
                         ModelDeploymentUpdateRequestWire.ResidencyPolicyValue.CLOUD_ALLOWED,
-                        "https://api.deepseek.com/v1", null,
+                        "https://api.deepseek.com/v1", null, null,
                         ModelDeploymentUpdateRequestWire.CredentialActionValue.KEEP, registered.rowVersion()));
         assertThat(updated.displayName()).isEqualTo("DeepSeek 临床模型");
         assertThat(updated.credentialConfigured()).isTrue();
@@ -123,12 +162,12 @@ final class ModelDeploymentApiTest {
         assertThatThrownBy(() -> models.register(identity(), "model-secret-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
                         "不安全模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
-                        "https://api.deepseek.com/v1", "sk-plaintext")))
+                        "https://api.deepseek.com/v1", "sk-plaintext", null)))
                 .isInstanceOf(ModelDeploymentException.class);
         assertThatThrownBy(() -> models.register(identity(), "model-http-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, "deepseek-chat", "DEEPSEEK",
                         "不安全地址", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
-                        "http://api.example.test/v1", "env://TEST_DEEPSEEK_API_KEY")))
+                        "http://api.example.test/v1", "env://TEST_DEEPSEEK_API_KEY", null)))
                 .isInstanceOf(ModelDeploymentException.class);
     }
 }

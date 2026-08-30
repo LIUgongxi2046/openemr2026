@@ -515,6 +515,83 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
         });
     }
 
+    DocumentVersionWire voidDocument(
+            ClinicalIdentity identity,
+            String idempotencyKey,
+            UUID documentId,
+            UUID patientId,
+            UUID encounterId,
+            long expectedRowVersion,
+            String reason) {
+        requireCorrectionReason(reason);
+        return transactions.execute(status -> {
+            beginCommand(identity, "DOCUMENT_VOID", idempotencyKey,
+                    sha256(documentId + "|" + expectedRowVersion + "|" + reason.trim()));
+            VoidableDocument head = jdbc.sql("""
+                    select document.document_type_code, document.status, document.current_version_id,
+                      document.row_version, version.sections::text
+                    from clinical_document document
+                    join clinical_document_version version
+                      on version.tenant_id = document.tenant_id and version.document_id = document.document_id
+                      and version.document_version_id = document.current_version_id
+                    where document.tenant_id = :tenant and document.document_id = :document
+                      and document.patient_id = :patient and document.encounter_id = :encounter
+                    for update of document
+                    """).param("tenant", identity.tenantId()).param("document", documentId)
+                    .param("patient", patientId).param("encounter", encounterId)
+                    .query((rs, row) -> new VoidableDocument(
+                            rs.getString("document_type_code"), rs.getString("status"),
+                            rs.getObject("current_version_id", UUID.class), rs.getLong("row_version"),
+                            map(rs.getString("sections"))))
+                    .optional().orElseThrow(ClinicalLifecycleService::notFound);
+            if (head.rowVersion() != expectedRowVersion) {
+                throw versionConflict(documentId, head.currentVersionId(), head.rowVersion());
+            }
+            if (!"DRAFT".equals(head.status())) {
+                throw new ClinicalCommandException("INVALID_DOCUMENT_STATE", 409,
+                        "Only a draft document can be voided");
+            }
+            int nextVersion = jdbc.sql("""
+                    select coalesce(max(version_no), 0) + 1 from clinical_document_version
+                    where tenant_id = :tenant and document_id = :document
+                    """).param("tenant", identity.tenantId()).param("document", documentId)
+                    .query(Integer.class).single();
+            UUID versionId = UUID.randomUUID();
+            OffsetDateTime now = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+            String canonicalSections = json(head.sections());
+            String contentHash = sha256(canonicalSections);
+            jdbc.sql("""
+                    insert into clinical_document_version(
+                      tenant_id, document_id, document_version_id, version_no, status,
+                      sections, content_hash, based_on_version_id, author_user_id, created_at)
+                    values (:tenant, :document, :version, :version_no, 'VOID', cast(:sections as jsonb),
+                      :hash, :based_on, :author, :created)
+                    """).param("tenant", identity.tenantId()).param("document", documentId)
+                    .param("version", versionId).param("version_no", nextVersion)
+                    .param("sections", canonicalSections).param("hash", contentHash)
+                    .param("based_on", head.currentVersionId()).param("author", identity.userId())
+                    .param("created", now).update();
+            int updated = jdbc.sql("""
+                    update clinical_document set status = 'VOID', current_version_id = :version,
+                      row_version = row_version + 1, updated_at = :updated
+                    where tenant_id = :tenant and document_id = :document and row_version = :expected
+                    """).param("version", versionId).param("updated", now)
+                    .param("tenant", identity.tenantId()).param("document", documentId)
+                    .param("expected", expectedRowVersion).update();
+            if (updated != 1) throw versionConflict(documentId, head.currentVersionId(), head.rowVersion());
+            appendAudit(identity, "DOCUMENT_VOIDED", "CLINICAL_DOCUMENT", documentId, patientId,
+                    UUID.randomUUID().toString());
+            appendOutbox(identity.tenantId(), "CLINICAL_DOCUMENT", documentId, expectedRowVersion + 1,
+                    "DocumentVoided");
+            completeCommand(identity, "DOCUMENT_VOID", idempotencyKey, versionId);
+            TemplateBinding template = templateBinding(identity.tenantId(), documentId);
+            return new DocumentVersionWire(documentId, versionId, encounterId,
+                    template.templateVersionId(), template.versionNo(), nextVersion,
+                    DocumentVersionWire.StatusValue.VOID, head.documentTypeCode(), head.sections(),
+                    contentHash, expectedRowVersion + 1, now.toInstant());
+        });
+    }
+
     DocumentCorrectionWire createCorrection(
             ClinicalIdentity identity,
             String idempotencyKey,
@@ -1271,6 +1348,13 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
     }
 
     private record DocumentHead(String documentTypeCode, String status, UUID currentVersionId, long rowVersion) {}
+
+    private record VoidableDocument(
+            String documentTypeCode,
+            String status,
+            UUID currentVersionId,
+            long rowVersion,
+            Map<String, Object> sections) {}
 
     private record CorrectionHead(
             String documentTypeCode, UUID currentVersionId, long rowVersion,

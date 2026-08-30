@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EncounterDomainSwitchRecordRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchCorrectionRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchVoidRequestWire;
 import org.openemr2026.contracts.EncounterDomainSwitchWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -155,6 +157,29 @@ final class EncounterDomainSwitchApiTest {
                 where tenant_id = cast(:tenant as uuid) and domain_switch_id = :switch
                 """).param("tenant", TENANT).param("switch", recorded.domainSwitchId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenDomainSwitch_whenCorrectingAndVoiding_thenOnlyActiveVersionIsListed() {
+        Context context = seedContext();
+        EncounterDomainSwitchWire recorded = record(context, context.outpatientEncounterId(),
+                context.emergencyEncounterId(), EncounterDomainSwitchRecordRequestWire.FromDomainValue.OUTPATIENT,
+                EncounterDomainSwitchRecordRequestWire.ToDomainValue.EMERGENCY);
+        EncounterDomainSwitchWire corrected = switches.correct(identity(), "dsw-c-" + UUID.randomUUID(),
+                recorded.domainSwitchId(), new EncounterDomainSwitchCorrectionRequestWire(
+                        organization, facility, context.patientId(), context.outpatientEncounterId(),
+                        context.emergencyEncounterId(), EncounterDomainSwitchCorrectionRequestWire.FromDomainValue.OUTPATIENT,
+                        EncounterDomainSwitchCorrectionRequestWire.ToDomainValue.EMERGENCY,
+                        "病情变化转急诊绿色通道", Instant.now(), recorded.rowVersion(), "流转原因补充更正"));
+        assertThat(corrected.domainSwitchId()).isNotEqualTo(recorded.domainSwitchId());
+        assertThat(switches.listSwitches(identity(), context.patientId()))
+                .extracting(EncounterDomainSwitchWire::domainSwitchId)
+                .contains(corrected.domainSwitchId()).doesNotContain(recorded.domainSwitchId());
+        switches.voidSwitch(identity(), "dsw-v-" + UUID.randomUUID(), corrected.domainSwitchId(),
+                new EncounterDomainSwitchVoidRequestWire(
+                        organization, facility, context.patientId(), corrected.rowVersion(), "域切换重复记录"));
+        assertThat(switches.listSwitches(identity(), context.patientId()))
+                .extracting(EncounterDomainSwitchWire::domainSwitchId).doesNotContain(corrected.domainSwitchId());
     }
 
     private record Context(UUID patientId, UUID outpatientEncounterId, UUID emergencyEncounterId) {}

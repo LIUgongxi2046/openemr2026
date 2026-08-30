@@ -67,8 +67,10 @@ async function record() {
       evaluated_at: form.evaluatedAt,
     });
     form.evalName = '';
-    notice.value = '评估结果已记录，审计链与事件出箱已同步记录。';
-    await evaluationsQuery.refetch();
+    notice.value = form.score >= form.threshold
+      ? '评估通过：模型已进入可发布状态，Eva 可选择该模型。'
+      : '评估未通过：模型已退出 Eva 路由，请整改后重新评估。';
+    await Promise.all([modelsQuery.refetch(), evaluationsQuery.refetch()]);
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }

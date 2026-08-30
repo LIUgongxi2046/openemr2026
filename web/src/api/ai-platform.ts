@@ -18,6 +18,7 @@ import {
   agentRunBudgetWireSchema,
   aiRunSnapshotWireSchema,
   modelDeploymentDeactivateRequestWireSchema,
+  modelDeploymentConnectionTestRequestWireSchema,
   modelDeploymentRegisterRequestWireSchema,
   modelDeploymentUpdateRequestWireSchema,
   modelDeploymentWireSchema,
@@ -115,6 +116,21 @@ export async function updateModelDeployment(
       ...orgFacility(), ...input, expected_row_version: model.row_version,
     })),
   }));
+}
+
+export async function testModelDeploymentConnection(
+  lease: ContextLeaseWire,
+  model: ModelDeploymentWire,
+): Promise<ModelDeploymentWire> {
+  return modelDeploymentWireSchema.parse(await request(
+    `/model-deployments/${model.model_deployment_id}/connection-tests`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(modelDeploymentConnectionTestRequestWireSchema.parse({
+        ...orgFacility(), expected_row_version: model.row_version,
+      })),
+    },
+  ));
 }
 
 // ── Agent 目录（Agent Registry） ─────────────────────────────

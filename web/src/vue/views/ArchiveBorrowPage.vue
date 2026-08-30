@@ -1,99 +1,45 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
-import type { MedicalRecordAssetWire } from '../../generated/contracts';
-import { borrowMedicalRecordAsset, issueMedicalRecordAssetLease, listMedicalRecordAssets, returnMedicalRecordAsset } from '../../api/records';
-import { developmentCopy } from '../../development-copy';
+import type { MedicalRecordAssetDistributionPackageWire as Package, MedicalRecordAssetWire as Asset } from '../../generated/contracts';
+import { borrowMedicalRecordAsset, createMedicalRecordAssetDistribution, deliverMedicalRecordAssetDistribution, downloadMedicalRecordAssetDistribution, issueMedicalRecordAssetLease, listMedicalRecordAssetDistributionPackages, listMedicalRecordAssets, returnMedicalRecordAsset, updateMedicalRecordAssetBorrow } from '../../api/records';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const busy = ref('');
-const notice = ref('');
-const dueDays = ref(7);
-const assetsQuery = useQuery({
-  queryKey: ['clinical', 'medical-record-assets'],
-  queryFn: async () => {
-    const lease = await issueMedicalRecordAssetLease();
-    return { lease, assets: await listMedicalRecordAssets(lease) };
-  },
-  retry: false, staleTime: 0, gcTime: 0,
-});
-const issue = computed(() => assetsQuery.error.value ? toClinicalIssue(assetsQuery.error.value) : null);
-const assets = computed(() => assetsQuery.data.value?.assets ?? []);
-
-const archivedCount = computed(() => assets.value.filter((asset) => asset.status === 'ARCHIVED').length);
-const borrowedCount = computed(() => assets.value.filter((asset) => asset.status === 'BORROWED').length);
-const overdueCount = computed(() => assets.value.filter((asset) => asset.status === 'BORROWED' && asset.due_at && new Date(asset.due_at).getTime() < Date.now()).length);
-
-async function run(key: string, action: () => Promise<void>, success: string) {
-  if (busy.value || !assetsQuery.data.value) return;
-  busy.value = key; notice.value = '';
-  try { await action(); await assetsQuery.refetch(); notice.value = success; }
-  catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
-  finally { busy.value = ''; }
-}
-
-function borrow(asset: MedicalRecordAssetWire) {
-  const data = assetsQuery.data.value;
-  if (!data) return;
-  const dueAt = new Date(Date.now() + Math.max(1, dueDays.value) * 86400000).toISOString();
-  void run(`borrow:${asset.medical_record_asset_id}`, async () => { await borrowMedicalRecordAsset(data.lease, asset, dueAt); }, '病案资产已按借阅状态机转为借出，归还前不可重复借出');
-}
-
-function returnAsset(asset: MedicalRecordAssetWire) {
-  const data = assetsQuery.data.value;
-  if (!data) return;
-  void run(`return:${asset.medical_record_asset_id}`, async () => { await returnMedicalRecordAsset(data.lease, asset); }, '病案资产已归还入库，借阅状态清零');
-}
-
-function typeLabel(value: string) { return ({ PAPER: '纸质原件', SCAN: '扫描件', DIGITAL: '数字原生' } as Record<string, string>)[value] || value; }
-function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '借出中' } as Record<string, string>)[value] || value; }
-function formatDate(value: string | null | undefined) { return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)) : '—'; }
+type PackageRow={asset:Asset;pkg:Package};
+const busy=ref(false),notice=ref(''),dueDays=ref(7),purpose=ref('病案复印提供'),recipient=ref(''),expiryDays=ref(7);
+const dialog=ref<'borrow'|'edit'|'return'|'copy'|'deliver'|null>(null),target=ref<Asset|null>(null),packageTarget=ref<PackageRow|null>(null);
+const query=useQuery({queryKey:['clinical','assets','borrow-distribution'],queryFn:async()=>{const lease=await issueMedicalRecordAssetLease();const assets=await listMedicalRecordAssets(lease);const groups=await Promise.all(assets.filter(x=>x.storage_status!=='MISSING').map(async asset=>({asset,packages:await listMedicalRecordAssetDistributionPackages(lease,asset.medical_record_asset_id)})));return{lease,assets,packages:groups.flatMap(g=>g.packages.map(pkg=>({asset:g.asset,pkg}))) as PackageRow[]};},retry:false,staleTime:0,gcTime:0});
+const issue=computed(()=>query.error.value?toClinicalIssue(query.error.value):null),assets=computed(()=>(query.data.value?.assets??[]).filter(x=>x.status!=='RETIRED')),packages=computed(()=>query.data.value?.packages??[]);
+const archivedCount=computed(()=>assets.value.filter(x=>x.status==='ARCHIVED').length),borrowedCount=computed(()=>assets.value.filter(x=>x.status==='BORROWED').length),overdueCount=computed(()=>assets.value.filter(x=>x.status==='BORROWED'&&x.due_at&&new Date(x.due_at)<new Date()).length);
+const selectedAssetId=ref(''),rulesOpen=ref(false);
+const selectedAsset=computed(()=>assets.value.find(x=>x.medical_record_asset_id===selectedAssetId.value)??assets.value.find(x=>x.status==='ARCHIVED')??assets.value[0]??null);
+const selectedPackages=computed(()=>packages.value.filter(row=>row.asset.medical_record_asset_id===selectedAsset.value?.medical_record_asset_id));
+function open(action:'borrow'|'edit'|'return',asset:Asset){dialog.value=action;target.value=asset;dueDays.value=action==='edit'&&asset.due_at?Math.max(1,Math.ceil((new Date(asset.due_at).getTime()-Date.now())/86400000)):7;}
+function openCopy(asset:Asset){dialog.value='copy';target.value=asset;recipient.value='';purpose.value='病案复印提供';expiryDays.value=7;}
+async function submit(){const data=query.data.value,asset=target.value,action=dialog.value;if(!data||!asset||!action||busy.value)return;busy.value=true;notice.value='';try{const dueAt=new Date(Date.now()+dueDays.value*86400000).toISOString();if(action==='borrow')await borrowMedicalRecordAsset(data.lease,asset,dueAt);else if(action==='edit')await updateMedicalRecordAssetBorrow(data.lease,asset,dueAt);else if(action==='return')await returnMedicalRecordAsset(data.lease,asset);else if(action==='copy')await createMedicalRecordAssetDistribution(data.lease,asset,purpose.value.trim(),recipient.value.trim(),new Date(Date.now()+expiryDays.value*86400000).toISOString());notice.value=action==='copy'?'已从原件生成带 manifest、水印和到期时间的不可变 ZIP 复制包。':'借阅状态已写入并记录审计证据。';dialog.value=null;target.value=null;await query.refetch();}catch(error){const next=toClinicalIssue(error);notice.value=`${next.code}：${next.message}`;}finally{busy.value=false;}}
+async function deliver(){const data=query.data.value,row=packageTarget.value;if(!data||!row||busy.value)return;busy.value=true;try{await deliverMedicalRecordAssetDistribution(data.lease,row.asset,row.pkg);notice.value='交付人、时间与复制包哈希已写入审计链。';dialog.value=null;packageTarget.value=null;await query.refetch();}catch(error){const next=toClinicalIssue(error);notice.value=`${next.code}：${next.message}`;}finally{busy.value=false;}}
+async function download(row:PackageRow){const data=query.data.value;if(!data)return;try{const r=await downloadMedicalRecordAssetDistribution(data.lease,row.asset.medical_record_asset_id,row.pkg.distribution_package_id);const url=URL.createObjectURL(r.blob),a=document.createElement('a');a.href=url;a.download=r.filename;a.click();URL.revokeObjectURL(url);notice.value=`已下载并校验复制包 ${r.contentHash?.slice(0,16)}…`;}catch(error){const next=toClinicalIssue(error);notice.value=`${next.code}：${next.message}`;}}
+const fmt=(v:string|null|undefined)=>v?new Date(v).toLocaleString('zh-CN'):'—';
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page archive-content">
-    <div class="page-heading archive-heading">
-      <div><p class="eyebrow">病历与病案 / 病案借阅</p><h1>病案借阅、复制与对外提供</h1><p>纸质与扫描病案按借阅状态机流转：在库 → 借出 → 归还；借阅必须登记到期时限，内容哈希在编目后不可变更。</p></div>
-      <RouterLink class="button secondary" to="/archive-assets">返回病案归档</RouterLink>
-    </div>
-    <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
-      <div><strong>{{ developmentCopy.patientName }}</strong><span>病案资产借阅 · 患者级上下文</span></div><dl>
-        <div><dt>资产归属</dt><dd>当前患者</dd></div>
-        <div><dt>借阅规则</dt><dd>在库才可借出</dd></div>
-        <div><dt>哈希硬门</dt><dd>编目后不可变</dd></div></dl>
-      <span class="lease-badge">患者级租约</span></section>
-    <ClinicalPageState v-if="assetsQuery.isPending.value" kind="loading" message="正在加载病案资产借阅状态" />
-    <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="assetsQuery.refetch()" />
+  <section data-page-root class="content vue-native-page archive-prototype-page">
+    <div class="page-head"><div class="page-title"><h1>病案借阅、复制与对外提供</h1><p>用途、范围、审批、脱敏、水印、有效期和访问审计全部绑定</p></div><div class="head-actions"><button class="btn" @click="rulesOpen = true">借阅规则</button><button class="btn primary" :disabled="!selectedAsset" @click="selectedAsset && open('borrow', selectedAsset)">新建申请</button></div></div>
+    <ClinicalPageState v-if="query.isPending.value" kind="loading" message="正在加载借阅与分发状态" />
+    <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="query.refetch()" />
     <template v-else>
-      <section class="archive-metrics" aria-label="借阅状态摘要">
-        <article><span>在库资产</span><strong>{{ archivedCount }}</strong><small>可发起借阅</small></article>
-        <article><span>借出中</span><strong>{{ borrowedCount }}</strong><small>归还前锁定</small></article>
-        <article :class="overdueCount ? 'metric-danger' : 'metric-success'"><span>逾期未还</span><strong>{{ overdueCount }}</strong><small>到期须催还</small></article>
-        <article><span>编目总数</span><strong>{{ assets.length }}</strong><small>内容哈希 64 位 SHA-256</small></article>
-      </section>
-      <div v-if="notice" class="notice archive-notice" role="status">{{ notice }}</div>
-      <section class="archive-panel archive-manifest-panel">
-        <div class="archive-panel-heading"><div><span class="archive-step">借</span><h2>病案资产借阅清单</h2></div>
-          <label class="archive-field" style="min-width: 180px"><span>借阅期限（天）</span><input v-model.number="dueDays" type="number" min="1" max="365" /></label>
-        </div>
-        <div v-if="assets.length === 0" class="archive-empty"><span>借</span><p>当前患者尚无已编目的病案资产</p><small>编目入口见病案目录，此处不使用前端示例伪造借阅数据。</small></div>
-        <div v-else class="archive-table-wrap">
-          <table class="archive-table"><thead><tr><th>载体</th><th>存放位置</th><th>内容哈希</th><th>状态</th><th>借阅人 / 到期</th><th>操作</th></tr></thead>
-            <tbody><tr v-for="asset in assets" :key="asset.medical_record_asset_id">
-              <td>{{ typeLabel(asset.asset_type) }}</td><td>{{ asset.location }}</td>
-              <td><code>{{ asset.content_hash.slice(0, 16) }}…</code></td>
-              <td><span class="state-chip" :class="{ signed: asset.status === 'ARCHIVED' }">{{ statusLabel(asset.status) }}</span></td>
-              <td>{{ asset.status === 'BORROWED' ? `…${(asset.borrowed_by || '').slice(-8)} · ${formatDate(asset.due_at)}` : '—' }}</td>
-              <td>
-                <button v-if="asset.status === 'ARCHIVED'" class="button primary" :disabled="Boolean(busy)" @click="borrow(asset)">{{ busy === `borrow:${asset.medical_record_asset_id}` ? '借出中…' : '借阅' }}</button>
-                <button v-else class="button secondary" :disabled="Boolean(busy)" @click="returnAsset(asset)">{{ busy === `return:${asset.medical_record_asset_id}` ? '归还中…' : '归还' }}</button>
-              </td>
-            </tr></tbody>
-          </table>
-        </div>
-        <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">借阅与归还都是幂等命令：同一借出/归还按键不会重复入账，行版本冲突会提示重新加载后再操作。</footer>
-      </section>
+      <div v-if="notice" class="notice archive-notice">{{ notice }}</div>
+      <div class="grid borrow-layout">
+        <section class="card"><div class="archive-table-wrap"><table class="table"><thead><tr><th>申请</th><th>申请方</th><th>范围</th><th>状态</th><th>有效期</th></tr></thead><tbody><tr v-for="asset in assets" :key="asset.medical_record_asset_id" :class="{ 'prototype-row-active': selectedAsset?.medical_record_asset_id === asset.medical_record_asset_id }" @click="selectedAssetId = asset.medical_record_asset_id"><td><b>BR-…{{ asset.medical_record_asset_id.slice(-6) }}</b><small>{{ asset.display_name }}</small></td><td>{{ asset.borrowed_by ? `用户 …${asset.borrowed_by.slice(-6)}` : '患者/业务申请方' }}</td><td>{{ asset.display_name }} · {{ asset.page_count }} 页</td><td><span class="status" :class="asset.status === 'BORROWED' ? (asset.due_at && new Date(asset.due_at) < new Date() ? 'red' : 'amber') : asset.integrity_status === 'VERIFIED' ? 'green' : 'gray'">{{ asset.status === 'BORROWED' ? '已授权借阅' : asset.integrity_status === 'VERIFIED' ? '可申请' : '验真阻断' }}</span></td><td>{{ asset.status === 'BORROWED' ? fmt(asset.due_at) : '—' }}</td></tr><tr v-if="!assets.length"><td colspan="5" class="prototype-empty">暂无可借阅资产</td></tr></tbody></table></div><div class="prototype-card-actions"><div class="prototype-action-row"><button class="btn primary" :disabled="!selectedAsset || selectedAsset.status !== 'ARCHIVED' || selectedAsset.integrity_status !== 'VERIFIED'" @click="selectedAsset && open('borrow', selectedAsset)">新建借阅</button><button class="btn" :disabled="!selectedAsset || selectedAsset.status !== 'BORROWED'" @click="selectedAsset && open('edit', selectedAsset)">编辑</button><button class="btn danger" :disabled="!selectedAsset || selectedAsset.status !== 'BORROWED'" @click="selectedAsset && open('return', selectedAsset)">删除/归还</button><button class="btn" :disabled="!selectedAsset || selectedAsset.status !== 'ARCHIVED' || selectedAsset.integrity_status !== 'VERIFIED' || selectedAsset.storage_status === 'MISSING'" @click="selectedAsset && openCopy(selectedAsset)">新建复制包</button></div></div></section>
+        <aside class="card"><div class="card-head">{{ selectedAsset?.status === 'BORROWED' ? '当前借阅申请' : '患者本人复制申请' }}</div><div class="card-body"><div class="folder-row">身份核验<span>患者级授权 + 服务端租约</span></div><div class="folder-row">申请范围<span>{{ selectedAsset?.display_name ?? '未选择资产' }}</span></div><div class="folder-row">存储/验真<span>{{ selectedAsset?.storage_status ?? '—' }} / {{ selectedAsset?.integrity_status ?? '—' }}</span></div><div class="folder-row">输出<span>原件 + manifest ZIP</span></div><div class="folder-row">水印<span>接收方/用途/申请号/时间</span></div><div class="folder-row">访问码<span>下载前授权校验</span></div><div class="folder-row">有效期<span>{{ selectedAsset?.due_at ? fmt(selectedAsset.due_at) : '生成时设置' }}</span></div><div class="folder-row">复制包<span>{{ selectedPackages.length }} 个</span></div><div class="borrow-detail-actions"><button class="btn primary" :disabled="!selectedAsset || selectedAsset.status !== 'ARCHIVED' || selectedAsset.integrity_status !== 'VERIFIED' || selectedAsset.storage_status === 'MISSING'" @click="selectedAsset && openCopy(selectedAsset)">审批并生成复制包</button><button v-for="row in selectedPackages" :key="row.pkg.distribution_package_id" class="btn" @click="download(row)">下载复制包 · {{ row.pkg.recipient_name }}</button><button v-for="row in selectedPackages.filter(x => x.pkg.status === 'READY')" :key="`deliver-${row.pkg.distribution_package_id}`" class="btn primary" @click="packageTarget = row; dialog = 'deliver'">确认交付 · {{ row.pkg.recipient_name }}</button></div></div></aside>
+      </div>
+      <section class="card" style="margin-top:14px"><div class="card-head">复制分发台账 <span class="sub">{{ packages.length }} 个不可变 ZIP 包</span></div><div class="archive-table-wrap"><table class="table"><thead><tr><th>资产 / 接收方</th><th>用途</th><th>到期</th><th>ZIP 哈希</th><th>状态</th></tr></thead><tbody><tr v-for="row in packages" :key="row.pkg.distribution_package_id"><td><b>{{ row.asset.display_name }}</b><small>{{ row.pkg.recipient_name }}</small></td><td>{{ row.pkg.purpose }}</td><td>{{ fmt(row.pkg.expires_at) }}</td><td><code>{{ row.pkg.content_hash.slice(0,16) }}…</code></td><td><span class="status" :class="row.pkg.status === 'DELIVERED' ? 'green' : 'blue'">{{ row.pkg.status }}</span></td></tr><tr v-if="!packages.length"><td colspan="5" class="prototype-empty">暂无复制分发包</td></tr></tbody></table></div></section>
     </template>
+    <BusinessActionDialog :open="rulesOpen" title="借阅规则" description="借阅与复制均受验真、存储状态和有效期约束。" eyebrow="病案 / 借阅规则" confirm-label="已了解" @cancel="rulesOpen = false" @confirm="rulesOpen = false"><div class="folder-row">在库且验真通过<span>{{ archivedCount }} 份</span></div><div class="folder-row">借出中<span>{{ borrowedCount }} 份</span></div><div class="folder-row">逾期<span>{{ overdueCount }} 份</span></div><p class="dialog-warning">验真失败、原件缺失或已长期封包冲突时，服务端会拒绝借阅与复制。</p></BusinessActionDialog>
+    <BusinessActionDialog :open="dialog === 'borrow' || dialog === 'edit' || dialog === 'return'" :title="dialog === 'borrow' ? '新建借阅' : dialog === 'edit' ? '编辑借阅' : '删除借阅并归还'" eyebrow="病案 / 借阅" :confirm-label="dialog === 'return' ? '确认归还' : '保存'" :danger="dialog === 'return'" :busy="busy" @cancel="dialog = null; target = null" @confirm="submit"><p class="dialog-warning">{{ target?.display_name }}</p><label v-if="dialog !== 'return'">借阅天数<input v-model.number="dueDays" type="number" min="1" max="365" /></label></BusinessActionDialog>
+    <BusinessActionDialog :open="dialog === 'copy'" title="新建可校验复制包" description="包含原件、manifest、水印、接收方和到期时间。" eyebrow="病案 / 复制分发" confirm-label="生成复制包" :busy="busy" :confirm-disabled="recipient.trim().length < 2 || purpose.trim().length < 2" @cancel="dialog = null; target = null" @confirm="submit"><label>接收方<input v-model="recipient" /></label><label>用途<input v-model="purpose" /></label><label>有效天数<input v-model.number="expiryDays" type="number" min="1" max="30" /></label></BusinessActionDialog>
+    <BusinessActionDialog :open="dialog === 'deliver'" title="确认复制包交付" description="交付人、时间和哈希将写入审计链。" eyebrow="病案 / 对外提供" confirm-label="确认交付" :busy="busy" @cancel="dialog = null; packageTarget = null" @confirm="deliver"><p class="dialog-warning">{{ packageTarget?.pkg.recipient_name }} · {{ packageTarget?.pkg.content_hash }}</p></BusinessActionDialog>
   </section>
 </template>

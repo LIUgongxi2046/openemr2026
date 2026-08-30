@@ -83,9 +83,9 @@ const nativeComponents: Record<string, () => Promise<unknown>> = {
   'surgery-schedule': () => import('./views/SurgerySchedulePage.vue'),
   'care-operations': () => import('./views/CareOperationsPage.vue'),
   ward: () => import('./views/WardPage.vue'),
-  'infection-events': () => import('./views/InfectionEventsPage.vue'),
-  'quality-rating': () => import('./views/QualityRatingPage.vue'),
-  credentials: () => import('./views/CredentialsPage.vue'),
+  'infection-events': () => import('./views/InfectionEventsOverviewPage.vue'),
+  'quality-rating': () => import('./views/QualityRatingOverviewPage.vue'),
+  credentials: () => import('./views/CredentialsOverviewPage.vue'),
   'specialty-center': () => import('./views/SpecialtyCenterPage.vue'),
   'obgyn-record': () => import('./views/ObstetricRecordPage.vue'),
   'reproductive-record': () => import('./views/ReproductiveRecordPage.vue'),
@@ -252,6 +252,48 @@ export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
     routes: [
       { path: '/', redirect: '/clinical' },
       ...buildContractRoutes(),
+      {
+        path: '/quality-center/initiatives', name: 'quality-initiatives', component: () => import('./views/QualityOperationsRoutePage.vue'), props: { moduleId: 'quality-center' },
+        meta: { contractId: 'quality-center', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/quality-center/initiatives/:itemId', name: 'quality-initiative-detail', component: () => import('./views/QualityOperationsRoutePage.vue'),
+        props: (route) => ({ moduleId: 'quality-center', itemId: route.params.itemId }),
+        meta: { contractId: 'quality-center', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/department-qc/cases', name: 'department-qc-cases', component: () => import('./views/QualityOperationsRoutePage.vue'), props: { moduleId: 'department-qc' },
+        meta: { contractId: 'department-qc', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/department-qc/cases/:itemId', name: 'department-qc-case-detail', component: () => import('./views/QualityOperationsRoutePage.vue'),
+        props: (route) => ({ moduleId: 'department-qc', itemId: route.params.itemId }),
+        meta: { contractId: 'department-qc', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/quality-rating/assessments', name: 'quality-rating-assessments', component: () => import('./views/QualityRatingPage.vue'),
+        meta: { contractId: 'quality-rating', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/quality-rating/assessments/:assessmentId', name: 'quality-rating-assessment-detail', component: () => import('./views/QualityRatingPage.vue'), props: true,
+        meta: { contractId: 'quality-rating', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/infection-events/clues', name: 'infection-event-clues', component: () => import('./views/InfectionEventsPage.vue'),
+        meta: { contractId: 'infection-events', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/infection-events/clues/:eventId', name: 'infection-event-clue-detail', component: () => import('./views/InfectionEventsPage.vue'), props: true,
+        meta: { contractId: 'infection-events', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/credentials/grants', name: 'credential-grants', component: () => import('./views/CredentialsPage.vue'),
+        meta: { contractId: 'credentials', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/credentials/grants/:credentialId', name: 'credential-grant-detail', component: () => import('./views/CredentialsPage.vue'), props: true,
+        meta: { contractId: 'credentials', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
       {
         path: '/mock-interfaces',
         name: 'mock-interfaces',

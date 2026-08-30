@@ -1,0 +1,723 @@
+{
+  "run_at": "2026-08-30T14:46:06.362Z",
+  "run_id": "E2E-20260830144546",
+  "routes": [
+    "record",
+    "record-editor",
+    "record-sources",
+    "opd-orders",
+    "opd-results",
+    "lis-report",
+    "pacs-viewer",
+    "record-qc",
+    "record-versions",
+    "record-diff"
+  ],
+  "checks": 30,
+  "passed": 30,
+  "failed": 0,
+  "observations": [
+    {
+      "route": "record",
+      "name": "record-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents",
+      "payload": {
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "aabb69f3-4a5a-418d-b430-0d110a4674b6",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "template_version_id": "5ae9203a-1b09-3a6d-a543-e9228bda82cf",
+        "template_version_no": 1,
+        "version_no": 1,
+        "status": "DRAFT",
+        "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+        "sections": {
+          "chief_complaint": "E2E-20260830144546 主诉 初始",
+          "present_illness": "E2E-20260830144546 现病史完整 初始",
+          "assessment": "E2E-20260830144546 评估完整 初始",
+          "treatment_plan": "E2E-20260830144546 治疗计划完整 初始"
+        },
+        "content_hash": "82f173d8b50629a2916eae851d22c71e109471f9e2deca99ddfa31165938cace",
+        "row_version": 1,
+        "created_at": "2026-08-30T14:45:51.516897Z"
+      }
+    },
+    {
+      "route": "record",
+      "name": "record-edit",
+      "status": 200,
+      "method": "PUT",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/draft",
+      "payload": {
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9097d650-c277-4afb-ab81-e6e84a858b0d",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "template_version_id": "5ae9203a-1b09-3a6d-a543-e9228bda82cf",
+        "template_version_no": 1,
+        "version_no": 2,
+        "status": "DRAFT",
+        "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+        "sections": {
+          "chief_complaint": "E2E-20260830144546 主诉 初始",
+          "present_illness": "E2E-20260830144546 现病史完整 初始",
+          "assessment": "E2E-20260830144546 工作台编辑后的完整评估",
+          "treatment_plan": "E2E-20260830144546 治疗计划完整 初始"
+        },
+        "content_hash": "49595f91efd18b4b83d6839bbe450ab338dc4d0cb8e19887d1f214d82c072e2d",
+        "row_version": 2,
+        "created_at": "2026-08-30T14:45:52.026516Z"
+      }
+    },
+    {
+      "route": "record-editor",
+      "name": "editor-save",
+      "status": 200,
+      "method": "PUT",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/draft",
+      "payload": {
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "template_version_id": "5ae9203a-1b09-3a6d-a543-e9228bda82cf",
+        "template_version_no": 1,
+        "version_no": 3,
+        "status": "DRAFT",
+        "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+        "sections": {
+          "assessment": "E2E-20260830144546 工作台编辑后的完整评估",
+          "treatment_plan": "E2E-20260830144546 治疗计划完整 初始",
+          "chief_complaint": "E2E-20260830144546 编辑器再次修改的主诉",
+          "present_illness": "E2E-20260830144546 现病史完整 初始"
+        },
+        "content_hash": "8739570905bfd1a752c3296449fd2ce395052ed4654216f4a9a22ea6f304e4be",
+        "row_version": 3,
+        "created_at": "2026-08-30T14:45:52.470680Z"
+      }
+    },
+    {
+      "route": "record-editor",
+      "name": "editor-quality-check",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/quality-checks",
+      "payload": []
+    },
+    {
+      "route": "record-sources",
+      "name": "attachment-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/attachments",
+      "payload": {
+        "attachment_id": "af4b0e95-2cbc-411a-b6de-4358a0096a51",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "original_filename": "E2E-20260830144546-original.txt",
+        "media_type": "text/plain",
+        "byte_size": 38,
+        "content_hash": "bf31b15dbec4422d648b7ac11e36bb23085ab2c997bc168fa013f1e01f51f9bc",
+        "storage_status": "AVAILABLE",
+        "malware_scan_status": "PASSED",
+        "evidence_state": "ACTIVE",
+        "superseded_by_attachment_id": null,
+        "lifecycle_reason": null,
+        "uploaded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "created_at": "2026-08-30T14:45:53.596952Z"
+      }
+    },
+    {
+      "route": "record-sources",
+      "name": "attachment-replace",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/attachments",
+      "payload": {
+        "attachment_id": "f8e32deb-de16-4dfb-86f3-4d496e5a6deb",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "original_filename": "E2E-20260830144546-replacement.txt",
+        "media_type": "text/plain",
+        "byte_size": 41,
+        "content_hash": "d1cd34e1b75e2bd5dcbdcd7bedab0fa281f091d78a62b80449be4b930661584e",
+        "storage_status": "AVAILABLE",
+        "malware_scan_status": "PASSED",
+        "evidence_state": "ACTIVE",
+        "superseded_by_attachment_id": null,
+        "lifecycle_reason": null,
+        "uploaded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "created_at": "2026-08-30T14:45:54.472128Z"
+      }
+    },
+    {
+      "route": "record-sources",
+      "name": "attachment-void",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/attachments/f8e32deb-de16-4dfb-86f3-4d496e5a6deb/voids",
+      "payload": {
+        "attachment_id": "f8e32deb-de16-4dfb-86f3-4d496e5a6deb",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "original_filename": "E2E-20260830144546-replacement.txt",
+        "media_type": "text/plain",
+        "byte_size": 41,
+        "content_hash": "d1cd34e1b75e2bd5dcbdcd7bedab0fa281f091d78a62b80449be4b930661584e",
+        "storage_status": "AVAILABLE",
+        "malware_scan_status": "PASSED",
+        "evidence_state": "VOID",
+        "superseded_by_attachment_id": null,
+        "lifecycle_reason": "端到端回归验证附件业务作废",
+        "uploaded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "created_at": "2026-08-30T14:45:54.472128Z"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-lab-order-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/orders",
+      "payload": {
+        "order_id": "c3397812-dd55-4f40-aaf5-be29b0356340",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_scope": "TEMPORARY",
+        "status": "DRAFT",
+        "clinical_indication": "E2E-20260830144546 LAB 引用回归前置医嘱",
+        "items": [
+          {
+            "order_item_id": "3b58b4e9-13bd-4136-867c-d3d515e21208",
+            "item_type": "LAB",
+            "catalog_code": "LAB-30144546",
+            "display_name": "E2E-20260830144546 LAB 项目",
+            "requested_quantity": 1,
+            "quantity_unit": "次",
+            "medication_catalog_version_id": null,
+            "drug_code": null,
+            "ingredient_code": null,
+            "dose_value": null,
+            "dose_unit": null,
+            "route_code": null,
+            "frequency_code": null,
+            "instructions": "病历中心真实写入回归前置执行",
+            "item_state": "DRAFT",
+            "row_version": 1
+          }
+        ],
+        "execution_tasks": [],
+        "row_version": 1,
+        "data_watermark": "b0753cb7950f109fc81fa9a0de4c7934157ab5de68b5e840eb94b9ca2445b5b8"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-lab-order-sign",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/orders/c3397812-dd55-4f40-aaf5-be29b0356340/sign",
+      "payload": {
+        "order_id": "c3397812-dd55-4f40-aaf5-be29b0356340",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_scope": "TEMPORARY",
+        "status": "ACTIVE",
+        "clinical_indication": "E2E-20260830144546 LAB 引用回归前置医嘱",
+        "items": [
+          {
+            "order_item_id": "3b58b4e9-13bd-4136-867c-d3d515e21208",
+            "item_type": "LAB",
+            "catalog_code": "LAB-30144546",
+            "display_name": "E2E-20260830144546 LAB 项目",
+            "requested_quantity": 1,
+            "quantity_unit": "次",
+            "medication_catalog_version_id": null,
+            "drug_code": null,
+            "ingredient_code": null,
+            "dose_value": null,
+            "dose_unit": null,
+            "route_code": null,
+            "frequency_code": null,
+            "instructions": "病历中心真实写入回归前置执行",
+            "item_state": "ACTIVE",
+            "row_version": 2
+          }
+        ],
+        "execution_tasks": [
+          {
+            "execution_task_id": "427dc431-5cb0-47a0-87a3-b318b66c4368",
+            "order_id": "c3397812-dd55-4f40-aaf5-be29b0356340",
+            "order_item_id": "3b58b4e9-13bd-4136-867c-d3d515e21208",
+            "task_state": "PENDING",
+            "requested_quantity": 1,
+            "performed_quantity": 0,
+            "quantity_unit": "次",
+            "row_version": 1
+          }
+        ],
+        "row_version": 2,
+        "data_watermark": "905e4c6d816ac183f8cc5733528b0d5615e347968fb9015103176980d92988e0"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-lab-execution-complete",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/executions/427dc431-5cb0-47a0-87a3-b318b66c4368/events",
+      "payload": {
+        "execution_task_id": "427dc431-5cb0-47a0-87a3-b318b66c4368",
+        "order_id": "c3397812-dd55-4f40-aaf5-be29b0356340",
+        "order_item_id": "3b58b4e9-13bd-4136-867c-d3d515e21208",
+        "task_state": "COMPLETED",
+        "requested_quantity": 1,
+        "performed_quantity": 1,
+        "quantity_unit": "次",
+        "row_version": 2
+      }
+    },
+    {
+      "route": "opd-results",
+      "name": "seed-lab-result-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/results",
+      "payload": {
+        "result_id": "9856422a-6d7e-44a1-9672-72208c1fcbea",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_id": "c3397812-dd55-4f40-aaf5-be29b0356340",
+        "execution_task_id": "427dc431-5cb0-47a0-87a3-b318b66c4368",
+        "report_type": "LAB",
+        "source_system": "OPENEMR2026-MANUAL",
+        "source_report_key": "2c9ce1dd-a4b7-41d5-8a9f-6caa923a4b7f",
+        "report_status": "FINAL",
+        "conclusion": "E2E-20260830144546 LAB 端到端报告",
+        "reported_at": "2026-08-30T14:45:57.190Z",
+        "observations": [
+          {
+            "observation_id": "708f8983-fd23-4c9b-88a6-a4fd88c7e020",
+            "item_code": "LAB-30144546",
+            "item_name": "E2E-20260830144546 LAB 项目",
+            "value_type": "NUMERIC",
+            "numeric_value": 4.2,
+            "text_value": null,
+            "unit": "mmol/L",
+            "reference_low": 3.5,
+            "reference_high": 5.5,
+            "abnormal_flag": "NORMAL"
+          }
+        ],
+        "critical_values": [],
+        "version_no": 1,
+        "row_version": 1,
+        "data_watermark": "56b698af19bc11b0ee1fc6b67cb619df38ca18605786ce2e92b1776501bdd759"
+      }
+    },
+    {
+      "route": "lis-report",
+      "name": "lis-reference-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/source-references",
+      "payload": {
+        "source_reference_id": "8155b10b-8c0d-4264-ac42-94dd22fe6eda",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "source_type": "RESULT",
+        "source_resource_id": "9856422a-6d7e-44a1-9672-72208c1fcbea",
+        "source_version_ref": "1cee5b15-e74a-4ef9-b0ac-c6af9a5202b0",
+        "current_version_ref": "1cee5b15-e74a-4ef9-b0ac-c6af9a5202b0",
+        "freshness": "CURRENT",
+        "target_field_path": "sections.assessment",
+        "display_label": "结果：E2E-20260830144546 LAB 端到端报告",
+        "excerpt_hash": "e74ac441cddd398c004ef65f980177c4861337638900be1f5982325f045401de",
+        "evidence_state": "ACTIVE",
+        "lifecycle_reason": null,
+        "recorded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "recorded_at": "2026-08-30T14:45:57.782124Z"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-imaging-order-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/orders",
+      "payload": {
+        "order_id": "70b4dbbf-3d15-4f67-96ab-47117328056e",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_scope": "TEMPORARY",
+        "status": "DRAFT",
+        "clinical_indication": "E2E-20260830144546 IMAGING 引用回归前置医嘱",
+        "items": [
+          {
+            "order_item_id": "66a85267-39e7-48e6-8ac7-8eb8c1cc538a",
+            "item_type": "IMAGING",
+            "catalog_code": "IMAGING-30144546",
+            "display_name": "E2E-20260830144546 IMAGING 项目",
+            "requested_quantity": 1,
+            "quantity_unit": "次",
+            "medication_catalog_version_id": null,
+            "drug_code": null,
+            "ingredient_code": null,
+            "dose_value": null,
+            "dose_unit": null,
+            "route_code": null,
+            "frequency_code": null,
+            "instructions": "病历中心真实写入回归前置执行",
+            "item_state": "DRAFT",
+            "row_version": 1
+          }
+        ],
+        "execution_tasks": [],
+        "row_version": 1,
+        "data_watermark": "4b704f20b38848abdab8ffab475bf13cdf014df381dca592587c16ee8b007d9c"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-imaging-order-sign",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/orders/70b4dbbf-3d15-4f67-96ab-47117328056e/sign",
+      "payload": {
+        "order_id": "70b4dbbf-3d15-4f67-96ab-47117328056e",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_scope": "TEMPORARY",
+        "status": "ACTIVE",
+        "clinical_indication": "E2E-20260830144546 IMAGING 引用回归前置医嘱",
+        "items": [
+          {
+            "order_item_id": "66a85267-39e7-48e6-8ac7-8eb8c1cc538a",
+            "item_type": "IMAGING",
+            "catalog_code": "IMAGING-30144546",
+            "display_name": "E2E-20260830144546 IMAGING 项目",
+            "requested_quantity": 1,
+            "quantity_unit": "次",
+            "medication_catalog_version_id": null,
+            "drug_code": null,
+            "ingredient_code": null,
+            "dose_value": null,
+            "dose_unit": null,
+            "route_code": null,
+            "frequency_code": null,
+            "instructions": "病历中心真实写入回归前置执行",
+            "item_state": "ACTIVE",
+            "row_version": 2
+          }
+        ],
+        "execution_tasks": [
+          {
+            "execution_task_id": "41fe9b54-3039-41ad-b619-5fe17af98b24",
+            "order_id": "70b4dbbf-3d15-4f67-96ab-47117328056e",
+            "order_item_id": "66a85267-39e7-48e6-8ac7-8eb8c1cc538a",
+            "task_state": "PENDING",
+            "requested_quantity": 1,
+            "performed_quantity": 0,
+            "quantity_unit": "次",
+            "row_version": 1
+          }
+        ],
+        "row_version": 2,
+        "data_watermark": "ecd627382edffd9c7eab6d38a7d01743341ff71aac894dd60d09e841b42f7e23"
+      }
+    },
+    {
+      "route": "opd-orders",
+      "name": "seed-imaging-execution-complete",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/executions/41fe9b54-3039-41ad-b619-5fe17af98b24/events",
+      "payload": {
+        "execution_task_id": "41fe9b54-3039-41ad-b619-5fe17af98b24",
+        "order_id": "70b4dbbf-3d15-4f67-96ab-47117328056e",
+        "order_item_id": "66a85267-39e7-48e6-8ac7-8eb8c1cc538a",
+        "task_state": "COMPLETED",
+        "requested_quantity": 1,
+        "performed_quantity": 1,
+        "quantity_unit": "次",
+        "row_version": 2
+      }
+    },
+    {
+      "route": "opd-results",
+      "name": "seed-imaging-result-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/results",
+      "payload": {
+        "result_id": "fbdf7dfe-6a1a-48bb-86c3-1f5a4c96a2d2",
+        "patient_id": "018f0000-0000-7000-8000-000000000001",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "order_id": "70b4dbbf-3d15-4f67-96ab-47117328056e",
+        "execution_task_id": "41fe9b54-3039-41ad-b619-5fe17af98b24",
+        "report_type": "IMAGING",
+        "source_system": "OPENEMR2026-MANUAL",
+        "source_report_key": "2e027f47-f9dd-449d-a33e-834dfe2cbfc0",
+        "report_status": "FINAL",
+        "conclusion": "E2E-20260830144546 IMAGING 端到端报告",
+        "reported_at": "2026-08-30T14:45:59.384Z",
+        "observations": [
+          {
+            "observation_id": "5cdcb833-bf3e-4b40-aa3f-21dfecd89644",
+            "item_code": "IMAGING-30144546",
+            "item_name": "E2E-20260830144546 IMAGING 项目",
+            "value_type": "NUMERIC",
+            "numeric_value": 4.2,
+            "text_value": null,
+            "unit": "mmol/L",
+            "reference_low": 3.5,
+            "reference_high": 5.5,
+            "abnormal_flag": "NORMAL"
+          }
+        ],
+        "critical_values": [],
+        "version_no": 1,
+        "row_version": 1,
+        "data_watermark": "2cff657980de6fa76fe26d2a3c8114c021e7200413cf4f681872464a7c8f76b7"
+      }
+    },
+    {
+      "route": "pacs-viewer",
+      "name": "pacs-reference-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/source-references",
+      "payload": {
+        "source_reference_id": "96993e45-66fd-4297-b429-0479a93a5060",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "source_type": "RESULT",
+        "source_resource_id": "fbdf7dfe-6a1a-48bb-86c3-1f5a4c96a2d2",
+        "source_version_ref": "322b7630-0f96-4342-9904-df7ec56e6005",
+        "current_version_ref": "322b7630-0f96-4342-9904-df7ec56e6005",
+        "freshness": "CURRENT",
+        "target_field_path": "sections.assessment",
+        "display_label": "结果：E2E-20260830144546 IMAGING 端到端报告",
+        "excerpt_hash": "4b0239bd42cbd19865c0f3021a3aed846c6cee43618f1e114ebdef33f8a6e8f1",
+        "evidence_state": "ACTIVE",
+        "lifecycle_reason": null,
+        "recorded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "recorded_at": "2026-08-30T14:45:59.819896Z"
+      }
+    },
+    {
+      "route": "record-sources",
+      "name": "source-reference-correct",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/source-references/8155b10b-8c0d-4264-ac42-94dd22fe6eda/corrections",
+      "payload": {
+        "source_reference_id": "8155b10b-8c0d-4264-ac42-94dd22fe6eda",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "source_type": "RESULT",
+        "source_resource_id": "9856422a-6d7e-44a1-9672-72208c1fcbea",
+        "source_version_ref": "1cee5b15-e74a-4ef9-b0ac-c6af9a5202b0",
+        "current_version_ref": "1cee5b15-e74a-4ef9-b0ac-c6af9a5202b0",
+        "freshness": "CURRENT",
+        "target_field_path": "sections.treatment_plan",
+        "display_label": "结果：E2E-20260830144546 LAB 端到端报告",
+        "excerpt_hash": "0f808b65a76192ebc59d4f328b1b1b1a8277eb444274c54a10d455b3c73161bf",
+        "evidence_state": "CORRECTED",
+        "lifecycle_reason": "端到端回归验证来源目标字段更正",
+        "recorded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "recorded_at": "2026-08-30T14:45:57.782124Z"
+      }
+    },
+    {
+      "route": "record-sources",
+      "name": "source-reference-revoke",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/source-references/96993e45-66fd-4297-b429-0479a93a5060/revocations",
+      "payload": {
+        "source_reference_id": "96993e45-66fd-4297-b429-0479a93a5060",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "source_type": "RESULT",
+        "source_resource_id": "fbdf7dfe-6a1a-48bb-86c3-1f5a4c96a2d2",
+        "source_version_ref": "322b7630-0f96-4342-9904-df7ec56e6005",
+        "current_version_ref": "322b7630-0f96-4342-9904-df7ec56e6005",
+        "freshness": "CURRENT",
+        "target_field_path": "sections.assessment",
+        "display_label": "结果：E2E-20260830144546 IMAGING 端到端报告",
+        "excerpt_hash": "4b0239bd42cbd19865c0f3021a3aed846c6cee43618f1e114ebdef33f8a6e8f1",
+        "evidence_state": "REVOKED",
+        "lifecycle_reason": "端到端回归验证来源引用撤销",
+        "recorded_by": "018f0000-0000-7000-8000-00000000aa04",
+        "recorded_at": "2026-08-30T14:45:59.819896Z"
+      }
+    },
+    {
+      "route": "record-editor",
+      "name": "editor-quality-after-source-lifecycle",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/quality-checks",
+      "payload": []
+    },
+    {
+      "route": "record-qc",
+      "name": "governance-quality-check",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/quality-checks",
+      "payload": []
+    },
+    {
+      "route": "record-editor",
+      "name": "editor-sign",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/signatures",
+      "payload": {
+        "signature_id": "612c15a1-c4aa-403d-a909-7f9b051bb3b3",
+        "document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "signer_user_id": "018f0000-0000-7000-8000-00000000aa04",
+        "signed_at": "2026-08-30T14:46:01.969927Z",
+        "content_hash": "8739570905bfd1a752c3296449fd2ce395052ed4654216f4a9a22ea6f304e4be",
+        "signature_status": "PENDING_CA_EVIDENCE"
+      }
+    },
+    {
+      "route": "record-versions",
+      "name": "version-correction-create",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/corrections",
+      "payload": {
+        "correction_id": "de2cc3b5-d087-46a6-90af-4103f9bdf5c9",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "source_document_version_id": "9ae621fb-6fca-4711-83f9-6c55d9735a45",
+        "correction_document_version_id": "d843da1c-85ad-4dca-b45e-bcdca3494bac",
+        "correction_type": "CORRECTION",
+        "reason": "端到端回归验证已签病历依法更正",
+        "status": "DRAFT",
+        "requested_by": "018f0000-0000-7000-8000-00000000aa04",
+        "requested_at": "2026-08-30T14:46:02.594814Z",
+        "signed_at": null,
+        "propagations": []
+      }
+    },
+    {
+      "route": "record-editor",
+      "name": "correction-quality-check",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/quality-checks",
+      "payload": []
+    },
+    {
+      "route": "record-qc",
+      "name": "governance-sign-correction",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/signatures",
+      "payload": {
+        "signature_id": "449eb6c5-d429-4a91-a3f9-6583b4d50f3c",
+        "document_version_id": "d843da1c-85ad-4dca-b45e-bcdca3494bac",
+        "signer_user_id": "018f0000-0000-7000-8000-00000000aa04",
+        "signed_at": "2026-08-30T14:46:03.422057Z",
+        "content_hash": "fc7b7636c99a9357473ecbe033346fe5edef29c635184dab06157c99cff9de81",
+        "signature_status": "PENDING_CA_EVIDENCE"
+      }
+    },
+    {
+      "route": "record-versions",
+      "name": "correction-propagation-retry",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/correction-propagations/caeb99ac-98bd-41be-9728-9c71a6f62d7f/retry",
+      "payload": {
+        "propagation_id": "caeb99ac-98bd-41be-9728-9c71a6f62d7f",
+        "destination_code": "EXTERNAL_SHARED_RECORD",
+        "status": "FAILED",
+        "attempt_count": 1,
+        "last_error_code": "ADAPTER_NOT_CONFIGURED",
+        "last_attempt_at": "2026-08-30T14:46:03.876978Z",
+        "delivered_at": null,
+        "row_version": 2,
+        "created_at": "2026-08-30T14:46:03.418486Z"
+      }
+    },
+    {
+      "route": "record-versions",
+      "name": "signature-revoke",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/db2bb24d-5c96-490e-822c-3ab6e39a4a1a/signature-revocations",
+      "payload": {
+        "revocation_id": "f5b797ec-6e0c-4093-a2cb-474e441888a5",
+        "signature_id": "449eb6c5-d429-4a91-a3f9-6583b4d50f3c",
+        "document_id": "db2bb24d-5c96-490e-822c-3ab6e39a4a1a",
+        "document_version_id": "d843da1c-85ad-4dca-b45e-bcdca3494bac",
+        "reason": "端到端回归验证签名撤销证据",
+        "revoked_by": "018f0000-0000-7000-8000-00000000aa04",
+        "revoked_at": "2026-08-30T14:46:04.225537Z"
+      }
+    },
+    {
+      "route": "record-diff",
+      "name": "version-diff-readback",
+      "status": "PASS",
+      "changedRows": 2
+    },
+    {
+      "route": "record",
+      "name": "record-create-for-void",
+      "status": 201,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents",
+      "payload": {
+        "document_id": "069a274d-4d28-46af-adba-587be0193edd",
+        "document_version_id": "f1848059-40eb-4326-813f-33a2d0273252",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "template_version_id": "5ae9203a-1b09-3a6d-a543-e9228bda82cf",
+        "template_version_no": 1,
+        "version_no": 1,
+        "status": "DRAFT",
+        "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+        "sections": {
+          "chief_complaint": "E2E-20260830144546 主诉 作废场景",
+          "present_illness": "E2E-20260830144546 现病史完整 作废场景",
+          "assessment": "E2E-20260830144546 评估完整 作废场景",
+          "treatment_plan": "E2E-20260830144546 治疗计划完整 作废场景"
+        },
+        "content_hash": "76fa9ea19d17e764e4072f0492b3a2829c69fae12ac5f589dd459ba8ec61c971",
+        "row_version": 1,
+        "created_at": "2026-08-30T14:46:04.991688Z"
+      }
+    },
+    {
+      "route": "record",
+      "name": "record-void",
+      "status": 200,
+      "method": "POST",
+      "url": "http://127.0.0.1:4179/api/v1/documents/069a274d-4d28-46af-adba-587be0193edd/voids",
+      "payload": {
+        "document_id": "069a274d-4d28-46af-adba-587be0193edd",
+        "document_version_id": "09633884-97cc-4be6-9002-30e14b034347",
+        "encounter_id": "018f0000-0000-7000-8000-000000000101",
+        "template_version_id": "5ae9203a-1b09-3a6d-a543-e9228bda82cf",
+        "template_version_no": 1,
+        "version_no": 2,
+        "status": "VOID",
+        "document_type_code": "WS445.2.OUTPATIENT_RECORD",
+        "sections": {
+          "assessment": "E2E-20260830144546 评估完整 作废场景",
+          "treatment_plan": "E2E-20260830144546 治疗计划完整 作废场景",
+          "chief_complaint": "E2E-20260830144546 主诉 作废场景",
+          "present_illness": "E2E-20260830144546 现病史完整 作废场景"
+        },
+        "content_hash": "4befd5ccc8fb55781179110725df4b09063675c95b15b284233c09d84dc87bee",
+        "row_version": 2,
+        "created_at": "2026-08-30T14:46:05.301629Z"
+      }
+    }
+  ],
+  "findings": []
+}

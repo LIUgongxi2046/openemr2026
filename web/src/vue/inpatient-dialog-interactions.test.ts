@@ -7,6 +7,9 @@ describe('住院工作台九子菜单交互契约', () => {
     for (const page of [
       'InpatientWorkspacePage.vue',
       'InpatientJourneyPage.vue',
+      'AdmissionBedPage.vue',
+      'InpatientDocumentEditorPage.vue',
+      'InpatientPharmacyPage.vue',
       'OrdersWorkspacePage.vue',
       'ResultsWorkspacePage.vue',
       'InpatientConsultationPage.vue',
@@ -15,6 +18,28 @@ describe('住院工作台九子菜单交互契约', () => {
     ]) {
       expect(views[`./views/${page}`], `${page} 应使用业务操作弹窗`).toContain('<BusinessActionDialog');
     }
+  });
+
+  it('住院三级页的新增、版本修改、退回与摆药作废都由业务弹窗承载', () => {
+    const admission = views['./views/AdmissionBedPage.vue'];
+    expect(admission).toContain('title="办理新入院"');
+    expect(admission).not.toContain('<form @submit.prevent="admit">');
+
+    const editor = views['./views/InpatientDocumentEditorPage.vue'];
+    expect(editor).toContain('title="保存住院病历新版本"');
+    expect(editor).toContain('title="运行确定性质控"');
+    expect(editor).toContain('确认签署并流转');
+
+    const workspace = views['./views/InpatientWorkspacePage.vue'];
+    expect(workspace).toContain('title="退回住院病历修改"');
+    expect(workspace).toContain('title="建立住院病历草稿"');
+    expect(workspace).not.toContain('class="task-reject-panel"');
+
+    const pharmacy = views['./views/InpatientPharmacyPage.vue'];
+    expect(pharmacy).toContain('title="编辑待核验摆药"');
+    expect(pharmacy).toContain('title="作废摆药记录"');
+    expect(pharmacy).toContain('voidInpatientPharmacyDispensing');
+    expect(pharmacy).not.toContain('<AdminActionDialog');
   });
 
   it('不再使用页面内嵌表单承载新建医嘱、结果、会诊和护理交班', () => {

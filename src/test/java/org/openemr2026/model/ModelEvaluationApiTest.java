@@ -66,6 +66,7 @@ final class ModelEvaluationApiTest {
         UUID deploymentId = seedModelDeployment();
         ModelEvaluationWire recorded = record(deploymentId, 0.9, 0.8);
         assertThat(recorded.status()).isEqualTo(ModelEvaluationWire.StatusValue.PASSED);
+        assertThat(evaluationStatus(deploymentId)).isEqualTo("APPROVED");
 
         List<ModelEvaluationWire> listed = evaluations.listEvaluations(identity(), deploymentId);
         assertThat(listed).extracting(ModelEvaluationWire::modelEvaluationId).contains(recorded.modelEvaluationId());
@@ -76,6 +77,14 @@ final class ModelEvaluationApiTest {
         UUID deploymentId = seedModelDeployment();
         ModelEvaluationWire recorded = record(deploymentId, 0.5, 0.8);
         assertThat(recorded.status()).isEqualTo(ModelEvaluationWire.StatusValue.FAILED);
+        assertThat(evaluationStatus(deploymentId)).isEqualTo("REJECTED");
+    }
+
+    private String evaluationStatus(UUID deploymentId) {
+        return jdbc.sql("""
+                select evaluation_status from model_deployment
+                where tenant_id = cast(:tenant as uuid) and model_deployment_id = :deployment
+                """).param("tenant", TENANT).param("deployment", deploymentId).query(String.class).single();
     }
 
     @Test

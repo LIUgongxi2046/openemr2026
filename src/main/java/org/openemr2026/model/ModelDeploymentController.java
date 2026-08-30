@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
+import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
@@ -73,5 +74,17 @@ final class ModelDeploymentController {
                 request, command.organizationId(), command.facilityId(), null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.update(identity, idempotencyKey, deploymentId, command));
+    }
+
+    @PostMapping("/model-deployments/{model_deployment_id}/connection-tests")
+    ResponseEntity<ModelDeploymentWire> testConnection(
+            HttpServletRequest request,
+            @PathVariable("model_deployment_id") UUID deploymentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentConnectionTestRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(models.testConnection(identity, idempotencyKey, deploymentId, command));
     }
 }

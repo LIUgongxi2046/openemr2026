@@ -16,6 +16,9 @@ server:
 
 openemr2026:
   version: 0.1.0-SNAPSHOT
+  archive:
+    storage-root: ${OPENEMR2026_ARCHIVE_STORAGE_ROOT:${java.io.tmpdir}/openemr2026-archive-objects}
+    ocr-endpoint: ${OPENEMR2026_ARCHIVE_OCR_ENDPOINT:}
   security:
     emergency-reauthentication-max-age-seconds: 300
   outbox:
@@ -24,3 +27,11 @@ openemr2026:
     lease-seconds: 30
     max-attempts: 5
     poll-delay-ms: 1000
+  medical-agent:
+    external-models-enabled: ${OPENEMR2026_MEDICAL_AGENT_EXTERNAL_MODELS_ENABLED:true}
+    worker:
+      enabled: true
+      lease-seconds: 180
+      poll-delay-ms: 500
+  model-secrets:
+    directory: ${OPENEMR2026_MODEL_SECRET_DIRECTORY:${java.io.tmpdir}/openemr2026-model-secrets}

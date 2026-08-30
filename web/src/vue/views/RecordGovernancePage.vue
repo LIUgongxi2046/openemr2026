@@ -8,9 +8,12 @@ import {
   issueDocumentLease,
   loadDocumentGovernance,
   loadEncounterDocuments,
+  runQualityChecks,
   signDocument,
 } from '../../clinical-api';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
+import RecordPatientStrip from '../components/RecordPatientStrip.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const route = useRoute();
@@ -18,6 +21,7 @@ const queryClient = useQueryClient();
 const warningDisposition = ref('已核对警告并完成处置，不影响本次签署');
 const busy = ref(false);
 const notice = ref('');
+const signDialogOpen = ref(false);
 const signMode = computed(() => route.meta.contractId === 'record-sign');
 
 const governance = useQuery({
@@ -50,6 +54,23 @@ const canSign = computed(() => Boolean(
   && qualityRun.value && qualityRun.value.outcome !== 'BLOCKED'
   && blocking.value.length === 0,
 ));
+const readinessPercent = computed(() => Math.max(0, Math.min(100,
+  100 - (blocking.value.length * 50) - (warnings.value.length * 10) - (qualityRun.value ? 0 : 25))));
+
+async function rerunQuality() {
+  const data = governance.data.value;
+  if (!data?.document || busy.value || data.document.status !== 'DRAFT') return;
+  busy.value = true;
+  notice.value = '';
+  try {
+    const findings = await runQualityChecks(data.lease, data.document);
+    notice.value = findings.length === 0 ? '确定性质控通过，可以进入签署。' : `质控完成，发现 ${findings.length} 项问题。`;
+    await governance.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error);
+    notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = false; }
+}
 
 async function signCurrentVersion() {
   const data = governance.data.value;
@@ -59,6 +80,7 @@ async function signCurrentVersion() {
   try {
     const evidence = await signDocument(data.lease, data.document, warningDisposition.value);
     notice.value = `签署证据已创建：${evidence.signature_status}`;
+    signDialogOpen.value = false;
     await governance.refetch();
     await queryClient.invalidateQueries({ queryKey: ['clinical', 'current-document'] });
   } catch (error) {
@@ -73,53 +95,23 @@ function outcomeLabel(outcome?: string) {
   return ({ PASSED: '已通过', WARNING: '有警告', BLOCKED: '已阻断', NOT_RUN: '未运行' } as Record<string, string>)[outcome ?? 'NOT_RUN'];
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'short', timeStyle: 'short', hour12: false }).format(new Date(value));
-}
 </script>
 
 <template>
   <section data-page-root class="content vue-native-page">
-    <div class="page-heading"><div><p class="eyebrow">病历主轴 / 确定性治理</p><h1>{{ signMode ? '病历签署与法律证据' : '病历质控与审签中心' }}</h1></div>
-      <RouterLink class="button secondary" to="/opd-record">返回编辑处理</RouterLink></div>
-    <p class="record-center-intro">把质控运行、问题闭环、签名证据与分级审签放在同一版本上下文中；AI 建议与硬性门禁严格分层。</p>
+    <div class="page-heading"><div><h1>{{ signMode ? '病历签署确认' : '病历质控与审签中心' }}</h1><p>{{ signMode ? '受保护终态 · 签署后内容不可覆盖' : '硬规则、机构规则、AI 建议和人工缺陷分别治理' }}</p></div><div class="toolbar-actions"><button class="btn" type="button" :disabled="busy || document?.status !== 'DRAFT'" @click="rerunQuality">运行全量质控</button><RouterLink v-if="!signMode" class="btn primary" to="/record-sign">进入签署确认</RouterLink><RouterLink v-else class="btn" to="/record-qc">返回质控</RouterLink></div></div>
+    <RecordPatientStrip />
     <ClinicalPageState v-if="governance.isPending.value" kind="loading" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="governance.refetch()" />
     <div v-else-if="!document" class="record-evidence-empty"><h2>本次就诊尚无可治理病历</h2><p>创建病历后才能运行质控并进入审签。</p>
-      <RouterLink class="button primary" to="/opd-record">创建病历</RouterLink></div>
+      <RouterLink class="button primary" to="/record">创建病历</RouterLink></div>
     <div v-else-if="snapshot" class="governance-workspace">
       <div v-if="notice" class="notice" role="status">{{ notice }}</div>
-      <section class="governance-metrics" aria-label="治理摘要">
-        <article class="governance-outcome" :class="(qualityRun?.outcome ?? 'NOT_RUN').toLowerCase()"><span>当前版本质控</span><strong>{{ outcomeLabel(qualityRun?.outcome) }}</strong>
-          <small>{{ qualityRun ? `${qualityRun.rule_version} · ${formatDate(qualityRun.executed_at)}` : '尚无绑定当前内容哈希的质控运行' }}</small></article>
-        <article><span>阻断问题</span><strong :class="{ 'danger-value': blocking.length }">{{ blocking.length }}</strong><small>未闭环的 BLOCKING 规则</small></article>
-        <article><span>未闭环警告</span><strong>{{ warnings.length }}</strong><small>签署前需记录处置意见</small></article>
-        <article><span>签名证据</span><strong>{{ snapshot.signatures.length }}</strong><small>{{ snapshot.document_status }} · 当前版本 v{{ document.version_no }}</small></article>
-      </section>
-      <div v-if="!qualityRun" class="governance-gate blocked" role="status"><strong>当前版本禁止签署</strong><span>尚未运行确定性质控；空问题列表不等于通过。</span>
-        <RouterLink to="/opd-record">进入编辑页运行质控</RouterLink></div>
-      <div v-else-if="qualityRun.outcome === 'BLOCKED'" class="governance-gate blocked" role="status"><strong>质控未通过</strong><span>处理阻断项、保存新版本并重新质控。</span>
-        <RouterLink to="/opd-record">返回病历处理</RouterLink></div>
-      <div v-else class="governance-gate passed" role="status"><strong>当前内容已执行确定性质控</strong><span>证据绑定内容指纹 {{ qualityRun.content_hash.slice(0, 16) }}…</span></div>
-      <div class="governance-grid">
-        <section class="governance-card quality-evidence"><header><div><h2>确定性质控规则与问题闭环</h2><p>只展示服务端规则结果，不把 AI 建议计入数量。</p></div><span class="evidence-verified">数据库原始证据</span></header>
-          <div v-if="openFindings.length === 0" class="governance-empty"><span>✓</span><strong>{{ qualityRun ? (qualityRun.finding_count > 0 ? '当前无未闭环规则问题' : '本次运行未发现规则问题') : '暂无问题证据，但尚未运行质控' }}</strong><small>{{ qualityRun ? (qualityRun.finding_count > 0 ? `本次共命中 ${qualityRun.finding_count} 项，均已处置` : '本次未命中规则问题') : '空列表不等于通过' }}</small></div>
-          <div v-else class="governance-findings"><article v-for="finding in openFindings" :key="finding.finding_id" :class="finding.severity.toLowerCase()"><div><b>{{ finding.severity }}</b><code>{{ finding.rule_code }}</code></div>
-            <strong>{{ finding.message }}</strong><span>{{ finding.field_path || '文书级规则' }} · 规则版本 {{ finding.rule_version }}</span></article></div>
-        </section>
-        <aside class="governance-card signature-chain"><header><h2>审签与法律证据链</h2><span class="document-state" :class="snapshot.document_status.toLowerCase()">{{ snapshot.document_status }}</span></header>
-          <dl v-if="snapshot.signature_policy"><div><dt>要求级别</dt><dd>{{ snapshot.signature_policy.required_signature_level }}</dd></div><div><dt>当前级别</dt><dd>{{ snapshot.signature_policy.current_signature_level || '未开始' }}</dd></div>
-            <div><dt>审签状态</dt><dd>{{ snapshot.signature_policy.review_status }}</dd></div><div><dt>签名分离</dt><dd>{{ snapshot.signature_policy.requires_distinct_signers ? '必须不同人员' : '未要求' }}</dd></div></dl>
-          <p v-else class="standard-policy">本版本按普通门诊单签流程；不可据此推断已有签名。</p>
-          <div class="signature-events"><p v-if="snapshot.signatures.length === 0">尚无签名证据</p><article v-for="signature in snapshot.signatures" v-else :key="signature.signature_id"><span>{{ signature.signature_role }}</span><strong>{{ signature.signer_display_name }}</strong>
-            <small>{{ formatDate(signature.signed_at) }} · {{ signature.signature_status }}</small><code>{{ signature.content_hash.slice(0, 16) }}…</code></article></div>
-          <footer><span>证据水印</span><code>{{ snapshot.data_watermark }}</code><p>CA 证据未回传时显示 PENDING_CA_EVIDENCE，不伪造有效签名。</p></footer></aside>
+      <div class="grid qc-layout record-real-qc">
+        <section class="card"><div class="card-head">当前草稿 v{{ document.version_no }} · 质量问题 <span class="status" :class="blocking.length ? 'red' : 'green'">{{ blocking.length }} 阻断</span></div><table class="table"><thead><tr><th>类型</th><th>问题</th><th>状态</th><th>定位</th><th></th></tr></thead><tbody><tr v-if="openFindings.length === 0"><td>确定性规则</td><td><b>{{ qualityRun ? '当前无未闭环规则问题' : '尚未运行质控' }}</b></td><td><span class="status" :class="qualityRun ? 'green' : 'amber'">{{ qualityRun ? outcomeLabel(qualityRun.outcome) : '待运行' }}</span></td><td>整份文书</td><td><RouterLink class="btn sm" to="/record-editor">定位</RouterLink></td></tr><tr v-for="finding in openFindings" :key="finding.finding_id"><td>{{ finding.severity === 'BLOCKING' ? '硬规则' : '机构规则' }}</td><td><b>{{ finding.message }}</b><br><span class="meta">{{ finding.rule_code }} · {{ finding.rule_version }}</span></td><td><span class="status" :class="finding.severity === 'BLOCKING' ? 'red' : 'amber'">{{ finding.severity === 'BLOCKING' ? '阻断' : '待处理' }}</span></td><td>{{ finding.field_path || '文书级' }}</td><td><RouterLink class="btn sm" to="/record-editor">定位</RouterLink></td></tr></tbody></table><div class="card-body"><div class="notice info"><div class="notice-title">缺陷失效规则</div>正文、来源、模板或规则版本变化后，相关“已处理”状态自动重新评估；豁免不跨版本继承。</div></div></section>
+        <aside class="card"><div class="card-head">审签责任与最终状态</div><div class="card-body"><div class="completion-ring warning" :style="{ background: `conic-gradient(#e99d23 ${readinessPercent}%, #e8edf2 0)` }"><b>{{ readinessPercent }}%</b><span>签署准备度</span></div><div class="queue-item"><div class="queue-title">作者 · 当前医生<span class="status green">有效</span></div></div><div class="queue-item"><div class="queue-title">签署策略 · {{ snapshot.signature_policy?.required_signature_level || '正式医师单签' }}<span class="status green">已匹配</span></div></div><div class="queue-item"><div class="queue-title">最终版本 · v{{ document.version_no }}<span class="status" :class="document.status === 'SIGNED' ? 'green' : 'amber'">{{ document.status }}</span></div></div><div class="queue-item"><div class="queue-title">CA/时间戳<span class="status" :class="snapshot.signatures.length ? 'green' : 'amber'">{{ snapshot.signatures.length ? '已有证据' : '签署时生成' }}</span></div></div><button class="btn primary record-sign-action" type="button" :disabled="!canSign || busy" @click="signDialogOpen = true">{{ document.status === 'SIGNED' ? '当前版本已签署' : '预览最终文书并签署' }}</button><small v-if="!canSign && document.status !== 'SIGNED'">必须先完成当前内容确定性质控并清零阻断问题。</small></div></aside>
       </div>
-      <section class="governance-card governance-sign-panel" :class="{ focused: signMode }"><header><div><h2>签署当前不可变版本</h2><p>签署命令仍由服务端复核版本、质控、岗位与签名策略。</p></div>
-        <RouterLink v-if="!signMode" to="/record-sign">进入专注签署页</RouterLink></header>
-        <label><span>警告处置说明</span><textarea v-model="warningDisposition" rows="3" /></label>
-        <button class="button danger" :disabled="!canSign || busy" @click="signCurrentVersion">{{ busy ? '正在签署…' : (document.status === 'SIGNED' ? '当前版本已签署' : '确认签署当前版本') }}</button>
-        <small v-if="!canSign && document.status !== 'SIGNED'">必须先完成当前内容确定性质控并清零阻断问题。</small></section>
+      <BusinessActionDialog :open="signDialogOpen" title="确认签署当前不可变版本" description="签署会生成绑定当前内容哈希的签名证据；签后修改必须走更正/补记流程。" eyebrow="病历 / 审签门禁" confirm-label="确认签署并留存证据" danger :busy="busy" width="wide" @cancel="signDialogOpen = false" @confirm="signCurrentVersion"><p class="dialog-warning">v{{ document.version_no }} · 内容哈希 {{ document.content_hash.slice(0, 18) }}… · {{ warnings.length }} 条警告</p><label>警告处置说明<textarea v-model="warningDisposition" rows="4" minlength="2" maxlength="2000" /></label></BusinessActionDialog>
     </div>
   </section>
 </template>

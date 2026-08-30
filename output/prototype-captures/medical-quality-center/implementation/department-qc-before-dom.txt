@@ -1,0 +1,174 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助Eva":
+    - generic: AI医助 Eva
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-30
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 6":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "6"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "全院病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 全院病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "诊疗执行中心 12":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 诊疗执行中心
+    - generic: "12"
+  - link "任务中心 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务中心
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 9":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "9"
+  - link "模拟接口 13":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+    - generic: "13"
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - navigation "医疗质量中心二级导航":
+    - generic: 医疗质量中心
+    - link "质量总览":
+      - /url: "#/quality-center"
+    - link "院科质控":
+      - /url: "#/department-qc"
+    - link "评级取证":
+      - /url: "#/quality-rating"
+    - link "院感事件":
+      - /url: "#/infection-events"
+    - link "临床资质":
+      - /url: "#/credentials"
+  - heading "院科病历质控与整改" [level=1]
+  - paragraph: 按院区、科室、病区、文书类型和责任人管理运行质控、终末质控与整改复核。
+  - link "跨域进入病历中心":
+    - /url: "#/record"
+  - link "进入缺陷整改台账":
+    - /url: "#/department-qc/cases"
+  - paragraph: 病历质控 / 指标快照
+  - heading "质量指标与事实血缘" [level=2]
+  - paragraph: 质控运行、阻断、开放问题和整改闭环按科室工作流呈现
+  - button "刷新"
+  - button "记录人工快照"
+  - button "按登记口径计算"
+  - article:
+    - generic: "1"
+    - strong: 执行规则
+  - article:
+    - generic: "2"
+    - strong: 分派问题
+  - article:
+    - generic: "3"
+    - strong: 科室整改
+  - article:
+    - generic: "4"
+    - strong: 复核闭环
+  - region "最新指标":
+    - article:
+      - generic: 质控运行
+      - strong: —
+      - generic: 尚未计算
+    - article:
+      - generic: 阻断运行
+      - strong: —
+      - generic: 尚未计算
+    - article:
+      - generic: 开放问题
+      - strong: —
+      - generic: 尚未计算
+    - article:
+      - generic: 已整改问题
+      - strong: —
+      - generic: 尚未计算
+  - heading "指标目录与血缘" [level=2]
+  - paragraph: 每个自动快照携带事实来源与公式
+  - generic: 0/4 已计算
+  - generic: ◇ 暂无自动计算快照。执行“按登记口径计算”后生成。
+  - complementary:
+    - heading "业务入口" [level=2]
+    - paragraph: 从指标回到可整改事实
+    - navigation:
+      - link "病历质控 →":
+        - /url: "#/record-qc"
+      - link "医疗质量中心 →":
+        - /url: "#/quality-center"
+    - heading "人工参考快照" [level=2]
+    - paragraph: 明确标记为无自动公式
+    - paragraph: 人工参考值只用于补充说明，不会覆盖自动公式计算结果。
+    - button "记录人工快照"
+  - heading "整改业务下钻" [level=2]
+  - paragraph: 三级台账管理全部缺陷，四级详情管理单个缺陷的责任人、时限、风险和闭环状态。
+  - link "打开三级台账":
+    - /url: "#/department-qc/cases"

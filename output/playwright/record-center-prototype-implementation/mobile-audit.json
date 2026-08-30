@@ -1,0 +1,72 @@
+[
+  {
+    "route": "record",
+    "docH": 1129,
+    "docW": 390,
+    "h1": "全院病历中心",
+    "hash": "#/record",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 627
+  },
+  {
+    "route": "record-editor",
+    "docH": 1608,
+    "docW": 836,
+    "h1": "门诊病历 · 专注编辑",
+    "hash": "#/record-editor",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 627
+  },
+  {
+    "route": "record-sources",
+    "docH": 1236,
+    "docW": 537,
+    "h1": "病历来源与证据中心",
+    "hash": "#/record-sources",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 627
+  },
+  {
+    "route": "record-qc",
+    "docH": 1181,
+    "docW": 537,
+    "h1": "病历质控与审签中心",
+    "hash": "#/record-qc",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 627
+  },
+  {
+    "route": "record-versions",
+    "docH": 1692,
+    "docW": 602,
+    "h1": "病历版本与法律证据",
+    "hash": "#/record-versions",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 627
+  },
+  {
+    "route": "lis-report",
+    "docH": 1138,
+    "docW": 537,
+    "h1": "LIS 检验报告调阅",
+    "hash": "#/lis-report",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 629
+  },
+  {
+    "route": "pacs-viewer",
+    "docH": 1774,
+    "docW": 1002,
+    "h1": "PACS 影像调阅",
+    "hash": "#/pacs-viewer",
+    "innerH": 844,
+    "innerW": 390,
+    "navW": 630
+  }
+]

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.OutpatientFollowupCompleteRequestWire;
 import org.openemr2026.contracts.OutpatientFollowupCreateRequestWire;
+import org.openemr2026.contracts.OutpatientFollowupCancelRequestWire;
+import org.openemr2026.contracts.OutpatientFollowupUpdateRequestWire;
 import org.openemr2026.contracts.OutpatientFollowupWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -12,6 +14,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -66,5 +69,35 @@ final class OutpatientFollowupController {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(followups.complete(identity, followupId, command));
+    }
+
+    @PatchMapping("/outpatient-followups/{followup_id}")
+    ResponseEntity<OutpatientFollowupWire> update(
+            HttpServletRequest request,
+            @PathVariable("followup_id") UUID followupId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody OutpatientFollowupUpdateRequestWire command,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId,
+            @RequestHeader("X-Encounter-Context") UUID encounterId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(followups.update(identity, patientId, encounterId, idempotencyKey, followupId, command));
+    }
+
+    @PostMapping("/outpatient-followups/{followup_id}/cancellations")
+    ResponseEntity<OutpatientFollowupWire> cancel(
+            HttpServletRequest request,
+            @PathVariable("followup_id") UUID followupId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody OutpatientFollowupCancelRequestWire command,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId,
+            @RequestHeader("X-Encounter-Context") UUID encounterId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(followups.cancel(identity, patientId, encounterId, idempotencyKey, followupId, command));
     }
 }

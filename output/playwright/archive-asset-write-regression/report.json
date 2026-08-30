@@ -1,0 +1,112 @@
+{
+  "runId": "ARCHIVE-E2E-1788100110694",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "scan-ingest",
+      "status": "PASS",
+      "httpStatus": 201,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/ingestions"
+    },
+    {
+      "name": "original-download",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/content",
+      "contentHash": "003391ada85b5547071b079d54dcefaed8450956a8638767e6730a6abd3b7ad4"
+    },
+    {
+      "name": "ocr",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/ocr-runs"
+    },
+    {
+      "name": "index",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4"
+    },
+    {
+      "name": "storage-verify",
+      "status": "PASS",
+      "httpStatus": 201,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/storage-verifications"
+    },
+    {
+      "name": "copy-package",
+      "status": "PASS",
+      "httpStatus": 201,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/distribution-packages"
+    },
+    {
+      "name": "copy-download",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/distribution-packages/3c3ce8e0-a62e-4765-96bf-715a17abde77/content",
+      "contentHash": "8b9c56176e5bdb1ccdc0e3ca58b11aa02854ba2707c2bb409dd087679e7fe2e1"
+    },
+    {
+      "name": "copy-deliver",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/distribution-packages/3c3ce8e0-a62e-4765-96bf-715a17abde77/deliveries"
+    },
+    {
+      "name": "borrow-create",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/borrows"
+    },
+    {
+      "name": "borrow-edit",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/borrow"
+    },
+    {
+      "name": "borrow-return",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/returns"
+    },
+    {
+      "name": "catalog-edit",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4"
+    },
+    {
+      "name": "catalog-paper-create",
+      "status": "PASS",
+      "httpStatus": 201,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets"
+    },
+    {
+      "name": "catalog-retire",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/9dce9748-bca9-4acd-91ec-0a555642d930/retirements"
+    },
+    {
+      "name": "preservation-schedule",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4"
+    },
+    {
+      "name": "worm-seal",
+      "status": "PASS",
+      "httpStatus": 200,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4"
+    },
+    {
+      "name": "worm-restore-verify",
+      "status": "PASS",
+      "httpStatus": 201,
+      "url": "http://127.0.0.1:4280/api/v1/medical-record-assets/b7b63368-4a23-4fa3-bbd3-de0333bef6e4/storage-verifications"
+    }
+  ],
+  "findings": [],
+  "createdAt": "2026-08-30T14:28:41.948Z"
+}

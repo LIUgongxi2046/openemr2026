@@ -6,6 +6,10 @@ import {
   archiveReadinessWireSchema,
   contextLeaseWireSchema,
   documentDiffWireSchema,
+  documentCreateRequestWireSchema,
+  documentVoidRequestWireSchema,
+  documentEvidenceLifecycleRequestWireSchema,
+  documentSourceReferenceCorrectionRequestWireSchema,
   documentCorrectionWireSchema,
   documentCorrectionPropagationWireSchema,
   documentGovernanceSnapshotWireSchema,
@@ -255,6 +259,48 @@ export async function request(path: string, init: RequestInit = {}) {
     );
   }
   return payload;
+}
+
+export type ClinicalBinaryResponse = {
+  blob: Blob;
+  filename: string;
+  mediaType: string;
+  contentHash: string | null;
+};
+
+/**
+ * Download authenticated clinical evidence without attempting JSON decoding.
+ * The same patient/role/lease headers and fail-closed error envelope used by
+ * request() are retained so downloads cannot bypass the clinical context gate.
+ */
+export async function requestBinary(path: string, headers: Record<string, string> = {}): Promise<ClinicalBinaryResponse> {
+  const actor = activeInpatientSyntheticActor;
+  if (!clinicalContext.tenantId || !clinicalContext.organizationId || !clinicalContext.facilityId
+      || !(actor?.userId ?? clinicalContext.userId) || !(actor?.roleId ?? clinicalContext.roleId) || !configuredBearer()) {
+    throw new ClinicalApiError('CLINICAL_IDENTITY_NOT_CONFIGURED', '生产构建必须由 OIDC 会话注入身份与临床上下文', 401);
+  }
+  const response = await fetch(`/api/v1${path}`, { headers: { ...effectiveIdentityHeaders(), ...headers } });
+  if (!response.ok) {
+    const text = await response.text();
+    let code = `HTTP_${response.status}`;
+    let message = '临床服务请求失败';
+    try {
+      const payload = JSON.parse(text) as { error?: { code?: string; message?: string } };
+      code = payload.error?.code || code;
+      message = payload.error?.message || message;
+    } catch { /* non-JSON error body */ }
+    throw new ClinicalApiError(code, message, response.status);
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? '';
+  const utf8Name = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const quotedName = disposition.match(/filename="([^"]+)"/i)?.[1];
+  const filename = utf8Name ? decodeURIComponent(utf8Name) : quotedName ?? 'download.bin';
+  return {
+    blob: await response.blob(),
+    filename,
+    mediaType: response.headers.get('Content-Type') ?? 'application/octet-stream',
+    contentHash: response.headers.get('X-Content-SHA256'),
+  };
 }
 
 export async function streamText(path: string, headers: Record<string, string> = {}) {
@@ -1774,6 +1820,57 @@ export async function loadCurrentDocument(lease: ContextLeaseWire): Promise<Docu
   }));
 }
 
+export async function loadDocument(
+  lease: ContextLeaseWire,
+  documentId: string,
+): Promise<DocumentVersionWire> {
+  return documentVersionWireSchema.parse(await request(`/documents/${documentId}`, {
+    headers: scopedHeaders(lease),
+  }));
+}
+
+export async function createClinicalDocument(
+  lease: ContextLeaseWire,
+  documentTypeCode: string,
+  sections: Record<string, unknown>,
+): Promise<DocumentVersionWire> {
+  return documentVersionWireSchema.parse(await request('/documents', {
+    method: 'POST',
+    headers: {
+      ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+    },
+    body: JSON.stringify(documentCreateRequestWireSchema.parse({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      patient_id: clinicalContext.patientId,
+      encounter_id: clinicalContext.encounterId,
+      document_type_code: documentTypeCode.trim(),
+      sections,
+    })),
+  }));
+}
+
+export async function voidClinicalDocument(
+  lease: ContextLeaseWire,
+  document: DocumentVersionWire,
+  reason: string,
+): Promise<DocumentVersionWire> {
+  return documentVersionWireSchema.parse(await request(`/documents/${document.document_id}/voids`, {
+    method: 'POST',
+    headers: {
+      ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+    },
+    body: JSON.stringify(documentVoidRequestWireSchema.parse({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      patient_id: clinicalContext.patientId,
+      encounter_id: clinicalContext.encounterId,
+      expected_row_version: document.row_version,
+      reason: reason.trim(),
+    })),
+  }));
+}
+
 export async function loadDocumentSources(
   lease: ContextLeaseWire,
   document: DocumentVersionWire,
@@ -1789,6 +1886,7 @@ export async function uploadDocumentAttachment(
   document: DocumentVersionWire,
   file: File,
   targetFieldPath: string,
+  replacement?: { attachmentId: string; reason: string },
 ): Promise<DocumentAttachmentWire> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -1813,6 +1911,8 @@ export async function uploadDocumentAttachment(
       content_base64: btoa(binary),
       expected_sha256: expectedSha256,
       target_field_path: targetFieldPath,
+      replaces_attachment_id: replacement?.attachmentId ?? null,
+      replacement_reason: replacement?.reason.trim() || null,
     }),
   }));
 }
@@ -1853,9 +1953,89 @@ export async function addDocumentSourceReference(
   }));
 }
 
-export async function loadEncounterDocuments(lease: ContextLeaseWire): Promise<DocumentVersionWire[]> {
-  const payload = await request(`/encounters/${clinicalContext.encounterId}/documents`, {
-    headers: scopedHeaders(lease),
+export async function correctDocumentSourceReference(
+  lease: ContextLeaseWire,
+  document: DocumentVersionWire,
+  sourceReferenceId: string,
+  targetFieldPath: string,
+  excerpt: string,
+  reason: string,
+): Promise<DocumentSourceReferenceWire> {
+  return documentSourceReferenceWireSchema.parse(await request(
+    `/documents/${document.document_id}/source-references/${sourceReferenceId}/corrections`, {
+      method: 'POST',
+      headers: {
+        ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+      },
+      body: JSON.stringify(documentSourceReferenceCorrectionRequestWireSchema.parse({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        patient_id: clinicalContext.patientId,
+        encounter_id: clinicalContext.encounterId,
+        document_version_id: document.document_version_id,
+        target_field_path: targetFieldPath,
+        excerpt: excerpt.trim() || null,
+        reason: reason.trim(),
+      })),
+    },
+  ));
+}
+
+export async function revokeDocumentSourceReference(
+  lease: ContextLeaseWire,
+  document: DocumentVersionWire,
+  sourceReferenceId: string,
+  reason: string,
+): Promise<DocumentSourceReferenceWire> {
+  return documentSourceReferenceWireSchema.parse(await request(
+    `/documents/${document.document_id}/source-references/${sourceReferenceId}/revocations`, {
+      method: 'POST',
+      headers: {
+        ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+      },
+      body: JSON.stringify(documentEvidenceLifecycleRequestWireSchema.parse({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        patient_id: clinicalContext.patientId,
+        encounter_id: clinicalContext.encounterId,
+        document_version_id: document.document_version_id,
+        reason: reason.trim(),
+      })),
+    },
+  ));
+}
+
+export async function voidDocumentAttachment(
+  lease: ContextLeaseWire,
+  document: DocumentVersionWire,
+  attachmentId: string,
+  reason: string,
+): Promise<DocumentAttachmentWire> {
+  return documentAttachmentWireSchema.parse(await request(
+    `/documents/${document.document_id}/attachments/${attachmentId}/voids`, {
+      method: 'POST',
+      headers: {
+        ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID(),
+      },
+      body: JSON.stringify(documentEvidenceLifecycleRequestWireSchema.parse({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        patient_id: clinicalContext.patientId,
+        encounter_id: clinicalContext.encounterId,
+        document_version_id: document.document_version_id,
+        reason: reason.trim(),
+      })),
+    },
+  ));
+}
+
+export async function loadEncounterDocuments(
+  lease: ContextLeaseWire,
+  encounterId = clinicalContext.encounterId,
+  patientId = clinicalContext.patientId,
+): Promise<DocumentVersionWire[]> {
+  const payload = await request(`/encounters/${encounterId}/documents`, {
+    headers: explicitContextHeaders(lease, patientId, encounterId),
   });
   return documentVersionWireSchema.array().parse(payload);
 }
@@ -1912,8 +2092,8 @@ export async function createDocumentCorrection(
   correctionType: 'CORRECTION' | 'ADDENDUM',
   reason: string,
   sections: Record<string, unknown>,
-): Promise<DocumentVersionWire> {
-  return documentVersionWireSchema.parse(await request(`/documents/${document.document_id}/corrections`, {
+): Promise<DocumentCorrectionWire> {
+  return documentCorrectionWireSchema.parse(await request(`/documents/${document.document_id}/corrections`, {
     method: 'POST',
     headers: {
       ...scopedHeaders(lease),

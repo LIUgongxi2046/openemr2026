@@ -12,6 +12,7 @@ import org.openemr2026.contracts.DocumentCorrectionWire;
 import org.openemr2026.contracts.DocumentDiffWire;
 import org.openemr2026.contracts.DocumentGovernanceSnapshotWire;
 import org.openemr2026.contracts.DocumentDraftSaveRequestWire;
+import org.openemr2026.contracts.DocumentVoidRequestWire;
 import org.openemr2026.contracts.DocumentVersionWire;
 import org.openemr2026.contracts.DocumentQualityCheckRequestWire;
 import org.openemr2026.contracts.DocumentReviewRejectRequestWire;
@@ -218,6 +219,20 @@ final class ClinicalLifecycleController {
         DocumentVersionWire version = clinical.saveDraft(
                 identity, idempotencyKey, documentId, request.patientId(), request.encounterId(),
                 request.expectedRowVersion(), request.sections());
+        return documentResponse(200, version);
+    }
+
+    @PostMapping("/documents/{documentId}/voids")
+    ResponseEntity<DocumentVersionWire> voidDocument(
+            HttpServletRequest httpRequest,
+            @PathVariable UUID documentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody DocumentVoidRequestWire request) {
+        ClinicalIdentity identity = security.authorize(
+                httpRequest, request.organizationId(), request.facilityId(), request.patientId(), request.encounterId());
+        DocumentVersionWire version = clinical.voidDocument(
+                identity, idempotencyKey, documentId, request.patientId(), request.encounterId(),
+                request.expectedRowVersion(), request.reason());
         return documentResponse(200, version);
     }
 

@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-08-28T11:31:10.978Z",
+  "run_at": "2026-08-30T03:49:42.277Z",
   "routes": [
     "outpatient",
     "opd-record",
@@ -9,8 +9,8 @@
     "opd-consult",
     "opd-followup"
   ],
-  "checks": 33,
-  "passed": 33,
+  "checks": 37,
+  "passed": 37,
   "failed": 0,
   "findings": [],
   "observations": [
@@ -61,6 +61,11 @@
     },
     {
       "route": "opd-orders",
+      "name": "orders-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-orders",
       "name": "orders-delete-lifecycle-modal",
       "status": "PASS"
     },
@@ -91,6 +96,11 @@
     },
     {
       "route": "opd-consult",
+      "name": "consult-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-consult",
       "name": "consult-delete-lifecycle-modal",
       "status": "PASS"
     },
@@ -107,6 +117,16 @@
     {
       "route": "opd-followup",
       "name": "followup-edit-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-followup",
+      "name": "followup-complete-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-followup",
+      "name": "followup-delete-lifecycle-modal",
       "status": "PASS"
     },
     {

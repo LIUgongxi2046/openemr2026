@@ -16,6 +16,11 @@ server:
 
 openemr2026:
   synthetic-dataset-enabled: false
+  archive:
+    storage-root: ${OPENEMR2026_ARCHIVE_STORAGE_ROOT:}
+    ocr-endpoint: ${OPENEMR2026_ARCHIVE_OCR_ENDPOINT:}
+  medical-agent:
+    external-models-enabled: ${OPENEMR2026_MEDICAL_AGENT_EXTERNAL_MODELS_ENABLED:false}
   production:
     deployment-id: ${OPENEMR2026_DEPLOYMENT_ID:}
     allow-development-identity: false

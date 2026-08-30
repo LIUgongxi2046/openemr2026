@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ReferralCreateRequestWire;
 import org.openemr2026.contracts.ReferralTransitionRequestWire;
+import org.openemr2026.contracts.ReferralUpdateRequestWire;
 import org.openemr2026.contracts.ReferralWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -12,6 +13,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -64,5 +66,17 @@ final class ReferralController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(referrals.transition(identity, idempotencyKey, referralId, command));
+    }
+
+    @PatchMapping("/referrals/{referral_id}")
+    ResponseEntity<ReferralWire> update(
+            HttpServletRequest request,
+            @PathVariable("referral_id") UUID referralId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ReferralUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), command.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(referrals.update(identity, idempotencyKey, referralId, command));
     }
 }

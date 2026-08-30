@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,13 +23,22 @@ public final class ContextLeasePolicy {
             List.of("DOCUMENT_VERSION", "OBSERVATION", "ORDER", "RULE");
 
     private final Clock clock;
+    private final boolean externalMedicalAgentModelsEnabled;
 
-    public ContextLeasePolicy() {
-        this(Clock.systemUTC());
+    @Autowired
+    public ContextLeasePolicy(
+            @Value("${openemr2026.medical-agent.external-models-enabled:false}")
+            boolean externalMedicalAgentModelsEnabled) {
+        this(Clock.systemUTC(), externalMedicalAgentModelsEnabled);
     }
 
     ContextLeasePolicy(Clock clock) {
+        this(clock, false);
+    }
+
+    ContextLeasePolicy(Clock clock, boolean externalMedicalAgentModelsEnabled) {
         this.clock = Objects.requireNonNull(clock);
+        this.externalMedicalAgentModelsEnabled = externalMedicalAgentModelsEnabled;
     }
 
     public ContextLease issue(
@@ -56,12 +67,16 @@ public final class ContextLeasePolicy {
             throw new IllegalArgumentException("An encounter lease requires a patient");
         }
 
+        String normalizedPurpose = purposeCode.trim();
+        String modelResidencyPolicy = externalMedicalAgentModelsEnabled
+                && "MEDICAL_AGENT_COLLABORATION".equals(normalizedPurpose)
+                ? "APPROVED_EXTERNAL" : "ON_PREM_ONLY";
         Instant issuedAt = clock.instant();
         UUID leaseId = uuidV7(issuedAt);
         String watermark = sha256(String.join("|",
                 leaseId.toString(), identity.tenantId().toString(), identity.userId().toString(),
                 organizationId.toString(), facilityId.toString(), String.valueOf(patientId),
-                String.valueOf(encounterId), purposeCode.trim(), issuedAt.toString()));
+                String.valueOf(encounterId), normalizedPurpose, modelResidencyPolicy, issuedAt.toString()));
 
         return new ContextLease(
                 leaseId,
@@ -73,11 +88,11 @@ public final class ContextLeasePolicy {
                 patientId,
                 encounterId,
                 taskId,
-                purposeCode.trim(),
+                normalizedPurpose,
                 DEFAULT_SOURCES,
                 watermark,
                 "SENSITIVE",
-                "ON_PREM_ONLY",
+                modelResidencyPolicy,
                 issuedAt,
                 issuedAt.plus(LEASE_DURATION));
     }

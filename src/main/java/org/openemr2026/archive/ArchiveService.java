@@ -346,6 +346,16 @@ final class ArchiveService {
                         "All current signature evidence must be valid and bound to content", document.documentId()));
             }
         }
+        for (UUID assetId : jdbc.sql("""
+                select medical_record_asset_id from medical_record_asset
+                where tenant_id = :tenant and encounter_id = :encounter
+                  and status <> 'RETIRED' and integrity_status <> 'VERIFIED'
+                order by medical_record_asset_id
+                """).param("tenant", tenantId).param("encounter", encounterId).query(UUID.class).list()) {
+            blockers.add(new ArchiveBlockerWire(
+                    "ASSET_INTEGRITY_REQUIRED",
+                    "All linked record assets must pass immutable hash verification before archive", assetId));
+        }
         return List.copyOf(blockers);
     }
 

@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EncounterDomainSwitchRecordRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchCorrectionRequestWire;
+import org.openemr2026.contracts.EncounterDomainSwitchVoidRequestWire;
 import org.openemr2026.contracts.EncounterDomainSwitchWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -11,6 +13,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,5 +53,29 @@ final class EncounterDomainSwitchController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), null);
         return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
                 .body(switches.record(identity, idempotencyKey, command));
+    }
+
+    @PostMapping("/encounter-domain-switches/{domain_switch_id}/corrections")
+    ResponseEntity<EncounterDomainSwitchWire> correct(
+            HttpServletRequest request,
+            @PathVariable("domain_switch_id") UUID switchId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EncounterDomainSwitchCorrectionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(switches.correct(identity, idempotencyKey, switchId, command));
+    }
+
+    @PostMapping("/encounter-domain-switches/{domain_switch_id}/voids")
+    ResponseEntity<EncounterDomainSwitchWire> voidSwitch(
+            HttpServletRequest request,
+            @PathVariable("domain_switch_id") UUID switchId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EncounterDomainSwitchVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(switches.voidSwitch(identity, idempotencyKey, switchId, command));
     }
 }

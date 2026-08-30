@@ -1,0 +1,419 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助Eva":
+    - generic: AI医助 Eva
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-30
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 6":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "6"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "全院病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 全院病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "诊疗执行中心 12":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 诊疗执行中心
+    - generic: "12"
+  - link "任务中心 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务中心
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 9":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "9"
+  - link "模拟接口 13":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+    - generic: "13"
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - navigation "医疗质量中心二级导航":
+    - generic: 医疗质量中心
+    - link "质量总览":
+      - /url: "#/quality-center"
+    - link "院科质控":
+      - /url: "#/department-qc"
+    - link "评级取证":
+      - /url: "#/quality-rating"
+    - link "院感事件":
+      - /url: "#/infection-events"
+    - link "临床资质":
+      - /url: "#/credentials"
+  - heading "医疗质量与电子病历评级看板" [level=1]
+  - paragraph: 39 项评价的功能、应用范围、四维数据质量和证据快照；未验证科室不能升级支持级别。
+  - link "打开三级台账":
+    - /url: "#/quality-rating/assessments"
+  - button "新建评级证据"
+  - region "支持等级统计":
+    - article:
+      - generic: 项目映射
+      - strong: "18"
+      - generic: 实际已建档评估
+    - article:
+      - generic: 有效应用达标
+      - strong: "5"
+      - generic: 当前院区已验证
+    - article:
+      - generic: 待整改
+      - strong: "2"
+      - generic: 能力包或支持缺口
+    - article:
+      - generic: 证据缺口
+      - strong: "2"
+      - generic: 缺失安全门
+  - heading "支持评估台账" [level=2]
+  - paragraph: 证据哈希与缺失安全门决定评级，不得手工越级。
+  - button "刷新"
+  - button "新建"
+  - table:
+    - rowgroup:
+      - row "科室 / 范围 支持等级 证据哈希 缺失安全门 有效期 操作":
+        - columnheader "科室 / 范围"
+        - columnheader "支持等级"
+        - columnheader "证据哈希"
+        - columnheader "缺失安全门"
+        - columnheader "有效期"
+        - columnheader "操作"
+    - rowgroup:
+      - row "OBSTETRICS …d6f7482b 基础闭环 cb9f1c841903b417… 无 2027年8月30日 编辑 删除":
+        - cell "OBSTETRICS …d6f7482b":
+          - link "OBSTETRICS":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41a"
+            - strong: OBSTETRICS
+          - generic: …d6f7482b
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "cb9f1c841903b417…":
+          - code: cb9f1c841903b417…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "PEDIATRICS …0000ab04 基础闭环 f6ebbef2c3a033bc… 无 2027年8月30日 编辑 删除":
+        - cell "PEDIATRICS …0000ab04":
+          - link "PEDIATRICS":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c413"
+            - strong: PEDIATRICS
+          - generic: …0000ab04
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "f6ebbef2c3a033bc…":
+          - code: f6ebbef2c3a033bc…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "GENERAL_MEDICINE …0000ab15 通用可用 5ae8ea2ddb7b3b93… 无 2027年8月30日 编辑 删除":
+        - cell "GENERAL_MEDICINE …0000ab15":
+          - link "GENERAL_MEDICINE":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c411"
+            - strong: GENERAL_MEDICINE
+          - generic: …0000ab15
+        - cell "通用可用":
+          - generic: 通用可用
+        - cell "5ae8ea2ddb7b3b93…":
+          - code: 5ae8ea2ddb7b3b93…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "RADIOLOGY …0000ab06 通用可用 239d2a2846853320… 无 2027年8月30日 编辑 删除":
+        - cell "RADIOLOGY …0000ab06":
+          - link "RADIOLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c419"
+            - strong: RADIOLOGY
+          - generic: …0000ab06
+        - cell "通用可用":
+          - generic: 通用可用
+        - cell "239d2a2846853320…":
+          - code: 239d2a2846853320…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "LABORATORY_MEDICINE …0000ab05 通用可用 e4dac9c20a8403e3… 无 2027年8月30日 编辑 删除":
+        - cell "LABORATORY_MEDICINE …0000ab05":
+          - link "LABORATORY_MEDICINE":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c418"
+            - strong: LABORATORY_MEDICINE
+          - generic: …0000ab05
+        - cell "通用可用":
+          - generic: 通用可用
+        - cell "e4dac9c20a8403e3…":
+          - code: e4dac9c20a8403e3…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "REHABILITATION …7cddef5a 基础闭环 ec8f680a99254072… 无 2027年8月30日 编辑 删除":
+        - cell "REHABILITATION …7cddef5a":
+          - link "REHABILITATION":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c420"
+            - strong: REHABILITATION
+          - generic: …7cddef5a
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "ec8f680a99254072…":
+          - code: ec8f680a99254072…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "CARDIOLOGY …0000aa08 基础闭环 2bf6dbd35bc07822… 无 2027年8月30日 编辑 删除":
+        - cell "CARDIOLOGY …0000aa08":
+          - link "CARDIOLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c412"
+            - strong: CARDIOLOGY
+          - generic: …0000aa08
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "2bf6dbd35bc07822…":
+          - code: 2bf6dbd35bc07822…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "E2E_MTFWHQDV …0000aa08 能力包待配 — EVIDENCE_REVIEW 长期 编辑 删除":
+        - cell "E2E_MTFWHQDV …0000aa08":
+          - link "E2E_MTFWHQDV":
+            - /url: "#/quality-rating/assessments/b356b823-983f-4824-bf70-f26fad332c2e"
+            - strong: E2E_MTFWHQDV
+          - generic: …0000aa08
+        - cell "能力包待配":
+          - generic: 能力包待配
+        - cell "—":
+          - code: —
+        - cell "EVIDENCE_REVIEW"
+        - cell "长期"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "E2E_MTFWKNGJ …0000aa08 能力包待配 — EVIDENCE_REVIEW 长期 编辑 删除":
+        - cell "E2E_MTFWKNGJ …0000aa08":
+          - link "E2E_MTFWKNGJ":
+            - /url: "#/quality-rating/assessments/189456fd-b98e-4690-8958-33813d8925a4"
+            - strong: E2E_MTFWKNGJ
+          - generic: …0000aa08
+        - cell "能力包待配":
+          - generic: 能力包待配
+        - cell "—":
+          - code: —
+        - cell "EVIDENCE_REVIEW"
+        - cell "长期"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "EMERGENCY_MEDICINE …0000ab01 基础闭环 945b0e6bd2aa5d37… 无 2027年8月30日 编辑 删除":
+        - cell "EMERGENCY_MEDICINE …0000ab01":
+          - link "EMERGENCY_MEDICINE":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c415"
+            - strong: EMERGENCY_MEDICINE
+          - generic: …0000ab01
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "945b0e6bd2aa5d37…":
+          - code: 945b0e6bd2aa5d37…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "GENERAL_SURGERY …0000ab03 基础闭环 2b95d22f2803f107… 无 2027年8月30日 编辑 删除":
+        - cell "GENERAL_SURGERY …0000ab03":
+          - link "GENERAL_SURGERY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c417"
+            - strong: GENERAL_SURGERY
+          - generic: …0000ab03
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "2b95d22f2803f107…":
+          - code: 2b95d22f2803f107…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "PATHOLOGY …b661f2c6 通用可用 fd61e5366a8d29d5… 无 2027年8月30日 编辑 删除":
+        - cell "PATHOLOGY …b661f2c6":
+          - link "PATHOLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41e"
+            - strong: PATHOLOGY
+          - generic: …b661f2c6
+        - cell "通用可用":
+          - generic: 通用可用
+        - cell "fd61e5366a8d29d5…":
+          - code: fd61e5366a8d29d5…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "NEUROLOGY …0000ab02 基础闭环 bd042b4435e1fed1… 无 2027年8月30日 编辑 删除":
+        - cell "NEUROLOGY …0000ab02":
+          - link "NEUROLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c416"
+            - strong: NEUROLOGY
+          - generic: …0000ab02
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "bd042b4435e1fed1…":
+          - code: bd042b4435e1fed1…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "MENTAL_HEALTH …0000ab14 基础闭环 10fa2a52e865fc5e… 无 2027年8月30日 编辑 删除":
+        - cell "MENTAL_HEALTH …0000ab14":
+          - link "MENTAL_HEALTH":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c414"
+            - strong: MENTAL_HEALTH
+          - generic: …0000ab14
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "10fa2a52e865fc5e…":
+          - code: 10fa2a52e865fc5e…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "ONCOLOGY …879c66d1 基础闭环 0abdedc9b3585823… 无 2027年8月30日 编辑 删除":
+        - cell "ONCOLOGY …879c66d1":
+          - link "ONCOLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41b"
+            - strong: ONCOLOGY
+          - generic: …879c66d1
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "0abdedc9b3585823…":
+          - code: 0abdedc9b3585823…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "PHARMACY …f24a400a 通用可用 026d398b83ea9f5f… 无 2027年8月30日 编辑 删除":
+        - cell "PHARMACY …f24a400a":
+          - link "PHARMACY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41f"
+            - strong: PHARMACY
+          - generic: …f24a400a
+        - cell "通用可用":
+          - generic: 通用可用
+        - cell "026d398b83ea9f5f…":
+          - code: 026d398b83ea9f5f…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "CRITICAL_CARE …861c81a6 基础闭环 eeb65419afcc29ee… 无 2027年8月30日 编辑 删除":
+        - cell "CRITICAL_CARE …861c81a6":
+          - link "CRITICAL_CARE":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41c"
+            - strong: CRITICAL_CARE
+          - generic: …861c81a6
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "eeb65419afcc29ee…":
+          - code: eeb65419afcc29ee…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"
+      - row "ANESTHESIOLOGY …15786482 基础闭环 04b86d29484496cd… 无 2027年8月30日 编辑 删除":
+        - cell "ANESTHESIOLOGY …15786482":
+          - link "ANESTHESIOLOGY":
+            - /url: "#/quality-rating/assessments/018f0000-0000-7000-8000-00000000c41d"
+            - strong: ANESTHESIOLOGY
+          - generic: …15786482
+        - cell "基础闭环":
+          - generic: 基础闭环
+        - cell "04b86d29484496cd…":
+          - code: 04b86d29484496cd…
+        - cell "无"
+        - cell "2027年8月30日"
+        - cell "编辑 删除":
+          - button "编辑"
+          - button "删除"

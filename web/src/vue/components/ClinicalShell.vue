@@ -49,7 +49,7 @@ const navigation: NavItem[] = [
   { id: 'outpatient', label: '门诊工作台', icon: '◫', group: '临床工作域', count: '6' },
   { id: 'emergency', label: '急诊工作台', icon: '✚', group: '临床工作域', count: '6' },
   { id: 'inpatient', label: '住院工作站', icon: '▥', group: '临床工作域', count: '5' },
-  { id: 'record', label: '病历中心', icon: '▤', group: '病历与质量', count: '3' },
+  { id: 'record', label: '全院病历中心', icon: '▤', group: '病历与质量', count: '3' },
   { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量', count: '7' },
   { id: 'archive-assets', label: '病案资产中心', icon: '▣', group: '病历与质量', count: '3' },
   { id: 'care-operations', label: '诊疗执行中心', icon: '✚', group: '业务协同', count: '12' },
@@ -130,6 +130,19 @@ const subNav = computed<SubNav | null>(() => {
       items: mockInterfaceSubmenus.map(([id, label]) => [id === 'mock-interfaces' ? id : `mock-interfaces/${id}`, label]),
     };
   }
+  if (recordRoutes.includes(c)) {
+    const active = c === 'record-sign' ? 'record-qc' : c === 'record-diff' ? 'record-versions' : c;
+    return {
+      kind: 'center',
+      title: '全院病历中心',
+      active,
+      items: [
+        ['record', '病历工作台'], ['record-editor', '专注编辑'], ['record-sources', '来源证据'],
+        ['record-qc', '质控审签'], ['record-versions', '版本证据'],
+        ['lis-report', 'LIS 报告'], ['pacs-viewer', 'PACS 影像'],
+      ],
+    };
+  }
   if (outpatientRoutes.includes(c) && !recordRoutes.includes(c)) {
     return { kind: 'domain', title: '临床业务门户', active: c, items: [['outpatient', '门诊工作台'], ['opd-record', '门诊病历'], ['opd-diagnosis', '诊断'], ['opd-orders', '医嘱处方'], ['opd-results', '检查检验'], ['opd-consult', '会诊转诊'], ['opd-followup', '随访终诊']] };
   }
@@ -171,7 +184,13 @@ const subNav = computed<SubNav | null>(() => {
     };
   }
   if (qualityCenterRoutes.includes(c)) {
-    return { kind: 'center', title: '医疗质量中心', active: c, items: [['quality-center', '质量总览'], ['quality-rating', '评级取证'], ['infection-events', '院感事件'], ['credentials', '临床资质']] };
+    return { kind: 'center', title: '医疗质量中心', active: c, items: [['quality-center', '质量总览'], ['department-qc', '院科质控'], ['quality-rating', '评级取证'], ['infection-events', '院感事件'], ['credentials', '临床资质']] };
+  }
+  if (archiveRoutes.includes(c)) {
+    return {
+      kind: 'center', title: '病案资产', active: c === 'asset-detail' ? 'archive-integrity' : c,
+      items: [['archive-assets', '总览'], ['archive-catalog', '病案目录'], ['archive-scan', '扫描编目'], ['archive-integrity', '完整性与验真'], ['archive-borrow', '借阅复制'], ['archive-preservation', '长期保存']],
+    };
   }
   if (dataCenterRoutes.includes(c)) {
     return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['integration', '集成交换'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['devices', '设备接入'], ['research', '科研统计']] };
@@ -194,7 +213,9 @@ const routeRoleContext = computed(() => {
   if (inpatientRoutes.includes(id)) return '住院医生 · 心内科一病区';
   if (emergencyRoutes.includes(id)) return '急诊医生 · 抢救区';
   if (id === 'clinical-tasks') return '任务中心';
-  if (outpatientRoutes.includes(id) || recordRoutes.includes(id)) return '病历中心 · 当前门诊就诊';
+  if (archiveRoutes.includes(id)) return '病案资产与长期保存';
+  if (recordRoutes.includes(id)) return '全院病历中心 · 当前门诊就诊';
+  if (outpatientRoutes.includes(id)) return '病历中心 · 当前门诊就诊';
   return '管理与治理工作台';
 });
 const roleContext = computed(() => selectedRole.value ?? routeRoleContext.value);
@@ -215,7 +236,7 @@ const assistantContext = computed(() => {
       encounterId: clinicalContext.emergencyEncounterId || null,
     };
   }
-  if (outpatientRoutes.includes(id) || recordRoutes.includes(id)) {
+  if (outpatientRoutes.includes(id) || recordRoutes.includes(id) || archiveRoutes.includes(id)) {
     return {
       label: `${roleContext.value} · 当前患者/就诊`,
       patientId: clinicalContext.patientId || null,
@@ -402,7 +423,7 @@ async function closeAssistant() {
       </template>
     </aside>
     <main id="main-content" class="main">
-      <nav v-if="subNav" class="center-nav" :class="[subNav.kind, { 'task-center-subnav': routeId === 'clinical-tasks' }]" :aria-label="`${subNav.title}二级导航`">
+      <nav v-if="subNav" class="center-nav" :class="[subNav.kind, { 'task-center-subnav': routeId === 'clinical-tasks', 'archive-subpage-nav': archiveRoutes.includes(routeId) }]" :aria-label="`${subNav.title}二级导航`">
         <b>{{ subNav.title }}</b>
         <RouterLink v-for="[id, label] in subNav.items" :key="id" :to="`/${id}`" :class="{ active: id === subNav.active }" :aria-current="id === subNav.active ? 'page' : undefined">{{ label }}</RouterLink>
       </nav>

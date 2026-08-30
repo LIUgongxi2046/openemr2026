@@ -8,7 +8,7 @@ import AdminActionDialog from './AdminActionDialog.vue';
 import ClinicalPageState from './ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const props = defineProps<{ definition: MetricWorkbenchDefinition }>();
+const props = withDefaults(defineProps<{ definition: MetricWorkbenchDefinition; embedded?: boolean }>(), { embedded: false });
 const leaseQuery = useQuery({ queryKey: ['metric', 'lease'], queryFn: issueMetricLease, retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const itemsQuery = useQuery({ queryKey: ['metric', props.definition.metricType], queryFn: () => listMetricSnapshots(leaseQuery.data.value!, props.definition.metricType), enabled: () => Boolean(leaseQuery.data.value), retry: false });
 const items = computed(() => itemsQuery.data.value ?? []);
@@ -38,8 +38,9 @@ function date(value?: string) { return value ? new Date(value).toLocaleString('z
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page metric-workbench-page">
-    <div class="page-heading admin-heading"><div><p class="eyebrow">{{ definition.perspective }} / 指标快照</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><button class="button secondary" @click="itemsQuery.refetch()">刷新</button><button class="button secondary" :disabled="Boolean(busy)" @click="manualOpen = true">记录人工快照</button><button class="button primary" :disabled="Boolean(busy)" @click="computeMetrics">{{ busy === 'compute' ? '计算中…' : '按登记口径计算' }}</button></div></div>
+  <section :data-page-root="embedded ? undefined : ''" class="content vue-native-page metric-workbench-page" :class="{ embedded }">
+    <div v-if="!embedded" class="page-heading admin-heading"><div><p class="eyebrow">{{ definition.perspective }} / 指标快照</p><h1>{{ definition.title }}</h1><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><button class="button secondary" @click="itemsQuery.refetch()">刷新</button><button class="button secondary" :disabled="Boolean(busy)" @click="manualOpen = true">记录人工快照</button><button class="button primary" :disabled="Boolean(busy)" @click="computeMetrics">{{ busy === 'compute' ? '计算中…' : '按登记口径计算' }}</button></div></div>
+    <div v-else class="embedded-heading"><div><p class="eyebrow">{{ definition.perspective }} / 指标快照</p><h2>质量指标与事实血缘</h2><p>{{ definition.subtitle }}</p></div><div class="toolbar-actions"><button class="button secondary" @click="itemsQuery.refetch()">刷新</button><button class="button secondary" :disabled="Boolean(busy)" @click="manualOpen = true">记录人工快照</button><button class="button primary" :disabled="Boolean(busy)" @click="computeMetrics">{{ busy === 'compute' ? '计算中…' : '按登记口径计算' }}</button></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取指标目录、血缘与快照" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="itemsQuery.refetch()" />
     <template v-else><p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
@@ -58,4 +59,5 @@ function date(value?: string) { return value ? new Date(value).toLocaleString('z
 
 <style scoped>
 .metric-workflow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.metric-workflow article{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fff}.metric-workflow span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#eaf1fb;color:#245493}.semantic-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.semantic-metrics article{display:grid;gap:3px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff}.semantic-metrics span,.semantic-metrics small{font-size:11px;color:#667085}.semantic-metrics strong{font-size:24px}.metric-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:14px}.metric-side{display:grid;gap:14px}.metric-side nav{display:grid;padding:8px}.metric-side nav a{padding:10px;border-radius:7px}.metric-side nav a:hover{background:#eef6ff}.admin-table td small{display:block;color:#667085}.metric-history{margin-top:14px}@media(max-width:900px){.metric-workflow,.semantic-metrics,.metric-layout{grid-template-columns:1fr 1fr}}@media(max-width:600px){.metric-workflow,.semantic-metrics,.metric-layout{grid-template-columns:1fr}}
+.metric-workbench-page.embedded{padding:0;margin-top:16px}.embedded-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:15px 16px;border:1px solid var(--line);border-radius:10px;background:#fff}.embedded-heading h2,.embedded-heading p{margin:0}.embedded-heading .eyebrow{margin-bottom:4px}.embedded-heading>div:first-child>p:last-child{margin-top:5px;color:#667085}.embedded-heading .toolbar-actions{flex-wrap:wrap}@media(max-width:760px){.embedded-heading{flex-direction:column}.embedded-heading .toolbar-actions{width:100%}}
 </style>

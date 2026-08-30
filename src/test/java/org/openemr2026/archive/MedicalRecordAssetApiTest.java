@@ -6,11 +6,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.MedicalRecordAssetBorrowRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetActionRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionCreateRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionDeliveryRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetDistributionPackageWire;
+import org.openemr2026.contracts.MedicalRecordAssetIngestRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetBorrowUpdateRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetIntegrityCheckRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetRegisterRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetRetireRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetReturnRequestWire;
+import org.openemr2026.contracts.MedicalRecordAssetUpdateRequestWire;
 import org.openemr2026.contracts.MedicalRecordAssetWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -58,12 +69,22 @@ final class MedicalRecordAssetApiTest {
     private MedicalRecordAssetWire register(UUID patientId) {
         return assets.register(identity(), "asset-" + UUID.randomUUID(),
                 new MedicalRecordAssetRegisterRequestWire(organization, facility, patientId, null,
-                        MedicalRecordAssetRegisterRequestWire.AssetTypeValue.PAPER, "档案库房-3-2", CONTENT_HASH));
+                        MedicalRecordAssetRegisterRequestWire.AssetTypeValue.PAPER, "档案库房-3-2", CONTENT_HASH,
+                        null, null, null, null, null, null, null, null));
     }
 
     private MedicalRecordAssetWire borrow(UUID patientId, UUID assetId, long expectedRowVersion, Instant dueAt) {
         return assets.borrow(identity(), "borrow-" + UUID.randomUUID(), assetId,
                 new MedicalRecordAssetBorrowRequestWire(organization, facility, patientId, expectedRowVersion, dueAt));
+    }
+
+    private MedicalRecordAssetWire verify(UUID patientId, MedicalRecordAssetWire asset) {
+        assets.verifyIntegrity(identity(), "verify-" + UUID.randomUUID(), asset.medicalRecordAssetId(),
+                new MedicalRecordAssetIntegrityCheckRequestWire(
+                        organization, facility, patientId, CONTENT_HASH, asset.rowVersion()));
+        return assets.listAssets(identity(), patientId).stream()
+                .filter(candidate -> candidate.medicalRecordAssetId().equals(asset.medicalRecordAssetId()))
+                .findFirst().orElseThrow();
     }
 
     private MedicalRecordAssetWire returnAsset(UUID patientId, UUID assetId, long expectedRowVersion) {
@@ -86,8 +107,8 @@ final class MedicalRecordAssetApiTest {
     @Test
     void givenArchivedAsset_whenBorrowing_thenBorrowed() {
         UUID patientId = seedPatient();
-        MedicalRecordAssetWire registered = register(patientId);
-        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), 1L,
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), registered.rowVersion(),
                 Instant.now().plus(7, ChronoUnit.DAYS));
         assertThat(borrowed.status()).isEqualTo(MedicalRecordAssetWire.StatusValue.BORROWED);
         assertThat(borrowed.borrowedBy()).isEqualTo(UUID.fromString(USER));
@@ -95,10 +116,22 @@ final class MedicalRecordAssetApiTest {
     }
 
     @Test
-    void givenBorrowedAsset_whenReturning_thenArchived() {
+    void givenUnverifiedAsset_whenBorrowing_thenIntegrityGateRejectsIt() {
         UUID patientId = seedPatient();
         MedicalRecordAssetWire registered = register(patientId);
-        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), 1L,
+
+        assertThatThrownBy(() -> borrow(patientId, registered.medicalRecordAssetId(), registered.rowVersion(),
+                Instant.now().plus(7, ChronoUnit.DAYS)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(e -> assertThat(((MedicalRecordAssetException) e).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_INTEGRITY_REQUIRED"));
+    }
+
+    @Test
+    void givenBorrowedAsset_whenReturning_thenArchived() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), registered.rowVersion(),
                 Instant.now().plus(7, ChronoUnit.DAYS));
         MedicalRecordAssetWire returned = returnAsset(patientId, registered.medicalRecordAssetId(), borrowed.rowVersion());
         assertThat(returned.status()).isEqualTo(MedicalRecordAssetWire.StatusValue.ARCHIVED);
@@ -108,8 +141,8 @@ final class MedicalRecordAssetApiTest {
     @Test
     void givenBorrowedAsset_whenBorrowingAgain_thenRejected() {
         UUID patientId = seedPatient();
-        MedicalRecordAssetWire registered = register(patientId);
-        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), 1L,
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(), registered.rowVersion(),
                 Instant.now().plus(7, ChronoUnit.DAYS));
         assertThatThrownBy(() -> borrow(patientId, registered.medicalRecordAssetId(), borrowed.rowVersion(),
                 Instant.now().plus(8, ChronoUnit.DAYS)))
@@ -121,7 +154,7 @@ final class MedicalRecordAssetApiTest {
     @Test
     void givenStaleVersion_whenBorrowing_thenRejected() {
         UUID patientId = seedPatient();
-        MedicalRecordAssetWire registered = register(patientId);
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
         assertThatThrownBy(() -> borrow(patientId, registered.medicalRecordAssetId(), 99L,
                 Instant.now().plus(7, ChronoUnit.DAYS)))
                 .isInstanceOf(MedicalRecordAssetException.class)
@@ -132,8 +165,8 @@ final class MedicalRecordAssetApiTest {
     @Test
     void givenPastDueAt_whenBorrowing_thenRejected() {
         UUID patientId = seedPatient();
-        MedicalRecordAssetWire registered = register(patientId);
-        assertThatThrownBy(() -> borrow(patientId, registered.medicalRecordAssetId(), 1L,
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        assertThatThrownBy(() -> borrow(patientId, registered.medicalRecordAssetId(), registered.rowVersion(),
                 Instant.now().minus(1, ChronoUnit.DAYS)))
                 .isInstanceOf(MedicalRecordAssetException.class)
                 .satisfies(e -> assertThat(((MedicalRecordAssetException) e).code())
@@ -143,11 +176,174 @@ final class MedicalRecordAssetApiTest {
     @Test
     void givenAssetIdentity_whenTampered_thenDatabaseRejectsMutation() {
         UUID patientId = seedPatient();
-        MedicalRecordAssetWire registered = register(patientId);
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
         assertThatThrownBy(() -> jdbc.sql("""
                 update medical_record_asset set content_hash = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
                 where tenant_id = cast(:tenant as uuid) and medical_record_asset_id = :asset
                 """).param("tenant", TENANT).param("asset", registered.medicalRecordAssetId()).update())
+                .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenAsset_whenEditingMetadata_thenImmutableHashIsPreserved() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        MedicalRecordAssetWire updated = assets.update(identity(), "update-" + UUID.randomUUID(),
+                registered.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
+                        organization, facility, patientId, "旧病案首页", "application/pdf", 8,
+                        "LegacyEMR", "病案库 A-03",
+                        MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.ScanStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SCHEDULED,
+                        30, registered.rowVersion()));
+
+        assertThat(updated.displayName()).isEqualTo("旧病案首页");
+        assertThat(updated.custodyLocation()).isEqualTo("病案库 A-03");
+        assertThat(updated.contentHash()).isEqualTo(CONTENT_HASH);
+    }
+
+    @Test
+    void givenObservedHashMismatch_whenVerifying_thenBorrowIsBlocked() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = register(patientId);
+        String wrongHash = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+        assets.verifyIntegrity(identity(), "verify-" + UUID.randomUUID(), registered.medicalRecordAssetId(),
+                new MedicalRecordAssetIntegrityCheckRequestWire(
+                        organization, facility, patientId, wrongHash, registered.rowVersion()));
+        MedicalRecordAssetWire failed = assets.listAssets(identity(), patientId).getFirst();
+
+        assertThat(failed.integrityStatus()).isEqualTo(MedicalRecordAssetWire.IntegrityStatusValue.FAILED);
+        assertThatThrownBy(() -> borrow(patientId, failed.medicalRecordAssetId(), failed.rowVersion(),
+                Instant.now().plus(7, ChronoUnit.DAYS)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(e -> assertThat(((MedicalRecordAssetException) e).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_INTEGRITY_REQUIRED"));
+    }
+
+    @Test
+    void givenActiveBorrow_whenEditingDueDateAndReturning_thenLifecycleIsPersisted() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = verify(patientId, register(patientId));
+        MedicalRecordAssetWire borrowed = borrow(patientId, registered.medicalRecordAssetId(),
+                registered.rowVersion(), Instant.now().plus(7, ChronoUnit.DAYS));
+        Instant extendedDueAt = Instant.now().plus(14, ChronoUnit.DAYS);
+        MedicalRecordAssetWire extended = assets.updateBorrow(identity(), "borrow-update-" + UUID.randomUUID(),
+                borrowed.medicalRecordAssetId(), new MedicalRecordAssetBorrowUpdateRequestWire(
+                        organization, facility, patientId, borrowed.rowVersion(), extendedDueAt));
+
+        assertThat(extended.dueAt()).isAfter(Instant.now().plus(13, ChronoUnit.DAYS));
+        MedicalRecordAssetWire returned = returnAsset(patientId, extended.medicalRecordAssetId(), extended.rowVersion());
+        assertThat(returned.status()).isEqualTo(MedicalRecordAssetWire.StatusValue.ARCHIVED);
+    }
+
+    @Test
+    void givenArchivedAsset_whenRetired_thenItCannotReenterOperationalFlow() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = register(patientId);
+        MedicalRecordAssetWire retired = assets.retire(identity(), "retire-" + UUID.randomUUID(),
+                registered.medicalRecordAssetId(), new MedicalRecordAssetRetireRequestWire(
+                        organization, facility, patientId, "重复编目作废", registered.rowVersion()));
+
+        assertThat(retired.status()).isEqualTo(MedicalRecordAssetWire.StatusValue.RETIRED);
+        assertThat(retired.retirementReason()).isEqualTo("重复编目作废");
+        assertThatThrownBy(() -> borrow(patientId, retired.medicalRecordAssetId(), retired.rowVersion(),
+                Instant.now().plus(7, ChronoUnit.DAYS)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(e -> assertThat(((MedicalRecordAssetException) e).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_STATE_INVALID"));
+    }
+
+    @Test
+    void givenMetadataOnlyAsset_whenSealing_thenRealStoredContentIsRequired() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetWire registered = register(patientId);
+        MedicalRecordAssetWire scheduled = assets.update(identity(), "schedule-" + UUID.randomUUID(),
+                registered.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
+                        organization, facility, patientId, registered.displayName(), registered.mediaType(),
+                        registered.pageCount(), registered.sourceSystem(), registered.custodyLocation(),
+                        MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.ScanStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SCHEDULED,
+                        registered.retentionYears(), registered.rowVersion()));
+        MedicalRecordAssetWire verified = verify(patientId, scheduled);
+        assertThatThrownBy(() -> assets.update(identity(), "seal-" + UUID.randomUUID(),
+                verified.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
+                        organization, facility, patientId, verified.displayName(), verified.mediaType(),
+                        verified.pageCount(), verified.sourceSystem(), verified.custodyLocation(),
+                        MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.ScanStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SEALED,
+                        verified.retentionYears(), verified.rowVersion())))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_STATE_INVALID"));
+    }
+
+    @Test
+    void givenRealFile_whenFullExternalLifecycleRuns_thenEveryWritePersistsAndWormIsEnforced() {
+        UUID patientId = seedPatient();
+        byte[] original = "\u59d3\u540d:\u5408\u6210\u60a3\u8005\n\u8bca\u65ad:\u9ad8\u8840\u538b\n".getBytes(StandardCharsets.UTF_8);
+        MedicalRecordAssetWire ingested = assets.ingest(identity(), "ingest-" + UUID.randomUUID(),
+                new MedicalRecordAssetIngestRequestWire(
+                        organization, facility, patientId, null,
+                        MedicalRecordAssetIngestRequestWire.AssetTypeValue.SCAN, "\u626b\u63cf\u5de5\u4f5c\u7ad9-01", "\u5165\u9662\u8bb0\u5f55\u626b\u63cf\u4ef6",
+                        "admission.txt", "text/plain", 1, "SCANNER-01", Base64.getEncoder().encodeToString(original),
+                        MedicalRecordAssetIngestRequestWire.CdaStatusValue.NOT_APPLICABLE, 15));
+
+        assertThat(ingested.storageStatus()).isEqualTo(MedicalRecordAssetWire.StorageStatusValue.AVAILABLE);
+        assertThat(ingested.byteSize()).isEqualTo(original.length);
+        assertThat(assets.content(identity(), patientId, ingested.medicalRecordAssetId()).content())
+                .isEqualTo(original);
+
+        MedicalRecordAssetWire ocr = assets.runOcr(identity(), "ocr-" + UUID.randomUUID(), ingested.medicalRecordAssetId(),
+                new MedicalRecordAssetActionRequestWire(organization, facility, patientId, ingested.rowVersion()));
+        assertThat(ocr.ocrStatus()).isEqualTo(MedicalRecordAssetWire.OcrStatusValue.COMPLETED);
+        assertThat(ocr.ocrText()).contains("\u9ad8\u8840\u538b");
+        assertThat(ocr.scanStatus()).isEqualTo(MedicalRecordAssetWire.ScanStatusValue.OCR_REVIEWED);
+
+        assertThat(assets.verifyStoredContent(identity(), "storage-verify-" + UUID.randomUUID(),
+                ocr.medicalRecordAssetId(), new MedicalRecordAssetActionRequestWire(
+                        organization, facility, patientId, ocr.rowVersion())).result().name()).isEqualTo("VERIFIED");
+        MedicalRecordAssetWire verified = assets.listAssets(identity(), patientId).getFirst();
+
+        MedicalRecordAssetDistributionPackageWire distribution = assets.createDistribution(identity(),
+                "distribution-" + UUID.randomUUID(), verified.medicalRecordAssetId(),
+                new MedicalRecordAssetDistributionCreateRequestWire(organization, facility, patientId,
+                        verified.rowVersion(), "\u4fdd\u9669\u7406\u8d54", "\u5408\u6210\u4fdd\u9669\u516c\u53f8", Instant.now().plus(7, ChronoUnit.DAYS)));
+        MedicalRecordAssetService.DistributionBinary zip = assets.distributionContent(
+                identity(), patientId, verified.medicalRecordAssetId(), distribution.distributionPackageId());
+        assertThat(zip.content()).startsWith(new byte[] {'P', 'K'});
+        assertThat(zip.contentHash()).isEqualTo(distribution.contentHash());
+        MedicalRecordAssetDistributionPackageWire delivered = assets.deliverDistribution(identity(),
+                "deliver-" + UUID.randomUUID(), verified.medicalRecordAssetId(), distribution.distributionPackageId(),
+                new MedicalRecordAssetDistributionDeliveryRequestWire(
+                        organization, facility, patientId, distribution.rowVersion()));
+        assertThat(delivered.status()).isEqualTo(MedicalRecordAssetDistributionPackageWire.StatusValue.DELIVERED);
+
+        MedicalRecordAssetWire current = assets.listAssets(identity(), patientId).getFirst();
+        MedicalRecordAssetWire scheduled = assets.update(identity(), "schedule-real-" + UUID.randomUUID(),
+                current.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
+                        organization, facility, patientId, current.displayName(), current.mediaType(), current.pageCount(),
+                        current.sourceSystem(), current.custodyLocation(), MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.ScanStatusValue.OCR_REVIEWED,
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SCHEDULED, 15, current.rowVersion()));
+        MedicalRecordAssetWire sealed = assets.update(identity(), "seal-real-" + UUID.randomUUID(),
+                scheduled.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
+                        organization, facility, patientId, scheduled.displayName(), scheduled.mediaType(), scheduled.pageCount(),
+                        scheduled.sourceSystem(), scheduled.custodyLocation(), MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetUpdateRequestWire.ScanStatusValue.OCR_REVIEWED,
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SEALED, 15, scheduled.rowVersion()));
+        assertThat(sealed.objectLockStatus()).isEqualTo(MedicalRecordAssetWire.ObjectLockStatusValue.LOCKED);
+        assertThat(sealed.wormRetainUntil()).isAfter(Instant.now().plus(14 * 365, ChronoUnit.DAYS));
+
+        assets.verifyStoredContent(identity(), "restore-" + UUID.randomUUID(), sealed.medicalRecordAssetId(),
+                new MedicalRecordAssetActionRequestWire(organization, facility, patientId, sealed.rowVersion()));
+        assertThat(assets.listAssets(identity(), patientId).getFirst().preservationStatus())
+                .isEqualTo(MedicalRecordAssetWire.PreservationStatusValue.VERIFIED);
+        assertThatThrownBy(() -> jdbc.sql("""
+                update medical_record_asset set worm_retain_until = now()
+                where tenant_id = cast(:tenant as uuid) and medical_record_asset_id = :asset
+                """).param("tenant", TENANT).param("asset", sealed.medicalRecordAssetId()).update())
                 .isInstanceOf(DataAccessException.class);
     }
 }

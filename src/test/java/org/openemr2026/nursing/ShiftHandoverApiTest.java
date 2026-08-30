@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ShiftHandoverCompleteRequestWire;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
+import org.openemr2026.contracts.ShiftHandoverCorrectionRequestWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
@@ -94,5 +95,21 @@ final class ShiftHandoverApiTest {
                 where tenant_id = cast(:tenant as uuid) and handover_id = :handover
                 """).param("tenant", TENANT).param("handover", created.handoverId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenDraftHandover_whenCorrecting_thenNewDraftVersionReplacesOriginal() {
+        ShiftHandoverWire created = nursing.createHandover(outgoing(), "handover-" + UUID.randomUUID(),
+                new ShiftHandoverCreateRequestWire(organization, facility, ward,
+                        Instant.now().minusSeconds(60), Instant.now(), UUID.fromString(COLLABORATOR),
+                        "交接内容：待完成风险复核"));
+        ShiftHandoverWire corrected = nursing.correctHandover(outgoing(), "handover-c-" + UUID.randomUUID(),
+                created.handoverId(), new ShiftHandoverCorrectionRequestWire(
+                        organization, facility, ward, created.rowVersion(), Instant.now(),
+                        Instant.now().plusSeconds(8 * 3600), UUID.fromString(COLLABORATOR),
+                        "交接内容：已补充高危患者和未完任务", "交班摘要不完整更正"));
+        assertThat(corrected.handoverId()).isNotEqualTo(created.handoverId());
+        assertThat(corrected.status()).isEqualTo(ShiftHandoverWire.StatusValue.DRAFT);
+        assertThat(corrected.handoverSummary()).contains("高危患者");
     }
 }

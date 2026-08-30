@@ -9,6 +9,8 @@ const contract = JSON.parse(await readFile(resolve(projectDir, 'contracts/genera
 const requestedRoutes = new Set((process.env.OPENEMR2026_BROWSER_ROUTES || '').split(',').filter(Boolean));
 const routes = contract.routes.filter((route) => requestedRoutes.size === 0 || requestedRoutes.has(route.route_id));
 const baseUrl = (process.env.OPENEMR2026_BROWSER_BASE_URL || 'http://127.0.0.1:4177').replace(/\/$/, '');
+const loginUsername = process.env.OPENEMR2026_DEV_LOGIN_USERNAME || 'linwei';
+const loginPassword = process.env.OPENEMR2026_DEV_LOGIN_PASSWORD || 'OpenEMR2026-dev!';
 const viewportText = process.env.OPENEMR2026_UI_VIEWPORTS || '1280x800,390x844';
 const viewports = viewportText.split(',').map((item) => {
   const [width, height] = item.split('x').map(Number);
@@ -35,6 +37,16 @@ try {
       if (['error', 'warning'].includes(message.type())) consoleIssues.push({ route: currentRoute, type: message.type(), text: message.text() });
     });
     page.on('pageerror', (error) => consoleIssues.push({ route: currentRoute, type: 'pageerror', text: error.message }));
+
+    currentRoute = 'login';
+    await page.goto(`${baseUrl}/#/login`, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    const loginButton = page.getByRole('button', { name: '登录系统', exact: true });
+    if (await loginButton.count()) {
+      await page.getByLabel('用户名', { exact: true }).fill(loginUsername);
+      await page.locator('#system-login-password').fill(loginPassword);
+      await loginButton.click();
+      await page.waitForFunction(() => document.documentElement.dataset.routeId !== 'login-context', undefined, { timeout: 20_000 });
+    }
 
     for (const route of routes) {
       currentRoute = route.route_id;
@@ -116,7 +128,7 @@ try {
         });
         if (unnamed.length) issues.push({ issue: 'UNNAMED_FORM_CONTROLS', count: unnamed.length, samples: unnamed.slice(0, 5).map((element) => ({ tag: element.tagName, type: element.getAttribute('type'), class_name: element.className?.toString().slice(0, 80) })) });
 
-        const aiLauncher = document.querySelector('[aria-label="打开AI医助小南"]');
+        const aiLauncher = document.querySelector('[aria-label^="打开AI医助"]');
         if (!aiLauncher || !visible(aiLauncher)) issues.push({ issue: 'GLOBAL_AI_LAUNCHER_MISSING' });
         return {
           issues,
@@ -130,11 +142,12 @@ try {
       observations.push({ route: route.route_id, viewport: viewport.label, ...audit });
     }
 
-    currentRoute = 'clinical';
-    await page.goto(`${baseUrl}/#/clinical`, { waitUntil: 'domcontentloaded' });
+    if (requestedRoutes.size === 0 || requestedRoutes.has('clinical')) {
+      currentRoute = 'clinical';
+      await page.goto(`${baseUrl}/#/clinical`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.documentElement.dataset.routeId === 'clinical', { timeout: 8_000 }).catch(() => {});
     const beforeUrl = page.url();
-    const launcher = page.locator('[aria-label="打开AI医助小南"]');
+    const launcher = page.locator('[aria-label^="打开AI医助"]');
     if (await launcher.count()) {
       await launcher.click();
       await page.waitForTimeout(150);
@@ -153,11 +166,12 @@ try {
         await page.keyboard.press('Escape');
         await page.waitForTimeout(100);
         if (await page.getByRole('dialog').count()) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_ESCAPE_DID_NOT_CLOSE' });
-        const focusReturned = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') === '打开AI医助小南');
+        const focusReturned = await page.evaluate(() => document.activeElement?.getAttribute('aria-label')?.startsWith('打开AI医助') === true);
         if (!focusReturned) findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_FOCUS_NOT_RESTORED' });
       }
-    } else {
-      findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_FLOW_UNTESTABLE_NO_LAUNCHER' });
+      } else {
+        findings.push({ route: 'clinical', viewport: viewport.label, issue: 'AI_DIALOG_FLOW_UNTESTABLE_NO_LAUNCHER' });
+      }
     }
     pushFindings('browser-console', viewport.label, consoleIssues.map((item) => ({ issue: 'CONSOLE_ISSUE', ...item })));
     await page.close();
@@ -166,7 +180,8 @@ try {
   await browser.close();
 }
 
-const affectedRoutes = new Set(findings.filter((item) => !['browser-console'].includes(item.route)).map((item) => `${item.viewport}:${item.route}`));
+const auditedRouteIds = new Set(routes.map((route) => route.route_id));
+const affectedRoutes = new Set(findings.filter((item) => auditedRouteIds.has(item.route)).map((item) => `${item.viewport}:${item.route}`));
 const result = {
   run_at: new Date().toISOString(),
   routes: routes.length,

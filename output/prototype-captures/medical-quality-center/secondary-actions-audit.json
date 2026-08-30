@@ -1,0 +1,74 @@
+{
+  "runAt": "2026-08-30T16:08:50.702Z",
+  "interactions": [
+    {
+      "path": "/department-qc",
+      "name": "创建质控抽查",
+      "url": "http://127.0.0.1:4190/#/department-qc",
+      "passed": false,
+      "expected": "新建质控缺陷"
+    },
+    {
+      "path": "/quality-rating",
+      "name": "生成本期证据快照",
+      "url": "http://127.0.0.1:4190/#/quality-rating/assessments",
+      "passed": true,
+      "expected": "新建评级证据"
+    },
+    {
+      "path": "/infection-events",
+      "name": "审核高风险线索",
+      "url": "http://127.0.0.1:4190/#/infection-events/clues",
+      "passed": true,
+      "expected": "院感线索"
+    },
+    {
+      "path": "/credentials",
+      "name": "新建临时授权",
+      "url": "http://127.0.0.1:4190/#/credentials/grants",
+      "passed": true,
+      "expected": "新建临床资质"
+    },
+    {
+      "path": "/credentials",
+      "name": "到期提醒",
+      "url": "http://127.0.0.1:4190/#/credentials",
+      "passed": true,
+      "expected": "30 日内到期提醒"
+    },
+    {
+      "path": "/credentials",
+      "name": "授权模拟",
+      "url": "http://127.0.0.1:4190/#/credentials",
+      "passed": false,
+      "expected": "临床授权模拟"
+    }
+  ],
+  "navigation": [
+    {
+      "name": "导出整改清单",
+      "url": "http://127.0.0.1:4190/#/department-qc",
+      "passed": true
+    },
+    {
+      "name": "导出清单",
+      "url": "http://127.0.0.1:4190/#/quality-rating",
+      "passed": true
+    },
+    {
+      "name": "导出清单",
+      "url": "http://127.0.0.1:4190/#/infection-events",
+      "passed": true
+    },
+    {
+      "name": "角色工作台",
+      "url": "http://127.0.0.1:4190/#/quality-center/initiatives",
+      "passed": true
+    },
+    {
+      "name": "查看全部待办",
+      "url": "http://127.0.0.1:4190/#/quality-center",
+      "passed": false
+    }
+  ]
+}

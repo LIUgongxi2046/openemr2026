@@ -10,6 +10,7 @@ import {
   signInpatientDocument, type InpatientSyntheticActorKey,
 } from '../../clinical-api';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const route = useRoute();
@@ -22,6 +23,9 @@ const busy = ref('');
 const notice = ref('');
 const commandError = ref('');
 const warningDisposition = ref('');
+const saveOpen = ref(false);
+const qualityOpen = ref(false);
+const signOpen = ref(false);
 
 const editorQuery = useQuery({
   queryKey: ['clinical', 'inpatient-document-editor', documentId],
@@ -91,6 +95,7 @@ async function save() {
   if (!current || !canEdit.value || !dirty.value) return;
   await execute('save', async () => {
     await saveInpatientDocumentDraft(current.lease, current.document, { ...sections.value });
+    saveOpen.value = false;
     await editorQuery.refetch(); notice.value = '已生成新的不可变住院病历版本；旧审签证据不会沿用。';
   });
 }
@@ -100,6 +105,7 @@ async function qualityCheck() {
   if (!current || dirty.value || selectedActorKey.value !== 'AUTHOR') return;
   await execute('quality', async () => {
     const findings = await runInpatientDocumentQuality(current.lease, current.document);
+    qualityOpen.value = false;
     await editorQuery.refetch();
     notice.value = findings.some((item) => item.severity === 'BLOCKING') ? '质控发现阻断项，请修订并重新保存。' : '确定性质控已通过，可执行当前层级签名。';
   });
@@ -110,6 +116,7 @@ async function sign() {
   if (!current || !canSign.value) return;
   await execute('sign', async () => {
     await signInpatientDocument(current.lease, current.document, selectedActorKey.value, warningDisposition.value);
+    signOpen.value = false;
     warningDisposition.value = '';
     await editorQuery.refetch(); notice.value = task.value?.review_status === 'COMPLETED' ? '四角色审签完成，住院文书任务已闭环。' : '本级签名已固化，文书已流转到下一审签岗位。';
   });
@@ -144,14 +151,17 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { d
       <section class="patient-strip" aria-label="住院病历上下文"><div class="patient-avatar">{{ data.overview.patient_display_name.slice(0, 1) }}</div><div><strong>{{ data.overview.patient_display_name }}</strong><span>{{ data.document.document_type_code }}</span></div><dl><div><dt>病区床位</dt><dd>{{ data.overview.ward_display_name }} · {{ data.overview.bed_label }}床</dd></div><div><dt>版本状态</dt><dd>v{{ data.document.version_no }} · {{ data.document.status }}</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '住院医师' }}</dd></div></dl><span class="lease-badge">住院号 …{{ task.admission_id.slice(-8) }}</span></section>
       <section class="inpatient-signature-steps" aria-label="四角色审签进度"><article v-for="(stage, index) in stages" :key="stage.key" :class="stageState(stage.key, task)"><span>{{ index + 1 }}</span><div><strong>{{ stage.label }}</strong><small>{{ stageState(stage.key, task) === 'complete' ? '证据已固化' : stageState(stage.key, task) === 'current' ? '当前待办' : stageState(stage.key, task) === 'not-required' ? '本规则不要求' : '等待前序' }}</small></div></article></section>
       <div v-if="notice || commandError" class="legal-action-message" :class="{ error: commandError }" role="status">{{ commandError || notice }}</div>
+      <BusinessActionDialog :open="saveOpen" title="保存住院病历新版本" description="保存不会覆盖旧版本；当前正文将形成新的不可变版本，原质控结论和未完成审签不会自动沿用。" confirm-label="确认保存新版本" :busy="busy === 'save'" :confirm-disabled="!dirty" width="wide" @cancel="saveOpen = false" @confirm="save"><p class="dialog-warning">当前 v{{ data.document.version_no }} · {{ task.document_type_code }}；共 {{ Object.keys(sections).length }} 个结构化字段。</p></BusinessActionDialog>
+      <BusinessActionDialog :open="qualityOpen" title="运行确定性质控" description="质控结果绑定当前内容哈希，若正文再次变化必须重新质控。" confirm-label="确认运行质控" :busy="busy === 'quality'" @cancel="qualityOpen = false" @confirm="qualityCheck"><p class="dialog-warning">内容哈希：{{ data.document.content_hash.slice(0, 24) }}…</p></BusinessActionDialog>
+      <BusinessActionDialog :open="signOpen" :title="`执行${activeActor?.roleLabel ?? selectedActorKey}签名`" description="签名会固化签署人、岗位、时间、内容哈希，并把任务流转到下一审签岗位。" confirm-label="确认签署并流转" :busy="busy === 'sign'" :confirm-disabled="!canSign" width="wide" @cancel="signOpen = false" @confirm="sign"><p class="dialog-warning">签署对象：v{{ data.document.version_no }} · {{ data.document.content_hash.slice(0, 20) }}…</p><label v-if="qualityWarning"><span>警告处置说明（至少 4 字）</span><textarea v-model="warningDisposition" rows="3" maxlength="1000" placeholder="说明已核对的警告及处置结论" /></label></BusinessActionDialog>
       <div class="inpatient-document-layout">
         <section class="inpatient-document-editor">
-          <header><div><p class="eyebrow">结构化正文</p><h2>{{ task.document_type_code }}</h2></div><div class="toolbar-actions"><button v-if="inpatientSyntheticActors.length" class="button secondary" :disabled="!canEdit || Boolean(busy)" @click="fillSyntheticContent">填入合成验收内容</button><button class="button primary" :disabled="!canEdit || !dirty || Boolean(busy)" @click="save">{{ busy === 'save' ? '保存中…' : '保存新版本' }}</button></div></header>
+          <header><div><p class="eyebrow">结构化正文</p><h2>{{ task.document_type_code }}</h2></div><div class="toolbar-actions"><button v-if="inpatientSyntheticActors.length" class="button secondary" :disabled="!canEdit || Boolean(busy)" @click="fillSyntheticContent">填入合成验收内容</button><button class="button primary" :disabled="!canEdit || !dirty || Boolean(busy)" @click="saveOpen = true">保存新版本</button></div></header>
           <div v-if="!canEdit" class="document-readonly-banner"><strong>只读审签视图</strong><span>{{ task.next_signature_level === selectedActorKey ? '请核对正文、质控和历史签名后执行本级签署或返回工作站退回。' : `当前待办属于 ${task.next_signature_level ?? '已完成'} 岗位。` }}</span></div>
           <div class="inpatient-section-form"><label v-for="(_, key) in sections" :key="key"><span>{{ fieldLabel(String(key)) }}</span><small>{{ String(key) }}</small><textarea v-model="sections[key]" rows="4" :readonly="!canEdit" /></label></div>
         </section>
         <aside class="inpatient-review-rail">
-          <section><header><div><p class="eyebrow">确定性门禁</p><h2>质控与当前动作</h2></div><span :class="['review-outcome', data.governance.quality_run?.outcome?.toLowerCase() ?? 'missing']">{{ data.governance.quality_run?.outcome ?? '未运行' }}</span></header><dl><div><dt>文书内容哈希</dt><dd>{{ data.document.content_hash.slice(0, 18) }}…</dd></div><div><dt>质控规则版本</dt><dd>{{ data.governance.quality_run?.rule_version ?? '—' }}</dd></div><div><dt>阻断问题</dt><dd>{{ data.governance.quality_run?.blocking_count ?? '—' }}</dd></div><div><dt>下一签名</dt><dd>{{ task.next_signature_level ?? '已完成' }}</dd></div></dl><div class="review-actions"><button class="button secondary full" :disabled="selectedActorKey !== 'AUTHOR' || dirty || Boolean(busy) || task.review_status === 'COMPLETED'" @click="qualityCheck">{{ busy === 'quality' ? '质控中…' : '运行确定性质控' }}</button><label v-if="qualityWarning && task.next_signature_level"><span>警告处置说明（至少 4 字）</span><textarea v-model="warningDisposition" rows="2" maxlength="1000" placeholder="说明已核对的警告及处置结论" /></label><button class="button primary full" :disabled="!canSign || Boolean(busy)" @click="sign">{{ task.review_status === 'COMPLETED' ? '审签已完成' : (busy === 'sign' ? '签署中…' : `执行${activeActor?.roleLabel ?? selectedActorKey}签名`) }}</button><small v-if="task.review_status === 'COMPLETED'">四级签名链已固化，正文转为只读。</small><small v-else-if="dirty">存在未保存修改，质控与签名已禁用。</small><small v-else-if="!qualityAcceptable">必须先取得绑定当前内容哈希的通过或可处置警告结论。</small><small v-else-if="qualityWarning && warningDisposition.trim().length < 4">质控存在警告，必须记录人工核对和处置说明。</small><small v-else-if="task.next_signature_level !== selectedActorKey">请切换到 {{ task.next_signature_level ?? '任务已完成' }} 对应的真实岗位。</small></div></section>
+          <section><header><div><p class="eyebrow">确定性门禁</p><h2>质控与当前动作</h2></div><span :class="['review-outcome', data.governance.quality_run?.outcome?.toLowerCase() ?? 'missing']">{{ data.governance.quality_run?.outcome ?? '未运行' }}</span></header><dl><div><dt>文书内容哈希</dt><dd>{{ data.document.content_hash.slice(0, 18) }}…</dd></div><div><dt>质控规则版本</dt><dd>{{ data.governance.quality_run?.rule_version ?? '—' }}</dd></div><div><dt>阻断问题</dt><dd>{{ data.governance.quality_run?.blocking_count ?? '—' }}</dd></div><div><dt>下一签名</dt><dd>{{ task.next_signature_level ?? '已完成' }}</dd></div></dl><div class="review-actions"><button class="button secondary full" :disabled="selectedActorKey !== 'AUTHOR' || dirty || Boolean(busy) || task.review_status === 'COMPLETED'" @click="qualityOpen = true">运行确定性质控</button><button class="button primary full" :disabled="!qualityAcceptable || dirty || task.next_signature_level !== selectedActorKey || Boolean(busy)" @click="signOpen = true">{{ task.review_status === 'COMPLETED' ? '审签已完成' : `执行${activeActor?.roleLabel ?? selectedActorKey}签名` }}</button><small v-if="task.review_status === 'COMPLETED'">四级签名链已固化，正文转为只读。</small><small v-else-if="dirty">存在未保存修改，质控与签名已禁用。</small><small v-else-if="!qualityAcceptable">必须先取得绑定当前内容哈希的通过或可处置警告结论。</small><small v-else-if="qualityWarning">质控存在警告，请在签名弹窗记录人工核对和处置说明。</small><small v-else-if="task.next_signature_level !== selectedActorKey">请切换到 {{ task.next_signature_level ?? '任务已完成' }} 对应的真实岗位。</small></div></section>
           <section><header><div><p class="eyebrow">不可变证据</p><h2>签名时间轴</h2></div><span>{{ data.governance.signatures.length }} 份</span></header><div v-if="data.governance.signatures.length === 0" class="legal-empty-state compact"><strong>尚未签名</strong><p>作者签名后，每一级人员、角色、时间与内容哈希将在此固化。</p></div><article v-for="signature in data.governance.signatures" v-else :key="signature.signature_id" class="inpatient-signature-evidence"><span>{{ signature.signature_role }}</span><div><strong>{{ signature.signer_display_name }}</strong><small>{{ formatDate(signature.signed_at) }} · {{ signature.signature_status }}</small><code>{{ signature.content_hash.slice(0, 16) }}…</code></div></article></section>
           <section class="review-safety-note"><h2>审签安全边界</h2><ul><li>不允许跳过前序层级</li><li>要求人员分离时同一人不可连续签署</li><li>退回后必须生成新版本并重新质控</li><li>CA 未回传时不伪造有效证据</li></ul></section>
         </aside>

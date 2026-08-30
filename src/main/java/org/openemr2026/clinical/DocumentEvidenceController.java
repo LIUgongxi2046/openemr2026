@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import org.openemr2026.clinical.DocumentEvidenceService.DocumentAttachmentCreateRequest;
 import org.openemr2026.clinical.DocumentEvidenceService.DocumentAttachmentWire;
+import org.openemr2026.clinical.DocumentEvidenceService.DocumentEvidenceLifecycleRequest;
 import org.openemr2026.clinical.DocumentEvidenceService.DocumentSourceBundleWire;
+import org.openemr2026.clinical.DocumentEvidenceService.DocumentSourceReferenceCorrectionRequest;
 import org.openemr2026.clinical.DocumentEvidenceService.DocumentSourceReferenceCreateRequest;
 import org.openemr2026.clinical.DocumentEvidenceService.DocumentSourceReferenceWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
@@ -52,6 +54,45 @@ final class DocumentEvidenceController {
                 request.patientId(), request.encounterId());
         return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
                 .body(evidence.addReference(identity, key, documentId, request));
+    }
+
+    @PostMapping("/attachments/{attachmentId}/voids")
+    ResponseEntity<DocumentAttachmentWire> voidAttachment(
+            HttpServletRequest httpRequest,
+            @PathVariable UUID documentId,
+            @PathVariable UUID attachmentId,
+            @RequestHeader("Idempotency-Key") String key,
+            @RequestBody DocumentEvidenceLifecycleRequest request) {
+        var identity = security.authorize(httpRequest, request.organizationId(), request.facilityId(),
+                request.patientId(), request.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(evidence.voidAttachment(identity, key, documentId, attachmentId, request));
+    }
+
+    @PostMapping("/source-references/{sourceReferenceId}/corrections")
+    ResponseEntity<DocumentSourceReferenceWire> correctReference(
+            HttpServletRequest httpRequest,
+            @PathVariable UUID documentId,
+            @PathVariable UUID sourceReferenceId,
+            @RequestHeader("Idempotency-Key") String key,
+            @RequestBody DocumentSourceReferenceCorrectionRequest request) {
+        var identity = security.authorize(httpRequest, request.organizationId(), request.facilityId(),
+                request.patientId(), request.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(evidence.correctReference(identity, key, documentId, sourceReferenceId, request));
+    }
+
+    @PostMapping("/source-references/{sourceReferenceId}/revocations")
+    ResponseEntity<DocumentSourceReferenceWire> revokeReference(
+            HttpServletRequest httpRequest,
+            @PathVariable UUID documentId,
+            @PathVariable UUID sourceReferenceId,
+            @RequestHeader("Idempotency-Key") String key,
+            @RequestBody DocumentEvidenceLifecycleRequest request) {
+        var identity = security.authorize(httpRequest, request.organizationId(), request.facilityId(),
+                request.patientId(), request.encounterId());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(evidence.revokeReference(identity, key, documentId, sourceReferenceId, request));
     }
 
     @GetMapping("/sources")

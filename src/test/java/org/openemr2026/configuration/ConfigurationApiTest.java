@@ -274,6 +274,38 @@ final class ConfigurationApiTest {
     }
 
     @Test
+    void givenAllMedicalQualitySubmenus_whenCreatingEditingAndDeleting_thenFlowFactsAreAudited() {
+        Map<String, List<String>> statuses = Map.of(
+                "QUALITY_INITIATIVE", List.of("MONITORING", "CLOSED"),
+                "DEPARTMENT_QC_CASE", List.of("OPEN", "CLOSED"),
+                "QUALITY_RATING_EVIDENCE", List.of("GAP", "VERIFIED"),
+                "INFECTION_CONTROL_CASE", List.of("REPORTED", "CLOSED"),
+                "CLINICAL_CREDENTIAL_GRANT", List.of("PENDING", "REVOKED"));
+
+        statuses.forEach((type, workflowStatuses) -> {
+            String key = type.substring(0, Math.min(type.length(), 12)) + "-" + UUID.randomUUID();
+            ConfigurationItemWire created = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                    new ConfigurationItemDefineRequestWire(type, key, type + " 新建工作项",
+                            qualityOperationPayload(type, workflowStatuses.getFirst(), 72)));
+            ConfigurationItemWire edited = configurations.update(identity(), created.configId(),
+                    "cfg-" + UUID.randomUUID(), new ConfigurationItemUpdateRequestWire(
+                            type + " 已编辑工作项",
+                            qualityOperationPayload(type, workflowStatuses.get(1), 96), created.rowVersion()));
+            assertThat(edited.payload()).containsEntry("workflow_status", workflowStatuses.get(1));
+            assertThat(edited.payload()).containsEntry("score", 96);
+
+            ConfigurationItemWire validated = transition(identity(), edited,
+                    ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验医疗质量工作项流程字段");
+            assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
+            ConfigurationItemWire archived = transition(identity(), validated,
+                    ConfigurationLifecycleRequestWire.ActionValue.ARCHIVE, "逻辑删除并保留医疗质量审计证据");
+            assertThat(archived.status()).isEqualTo(ConfigurationItemWire.StatusValue.ARCHIVED);
+            assertThat(configurations.list(identity(), type)).extracting(ConfigurationItemWire::configId)
+                    .doesNotContain(created.configId());
+        });
+    }
+
+    @Test
     void givenTertiaryClinicalTaskRuleAndPathway_whenValidating_thenOperationalGatesAreEnforced() {
         ConfigurationItemWire taskRule = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
                 new ConfigurationItemDefineRequestWire("CLINICAL_TASK_RULE", "TASK-" + UUID.randomUUID(),
@@ -345,5 +377,19 @@ final class ConfigurationApiTest {
                 "edges", List.of("发起->" + reviewNode, reviewNode + "->签署", "签署->审计", "审计->完成"),
                 "protected_nodes", List.of("签署", "审计"),
                 "timeout_policy", "2 小时提醒，4 小时升级");
+    }
+
+    private Map<String, Object> qualityOperationPayload(String type, String status, int score) {
+        return Map.ofEntries(
+                Map.entry("schema_version", 1),
+                Map.entry("module_id", type.toLowerCase()),
+                Map.entry("owner", "医务处质量管理科"),
+                Map.entry("scope", "本部院区全院"),
+                Map.entry("severity", score < 80 ? "BLOCKING" : "WARNING"),
+                Map.entry("workflow_status", status),
+                Map.entry("due_at", "2026-09-30T18:00:00+08:00"),
+                Map.entry("score", score),
+                Map.entry("description", "医疗质量工作项需要形成闭环证据"),
+                Map.entry("flow_impact", "开放工作项进入责任队列并影响质量指标"));
     }
 }

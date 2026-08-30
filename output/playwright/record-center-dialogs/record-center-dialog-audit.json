@@ -1,0 +1,47 @@
+{
+  "run_at": "2026-08-30T11:03:33.055Z",
+  "checks": [
+    {
+      "name": "create-dialog",
+      "status": "PASS",
+      "box": {
+        "x": 340,
+        "y": 241.90625,
+        "width": 760,
+        "height": 516.1875
+      }
+    },
+    {
+      "name": "edit-dialog",
+      "status": "PASS",
+      "box": {
+        "x": 340,
+        "y": 279.90625,
+        "width": 760,
+        "height": 440.1875
+      }
+    },
+    {
+      "name": "void-dialog",
+      "status": "PASS",
+      "box": {
+        "x": 440,
+        "y": 310.3125,
+        "width": 560,
+        "height": 379.375
+      }
+    },
+    {
+      "name": "mobile-create-dialog",
+      "status": "PASS",
+      "box": {
+        "x": 17,
+        "y": 43.90625,
+        "width": 356,
+        "height": 756.1875
+      }
+    }
+  ],
+  "findings": [],
+  "passed": true
+}

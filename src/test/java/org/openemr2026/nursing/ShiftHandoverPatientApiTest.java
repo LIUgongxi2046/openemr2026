@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientCreateRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientCorrectionRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
 import org.openemr2026.security.ClinicalIdentity;
@@ -151,5 +153,25 @@ final class ShiftHandoverPatientApiTest {
                 where tenant_id = cast(:tenant as uuid) and shift_handover_patient_id = :item
                 """).param("tenant", TENANT).param("item", item.shiftHandoverPatientId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenHandoverPatient_whenCorrectingAndVoiding_thenRiskFlowUsesActiveVersion() {
+        UUID patientId = seedAdmittedPatient();
+        ShiftHandoverWire handover = createDraftHandover();
+        ShiftHandoverPatientWire item = nursing.addHandoverPatient(outgoing(), "hsp-" + UUID.randomUUID(),
+                new ShiftHandoverPatientCreateRequestWire(
+                        organization, facility, ward, handover.handoverId(), patientId, "病情稳定待复查", false));
+        ShiftHandoverPatientWire corrected = nursing.correctHandoverPatient(outgoing(), "hsp-c-" + UUID.randomUUID(),
+                item.shiftHandoverPatientId(), new ShiftHandoverPatientCorrectionRequestWire(
+                        organization, facility, ward, handover.handoverId(), patientId, item.rowVersion(),
+                        "血氧下降，接班后立即复查并通知医生", true, "交接风险重新评估"));
+        assertThat(corrected.shiftHandoverPatientId()).isNotEqualTo(item.shiftHandoverPatientId());
+        assertThat(corrected.riskFlag()).isTrue();
+        nursing.voidHandoverPatient(outgoing(), "hsp-v-" + UUID.randomUUID(),
+                corrected.shiftHandoverPatientId(), new ShiftHandoverPatientVoidRequestWire(
+                        organization, facility, ward, handover.handoverId(), patientId,
+                        corrected.rowVersion(), "交接患者重复登记"));
+        assertThat(nursing.listHandoverPatients(outgoing(), handover.handoverId())).isEmpty();
     }
 }

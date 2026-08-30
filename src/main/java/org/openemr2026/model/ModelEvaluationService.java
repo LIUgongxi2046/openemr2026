@@ -40,6 +40,15 @@ final class ModelEvaluationService {
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_EVALUATION_RECORD", idempotencyKey,
                     sha256(request.modelDeploymentId() + "|" + evalName + "|" + request.score() + "|" + request.threshold()));
+            String deploymentStatus = jdbc.sql("""
+                    select status from model_deployment
+                    where tenant_id = :tenant and model_deployment_id = :deployment for update
+                    """).param("tenant", identity.tenantId()).param("deployment", request.modelDeploymentId())
+                    .query(String.class).optional().orElseThrow(ModelEvaluationService::contextDenied);
+            if (!"ACTIVE".equals(deploymentStatus)) {
+                throw new ModelEvaluationException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
+                        "Only an active model deployment can be evaluated");
+            }
             UUID evaluationId = UUID.randomUUID();
             jdbc.sql("""
                     insert into model_evaluation(
@@ -54,6 +63,13 @@ final class ModelEvaluationService {
                     .param("status", passed ? "PASSED" : "FAILED")
                     .param("evaluated_at", request.evaluatedAt().atOffset(ZoneOffset.UTC))
                     .param("evaluated_by", identity.userId()).update();
+            jdbc.sql("""
+                    update model_deployment
+                    set evaluation_status = :evaluation_status,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and model_deployment_id = :deployment
+                    """).param("evaluation_status", passed ? "APPROVED" : "REJECTED")
+                    .param("tenant", identity.tenantId()).param("deployment", request.modelDeploymentId()).update();
             appendEvidence(identity, evaluationId, "MODEL_EVALUATION_RECORDED", "ModelEvaluationRecorded");
             completeCommand(identity, "MODEL_EVALUATION_RECORD", idempotencyKey, evaluationId);
             return evaluation(identity.tenantId(), evaluationId);

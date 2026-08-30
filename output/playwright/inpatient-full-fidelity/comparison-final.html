@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>住院工作台原型与实现同屏对照</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; background: #17212b; color: #fff; font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    h1 { margin: 0 0 20px; font-size: 22px; }
+    section { margin: 0 0 28px; padding: 14px; border: 1px solid #405264; border-radius: 12px; background: #223140; }
+    h2 { margin: 0 0 12px; font-size: 16px; }
+    .labels, .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .labels { margin-bottom: 8px; color: #bcd0e1; font-weight: 700; }
+    img { display: block; width: 100%; height: auto; border-radius: 7px; background: #fff; }
+  </style>
+</head>
+<body>
+  <h1>住院工作台 9 个二级菜单 · 1440×1000 · DPR 1</h1>
+  <div id="routes"></div>
+  <script>
+    const routes = [
+      ['inpatient', '患者列表'], ['inpatient-overview', '患者总览'], ['inpatient-course', '病历文书'],
+      ['ip-orders', '医嘱与用药'], ['ip-results', '检查检验'], ['ip-consult', '查房会诊'],
+      ['ip-pathway', '临床路径'], ['ward', '护理摘要'], ['inpatient-discharge', '出院病案'],
+    ];
+    document.querySelector('#routes').innerHTML = routes.map(([id, label]) => `
+      <section><h2>${label} · ${id}</h2><div class="labels"><span>参考原型</span><span>当前实现</span></div><div class="pair">
+        <img src="source-20260830/${id}-1440.png" alt="${label}原型" />
+        <img src="implementation-final-20260830/${id}-1440.png" alt="${label}实现" />
+      </div></section>`).join('');
+  </script>
+</body>
+</html>

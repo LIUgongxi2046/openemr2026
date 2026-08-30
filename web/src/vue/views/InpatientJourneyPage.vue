@@ -28,6 +28,7 @@ const createOpen = ref(false);
 const dischargeOpen = ref(false);
 const selectedRuleCode = ref('IP-DAILY-COURSE');
 const occurredAt = ref(new Date().toISOString().slice(0, 16));
+const startTaskId = ref('');
 
 const journey = useQuery({
   queryKey: ['clinical', 'inpatient-journey', selectedActorKey],
@@ -49,6 +50,7 @@ const documentTasks = computed(() => overview.value?.document_tasks.filter((task
 const filteredTasks = computed(() => overview.value?.document_tasks.filter((task) => taskState.value === 'ALL' || task.task_state === taskState.value) ?? []);
 const creatableRules = computed(() => journey.data.value?.rules.filter((rule) => ['DAILY', 'MANUAL'].includes(rule.trigger_type)) ?? []);
 const selectedTask = computed(() => documentTasks.value.find((task) => (task.completed_document_id || task.working_document_id) === selectedDocumentId.value));
+const startTaskTarget = computed(() => overview.value?.document_tasks.find((task) => task.task_id === startTaskId.value) ?? null);
 
 watch(documentTasks, (tasks) => {
   if (!selectedDocumentId.value && tasks.length) selectedDocumentId.value = tasks[0].completed_document_id || tasks[0].working_document_id || '';
@@ -155,7 +157,19 @@ function formatDate(value?: string | null) {
         <div class="prototype-secondary-grid prototype-course-grid"><aside class="card prototype-document-tree"><div class="card-head">病程文书目录 <span>{{ filteredTasks.length }}</span></div><div class="prototype-document-list"><button v-for="task in filteredTasks" :key="task.task_id" type="button" :class="{ active: (task.completed_document_id || task.working_document_id) === selectedDocumentId }" @click="selectedDocumentId = task.completed_document_id || task.working_document_id || ''"><strong>{{ documentLabel(task) }}</strong><small>{{ formatDate(task.due_at) }}</small><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span></button></div></aside><div class="prototype-primary-stack">
         <section class="editor-card"><div class="card-toolbar"><div><p class="eyebrow">任务驱动</p><h2>病程、查房与事件型文书</h2></div><div class="toolbar-actions"><label class="compact-filter">任务状态<select v-model="taskState"><option value="ALL">全部</option><option value="PENDING">待开始</option><option value="IN_PROGRESS">处理中</option><option value="OVERDUE">已超时</option><option value="COMPLETED">已完成</option><option value="WAIVED">已豁免</option></select></label><button class="button primary" type="button" :disabled="admission.status !== 'ADMITTED' || selectedActorKey !== 'AUTHOR'" @click="createOpen = true">新增病程文书</button></div></div>
           <BusinessActionDialog :open="createOpen" title="新增病程文书任务" description="先形成时限任务，再建立草稿；创建后会立即影响文书待办与审签流程。" confirm-label="仅创建任务" :busy="busy" width="wide" @cancel="createOpen = false" @confirm="createCourse(false)"><div class="dialog-grid"><label>文书类型<select v-model="selectedRuleCode"><option v-for="rule in creatableRules" :key="rule.rule_code" :value="rule.rule_code">{{ rule.display_name }} · {{ rule.category_code }}</option></select></label><label>事件/记录时间<input v-model="occurredAt" type="datetime-local" required /></label></div><p class="dialog-warning">创建并开始书写会直接进入结构化编辑页。</p><template #leading-actions><button class="btn" type="button" :disabled="busy" @click="createCourse(true)">创建并开始书写</button></template></BusinessActionDialog>
-          <div class="task-table-wrap"><table class="task-table"><thead><tr><th>文书类型</th><th>截止时间</th><th>审签进度</th><th>动作</th></tr></thead><tbody><tr v-for="task in filteredTasks" :key="task.task_id"><td><strong>{{ documentLabel(task) }}</strong><small>{{ task.document_type_code }}</small></td><td>{{ formatDate(task.due_at) }}</td><td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ task.current_signature_level ?? '尚未签署' }} → {{ task.next_signature_level ?? '完成' }}</small></td><td><RouterLink v-if="task.working_document_id && task.task_state !== 'COMPLETED'" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">进入书写/审签</RouterLink><RouterLink v-else-if="task.completed_document_id || task.working_document_id" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink><button v-else class="task-action" type="button" :disabled="busy || selectedActorKey !== 'AUTHOR'" @click="startTask(task)">{{ selectedActorKey !== 'AUTHOR' ? '等待作者建稿' : '开始书写' }}</button></td></tr></tbody></table><div v-if="!filteredTasks.length" class="clinical-empty-state rich" role="status"><strong>当前筛选下没有文书任务</strong><p>可切换任务状态查看历史，或新增一份日常病程、查房记录等手工文书任务。</p><button class="button primary" type="button" @click="taskState = 'ALL'; createOpen = true">新增病程文书</button></div></div></section>
+          <BusinessActionDialog :open="Boolean(startTaskTarget)" title="建立住院病历草稿" description="建立后任务进入处理中，并打开结构化编辑器；后续每次修改都会追加不可变版本。" confirm-label="确认建立并书写" :busy="busy" @cancel="startTaskId = ''" @confirm="startTaskTarget && startTask(startTaskTarget)"><p v-if="startTaskTarget" class="dialog-warning">{{ documentLabel(startTaskTarget) }} · 截止 {{ formatDate(startTaskTarget.due_at) }}</p></BusinessActionDialog>
+          <div class="task-table-wrap">
+            <table class="task-table">
+              <thead><tr><th>文书类型</th><th>截止时间</th><th>审签进度</th><th>动作</th></tr></thead>
+              <tbody><tr v-for="task in filteredTasks" :key="task.task_id">
+                <td><strong>{{ documentLabel(task) }}</strong><small>{{ task.document_type_code }}</small></td>
+                <td>{{ formatDate(task.due_at) }}</td>
+                <td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ task.current_signature_level ?? '尚未签署' }} → {{ task.next_signature_level ?? '完成' }}</small></td>
+                <td><RouterLink v-if="task.working_document_id && task.task_state !== 'COMPLETED'" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">进入书写/审签</RouterLink><RouterLink v-else-if="task.completed_document_id || task.working_document_id" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink><button v-else class="task-action" type="button" :disabled="busy || selectedActorKey !== 'AUTHOR'" @click="startTaskId = task.task_id">{{ selectedActorKey !== 'AUTHOR' ? '等待作者建稿' : '开始书写' }}</button></td>
+              </tr></tbody>
+            </table>
+            <div v-if="!filteredTasks.length" class="clinical-empty-state rich" role="status"><strong>当前筛选下没有文书任务</strong><p>可切换任务状态查看历史，或新增一份日常病程、查房记录等手工文书任务。</p><button class="button primary" type="button" @click="taskState = 'ALL'; createOpen = true">新增病程文书</button></div>
+          </div></section>
         </div><InpatientPrototypeRail mode="course" :patient-name="overview.patient_display_name" :bed-label="overview.bed_label" :pending-count="pendingTasks.length" :completed-count="completedTasks.length" :overdue-count="overview.document_tasks.filter((task) => task.task_state === 'OVERDUE').length" /></div>
       </template>
 

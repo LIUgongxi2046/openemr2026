@@ -19,8 +19,11 @@ import org.openemr2026.contracts.NursingBedsideNoteWire;
 import org.openemr2026.contracts.NursingDischargeClosureRequestWire;
 import org.openemr2026.contracts.NursingDischargeClosureWire;
 import org.openemr2026.contracts.ShiftHandoverCompleteRequestWire;
+import org.openemr2026.contracts.ShiftHandoverCorrectionRequestWire;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientCreateRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientCorrectionRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientWire;
 import org.openemr2026.contracts.ShiftHandoverVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
@@ -381,10 +384,108 @@ final class NursingService {
         return jdbc.sql("""
                 select shift_handover_patient_id from shift_handover_patient
                 where tenant_id = :tenant and handover_id = :handover
+                  and voided_at is null
                 order by risk_flag desc, created_at desc, shift_handover_patient_id desc limit 500
                 """).param("tenant", identity.tenantId()).param("handover", handoverId)
                 .query(UUID.class).list().stream()
                 .map(id -> handoverPatient(identity.tenantId(), id, handoverId)).toList();
+    }
+
+    ShiftHandoverPatientWire correctHandoverPatient(
+            ClinicalIdentity identity, String idempotencyKey, UUID itemId,
+            ShiftHandoverPatientCorrectionRequestWire request) {
+        String summary = requireText(request.summary(), 2, "summary");
+        String reason = requireText(request.reason(), 4, "reason");
+        if (request.riskFlag() == null) throw invalid("risk_flag is required");
+        return transactions.execute(status -> {
+            beginCommand(identity, "SHIFT_HANDOVER_PATIENT_CORRECT", idempotencyKey,
+                    sha256(itemId + "|" + request.expectedRowVersion() + "|" + summary + "|" + request.riskFlag()));
+            HandoverPatientHead current = lockHandoverPatient(identity.tenantId(), itemId, request);
+            requireHandoverPatientMutable(current, request.expectedRowVersion());
+            UUID replacementId = UUID.randomUUID();
+            jdbc.sql("""
+                    update shift_handover_patient set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1
+                    where tenant_id = :tenant and shift_handover_patient_id = :item and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("item", itemId).param("expected", current.rowVersion()).update();
+            jdbc.sql("""
+                    insert into shift_handover_patient(
+                      tenant_id, shift_handover_patient_id, handover_id, patient_id,
+                      summary, risk_flag, supersedes_patient_item_id)
+                    values (:tenant, :item, :handover, :patient, :summary, :risk, :supersedes)
+                    """).param("tenant", identity.tenantId()).param("item", replacementId)
+                    .param("handover", request.handoverId()).param("patient", request.patientId())
+                    .param("summary", summary).param("risk", request.riskFlag()).param("supersedes", itemId).update();
+            appendEvidence(identity, request.patientId(), itemId, current.rowVersion() + 1,
+                    "SHIFT_HANDOVER_PATIENT_SUPERSEDED", "ShiftHandoverPatientSuperseded");
+            appendEvidence(identity, request.patientId(), replacementId, 1,
+                    "SHIFT_HANDOVER_PATIENT_CORRECTED", "ShiftHandoverPatientCorrected");
+            completeCommand(identity, "SHIFT_HANDOVER_PATIENT_CORRECT", idempotencyKey, replacementId);
+            return handoverPatient(identity.tenantId(), replacementId, request.handoverId());
+        });
+    }
+
+    ShiftHandoverPatientWire voidHandoverPatient(
+            ClinicalIdentity identity, String idempotencyKey, UUID itemId,
+            ShiftHandoverPatientVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "SHIFT_HANDOVER_PATIENT_VOID", idempotencyKey,
+                    sha256(itemId + "|" + request.expectedRowVersion() + "|" + reason));
+            HandoverPatientHead current = lockHandoverPatient(identity.tenantId(), itemId, request);
+            requireHandoverPatientMutable(current, request.expectedRowVersion());
+            jdbc.sql("""
+                    update shift_handover_patient set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1
+                    where tenant_id = :tenant and shift_handover_patient_id = :item and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("item", itemId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, request.patientId(), itemId, current.rowVersion() + 1,
+                    "SHIFT_HANDOVER_PATIENT_VOIDED", "ShiftHandoverPatientVoided");
+            completeCommand(identity, "SHIFT_HANDOVER_PATIENT_VOID", idempotencyKey, itemId);
+            return handoverPatient(identity.tenantId(), itemId, request.handoverId());
+        });
+    }
+
+    private HandoverPatientHead lockHandoverPatient(
+            UUID tenantId, UUID itemId, ShiftHandoverPatientVoidRequestWire request) {
+        return lockHandoverPatient(tenantId, itemId, request.handoverId(), request.patientId(),
+                request.wardId(), request.facilityId());
+    }
+
+    private HandoverPatientHead lockHandoverPatient(
+            UUID tenantId, UUID itemId, ShiftHandoverPatientCorrectionRequestWire request) {
+        return lockHandoverPatient(tenantId, itemId, request.handoverId(), request.patientId(),
+                request.wardId(), request.facilityId());
+    }
+
+    private HandoverPatientHead lockHandoverPatient(
+            UUID tenantId, UUID itemId, UUID handoverId, UUID patientId, UUID wardId, UUID facilityId) {
+        return jdbc.sql("""
+                select p.row_version, p.voided_at, h.status, h.voided_at handover_voided_at
+                from shift_handover_patient p
+                join shift_handover h on h.tenant_id = p.tenant_id and h.handover_id = p.handover_id
+                where p.tenant_id = :tenant and p.shift_handover_patient_id = :item
+                  and p.handover_id = :handover and p.patient_id = :patient
+                  and h.ward_id = :ward and h.facility_id = :facility for update of p
+                """).param("tenant", tenantId).param("item", itemId).param("handover", handoverId)
+                .param("patient", patientId).param("ward", wardId).param("facility", facilityId)
+                .query((rs, row) -> new HandoverPatientHead(rs.getLong("row_version"),
+                        rs.getObject("voided_at", OffsetDateTime.class), rs.getString("status"),
+                        rs.getObject("handover_voided_at", OffsetDateTime.class)))
+                .optional().orElseThrow(NursingService::contextDenied);
+    }
+
+    private static void requireHandoverPatientMutable(HandoverPatientHead current, Long expectedRowVersion) {
+        if (expectedRowVersion == null || current.rowVersion() != expectedRowVersion) {
+            throw new NursingException("SHIFT_HANDOVER_PATIENT_VERSION_CONFLICT", 409,
+                    "The handover patient item changed; reload before retrying");
+        }
+        if (current.voidedAt() != null || current.handoverVoidedAt() != null || !"DRAFT".equals(current.status())) {
+            throw new NursingException("SHIFT_HANDOVER_PATIENT_STATE_INVALID", 409,
+                    "Only an active item on a draft handover can be changed");
+        }
     }
 
     private ShiftHandoverPatientWire handoverPatient(UUID tenantId, UUID itemId, UUID handoverId) {
@@ -434,6 +535,7 @@ final class NursingService {
                     join shift_handover h on h.tenant_id = p.tenant_id and h.handover_id = p.handover_id
                     where p.tenant_id = :tenant and p.patient_id = :patient
                       and h.status = 'DRAFT' and h.voided_at is null
+                      and p.voided_at is null
                     """).param("tenant", identity.tenantId()).param("patient", request.patientId())
                     .query(Long.class).single();
             if (openHandovers != 0) {
@@ -589,6 +691,82 @@ final class NursingService {
                     "SHIFT_HANDOVER_COMPLETED", "ShiftHandoverCompleted");
             completeCommand(identity, "SHIFT_HANDOVER_COMPLETE", idempotencyKey, handoverId);
             return handover(identity.tenantId(), handoverId, request.facilityId());
+        });
+    }
+
+    ShiftHandoverWire correctHandover(
+            ClinicalIdentity identity, String idempotencyKey, UUID handoverId,
+            ShiftHandoverCorrectionRequestWire request) {
+        String summary = requireText(request.handoverSummary(), 4, "handover_summary");
+        String reason = requireText(request.reason(), 4, "reason");
+        if (request.shiftFrom() == null || request.shiftTo() == null || !request.shiftTo().isAfter(request.shiftFrom())) {
+            throw invalid("shift_to must be after shift_from");
+        }
+        if (request.incomingUserId() == null || request.incomingUserId().equals(identity.userId())) {
+            throw invalid("a different incoming nurse is required");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "SHIFT_HANDOVER_CORRECT", idempotencyKey,
+                    sha256(handoverId + "|" + request.expectedRowVersion() + "|" + summary));
+            HandoverHead current = jdbc.sql("""
+                    select status, row_version, incoming_user_id, voided_at from shift_handover
+                    where tenant_id = :tenant and handover_id = :handover
+                      and ward_id = :ward and facility_id = :facility for update
+                    """).param("tenant", identity.tenantId()).param("handover", handoverId)
+                    .param("ward", request.wardId()).param("facility", request.facilityId())
+                    .query((rs, row) -> new HandoverHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("incoming_user_id", UUID.class),
+                            rs.getObject("voided_at", OffsetDateTime.class)))
+                    .optional().orElseThrow(NursingService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new NursingException("SHIFT_HANDOVER_VERSION_CONFLICT", 409,
+                        "The handover changed; reload before retrying");
+            }
+            if (!"DRAFT".equals(current.status()) || current.voidedAt() != null) {
+                throw new NursingException("SHIFT_HANDOVER_STATE_INVALID", 409,
+                        "Only an active draft handover can be corrected");
+            }
+            UUID replacementId = UUID.randomUUID();
+            jdbc.sql("""
+                    insert into shift_handover(
+                      tenant_id, handover_id, ward_id, facility_id, shift_from, shift_to,
+                      outgoing_user_id, incoming_user_id, handover_summary, status, supersedes_handover_id)
+                    values (:tenant, :handover, :ward, :facility, :shift_from, :shift_to,
+                      :outgoing, :incoming, :summary, 'DRAFT', :supersedes)
+                    """).param("tenant", identity.tenantId()).param("handover", replacementId)
+                    .param("ward", request.wardId()).param("facility", request.facilityId())
+                    .param("shift_from", request.shiftFrom().atOffset(ZoneOffset.UTC))
+                    .param("shift_to", request.shiftTo().atOffset(ZoneOffset.UTC))
+                    .param("outgoing", identity.userId()).param("incoming", request.incomingUserId())
+                    .param("summary", summary).param("supersedes", handoverId).update();
+            jdbc.sql("""
+                    insert into shift_handover_patient(
+                      tenant_id, shift_handover_patient_id, handover_id, patient_id,
+                      summary, risk_flag, supersedes_patient_item_id)
+                    select tenant_id, gen_random_uuid(), :replacement, patient_id,
+                      summary, risk_flag, shift_handover_patient_id
+                    from shift_handover_patient
+                    where tenant_id = :tenant and handover_id = :original and voided_at is null
+                    """).param("replacement", replacementId).param("tenant", identity.tenantId())
+                    .param("original", handoverId).update();
+            jdbc.sql("""
+                    update shift_handover_patient set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1
+                    where tenant_id = :tenant and handover_id = :handover and voided_at is null
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("handover", handoverId).update();
+            jdbc.sql("""
+                    update shift_handover set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and handover_id = :handover and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("handover", handoverId).param("expected", current.rowVersion()).update();
+            appendEvidence(identity, null, handoverId, current.rowVersion() + 1,
+                    "SHIFT_HANDOVER_SUPERSEDED", "ShiftHandoverSuperseded");
+            appendEvidence(identity, null, replacementId, 1,
+                    "SHIFT_HANDOVER_CORRECTED", "ShiftHandoverCorrected");
+            completeCommand(identity, "SHIFT_HANDOVER_CORRECT", idempotencyKey, replacementId);
+            return handover(identity.tenantId(), replacementId, request.facilityId());
         });
     }
 
@@ -810,6 +988,8 @@ final class NursingService {
             UUID orderId, UUID patientId, UUID encounterId, String drugCode,
             BigDecimal doseValue, String doseUnit, String routeCode) {}
     private record HandoverHead(String status, long rowVersion, UUID incomingUserId, OffsetDateTime voidedAt) {}
+    private record HandoverPatientHead(
+            long rowVersion, OffsetDateTime voidedAt, String status, OffsetDateTime handoverVoidedAt) {}
 
     private static String sha256(String value) {
         try {

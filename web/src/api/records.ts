@@ -1,12 +1,24 @@
 import {
+  medicalRecordAssetActionRequestWireSchema,
   medicalRecordAssetBorrowRequestWireSchema,
+  medicalRecordAssetBorrowUpdateRequestWireSchema,
+  medicalRecordAssetDistributionCreateRequestWireSchema,
+  medicalRecordAssetDistributionDeliveryRequestWireSchema,
+  medicalRecordAssetDistributionPackageWireSchema,
+  medicalRecordAssetIngestRequestWireSchema,
+  medicalRecordAssetIntegrityCheckRequestWireSchema,
+  medicalRecordAssetIntegrityEventWireSchema,
   medicalRecordAssetRegisterRequestWireSchema,
+  medicalRecordAssetRetireRequestWireSchema,
   medicalRecordAssetReturnRequestWireSchema,
+  medicalRecordAssetUpdateRequestWireSchema,
   medicalRecordAssetWireSchema,
   type ContextLeaseWire,
+  type MedicalRecordAssetDistributionPackageWire,
+  type MedicalRecordAssetIntegrityEventWire,
   type MedicalRecordAssetWire,
 } from '../generated/contracts';
-import { clinicalContext, issueContextLease, request } from '../clinical-api';
+import { clinicalContext, issueContextLease, request, requestBinary, type ClinicalBinaryResponse } from '../clinical-api';
 
 /**
  * 病历与病案（RECORD）域客户端。
@@ -39,6 +51,91 @@ function orgFacilityPatient() {
   };
 }
 
+async function fileToBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = '';
+  const chunk = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunk));
+  }
+  return btoa(binary);
+}
+
+export async function ingestMedicalRecordAsset(
+  lease: ContextLeaseWire,
+  input: {
+    assetType: MedicalRecordAssetWire['asset_type']; location: string; displayName: string;
+    mediaType: string; pageCount: number; sourceSystem: string; file: File;
+    cdaStatus?: MedicalRecordAssetWire['cda_status']; retentionYears: number;
+  },
+): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request('/medical-record-assets/ingestions', {
+    method: 'POST',
+    headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetIngestRequestWireSchema.parse({
+      ...orgFacilityPatient(), encounter_id: clinicalContext.encounterId,
+      asset_type: input.assetType, location: input.location, display_name: input.displayName,
+      original_filename: input.file.name, media_type: input.mediaType, page_count: input.pageCount,
+      source_system: input.sourceSystem, content_base64: await fileToBase64(input.file),
+      cda_status: input.cdaStatus, retention_years: input.retentionYears,
+    })),
+  }));
+}
+
+export function downloadMedicalRecordAsset(lease: ContextLeaseWire, assetId: string): Promise<ClinicalBinaryResponse> {
+  return requestBinary(`/medical-record-assets/${assetId}/content`, assetHeaders(lease));
+}
+
+export async function runMedicalRecordAssetOcr(lease: ContextLeaseWire, asset: MedicalRecordAssetWire): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/ocr-runs`, {
+    method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetActionRequestWireSchema.parse({ ...orgFacilityPatient(), expected_row_version: asset.row_version })),
+  }));
+}
+
+export async function verifyMedicalRecordAssetStorage(lease: ContextLeaseWire, asset: MedicalRecordAssetWire): Promise<MedicalRecordAssetIntegrityEventWire> {
+  return medicalRecordAssetIntegrityEventWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/storage-verifications`, {
+    method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetActionRequestWireSchema.parse({ ...orgFacilityPatient(), expected_row_version: asset.row_version })),
+  }));
+}
+
+export async function listMedicalRecordAssetDistributionPackages(lease: ContextLeaseWire, assetId: string): Promise<MedicalRecordAssetDistributionPackageWire[]> {
+  return medicalRecordAssetDistributionPackageWireSchema.array().parse(await request(
+    `/medical-record-assets/${assetId}/distribution-packages`, { headers: assetHeaders(lease) },
+  ));
+}
+
+export async function createMedicalRecordAssetDistribution(
+  lease: ContextLeaseWire, asset: MedicalRecordAssetWire, purpose: string, recipientName: string, expiresAt: string,
+): Promise<MedicalRecordAssetDistributionPackageWire> {
+  return medicalRecordAssetDistributionPackageWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/distribution-packages`, {
+    method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetDistributionCreateRequestWireSchema.parse({
+      ...orgFacilityPatient(), expected_row_version: asset.row_version, purpose, recipient_name: recipientName, expires_at: expiresAt,
+    })),
+  }));
+}
+
+export async function deliverMedicalRecordAssetDistribution(
+  lease: ContextLeaseWire, asset: MedicalRecordAssetWire, pkg: MedicalRecordAssetDistributionPackageWire,
+): Promise<MedicalRecordAssetDistributionPackageWire> {
+  return medicalRecordAssetDistributionPackageWireSchema.parse(await request(
+    `/medical-record-assets/${asset.medical_record_asset_id}/distribution-packages/${pkg.distribution_package_id}/deliveries`, {
+      method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(medicalRecordAssetDistributionDeliveryRequestWireSchema.parse({
+        ...orgFacilityPatient(), expected_row_version: pkg.row_version,
+      })),
+    },
+  ));
+}
+
+export function downloadMedicalRecordAssetDistribution(
+  lease: ContextLeaseWire, assetId: string, packageId: string,
+): Promise<ClinicalBinaryResponse> {
+  return requestBinary(`/medical-record-assets/${assetId}/distribution-packages/${packageId}/content`, assetHeaders(lease));
+}
+
 export async function listMedicalRecordAssets(lease: ContextLeaseWire): Promise<MedicalRecordAssetWire[]> {
   return medicalRecordAssetWireSchema.array().parse(await request(
     `/medical-record-assets?patient_id=${clinicalContext.patientId}`,
@@ -48,7 +145,12 @@ export async function listMedicalRecordAssets(lease: ContextLeaseWire): Promise<
 
 export async function registerMedicalRecordAsset(
   lease: ContextLeaseWire,
-  input: { assetType: MedicalRecordAssetWire['asset_type']; location: string; contentHash: string },
+  input: {
+    assetType: MedicalRecordAssetWire['asset_type']; location: string; contentHash: string;
+    displayName?: string; mediaType?: string; pageCount?: number; sourceSystem?: string;
+    cdaStatus?: MedicalRecordAssetWire['cda_status']; scanStatus?: MedicalRecordAssetWire['scan_status'];
+    preservationStatus?: MedicalRecordAssetWire['preservation_status']; retentionYears?: number;
+  },
 ): Promise<MedicalRecordAssetWire> {
   return medicalRecordAssetWireSchema.parse(await request('/medical-record-assets', {
     method: 'POST',
@@ -59,8 +161,72 @@ export async function registerMedicalRecordAsset(
       asset_type: input.assetType,
       location: input.location,
       content_hash: input.contentHash,
+      display_name: input.displayName,
+      media_type: input.mediaType,
+      page_count: input.pageCount,
+      source_system: input.sourceSystem,
+      cda_status: input.cdaStatus,
+      scan_status: input.scanStatus,
+      preservation_status: input.preservationStatus,
+      retention_years: input.retentionYears,
     })),
   }));
+}
+
+export async function updateMedicalRecordAsset(
+  lease: ContextLeaseWire,
+  asset: MedicalRecordAssetWire,
+  input: Pick<MedicalRecordAssetWire, 'display_name' | 'media_type' | 'page_count' | 'source_system' |
+    'custody_location' | 'cda_status' | 'scan_status' | 'preservation_status' | 'retention_years'>,
+): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}`, {
+    method: 'PATCH',
+    headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetUpdateRequestWireSchema.parse({
+      ...orgFacilityPatient(), ...input, expected_row_version: asset.row_version,
+    })),
+  }));
+}
+
+export async function retireMedicalRecordAsset(
+  lease: ContextLeaseWire,
+  asset: MedicalRecordAssetWire,
+  reason: string,
+): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request(
+    `/medical-record-assets/${asset.medical_record_asset_id}/retirements`, {
+      method: 'POST',
+      headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(medicalRecordAssetRetireRequestWireSchema.parse({
+        ...orgFacilityPatient(), reason, expected_row_version: asset.row_version,
+      })),
+    },
+  ));
+}
+
+export async function verifyMedicalRecordAssetIntegrity(
+  lease: ContextLeaseWire,
+  asset: MedicalRecordAssetWire,
+  observedHash: string,
+): Promise<MedicalRecordAssetIntegrityEventWire> {
+  return medicalRecordAssetIntegrityEventWireSchema.parse(await request(
+    `/medical-record-assets/${asset.medical_record_asset_id}/integrity-events`, {
+      method: 'POST',
+      headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(medicalRecordAssetIntegrityCheckRequestWireSchema.parse({
+        ...orgFacilityPatient(), observed_hash: observedHash, expected_row_version: asset.row_version,
+      })),
+    },
+  ));
+}
+
+export async function listMedicalRecordAssetIntegrityEvents(
+  lease: ContextLeaseWire,
+  assetId: string,
+): Promise<MedicalRecordAssetIntegrityEventWire[]> {
+  return medicalRecordAssetIntegrityEventWireSchema.array().parse(await request(
+    `/medical-record-assets/${assetId}/integrity-events`, { headers: assetHeaders(lease) },
+  ));
 }
 
 export async function borrowMedicalRecordAsset(
@@ -92,6 +258,22 @@ export async function returnMedicalRecordAsset(
       body: JSON.stringify(medicalRecordAssetReturnRequestWireSchema.parse({
         ...orgFacilityPatient(),
         expected_row_version: asset.row_version,
+      })),
+    },
+  ));
+}
+
+export async function updateMedicalRecordAssetBorrow(
+  lease: ContextLeaseWire,
+  asset: MedicalRecordAssetWire,
+  dueAt: string,
+): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request(
+    `/medical-record-assets/${asset.medical_record_asset_id}/borrow`, {
+      method: 'PATCH',
+      headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(medicalRecordAssetBorrowUpdateRequestWireSchema.parse({
+        ...orgFacilityPatient(), expected_row_version: asset.row_version, due_at: dueAt,
       })),
     },
   ));

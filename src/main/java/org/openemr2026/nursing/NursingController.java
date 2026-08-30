@@ -13,8 +13,11 @@ import org.openemr2026.contracts.NursingBedsideNoteWire;
 import org.openemr2026.contracts.NursingDischargeClosureRequestWire;
 import org.openemr2026.contracts.NursingDischargeClosureWire;
 import org.openemr2026.contracts.ShiftHandoverCompleteRequestWire;
+import org.openemr2026.contracts.ShiftHandoverCorrectionRequestWire;
 import org.openemr2026.contracts.ShiftHandoverCreateRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientCreateRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientCorrectionRequestWire;
+import org.openemr2026.contracts.ShiftHandoverPatientVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverPatientWire;
 import org.openemr2026.contracts.ShiftHandoverVoidRequestWire;
 import org.openemr2026.contracts.ShiftHandoverWire;
@@ -165,6 +168,18 @@ final class NursingController {
                 .body(nursing.completeHandover(identity, idempotencyKey, handoverId, command));
     }
 
+    @PostMapping("/shift-handovers/{handover_id}/corrections")
+    ResponseEntity<ShiftHandoverWire> correctHandover(
+            HttpServletRequest request,
+            @PathVariable("handover_id") UUID handoverId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ShiftHandoverCorrectionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(nursing.correctHandover(identity, idempotencyKey, handoverId, command));
+    }
+
     @PostMapping("/shift-handovers/{handover_id}/voids")
     ResponseEntity<ShiftHandoverWire> voidHandover(
             HttpServletRequest request,
@@ -197,6 +212,30 @@ final class NursingController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), null);
         return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
                 .body(nursing.addHandoverPatient(identity, idempotencyKey, command));
+    }
+
+    @PostMapping("/shift-handover-patients/{shift_handover_patient_id}/corrections")
+    ResponseEntity<ShiftHandoverPatientWire> correctHandoverPatient(
+            HttpServletRequest request,
+            @PathVariable("shift_handover_patient_id") UUID itemId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ShiftHandoverPatientCorrectionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
+                .body(nursing.correctHandoverPatient(identity, idempotencyKey, itemId, command));
+    }
+
+    @PostMapping("/shift-handover-patients/{shift_handover_patient_id}/voids")
+    ResponseEntity<ShiftHandoverPatientWire> voidHandoverPatient(
+            HttpServletRequest request,
+            @PathVariable("shift_handover_patient_id") UUID itemId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ShiftHandoverPatientVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(nursing.voidHandoverPatient(identity, idempotencyKey, itemId, command));
     }
 
     @GetMapping("/nursing-discharge-closures")

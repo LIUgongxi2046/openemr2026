@@ -1,94 +1,67 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed, reactive, ref } from 'vue';
-import { issueMedicalRecordAssetLease, listMedicalRecordAssets, registerMedicalRecordAsset } from '../../api/records';
-import { developmentCopy } from '../../development-copy';
+import { computed, ref } from 'vue';
+import type { MedicalRecordAssetWire } from '../../generated/contracts';
+import { downloadMedicalRecordAsset, ingestMedicalRecordAsset, issueMedicalRecordAssetLease, listMedicalRecordAssets, registerMedicalRecordAsset, retireMedicalRecordAsset, updateMedicalRecordAsset } from '../../api/records';
+import ArchiveAssetEditorDialog from '../components/ArchiveAssetEditorDialog.vue';
+import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const assetsQuery = useQuery({
-  queryKey: ['clinical', 'medical-record-assets', 'catalog'],
-  queryFn: async () => {
-    const lease = await issueMedicalRecordAssetLease();
-    return { lease, assets: await listMedicalRecordAssets(lease) };
-  },
-  retry: false, staleTime: 0, gcTime: 0,
-});
+const assetsQuery = useQuery({ queryKey: ['clinical', 'medical-record-assets', 'catalog'], queryFn: async () => { const lease = await issueMedicalRecordAssetLease(); return { lease, assets: await listMedicalRecordAssets(lease) }; }, retry: false, staleTime: 0, gcTime: 0 });
 const issue = computed(() => assetsQuery.error.value ? toClinicalIssue(assetsQuery.error.value) : null);
 const assets = computed(() => assetsQuery.data.value?.assets ?? []);
+const activeAssets = computed(() => assets.value.filter((asset) => asset.status !== 'RETIRED'));
+const retiredAssets = computed(() => assets.value.filter((asset) => asset.status === 'RETIRED'));
 const busy = ref(false);
 const notice = ref('');
-const formOpen = ref(false);
-const form = reactive({ assetType: 'SCAN' as 'PAPER' | 'SCAN' | 'DIGITAL', location: '', contentHash: '' });
-const paperCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'PAPER').length);
-const scanCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'SCAN').length);
-const digitalCount = computed(() => assets.value.filter((asset) => asset.asset_type === 'DIGITAL').length);
-const verifiedCount = computed(() => assets.value.filter((asset) => asset.content_hash.length === 64).length);
+const editorOpen = ref(false);
+const rulesOpen = ref(false);
+const editing = ref<MedicalRecordAssetWire | null>(null);
+const retireTarget = ref<MedicalRecordAssetWire | null>(null);
+const retireReason = ref('');
+const selectedAssetId = ref('');
+const selectedAsset = computed(() => activeAssets.value.find((asset) => asset.medical_record_asset_id === selectedAssetId.value) ?? activeAssets.value.find((asset) => asset.integrity_status !== 'VERIFIED') ?? activeAssets.value[0] ?? null);
+const verifiedCount = computed(() => activeAssets.value.filter((asset) => asset.integrity_status === 'VERIFIED').length);
+const missingCount = computed(() => activeAssets.value.filter((asset) => asset.storage_status === 'MISSING').length);
+const pendingCount = computed(() => activeAssets.value.filter((asset) => asset.integrity_status === 'PENDING').length);
+const completion = computed(() => activeAssets.value.length ? Math.round(verifiedCount.value / activeAssets.value.length * 100) : 100);
 
-async function registerAsset() {
-  const data = assetsQuery.data.value;
-  if (!data || busy.value || form.location.trim().length < 2 || !/^[a-fA-F0-9]{64}$/.test(form.contentHash.trim())) return;
-  busy.value = true; notice.value = '';
+function openCreate() { editing.value = null; editorOpen.value = true; }
+function openEdit(asset: MedicalRecordAssetWire) { editing.value = asset; editorOpen.value = true; }
+function openCorrection() { if (selectedAsset.value) openEdit(selectedAsset.value); else openCreate(); }
+async function save(draft: any) {
+  const data = assetsQuery.data.value; if (!data || busy.value) return; busy.value = true; notice.value = '';
   try {
-    await registerMedicalRecordAsset(data.lease, { assetType: form.assetType, location: form.location.trim(), contentHash: form.contentHash.trim().toLowerCase() });
-    form.location = ''; form.contentHash = ''; formOpen.value = false;
-    notice.value = '病案资产已完成编目，内容哈希成为不可变验真锚点。';
-    await assetsQuery.refetch();
-  } catch (error) {
-    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
-  } finally { busy.value = false; }
+    if (editing.value) await updateMedicalRecordAsset(data.lease, editing.value, { display_name: draft.displayName, media_type: draft.mediaType, page_count: draft.pageCount, source_system: draft.sourceSystem, custody_location: draft.location, cda_status: draft.cdaStatus, scan_status: draft.scanStatus, preservation_status: draft.preservationStatus, retention_years: draft.retentionYears });
+    else if (draft.file) await ingestMedicalRecordAsset(data.lease, { assetType: draft.assetType, location: draft.location, displayName: draft.displayName, mediaType: draft.mediaType, pageCount: draft.pageCount, sourceSystem: draft.sourceSystem, file: draft.file, cdaStatus: draft.cdaStatus, retentionYears: draft.retentionYears });
+    else await registerMedicalRecordAsset(data.lease, { assetType: draft.assetType, location: draft.location, contentHash: draft.contentHash, displayName: draft.displayName, mediaType: draft.mediaType, pageCount: draft.pageCount, sourceSystem: draft.sourceSystem, cdaStatus: draft.cdaStatus, scanStatus: draft.scanStatus, preservationStatus: draft.preservationStatus, retentionYears: draft.retentionYears });
+    notice.value = editing.value ? '目录项已更正，原始内容哈希未被覆盖。' : draft.file ? '原始文件已写入并完成资产编目。' : '目录项已建立并固化内容哈希锚点。';
+    editorOpen.value = false; editing.value = null; await assetsQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; } finally { busy.value = false; }
 }
-
-function typeLabel(value: string) { return ({ PAPER: '纸质原件', SCAN: '扫描件', DIGITAL: '数字原生' } as Record<string, string>)[value] || value; }
-function statusLabel(value: string) { return ({ ARCHIVED: '在库', BORROWED: '借出中' } as Record<string, string>)[value] || value; }
+async function download(asset: MedicalRecordAssetWire) { const data = assetsQuery.data.value; if (!data || busy.value) return; busy.value = true; try { const result = await downloadMedicalRecordAsset(data.lease, asset.medical_record_asset_id); const url = URL.createObjectURL(result.blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = result.filename; anchor.click(); URL.revokeObjectURL(url); notice.value = `已从存储重读原件，SHA-256 ${result.contentHash?.slice(0, 16) ?? '未返回'}…`; } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; } finally { busy.value = false; } }
+async function retire() { const data = assetsQuery.data.value; if (!data || !retireTarget.value || busy.value || retireReason.value.trim().length < 4) return; busy.value = true; notice.value = ''; try { await retireMedicalRecordAsset(data.lease, retireTarget.value, retireReason.value.trim()); notice.value = '目录资产已作废并退出借阅、归档与保存流程，证据仍可追溯。'; retireTarget.value = null; retireReason.value = ''; await assetsQuery.refetch(); } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; } finally { busy.value = false; } }
+function groupLabel(value: string) { return ({ PAPER: '纸质原件', SCAN: '扫描资料', DIGITAL: '电子文书' } as Record<string, string>)[value] || value; }
+function statusLabel(asset: MedicalRecordAssetWire) { return asset.status === 'RETIRED' ? '已作废' : asset.integrity_status === 'VERIFIED' ? '已签/已归档' : asset.integrity_status === 'FAILED' ? '隔离' : '待复核'; }
+function integrityLabel(value: string) { return ({ PENDING: '待复核', VERIFIED: '通过', FAILED: '阻断' } as Record<string, string>)[value] || value; }
+function integrityClass(value: string) { return value === 'VERIFIED' ? 'green' : value === 'FAILED' ? 'red' : 'amber'; }
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page archive-content">
-    <div class="page-heading archive-heading">
-      <div><p class="eyebrow">病历与病案 / 病案目录</p><h1>病案目录与完整性</h1><p>按患者编目的病案资产目录：载体类型、存放位置与 64 位内容哈希；哈希在编目后由数据库触发器强制不可变，编目即验真锚点。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" type="button" @click="formOpen = !formOpen">{{ formOpen ? '收起编目' : '新增资产编目' }}</button><RouterLink class="button secondary" to="/archive-integrity">完整性与验真</RouterLink><RouterLink class="button primary" to="/archive-borrow">借阅与归还</RouterLink></div>
-    </div>
-    <section class="patient-strip" aria-label="患者上下文"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div>
-      <div><strong>{{ developmentCopy.patientName }}</strong><span>病案资产编目 · 患者级上下文</span></div><dl>
-        <div><dt>编目口径</dt><dd>按患者归属</dd></div>
-        <div><dt>完整性锚点</dt><dd>64 位 SHA-256</dd></div>
-        <div><dt>不可变性</dt><dd>触发器兜底</dd></div></dl>
-      <span class="lease-badge">患者级租约</span></section>
+  <section data-page-root class="content vue-native-page archive-prototype-page">
+    <div class="page-head"><div class="page-title"><h1>病案目录与完整性</h1><p>围绕“应有—已有—页序—签署—归档”管理完整病案</p></div><div class="head-actions"><button class="btn" @click="rulesOpen = true">目录规则 v5.2</button><button class="btn primary" @click="openCorrection">生成整改任务</button></div></div>
     <ClinicalPageState v-if="assetsQuery.isPending.value" kind="loading" message="正在加载病案目录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="assetsQuery.refetch()" />
     <template v-else>
       <div v-if="notice" class="notice archive-notice" role="status">{{ notice }}</div>
-      <form v-if="formOpen" class="archive-catalog-create" @submit.prevent="registerAsset">
-        <div><strong>新增病案资产编目</strong><span>编目后载体、位置与 SHA-256 哈希不允许覆盖；需更正时应新增资产并保留原证据。</span></div>
-        <label>载体类型<select v-model="form.assetType"><option value="PAPER">纸质原件</option><option value="SCAN">扫描件</option><option value="DIGITAL">数字原生</option></select></label>
-        <label>存放位置<input v-model="form.location" required minlength="2" maxlength="128" placeholder="例：病案库 A 区 03 柜" /></label>
-        <label>内容哈希（SHA-256）<input v-model="form.contentHash" required minlength="64" maxlength="64" pattern="[a-fA-F0-9]{64}" placeholder="64 位十六进制哈希" /></label>
-        <button class="button primary" :disabled="busy || form.location.trim().length < 2 || !/^[a-fA-F0-9]{64}$/.test(form.contentHash.trim())">{{ busy ? '编目中…' : '完成资产编目' }}</button>
-      </form>
-      <section class="archive-metrics" aria-label="目录完整性摘要">
-        <article><span>纸质原件</span><strong>{{ paperCount }}</strong><small>需扫描/长期保存切片</small></article>
-        <article><span>扫描件</span><strong>{{ scanCount }}</strong><small>PDF/A 等载体</small></article>
-        <article><span>数字原生</span><strong>{{ digitalCount }}</strong><small>电子文书载体</small></article>
-        <article class="metric-success"><span>哈希完整</span><strong>{{ verifiedCount }}/{{ assets.length }}</strong><small>64 位内容哈希齐全</small></article>
-      </section>
-      <section class="archive-panel archive-manifest-panel">
-        <div class="archive-panel-heading"><div><span class="archive-step">目</span><h2>病案资产目录</h2></div><span>{{ assets.length }} 份资产</span></div>
-        <div v-if="assets.length === 0" class="archive-empty"><span>目</span><p>当前患者尚无已编目的病案资产</p><small>此处不使用前端示例伪造目录数据；纸档扫描编目属于后续切片。</small></div>
-        <div v-else class="archive-table-wrap">
-          <table class="archive-table"><thead><tr><th>载体</th><th>存放位置</th><th>内容哈希（SHA-256）</th><th>状态</th><th>关联就诊</th><th>行版本</th><th></th></tr></thead>
-            <tbody><tr v-for="asset in assets" :key="asset.medical_record_asset_id">
-              <td>{{ typeLabel(asset.asset_type) }}</td><td>{{ asset.location }}</td>
-              <td><code>{{ asset.content_hash }}</code></td>
-              <td><span class="state-chip" :class="{ signed: asset.status === 'ARCHIVED' }">{{ statusLabel(asset.status) }}</span></td>
-              <td><code>{{ asset.encounter_id ? `…${asset.encounter_id.slice(-8)}` : '—' }}</code></td>
-              <td>{{ asset.row_version }}</td>
-              <td><RouterLink class="task-action" :to="`/asset-detail?asset=${asset.medical_record_asset_id}`">证据详情</RouterLink></td>
-            </tr></tbody>
-          </table>
-        </div>
-        <footer style="padding: 12px 16px; color: #607086; background: #f8fafc; border-top: 1px solid #e7edf4; font-size: 10px;">内容哈希由数据库约束强制 64 位长度，编目后 patient_id / asset_type / location / content_hash 由触发器禁止更新，目录即长期验真的不可变锚点。</footer>
-      </section>
+      <div class="grid catalog-layout">
+        <section class="card"><div class="card-head">当前患者病案目录 <span class="status" :class="completion === 100 ? 'green' : 'amber'">完整度 {{ completion }}%</span></div><div class="archive-table-wrap"><table class="table"><thead><tr><th>目录组</th><th>应有文书</th><th>资产</th><th>状态</th><th>页序</th><th>检查</th></tr></thead><tbody><tr v-for="(asset,index) in assets" :key="asset.medical_record_asset_id" :class="{ 'prototype-row-active': selectedAsset?.medical_record_asset_id === asset.medical_record_asset_id, 'is-voided': asset.status === 'RETIRED' }" @click="selectedAssetId = asset.medical_record_asset_id"><td>{{ groupLabel(asset.asset_type) }}</td><td><b>{{ asset.display_name }}</b><small>{{ asset.source_system }}</small></td><td>…{{ asset.medical_record_asset_id.slice(-8) }}</td><td>{{ statusLabel(asset) }}</td><td>{{ asset.page_count ? `${index + 1}–${index + asset.page_count}` : '—' }}</td><td><span class="status" :class="integrityClass(asset.integrity_status)">{{ integrityLabel(asset.integrity_status) }}</span></td></tr><tr v-if="!assets.length"><td colspan="6" class="prototype-empty">尚无目录资产，请先新建编目。</td></tr></tbody></table></div><div class="prototype-card-actions"><div class="prototype-action-row"><button class="btn primary" @click="openCreate">新建资产</button><button class="btn" :disabled="!selectedAsset" @click="selectedAsset && openEdit(selectedAsset)">编辑</button><button class="btn" :disabled="!selectedAsset || selectedAsset.storage_status === 'MISSING'" @click="selectedAsset && download(selectedAsset)">下载原件</button><button class="btn danger" :disabled="!selectedAsset || selectedAsset.status !== 'ARCHIVED'" @click="retireTarget = selectedAsset; retireReason = ''">删除</button><RouterLink v-if="selectedAsset" class="btn" :to="`/asset-detail?asset=${selectedAsset.medical_record_asset_id}`">证据详情</RouterLink></div></div></section>
+        <aside class="card"><div class="card-head">缺失与责任</div><div class="card-body"><div v-if="selectedAsset && selectedAsset.integrity_status !== 'VERIFIED'" class="notice hard"><div class="notice-title">{{ selectedAsset.display_name }}{{ selectedAsset.storage_status === 'MISSING' ? '缺失' : '待复核' }}</div>当前状态会影响借阅、归档与长期保存；责任人需完成原件补录或哈希重读验真。</div><div v-else class="notice info"><div class="notice-title">当前目录无硬性缺失</div>已选资产的目录、页数与验真状态可继续进入归档流程。</div><div class="folder-row">应有目录项<span>{{ activeAssets.length + missingCount }}</span></div><div class="folder-row">已有资产<span>{{ activeAssets.length }}</span></div><div class="folder-row">验真通过<span>{{ verifiedCount }}</span></div><div class="folder-row">待扫描复核<span>{{ pendingCount }}</span></div><div class="folder-row">缺失阻断<span>{{ missingCount }}</span></div><div class="folder-row">已作废留痕<span>{{ retiredAssets.length }}</span></div><button class="btn primary" style="width:100%;margin-top:12px" @click="openCorrection">分派病案整改</button></div></aside>
+      </div>
     </template>
+    <ArchiveAssetEditorDialog :open="editorOpen" :asset="editing" :busy="busy" @cancel="editorOpen = false; editing = null" @save="save" />
+    <BusinessActionDialog :open="rulesOpen" title="目录规则 v5.2" description="目录规则用于校验应有文书、页序、签署与归档状态。" eyebrow="病案目录 / 规则" confirm-label="已了解" @cancel="rulesOpen = false" @confirm="rulesOpen = false"><div class="folder-row">应有文书<span>按患者就诊类型生成</span></div><div class="folder-row">页序规则<span>连续、无重复、无缺页</span></div><div class="folder-row">硬性门禁<span>签署 + 质控 + 哈希验真</span></div></BusinessActionDialog>
+    <BusinessActionDialog :open="Boolean(retireTarget)" :title="`删除资产：${retireTarget?.display_name ?? ''}`" description="作废后立即退出借阅、归档和长期保存待办，但保留全部证据。" eyebrow="病案资产 / 删除" confirm-label="确认作废" danger :busy="busy" :confirm-disabled="retireReason.trim().length < 4" @cancel="retireTarget = null" @confirm="retire"><p class="dialog-warning">已借出或已长期封包的资产不允许作废。</p><label>作废理由（至少 4 字）<textarea v-model="retireReason" rows="4" maxlength="1000" /></label></BusinessActionDialog>
   </section>
 </template>

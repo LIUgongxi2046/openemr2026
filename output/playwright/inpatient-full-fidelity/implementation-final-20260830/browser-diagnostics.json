@@ -1,0 +1,185 @@
+{
+  "metrics": [
+    {
+      "id": "inpatient",
+      "width": 1440,
+      "title": "住院医生工作站",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1134,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "inpatient-overview",
+      "width": 1440,
+      "title": "住院患者总览",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1076,
+      "rightRails": 1,
+      "dialogs": 0
+    },
+    {
+      "id": "inpatient-course",
+      "width": 1440,
+      "title": "住院病程与文书中心",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1076,
+      "rightRails": 1,
+      "dialogs": 1
+    },
+    {
+      "id": "ip-orders",
+      "width": 1440,
+      "title": "住院医嘱与用药中心",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 2262,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "ip-results",
+      "width": 1440,
+      "title": "住院检查检验与危急值",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1241,
+      "rightRails": 1,
+      "dialogs": 3
+    },
+    {
+      "id": "ip-consult",
+      "width": 1440,
+      "title": "住院查房、会诊与协同",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1120,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "ip-pathway",
+      "width": 1440,
+      "title": "住院临床路径执行中心",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1179,
+      "rightRails": 1,
+      "dialogs": 1
+    },
+    {
+      "id": "ward",
+      "width": 1440,
+      "title": "心内科一病区 · 护理工作台",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1713,
+      "rightRails": 1,
+      "dialogs": 4
+    },
+    {
+      "id": "inpatient-discharge",
+      "width": 1440,
+      "title": "出院病历与病案归档闭环",
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "scrollHeight": 1076,
+      "rightRails": 1,
+      "dialogs": 1
+    },
+    {
+      "id": "inpatient",
+      "width": 390,
+      "title": "住院医生工作站",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 2318,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "inpatient-overview",
+      "width": 390,
+      "title": "住院患者总览",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 2330,
+      "rightRails": 1,
+      "dialogs": 0
+    },
+    {
+      "id": "inpatient-course",
+      "width": 390,
+      "title": "住院病程与文书中心",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 1743,
+      "rightRails": 1,
+      "dialogs": 1
+    },
+    {
+      "id": "ip-orders",
+      "width": 390,
+      "title": "住院医嘱与用药中心",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 4299,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "ip-results",
+      "width": 390,
+      "title": "住院检查检验与危急值",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 2583,
+      "rightRails": 1,
+      "dialogs": 3
+    },
+    {
+      "id": "ip-consult",
+      "width": 390,
+      "title": "住院查房、会诊与协同",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 2207,
+      "rightRails": 1,
+      "dialogs": 2
+    },
+    {
+      "id": "ip-pathway",
+      "width": 390,
+      "title": "住院临床路径执行中心",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 1647,
+      "rightRails": 1,
+      "dialogs": 1
+    },
+    {
+      "id": "ward",
+      "width": 390,
+      "title": "心内科一病区 · 护理工作台",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 2811,
+      "rightRails": 1,
+      "dialogs": 4
+    },
+    {
+      "id": "inpatient-discharge",
+      "width": 390,
+      "title": "出院病历与病案归档闭环",
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "scrollHeight": 1295,
+      "rightRails": 1,
+      "dialogs": 1
+    }
+  ],
+  "errors": []
+}

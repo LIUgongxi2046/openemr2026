@@ -49,7 +49,12 @@ final class ConfigurationService {
             Map.entry("RESEARCH_PROJECT", List.of("schema_version", "project_type", "principal_investigator", "registry_number", "ethics_approval", "approved_purpose", "data_scope", "member_count", "expires_at")),
             Map.entry("INTEGRATION_INCIDENT", List.of("schema_version", "trace_id", "direction", "event_type", "business_object", "result", "latency", "clinical_impact", "retry_policy")),
             Map.entry("CLINICAL_TASK_RULE", List.of("schema_version", "task_type", "risk_level", "due_minutes", "escalation_minutes", "assignment_strategy", "completion_source", "channels", "applies_to", "enabled")),
-            Map.entry("CLINICAL_PATHWAY", List.of("schema_version", "pathway_code", "specialty_code", "diagnosis_code", "version_no", "admission_criteria", "stages", "publication_scope", "version_immutable_after_publish")));
+            Map.entry("CLINICAL_PATHWAY", List.of("schema_version", "pathway_code", "specialty_code", "diagnosis_code", "version_no", "admission_criteria", "stages", "publication_scope", "version_immutable_after_publish")),
+            Map.entry("QUALITY_INITIATIVE", qualityOperationFields()),
+            Map.entry("DEPARTMENT_QC_CASE", qualityOperationFields()),
+            Map.entry("QUALITY_RATING_EVIDENCE", qualityOperationFields()),
+            Map.entry("INFECTION_CONTROL_CASE", qualityOperationFields()),
+            Map.entry("CLINICAL_CREDENTIAL_GRANT", qualityOperationFields()));
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
@@ -285,9 +290,44 @@ final class ConfigurationService {
             case "CAPABILITY_PACK_COMPOSITION" -> validateCapabilityComposition(payload, errors);
             case "CLINICAL_TASK_RULE" -> validateClinicalTaskRule(payload, errors);
             case "CLINICAL_PATHWAY" -> validateClinicalPathway(payload, errors);
+            case "QUALITY_INITIATIVE", "DEPARTMENT_QC_CASE", "QUALITY_RATING_EVIDENCE",
+                    "INFECTION_CONTROL_CASE", "CLINICAL_CREDENTIAL_GRANT" ->
+                    validateQualityOperation(configType, payload, errors);
             default -> { }
         }
         return List.copyOf(errors);
+    }
+
+    private static List<String> qualityOperationFields() {
+        return List.of("schema_version", "module_id", "owner", "scope", "severity", "workflow_status",
+                "due_at", "score", "description", "flow_impact");
+    }
+
+    private void validateQualityOperation(String configType, Map<String, Object> payload, List<String> errors) {
+        String severity = text(payload.get("severity"));
+        if (!List.of("INFO", "WARNING", "BLOCKING").contains(severity)) {
+            errors.add("质量工作项风险等级无效");
+        }
+        long score = number(payload.get("score"));
+        if (score < 0 || score > 100) errors.add("质量评分必须位于 0 到 100");
+        if (text(payload.get("description")).length() < 4) errors.add("质量工作项说明至少 4 个字符");
+        if (text(payload.get("flow_impact")).length() < 4) errors.add("必须说明对业务流程的影响");
+        try {
+            OffsetDateTime.parse(text(payload.get("due_at")));
+        } catch (RuntimeException invalid) {
+            errors.add("质量工作项完成时限必须为带时区的 ISO-8601 时间");
+        }
+        List<String> allowedStatuses = switch (configType) {
+            case "QUALITY_INITIATIVE" -> List.of("MONITORING", "IMPROVING", "REVIEW", "CLOSED");
+            case "DEPARTMENT_QC_CASE" -> List.of("OPEN", "REMEDIATING", "REVIEW", "CLOSED");
+            case "QUALITY_RATING_EVIDENCE" -> List.of("GAP", "COLLECTING", "READY", "VERIFIED");
+            case "INFECTION_CONTROL_CASE" -> List.of("REPORTED", "INVESTIGATING", "CONTROLLED", "CLOSED");
+            case "CLINICAL_CREDENTIAL_GRANT" -> List.of("PENDING", "ACTIVE", "EXPIRING", "REVOKED");
+            default -> List.of();
+        };
+        if (!allowedStatuses.contains(text(payload.get("workflow_status")))) {
+            errors.add("质量工作项流程状态与子菜单不匹配");
+        }
     }
 
     private void validateClinicalTaskRule(Map<String, Object> payload, List<String> errors) {

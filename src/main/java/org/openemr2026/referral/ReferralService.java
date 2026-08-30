@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ReferralCreateRequestWire;
 import org.openemr2026.contracts.ReferralTransitionRequestWire;
+import org.openemr2026.contracts.ReferralUpdateRequestWire;
 import org.openemr2026.contracts.ReferralWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -108,10 +109,62 @@ final class ReferralService {
                             """).param("status", target).param("tenant", identity.tenantId())
                             .param("referral", referralId).param("expected", current.rowVersion()).update();
                 }
+                case CANCEL -> {
+                    if (!"DRAFT".equals(current.status())) throw stateInvalid();
+                    jdbc.sql("""
+                            update referral set status = 'CANCELLED', resolved_at = now(),
+                              row_version = row_version + 1, updated_at = now()
+                            where tenant_id = :tenant and referral_id = :referral and row_version = :expected
+                            """).param("tenant", identity.tenantId()).param("referral", referralId)
+                            .param("expected", current.rowVersion()).update();
+                }
             }
             appendEvidence(identity, request.patientId(), referralId, current.rowVersion() + 1,
                     "REFERRAL_" + request.transition(), "Referral" + request.transition());
             completeCommand(identity, "REFERRAL_TRANSITION", idempotencyKey, referralId);
+            return referral(identity.tenantId(), referralId, request.patientId());
+        });
+    }
+
+    ReferralWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID referralId,
+            ReferralUpdateRequestWire request) {
+        String reason = requireText(request.reason(), 2, "reason");
+        String summary = requireText(request.clinicalSummary(), 4, "clinical_summary");
+        if (request.referralType() == null || request.expectedRowVersion() == null) {
+            throw invalid("referral_type and expected_row_version are required");
+        }
+        String department = blankToNull(request.targetDepartment());
+        String organization = blankToNull(request.targetOrganization());
+        if (request.referralType() == ReferralUpdateRequestWire.ReferralTypeValue.INTERNAL && department == null) {
+            throw invalid("target_department is required for INTERNAL referral");
+        }
+        if (request.referralType() == ReferralUpdateRequestWire.ReferralTypeValue.EXTERNAL && organization == null) {
+            throw invalid("target_organization is required for EXTERNAL referral");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "REFERRAL_UPDATE", idempotencyKey,
+                    sha256(referralId + "|" + request.expectedRowVersion() + "|" + request.referralType()
+                            + "|" + department + "|" + organization + "|" + reason + "|" + summary));
+            jdbc.sql("select set_config('openemr2026.allow_referral_edit', 'true', true)")
+                    .query(String.class).single();
+            int updated = jdbc.sql("""
+                    update referral set referral_type = :type, target_department = :department,
+                      target_organization = :organization, reason = :reason, clinical_summary = :summary,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and referral_id = :referral
+                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                      and status = 'DRAFT' and row_version = :expected
+                    """).param("type", request.referralType().name()).param("department", department)
+                    .param("organization", organization).param("reason", reason).param("summary", summary)
+                    .param("tenant", identity.tenantId()).param("referral", referralId)
+                    .param("patient", request.patientId()).param("encounter", request.encounterId())
+                    .param("facility", request.facilityId()).param("expected", request.expectedRowVersion()).update();
+            if (updated != 1) throw new ReferralException(
+                    "REFERRAL_VERSION_CONFLICT", 409, "The draft referral changed; reload before retrying");
+            appendEvidence(identity, request.patientId(), referralId, request.expectedRowVersion() + 1,
+                    "REFERRAL_UPDATED", "ReferralUpdated");
+            completeCommand(identity, "REFERRAL_UPDATE", idempotencyKey, referralId);
             return referral(identity.tenantId(), referralId, request.patientId());
         });
     }

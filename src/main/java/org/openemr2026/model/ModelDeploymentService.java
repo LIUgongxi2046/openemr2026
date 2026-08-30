@@ -6,15 +6,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
+import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
@@ -23,10 +27,18 @@ final class ModelDeploymentService {
             "^(env://[A-Z][A-Z0-9_]{2,127}|file:///\\S+)$");
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ModelConnectionVerifier connectionVerifier;
+    private final ManagedModelSecretStore secretStore;
 
-    ModelDeploymentService(JdbcClient jdbc, TransactionTemplate transactions) {
+    ModelDeploymentService(
+            JdbcClient jdbc,
+            TransactionTemplate transactions,
+            ModelConnectionVerifier connectionVerifier,
+            ManagedModelSecretStore secretStore) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.connectionVerifier = connectionVerifier;
+        this.secretStore = secretStore;
     }
 
     ModelDeploymentWire register(
@@ -37,15 +49,24 @@ final class ModelDeploymentService {
             throw invalid("model_code, provider_code, display_name and residency_policy are required");
         }
         String endpointUrl = normalizeEndpoint(request.endpointUrl());
-        String apiKeyRef = normalizeSecretReference(request.apiKeyRef());
-        if (apiKeyRef != null && endpointUrl == null) {
-            throw invalid("endpoint_url is required when api_key_ref is configured");
+        String requestedApiKeyRef = normalizeSecretReference(request.apiKeyRef());
+        String rawApiKey = normalizeApiKey(request.apiKey());
+        if (requestedApiKeyRef != null && rawApiKey != null) {
+            throw invalid("provide api_key or api_key_ref, not both");
         }
-        String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "READY";
+        if ((requestedApiKeyRef != null || rawApiKey != null) && endpointUrl == null) {
+            throw invalid("endpoint_url is required when an API key is configured");
+        }
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_DEPLOYMENT_REGISTER", idempotencyKey,
                     sha256(request.modelCode() + "|" + request.providerCode() + "|" + request.residencyPolicy()));
             UUID deploymentId = UUID.randomUUID();
+            String apiKeyRef = requestedApiKeyRef;
+            if (rawApiKey != null) {
+                apiKeyRef = secretStore.store(identity.tenantId(), deploymentId, rawApiKey).reference();
+                deleteOnRollback(apiKeyRef);
+            }
+            String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "UNVERIFIED";
             jdbc.sql("""
                     insert into model_deployment(
                       tenant_id, model_deployment_id, model_code, provider_code, display_name,
@@ -71,10 +92,11 @@ final class ModelDeploymentService {
             beginCommand(identity, "MODEL_DEPLOYMENT_DEACTIVATE", idempotencyKey,
                     sha256(deploymentId + "|" + request.expectedRowVersion()));
             DeploymentHead current = jdbc.sql("""
-                    select status, row_version from model_deployment
+                    select status, row_version, api_key_ref from model_deployment
                     where tenant_id = :tenant and model_deployment_id = :deployment for update
                     """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
-                    .query((rs, row) -> new DeploymentHead(rs.getString("status"), rs.getLong("row_version")))
+                    .query((rs, row) -> new DeploymentHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getString("api_key_ref")))
                     .optional().orElseThrow(() -> contextDenied());
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409, "The model deployment changed; reload before retrying");
@@ -83,10 +105,12 @@ final class ModelDeploymentService {
                 throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409, "Only an active model can be deactivated");
             }
             jdbc.sql("""
-                    update model_deployment set status = 'INACTIVE', row_version = row_version + 1, updated_at = now()
+                    update model_deployment set status = 'INACTIVE', api_key_ref = null,
+                      connection_status = 'NOT_CONFIGURED', row_version = row_version + 1, updated_at = now()
                     where tenant_id = :tenant and model_deployment_id = :deployment and row_version = :expected
                     """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
                     .param("expected", current.rowVersion()).update();
+            deleteAfterCommit(current.apiKeyRef());
             appendEvidence(identity, deploymentId, current.rowVersion() + 1,
                     "MODEL_DEPLOYMENT_DEACTIVATED", "ModelDeploymentDeactivated");
             completeCommand(identity, "MODEL_DEPLOYMENT_DEACTIVATE", idempotencyKey, deploymentId);
@@ -104,9 +128,17 @@ final class ModelDeploymentService {
         }
         String endpointUrl = normalizeEndpoint(request.endpointUrl());
         String requestedApiKeyRef = normalizeSecretReference(request.apiKeyRef());
+        String rawApiKey = normalizeApiKey(request.apiKey());
+        if (requestedApiKeyRef != null && rawApiKey != null) {
+            throw invalid("provide api_key or api_key_ref, not both");
+        }
         if (request.credentialAction() == ModelDeploymentUpdateRequestWire.CredentialActionValue.REPLACE
-                && requestedApiKeyRef == null) {
-            throw invalid("api_key_ref is required when credential_action is REPLACE");
+                && requestedApiKeyRef == null && rawApiKey == null) {
+            throw invalid("api_key or api_key_ref is required when credential_action is REPLACE");
+        }
+        if (request.credentialAction() != ModelDeploymentUpdateRequestWire.CredentialActionValue.REPLACE
+                && (requestedApiKeyRef != null || rawApiKey != null)) {
+            throw invalid("api_key and api_key_ref are only accepted when credential_action is REPLACE");
         }
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_DEPLOYMENT_UPDATE", idempotencyKey,
@@ -128,25 +160,36 @@ final class ModelDeploymentService {
                 throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
                         "Only an active model can be updated");
             }
+            String replacementApiKeyRef = requestedApiKeyRef;
+            if (request.credentialAction() == ModelDeploymentUpdateRequestWire.CredentialActionValue.REPLACE
+                    && rawApiKey != null) {
+                replacementApiKeyRef = secretStore.store(identity.tenantId(), deploymentId, rawApiKey).reference();
+                deleteOnRollback(replacementApiKeyRef);
+            }
             String apiKeyRef = switch (request.credentialAction()) {
                 case KEEP -> current.apiKeyRef();
-                case REPLACE -> requestedApiKeyRef;
+                case REPLACE -> replacementApiKeyRef;
                 case CLEAR -> null;
             };
             if (apiKeyRef != null && endpointUrl == null) {
                 throw invalid("endpoint_url is required when api_key_ref is configured");
             }
-            String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "READY";
+            String connectionStatus = apiKeyRef == null ? "NOT_CONFIGURED" : "UNVERIFIED";
             jdbc.sql("""
                     update model_deployment set display_name = :name, residency_policy = :residency,
                       endpoint_url = :endpoint, api_key_ref = :api_key_ref,
-                      connection_status = :connection_status, row_version = row_version + 1, updated_at = now()
+                      connection_status = :connection_status, last_connection_tested_at = null,
+                      last_connection_latency_ms = null, last_connection_error_code = null,
+                      row_version = row_version + 1, updated_at = now()
                     where tenant_id = :tenant and model_deployment_id = :deployment and row_version = :expected
                     """).param("name", request.displayName().trim())
                     .param("residency", request.residencyPolicy().name()).param("endpoint", endpointUrl)
                     .param("api_key_ref", apiKeyRef).param("connection_status", connectionStatus)
                     .param("tenant", identity.tenantId()).param("deployment", deploymentId)
                     .param("expected", request.expectedRowVersion()).update();
+            if (request.credentialAction() != ModelDeploymentUpdateRequestWire.CredentialActionValue.KEEP) {
+                deleteAfterCommit(current.apiKeyRef());
+            }
             appendEvidence(identity, deploymentId, current.rowVersion() + 1,
                     "MODEL_DEPLOYMENT_UPDATED", "ModelDeploymentUpdated");
             completeCommand(identity, "MODEL_DEPLOYMENT_UPDATE", idempotencyKey, deploymentId);
@@ -162,10 +205,65 @@ final class ModelDeploymentService {
                 .map(id -> deployment(identity.tenantId(), id)).toList();
     }
 
+    ModelDeploymentWire testConnection(
+            ClinicalIdentity identity,
+            String idempotencyKey,
+            UUID deploymentId,
+            ModelDeploymentConnectionTestRequestWire request) {
+        if (request.expectedRowVersion() == null) {
+            throw invalid("expected_row_version is required");
+        }
+        ConnectionConfig config = jdbc.sql("""
+                select model_code, endpoint_url, api_key_ref, status, row_version
+                from model_deployment where tenant_id = :tenant and model_deployment_id = :deployment
+                """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                .query((rs, row) -> new ConnectionConfig(rs.getString("model_code"),
+                        rs.getString("endpoint_url"), rs.getString("api_key_ref"),
+                        rs.getString("status"), rs.getLong("row_version")))
+                .optional().orElseThrow(ModelDeploymentService::contextDenied);
+        if (!"ACTIVE".equals(config.status())) {
+            throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
+                    "Only an active model connection can be tested");
+        }
+        if (config.rowVersion() != request.expectedRowVersion()) {
+            throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409,
+                    "The model deployment changed; reload before retrying");
+        }
+        if (config.endpointUrl() == null || config.apiKeyReference() == null) {
+            throw invalid("endpoint_url and api_key_ref are required before testing the connection");
+        }
+        ModelConnectionVerifier.ProbeResult probe = connectionVerifier.probe(
+                config.modelCode(), config.endpointUrl(), config.apiKeyReference());
+        return transactions.execute(status -> {
+            beginCommand(identity, "MODEL_DEPLOYMENT_CONNECTION_TEST", idempotencyKey,
+                    sha256(deploymentId + "|" + config.rowVersion()));
+            int updated = jdbc.sql("""
+                    update model_deployment set connection_status = :connection_status,
+                      last_connection_tested_at = now(), last_connection_latency_ms = :latency,
+                      last_connection_error_code = :error, row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and model_deployment_id = :deployment
+                      and row_version = :expected and status = 'ACTIVE'
+                    """).param("connection_status", probe.succeeded() ? "READY" : "FAILED")
+                    .param("latency", probe.latencyMs()).param("error", probe.errorCode())
+                    .param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .param("expected", config.rowVersion()).update();
+            if (updated != 1) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409,
+                        "The model deployment changed during the connection test");
+            }
+            appendEvidence(identity, deploymentId, config.rowVersion() + 1,
+                    probe.succeeded() ? "MODEL_CONNECTION_VERIFIED" : "MODEL_CONNECTION_FAILED",
+                    probe.succeeded() ? "ModelConnectionVerified" : "ModelConnectionFailed");
+            completeCommand(identity, "MODEL_DEPLOYMENT_CONNECTION_TEST", idempotencyKey, deploymentId);
+            return deployment(identity.tenantId(), deploymentId);
+        });
+    }
+
     private ModelDeploymentWire deployment(UUID tenantId, UUID deploymentId) {
         return jdbc.sql("""
                 select model_deployment_id, model_code, provider_code, display_name, residency_policy,
-                  endpoint_url, status, evaluation_status, api_key_ref, connection_status, row_version
+                  endpoint_url, status, evaluation_status, api_key_ref, connection_status,
+                  last_connection_tested_at, last_connection_latency_ms, last_connection_error_code, row_version
                 from model_deployment where tenant_id = :tenant and model_deployment_id = :deployment
                 """).param("tenant", tenantId).param("deployment", deploymentId)
                 .query((rs, row) -> new ModelDeploymentWire(
@@ -177,6 +275,10 @@ final class ModelDeploymentService {
                         ModelDeploymentWire.EvaluationStatusValue.valueOf(rs.getString("evaluation_status")),
                         rs.getString("api_key_ref") != null, credentialHint(rs.getString("api_key_ref")),
                         ModelDeploymentWire.ConnectionStatusValue.valueOf(rs.getString("connection_status")),
+                        rs.getObject("last_connection_tested_at", java.time.OffsetDateTime.class) == null ? null
+                                : rs.getObject("last_connection_tested_at", java.time.OffsetDateTime.class).toInstant(),
+                        rs.getObject("last_connection_latency_ms", Long.class),
+                        rs.getString("last_connection_error_code"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(() -> contextDenied());
     }
@@ -263,10 +365,41 @@ final class ModelDeploymentService {
         return normalized;
     }
 
-    private static String credentialHint(String reference) {
+    private static String normalizeApiKey(String value) {
+        if (value == null || value.isBlank()) return null;
+        String normalized = value.trim();
+        if (normalized.length() < 8 || normalized.length() > 4096
+                || normalized.chars().anyMatch(Character::isWhitespace)) {
+            throw invalid("api_key must contain 8 to 4096 non-whitespace characters");
+        }
+        return normalized;
+    }
+
+    private String credentialHint(String reference) {
         if (reference == null) return null;
+        Optional<String> managed = secretStore.maskedHint(reference);
+        if (managed.isPresent()) return managed.get();
         if (reference.startsWith("env://")) return "环境变量 · " + reference.substring("env://".length());
         return "密钥文件 · …/" + reference.substring(reference.lastIndexOf('/') + 1);
+    }
+
+    private void deleteOnRollback(String reference) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != TransactionSynchronization.STATUS_COMMITTED) secretStore.deleteManaged(reference);
+            }
+        });
+    }
+
+    private void deleteAfterCommit(String reference) {
+        if (reference == null) return;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                secretStore.deleteManaged(reference);
+            }
+        });
     }
 
     static ModelDeploymentException contextDenied() {
@@ -282,6 +415,8 @@ final class ModelDeploymentService {
         }
     }
 
-    private record DeploymentHead(String status, long rowVersion) {}
+    private record DeploymentHead(String status, long rowVersion, String apiKeyRef) {}
     private record DeploymentConfigHead(String status, long rowVersion, String apiKeyRef) {}
+    private record ConnectionConfig(String modelCode, String endpointUrl, String apiKeyReference,
+            String status, long rowVersion) {}
 }

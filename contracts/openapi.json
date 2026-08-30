@@ -436,6 +436,44 @@
         }
       }
     },
+    "/documents/{document_id}/voids": {
+      "post": {
+        "operationId": "voidDocument",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentVoidRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "draft document logically voided with immutable evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{document_id}/diff": {
       "get": {
         "operationId": "diffDocumentVersions",
@@ -809,6 +847,43 @@
         }
       }
     },
+    "/documents/{document_id}/attachments/{attachment_id}/voids": {
+      "post": {
+        "operationId": "voidDocumentAttachment",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DocumentEvidenceLifecycleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "attachment business-voided while immutable bytes remain preserved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DocumentAttachment" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/documents/{document_id}/source-references": {
       "post": {
         "operationId": "createDocumentSourceReference",
@@ -841,6 +916,80 @@
                 "schema": {
                   "$ref": "#/components/schemas/DocumentSourceReference"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{document_id}/source-references/{source_reference_id}/corrections": {
+      "post": {
+        "operationId": "correctDocumentSourceReference",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "source_reference_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DocumentSourceReferenceCorrectionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "effective source metadata corrected by append-only evidence",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DocumentSourceReference" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/documents/{document_id}/source-references/{source_reference_id}/revocations": {
+      "post": {
+        "operationId": "revokeDocumentSourceReference",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "source_reference_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DocumentEvidenceLifecycleRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "source reference revoked while original evidence remains preserved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DocumentSourceReference" }
               }
             }
           }
@@ -1347,6 +1496,44 @@
         }
       }
     },
+    "/appointments/{appointment_id}/reschedules": {
+      "post": {
+        "operationId": "rescheduleAppointment",
+        "parameters": [
+          {
+            "name": "appointment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppointmentRescheduleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "booked appointment moved atomically to another available slot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/appointments/{appointment_id}/check-ins": {
       "post": {
         "operationId": "checkInAppointment",
@@ -1799,6 +1986,14 @@
             }
           }
         }
+      }
+    },
+    "/shift-handovers/{handover_id}/corrections": {
+      "post": {
+        "operationId": "correctShiftHandover",
+        "parameters": [{ "name": "handover_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandoverCorrectionRequest" } } } },
+        "responses": { "201": { "description": "corrected draft handover and patient list version created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandover" } } } } }
       }
     },
     "/shift-handovers/{handover_id}/voids": {
@@ -2483,6 +2678,44 @@
         "responses": {
           "200": {
             "description": "model deployment deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDeployment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/model-deployments/{model_deployment_id}/connection-tests": {
+      "post": {
+        "operationId": "testModelDeploymentConnection",
+        "parameters": [
+          {
+            "name": "model_deployment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDeploymentConnectionTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "model deployment connection test recorded",
             "content": {
               "application/json": {
                 "schema": {
@@ -4692,6 +4925,22 @@
         }
       }
     },
+    "/shift-handover-patients/{shift_handover_patient_id}/corrections": {
+      "post": {
+        "operationId": "correctShiftHandoverPatient",
+        "parameters": [{ "name": "shift_handover_patient_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandoverPatientCorrectionRequest" } } } },
+        "responses": { "201": { "description": "corrected handover patient version created and prior version voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandoverPatient" } } } } }
+      }
+    },
+    "/shift-handover-patients/{shift_handover_patient_id}/voids": {
+      "post": {
+        "operationId": "voidShiftHandoverPatient",
+        "parameters": [{ "name": "shift_handover_patient_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandoverPatientVoidRequest" } } } },
+        "responses": { "200": { "description": "handover patient item logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ShiftHandoverPatient" } } } } }
+      }
+    },
     "/emergency-observations": {
       "get": {
         "operationId": "listEmergencyObservations",
@@ -4995,6 +5244,82 @@
         }
       }
     },
+    "/pharmacy-dispensings/{dispensing_id}": {
+      "patch": {
+        "operationId": "updatePharmacyDispensing",
+        "parameters": [
+          {
+            "name": "dispensing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PharmacyDispensingUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "prepared pharmacy dispensing updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PharmacyDispensing"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pharmacy-dispensings/{dispensing_id}/voids": {
+      "post": {
+        "operationId": "voidPharmacyDispensing",
+        "parameters": [
+          {
+            "name": "dispensing_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PharmacyDispensingVoidRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "pharmacy dispensing voided without deleting audit evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PharmacyDispensing"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/surgical-procedures": {
       "get": {
         "operationId": "listSurgicalProcedures",
@@ -5273,6 +5598,29 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/referrals/{referral_id}": {
+      "patch": {
+        "operationId": "updateReferralDraft",
+        "parameters": [
+          {
+            "name": "referral_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReferralUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "draft referral updated with optimistic locking",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Referral" } } }
           }
         }
       }
@@ -7498,6 +7846,14 @@
         }
       }
     },
+    "/emergency-nursing-notes/{note_id}/corrections": {
+      "post": {
+        "operationId": "correctEmergencyNursingNote",
+        "parameters": [{ "name": "note_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyNursingNoteCorrectionRequest" } } } },
+        "responses": { "201": { "description": "corrected nursing version created atomically and prior version voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyNursingNote" } } } } }
+      }
+    },
     "/emergency-preadmissions": {
       "get": {
         "operationId": "listEmergencyPreadmissions",
@@ -7592,6 +7948,22 @@
         }
       }
     },
+    "/emergency-preadmissions/{preadmission_id}": {
+      "put": {
+        "operationId": "updateEmergencyPreadmission",
+        "parameters": [{ "name": "preadmission_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyPreadmissionUpdateRequest" } } } },
+        "responses": { "200": { "description": "unregistered emergency preadmission updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyPreadmission" } } } } }
+      }
+    },
+    "/emergency-preadmissions/{preadmission_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyPreadmission",
+        "parameters": [{ "name": "preadmission_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyPreadmissionVoidRequest" } } } },
+        "responses": { "200": { "description": "unregistered emergency preadmission logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyPreadmission" } } } } }
+      }
+    },
     "/encounter-domain-switches": {
       "get": {
         "operationId": "listEncounterDomainSwitches",
@@ -7646,6 +8018,22 @@
             }
           }
         }
+      }
+    },
+    "/encounter-domain-switches/{domain_switch_id}/corrections": {
+      "post": {
+        "operationId": "correctEncounterDomainSwitch",
+        "parameters": [{ "name": "domain_switch_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDomainSwitchCorrectionRequest" } } } },
+        "responses": { "201": { "description": "corrected encounter domain switch version created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDomainSwitch" } } } } }
+      }
+    },
+    "/encounter-domain-switches/{domain_switch_id}/voids": {
+      "post": {
+        "operationId": "voidEncounterDomainSwitch",
+        "parameters": [{ "name": "domain_switch_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDomainSwitchVoidRequest" } } } },
+        "responses": { "200": { "description": "encounter domain switch logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EncounterDomainSwitch" } } } } }
       }
     },
     "/medical-record-assets": {
@@ -7704,6 +8092,13 @@
         }
       }
     },
+    "/medical-record-assets/ingestions": {
+      "post": {
+        "operationId": "ingestMedicalRecordAsset",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetIngestRequest" } } } },
+        "responses": { "201": { "description": "medical record asset binary validated, hashed, stored immutably and catalogued", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAsset" } } } } }
+      }
+    },
     "/medical-record-assets/{asset_id}/borrows": {
       "post": {
         "operationId": "borrowMedicalRecordAsset",
@@ -7742,6 +8137,14 @@
         }
       }
     },
+    "/medical-record-assets/{asset_id}/borrow": {
+      "patch": {
+        "operationId": "updateMedicalRecordAssetBorrow",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetBorrowUpdateRequest" } } } },
+        "responses": { "200": { "description": "active borrow due date updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAsset" } } } } }
+      }
+    },
     "/medical-record-assets/{asset_id}/returns": {
       "post": {
         "operationId": "returnMedicalRecordAsset",
@@ -7778,6 +8181,129 @@
             }
           }
         }
+      }
+    },
+    "/medical-record-assets/{asset_id}": {
+      "patch": {
+        "operationId": "updateMedicalRecordAsset",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "medical record asset descriptive metadata updated without replacing immutable evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAsset" } } }
+          }
+        }
+      }
+    },
+    "/medical-record-assets/{asset_id}/retirements": {
+      "post": {
+        "operationId": "retireMedicalRecordAsset",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetRetireRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "medical record asset logically retired with immutable evidence retained",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAsset" } } }
+          }
+        }
+      }
+    },
+    "/medical-record-assets/{asset_id}/integrity-events": {
+      "get": {
+        "operationId": "listMedicalRecordAssetIntegrityEvents",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "immutable integrity verification history newest first",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalRecordAssetIntegrityEvent" } } } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "verifyMedicalRecordAssetIntegrity",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetIntegrityCheckRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "integrity observation compared with the immutable catalogue hash",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetIntegrityEvent" } } }
+          }
+        }
+      }
+    },
+    "/medical-record-assets/{asset_id}/content": {
+      "get": {
+        "operationId": "downloadMedicalRecordAssetContent",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "exact immutable asset bytes with SHA-256 response header", "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } } }
+      }
+    },
+    "/medical-record-assets/{asset_id}/ocr-runs": {
+      "post": {
+        "operationId": "runMedicalRecordAssetOcr",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetActionRequest" } } } },
+        "responses": { "200": { "description": "stored scan bytes processed by the configured OCR engine", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAsset" } } } } }
+      }
+    },
+    "/medical-record-assets/{asset_id}/storage-verifications": {
+      "post": {
+        "operationId": "verifyMedicalRecordAssetStorage",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetActionRequest" } } } },
+        "responses": { "201": { "description": "stored bytes re-read and compared with the immutable catalogue hash", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetIntegrityEvent" } } } } }
+      }
+    },
+    "/medical-record-assets/{asset_id}/distribution-packages": {
+      "get": {
+        "operationId": "listMedicalRecordAssetDistributionPackages",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "auditable copy and external-provision packages newest first", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalRecordAssetDistributionPackage" } } } } } }
+      },
+      "post": {
+        "operationId": "createMedicalRecordAssetDistributionPackage",
+        "parameters": [{ "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetDistributionCreateRequest" } } } },
+        "responses": { "201": { "description": "watermarked immutable distribution ZIP created from stored asset bytes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetDistributionPackage" } } } } }
+      }
+    },
+    "/medical-record-assets/{asset_id}/distribution-packages/{package_id}/deliveries": {
+      "post": {
+        "operationId": "deliverMedicalRecordAssetDistributionPackage",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "package_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetDistributionDeliveryRequest" } } } },
+        "responses": { "200": { "description": "distribution delivery recorded with actor and timestamp", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalRecordAssetDistributionPackage" } } } } }
+      }
+    },
+    "/medical-record-assets/{asset_id}/distribution-packages/{package_id}/content": {
+      "get": {
+        "operationId": "downloadMedicalRecordAssetDistributionPackage",
+        "parameters": [
+          { "name": "asset_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "package_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "exact distribution ZIP bytes with SHA-256 response header", "content": { "application/zip": { "schema": { "type": "string", "format": "binary" } } } } }
       }
     },
     "/source-patient-match-candidates": {
@@ -10070,7 +10596,7 @@
         },
         "responses": {
           "202": {
-            "description": "approved main-agent composition executed and ready for human review",
+            "description": "durable medical-agent run accepted for asynchronous execution",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
           }
         }
@@ -10085,6 +10611,42 @@
         "responses": {
           "200": {
             "description": "root run with visible child contributions and event trajectory",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
+          }
+        }
+      }
+    },
+    "/medical-agents/runs/{run_id}/cancellations": {
+      "post": {
+        "operationId": "cancelMedicalAgentRun",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRunCancelRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "queued run cancelled or running cancellation requested at the next checkpoint",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
+          }
+        }
+      }
+    },
+    "/medical-agents/runs/{run_id}/retries": {
+      "post": {
+        "operationId": "retryMedicalAgentRun",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRunRetryRequest" } } }
+        },
+        "responses": {
+          "202": {
+            "description": "terminal run reauthorized and queued for a new durable attempt",
             "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRun" } } }
           }
         }
@@ -10437,6 +10999,79 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/admin/credentials": {
+      "get": {
+        "operationId": "listPractitionerCredentials",
+        "parameters": [
+          {
+            "name": "person_id",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tenant-scoped practitioner credentials used by real-time clinical authorization",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/PractitionerCredential" } } } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPractitionerCredential",
+        "parameters": [
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredentialWriteRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "credential granted and immediately included in authorization inputs",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredential" } } }
+          }
+        }
+      }
+    },
+    "/admin/credentials/{credential_id}": {
+      "put": {
+        "operationId": "updatePractitionerCredential",
+        "parameters": [
+          { "name": "credential_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredentialWriteRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "credential scope and validity updated under optimistic locking",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredential" } } }
+          }
+        }
+      }
+    },
+    "/admin/credentials/{credential_id}/revoke": {
+      "post": {
+        "operationId": "revokePractitionerCredential",
+        "parameters": [
+          { "name": "credential_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredentialRevokeRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "credential revoked and immediately excluded from new clinical authorization decisions",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredential" } } }
           }
         }
       }
@@ -13494,6 +14129,52 @@
         }
       }
     },
+    "/outpatient-followups/{followup_id}": {
+      "patch": {
+        "operationId": "updateOutpatientFollowup",
+        "parameters": [
+          {
+            "name": "followup_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OutpatientFollowupUpdateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "pending outpatient followup updated",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OutpatientFollowup" } } }
+          }
+        }
+      }
+    },
+    "/outpatient-followups/{followup_id}/cancellations": {
+      "post": {
+        "operationId": "cancelOutpatientFollowup",
+        "parameters": [
+          {
+            "name": "followup_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OutpatientFollowupCancelRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "pending outpatient followup cancelled with audit reason",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OutpatientFollowup" } } }
+          }
+        }
+      }
+    },
     "/metric-snapshots": {
       "get": {
         "operationId": "listMetricSnapshots",
@@ -14256,7 +14937,8 @@
             "type": "string",
             "enum": [
               "PENDING",
-              "COMPLETED"
+              "COMPLETED",
+              "CANCELLED"
             ]
           },
           "due_at": {
@@ -14330,6 +15012,50 @@
           "outcome": {
             "type": "string",
             "maxLength": 2000
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "OutpatientFollowupUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "followup_type",
+          "content",
+          "expected_row_version"
+        ],
+        "properties": {
+          "followup_type": {
+            "type": "string",
+            "enum": ["EDUCATION", "REVISIT", "FOLLOWUP"]
+          },
+          "content": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 2000
+          },
+          "due_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "OutpatientFollowupCancelRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["reason", "expected_row_version"],
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 1000
           },
           "expected_row_version": {
             "type": "integer",
@@ -15946,6 +16672,46 @@
           "sections": {
             "type": "object",
             "additionalProperties": true
+          }
+        }
+      },
+      "DocumentVoidRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "expected_row_version",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "encounter_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 2000
           }
         }
       },
@@ -18631,6 +19397,45 @@
           }
         }
       },
+      "AppointmentRescheduleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "schedule_slot_id",
+          "expected_row_version",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "schedule_slot_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 1000
+          }
+        }
+      },
       "WaitingQueueEntry": {
         "type": "object",
         "additionalProperties": false,
@@ -20670,6 +21475,9 @@
           "credential_configured",
           "credential_hint",
           "connection_status",
+          "last_connection_tested_at",
+          "last_connection_latency_ms",
+          "last_connection_error_code",
           "row_version"
         ],
         "properties": {
@@ -20733,8 +21541,32 @@
             "type": "string",
             "enum": [
               "NOT_CONFIGURED",
-              "READY"
+              "UNVERIFIED",
+              "READY",
+              "FAILED"
             ]
+          },
+          "last_connection_tested_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "last_connection_latency_ms": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "minimum": 0
+          },
+          "last_connection_error_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
           },
           "row_version": {
             "type": "integer",
@@ -20797,6 +21629,14 @@
             ],
             "maxLength": 512,
             "pattern": "^(env://[A-Z][A-Z0-9_]{2,127}|file:///[^\\s]+)$"
+          },
+          "api_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 8,
+            "maxLength": 4096
           }
         }
       },
@@ -20848,6 +21688,14 @@
             "maxLength": 512,
             "pattern": "^(env://[A-Z][A-Z0-9_]{2,127}|file:///[^\\s]+)$"
           },
+          "api_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 8,
+            "maxLength": 4096
+          },
           "credential_action": {
             "type": "string",
             "enum": [
@@ -20883,6 +21731,30 @@
           "expected_row_version": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ModelDeploymentConnectionTestRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       },
@@ -26038,6 +26910,20 @@
             ],
             "format": "date-time"
           },
+          "voided_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "void_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
           "row_version": {
             "type": "integer",
             "format": "int64",
@@ -26098,6 +26984,103 @@
           "prepared_at": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "PharmacyDispensingUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "expected_row_version",
+          "drug_code",
+          "batch_number",
+          "quantity",
+          "quantity_unit"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "encounter_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "drug_code": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "batch_number": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "quantity_unit": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        }
+      },
+      "PharmacyDispensingVoidRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "expected_row_version",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patient_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "encounter_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 4,
+            "maxLength": 1000
           }
         }
       },
@@ -26606,7 +27589,8 @@
               "DRAFT",
               "SENT",
               "ACCEPTED",
-              "REJECTED"
+              "REJECTED",
+              "CANCELLED"
             ]
           },
           "sent_at": {
@@ -26729,9 +27713,36 @@
             "enum": [
               "SEND",
               "ACCEPT",
-              "REJECT"
+              "REJECT",
+              "CANCEL"
             ]
           }
+        }
+      },
+      "ReferralUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "referral_type",
+          "reason",
+          "clinical_summary",
+          "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "referral_type": { "type": "string", "enum": ["INTERNAL", "EXTERNAL"] },
+          "target_department": { "type": ["string", "null"], "maxLength": 256 },
+          "target_organization": { "type": ["string", "null"], "maxLength": 256 },
+          "reason": { "type": "string", "minLength": 2, "maxLength": 1000 },
+          "clinical_summary": { "type": "string", "minLength": 4, "maxLength": 16000 },
+          "expected_row_version": { "type": "integer", "format": "int64" }
         }
       },
       "PromptRelease": {
@@ -29355,6 +30366,83 @@
           }
         }
       },
+      "EmergencyNursingNoteCorrectionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "expected_row_version", "assessment", "intervention", "risk_flag", "recorded_at", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "assessment": { "type": "string", "minLength": 2, "maxLength": 4000 }, "intervention": { "type": "string", "minLength": 2, "maxLength": 4000 },
+          "risk_flag": { "type": "boolean" }, "recorded_at": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "ShiftHandoverCorrectionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "ward_id", "expected_row_version", "shift_from", "shift_to", "incoming_user_id", "handover_summary", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "ward_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "shift_from": { "type": "string", "format": "date-time" }, "shift_to": { "type": "string", "format": "date-time" },
+          "incoming_user_id": { "type": "string", "format": "uuid" }, "handover_summary": { "type": "string", "minLength": 4, "maxLength": 16000 },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "ShiftHandoverPatientCorrectionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "ward_id", "handover_id", "patient_id", "expected_row_version", "summary", "risk_flag", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "ward_id": { "type": "string", "format": "uuid" },
+          "handover_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "summary": { "type": "string", "minLength": 2, "maxLength": 1000 },
+          "risk_flag": { "type": "boolean" }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "ShiftHandoverPatientVoidRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "ward_id", "handover_id", "patient_id", "expected_row_version", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "ward_id": { "type": "string", "format": "uuid" },
+          "handover_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "EmergencyPreadmissionUpdateRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "temporary_identifier", "reason", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" },
+          "temporary_identifier": { "type": "string", "minLength": 2, "maxLength": 128 }, "reason": { "type": "string", "minLength": 2, "maxLength": 1000 },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "EmergencyPreadmissionVoidRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "expected_row_version", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "EncounterDomainSwitchCorrectionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "from_encounter_id", "to_encounter_id", "from_domain", "to_domain", "reason", "switched_at", "expected_row_version", "correction_reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" },
+          "from_encounter_id": { "type": "string", "format": "uuid" }, "to_encounter_id": { "type": "string", "format": "uuid" },
+          "from_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY"] }, "to_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY"] },
+          "reason": { "type": "string", "minLength": 2, "maxLength": 1000 }, "switched_at": { "type": "string", "format": "date-time" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "correction_reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "EncounterDomainSwitchVoidRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
       "EmergencyNursingNote": {
         "type": "object",
         "additionalProperties": false,
@@ -29721,6 +30809,20 @@
           "location",
           "content_hash",
           "status",
+          "display_name",
+          "media_type",
+          "page_count",
+          "source_system",
+          "custody_location",
+          "integrity_status",
+          "cda_status",
+          "scan_status",
+          "preservation_status",
+          "retention_years",
+          "storage_status",
+          "malware_scan_status",
+          "ocr_status",
+          "object_lock_status",
           "row_version"
         ],
         "properties": {
@@ -29761,8 +30863,87 @@
             "type": "string",
             "enum": [
               "ARCHIVED",
-              "BORROWED"
+              "BORROWED",
+              "RETIRED"
             ]
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "media_type": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 96
+          },
+          "page_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "source_system": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "custody_location": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "integrity_status": {
+            "type": "string",
+            "enum": ["PENDING", "VERIFIED", "FAILED"]
+          },
+          "cda_status": {
+            "type": "string",
+            "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"]
+          },
+          "scan_status": {
+            "type": "string",
+            "enum": ["NOT_APPLICABLE", "CAPTURED", "OCR_REVIEWED", "INDEXED"]
+          },
+          "preservation_status": {
+            "type": "string",
+            "enum": ["NOT_SCHEDULED", "SCHEDULED", "SEALED", "VERIFIED"]
+          },
+          "retention_years": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "original_filename": { "type": ["string", "null"], "maxLength": 255 },
+          "byte_size": { "type": ["integer", "null"], "format": "int64", "minimum": 1 },
+          "storage_status": { "type": "string", "enum": ["MISSING", "AVAILABLE", "SEALED"] },
+          "malware_scan_status": { "type": "string", "enum": ["NOT_SCANNED", "PASSED", "REJECTED"] },
+          "ocr_status": { "type": "string", "enum": ["NOT_REQUESTED", "COMPLETED", "FAILED"] },
+          "ocr_text": { "type": ["string", "null"] },
+          "ocr_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+          "ocr_engine": { "type": ["string", "null"], "maxLength": 128 },
+          "ocr_completed_at": { "type": ["string", "null"], "format": "date-time" },
+          "object_lock_status": { "type": "string", "enum": ["UNLOCKED", "LOCKED"] },
+          "worm_retain_until": { "type": ["string", "null"], "format": "date-time" },
+          "last_verified_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "retired_by": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "retired_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "retirement_reason": {
+            "type": ["string", "null"],
+            "minLength": 4,
+            "maxLength": 1000
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
           },
           "borrowed_by": {
             "type": [
@@ -29840,7 +31021,133 @@
             "type": "string",
             "minLength": 64,
             "maxLength": 64
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "media_type": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 96
+          },
+          "page_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "source_system": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 128
+          },
+          "cda_status": {
+            "type": "string",
+            "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"]
+          },
+          "scan_status": {
+            "type": "string",
+            "enum": ["NOT_APPLICABLE", "CAPTURED", "OCR_REVIEWED", "INDEXED"]
+          },
+          "preservation_status": {
+            "type": "string",
+            "enum": ["NOT_SCHEDULED", "SCHEDULED", "SEALED", "VERIFIED"]
+          },
+          "retention_years": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
           }
+        }
+      },
+      "MedicalRecordAssetIngestRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id", "facility_id", "patient_id", "asset_type", "location",
+          "display_name", "original_filename", "media_type", "page_count", "source_system",
+          "content_base64", "retention_years"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": ["string", "null"], "format": "uuid" },
+          "asset_type": { "type": "string", "enum": ["PAPER", "SCAN", "DIGITAL"] },
+          "location": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "display_name": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "original_filename": { "type": "string", "minLength": 1, "maxLength": 255 },
+          "media_type": { "type": "string", "minLength": 3, "maxLength": 96 },
+          "page_count": { "type": "integer", "minimum": 1, "maximum": 100000 },
+          "source_system": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "content_base64": { "type": "string", "minLength": 1 },
+          "cda_status": { "type": "string", "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"] },
+          "retention_years": { "type": "integer", "minimum": 1, "maximum": 100 }
+        }
+      },
+      "MedicalRecordAssetActionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "MedicalRecordAssetDistributionCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "purpose", "recipient_name", "expires_at"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "purpose": { "type": "string", "minLength": 2, "maxLength": 500 },
+          "recipient_name": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MedicalRecordAssetDistributionDeliveryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "MedicalRecordAssetDistributionPackage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "distribution_package_id", "medical_record_asset_id", "patient_id", "purpose", "recipient_name",
+          "watermark_text", "original_filename", "media_type", "byte_size", "content_hash", "status",
+          "expires_at", "created_by", "created_at", "row_version"
+        ],
+        "properties": {
+          "distribution_package_id": { "type": "string", "format": "uuid" },
+          "medical_record_asset_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "purpose": { "type": "string" },
+          "recipient_name": { "type": "string" },
+          "watermark_text": { "type": "string" },
+          "original_filename": { "type": "string" },
+          "media_type": { "type": "string" },
+          "byte_size": { "type": "integer", "format": "int64", "minimum": 1 },
+          "content_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "status": { "type": "string", "enum": ["READY", "DELIVERED"] },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "delivered_by": { "type": ["string", "null"], "format": "uuid" },
+          "delivered_at": { "type": ["string", "null"], "format": "date-time" },
+          "row_version": { "type": "integer", "format": "int64", "minimum": 1 }
         }
       },
       "MedicalRecordAssetBorrowRequest": {
@@ -29876,6 +31183,18 @@
           }
         }
       },
+      "MedicalRecordAssetBorrowUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "due_at"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "due_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "MedicalRecordAssetReturnRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -29902,6 +31221,71 @@
             "type": "integer",
             "format": "int64"
           }
+        }
+      },
+      "MedicalRecordAssetUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id", "facility_id", "patient_id", "display_name", "media_type",
+          "page_count", "source_system", "custody_location", "cda_status", "scan_status",
+          "preservation_status", "retention_years", "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "display_name": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "media_type": { "type": "string", "minLength": 3, "maxLength": 96 },
+          "page_count": { "type": "integer", "minimum": 1, "maximum": 100000 },
+          "source_system": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "custody_location": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "cda_status": { "type": "string", "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"] },
+          "scan_status": { "type": "string", "enum": ["NOT_APPLICABLE", "CAPTURED", "OCR_REVIEWED", "INDEXED"] },
+          "preservation_status": { "type": "string", "enum": ["NOT_SCHEDULED", "SCHEDULED", "SEALED", "VERIFIED"] },
+          "retention_years": { "type": "integer", "minimum": 1, "maximum": 100 },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "MedicalRecordAssetRetireRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "reason", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "MedicalRecordAssetIntegrityCheckRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "observed_hash", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "observed_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "MedicalRecordAssetIntegrityEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "integrity_event_id", "medical_record_asset_id", "expected_hash", "observed_hash",
+          "result", "verified_by", "verified_at"
+        ],
+        "properties": {
+          "integrity_event_id": { "type": "string", "format": "uuid" },
+          "medical_record_asset_id": { "type": "string", "format": "uuid" },
+          "expected_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "observed_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "result": { "type": "string", "enum": ["VERIFIED", "FAILED"] },
+          "verified_by": { "type": "string", "format": "uuid" },
+          "verified_at": { "type": "string", "format": "date-time" }
         }
       },
       "SourcePatientMatchCandidate": {
@@ -33100,6 +34484,26 @@
           "completed_at": { "type": ["string", "null"], "format": "date-time" }
         }
       },
+      "MedicalAgentRunCancelRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expected_row_version", "reason"],
+        "properties": {
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "reason": { "type": "string", "minLength": 2, "maxLength": 500 }
+        }
+      },
+      "MedicalAgentRunRetryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "context_lease_id", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "context_lease_id": { "type": "string", "format": "uuid" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
       "MedicalAgentRunEvent": {
         "type": "object",
         "additionalProperties": false,
@@ -33115,7 +34519,7 @@
       "MedicalAgentRun": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["run_id", "context_lease_id", "root_agent_code", "root_agent_version", "composition_code", "composition_version", "requested_stage", "patient_id", "encounter_id", "target_type", "target_id", "objective", "state", "sequence", "output", "created_at", "completed_at", "row_version", "child_runs", "events"],
+        "required": ["run_id", "context_lease_id", "root_agent_code", "root_agent_version", "composition_code", "composition_version", "requested_stage", "patient_id", "encounter_id", "target_type", "target_id", "objective", "state", "sequence", "output", "created_at", "completed_at", "row_version", "attempt", "max_attempts", "cancel_requested_at", "failure_code", "child_runs", "events"],
         "properties": {
           "run_id": { "type": "string", "format": "uuid" },
           "context_lease_id": { "type": "string", "format": "uuid" },
@@ -33135,6 +34539,10 @@
           "created_at": { "type": "string", "format": "date-time" },
           "completed_at": { "type": ["string", "null"], "format": "date-time" },
           "row_version": { "type": "integer", "format": "int64" },
+          "attempt": { "type": "integer", "minimum": 0 },
+          "max_attempts": { "type": "integer", "minimum": 1 },
+          "cancel_requested_at": { "type": ["string", "null"], "format": "date-time" },
+          "failure_code": { "type": ["string", "null"] },
           "child_runs": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentChildRun" } },
           "events": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentRunEvent" } }
         }
@@ -33825,6 +35233,63 @@
           "reason": {
             "type": "string"
           }
+        }
+      },
+      "PractitionerCredential": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "credential_id", "person_id", "person_display_name", "credential_type",
+          "registration_number", "issuing_authority", "practice_scope", "status",
+          "valid_from", "valid_until", "row_version", "created_at", "updated_at"
+        ],
+        "properties": {
+          "credential_id": { "type": "string", "format": "uuid" },
+          "person_id": { "type": "string", "format": "uuid" },
+          "person_display_name": { "type": "string" },
+          "credential_type": {
+            "type": "string",
+            "enum": ["PHYSICIAN_LICENSE", "NURSE_LICENSE", "PHARMACIST_LICENSE", "TECHNICIAN_LICENSE", "OTHER"]
+          },
+          "registration_number": { "type": "string" },
+          "issuing_authority": { "type": "string" },
+          "practice_scope": { "type": "object", "additionalProperties": true },
+          "status": { "type": "string", "enum": ["ACTIVE", "SUSPENDED", "EXPIRED", "REVOKED"] },
+          "valid_from": { "type": "string", "format": "date-time" },
+          "valid_until": { "type": ["string", "null"], "format": "date-time" },
+          "row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PractitionerCredentialWriteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "person_id", "credential_type", "registration_number", "issuing_authority",
+          "practice_scope", "valid_from", "valid_until", "expected_row_version"
+        ],
+        "properties": {
+          "person_id": { "type": "string", "format": "uuid" },
+          "credential_type": {
+            "type": "string",
+            "enum": ["PHYSICIAN_LICENSE", "NURSE_LICENSE", "PHARMACIST_LICENSE", "TECHNICIAN_LICENSE", "OTHER"]
+          },
+          "registration_number": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "issuing_authority": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "practice_scope": { "type": "object", "additionalProperties": true },
+          "valid_from": { "type": "string", "format": "date-time" },
+          "valid_until": { "type": ["string", "null"], "format": "date-time" },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 0 }
+        }
+      },
+      "PractitionerCredentialRevokeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expected_row_version", "reason"],
+        "properties": {
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
         }
       },
       "WorkforceIdentity": {
@@ -34717,6 +36182,21 @@
           "target_field_path": {
             "type": "string",
             "pattern": "^sections\\.[A-Za-z0-9_.-]+$"
+          },
+          "replaces_attachment_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "replacement_reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 4,
+            "maxLength": 2000
           }
         }
       },
@@ -34780,6 +36260,52 @@
           }
         }
       },
+      "DocumentEvidenceLifecycleRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "document_version_id",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 2000 }
+        }
+      },
+      "DocumentSourceReferenceCorrectionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "patient_id",
+          "encounter_id",
+          "document_version_id",
+          "target_field_path",
+          "reason"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "target_field_path": {
+            "type": "string",
+            "pattern": "^sections\\.[A-Za-z0-9_.-]+$"
+          },
+          "excerpt": { "type": ["string", "null"], "maxLength": 2000 },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 2000 }
+        }
+      },
       "DocumentAttachment": {
         "type": "object",
         "additionalProperties": false,
@@ -34793,6 +36319,9 @@
           "content_hash",
           "storage_status",
           "malware_scan_status",
+          "evidence_state",
+          "superseded_by_attachment_id",
+          "lifecycle_reason",
           "uploaded_by",
           "created_at"
         ],
@@ -34841,6 +36370,17 @@
               "UNAVAILABLE"
             ]
           },
+          "evidence_state": {
+            "type": "string",
+            "enum": ["ACTIVE", "SUPERSEDED", "VOID"]
+          },
+          "superseded_by_attachment_id": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "lifecycle_reason": {
+            "type": ["string", "null"]
+          },
           "uploaded_by": {
             "type": "string",
             "format": "uuid"
@@ -34866,6 +36406,8 @@
           "target_field_path",
           "display_label",
           "excerpt_hash",
+          "evidence_state",
+          "lifecycle_reason",
           "recorded_by",
           "recorded_at"
         ],
@@ -34923,6 +36465,13 @@
               "string",
               "null"
             ]
+          },
+          "evidence_state": {
+            "type": "string",
+            "enum": ["ACTIVE", "CORRECTED", "REVOKED", "SUPERSEDED"]
+          },
+          "lifecycle_reason": {
+            "type": ["string", "null"]
           },
           "recorded_by": {
             "type": "string",

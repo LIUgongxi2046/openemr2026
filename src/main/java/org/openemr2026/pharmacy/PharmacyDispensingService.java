@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.PharmacyDispensingPrepareRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingTransitionRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingUpdateRequestWire;
+import org.openemr2026.contracts.PharmacyDispensingVoidRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -74,7 +76,7 @@ final class PharmacyDispensingService {
             beginCommand(identity, "PHARMACY_DISPENSING_TRANSITION", idempotencyKey,
                     sha256(dispensingId + "|" + request.expectedRowVersion() + "|" + request.transition()));
             DispensingHead current = jdbc.sql("""
-                    select status, dispensed_by, row_version from pharmacy_dispensing
+                    select status, dispensed_by, row_version, voided_at from pharmacy_dispensing
                     where tenant_id = :tenant and dispensing_id = :dispensing
                       and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
                       for update
@@ -83,11 +85,14 @@ final class PharmacyDispensingService {
                     .param("facility", request.facilityId())
                     .query((rs, row) -> new DispensingHead(
                             rs.getString("status"), rs.getObject("dispensed_by", UUID.class),
-                            rs.getLong("row_version")))
+                            rs.getLong("row_version"), rs.getObject("voided_at", OffsetDateTime.class)))
                     .optional().orElseThrow(PharmacyDispensingService::contextDenied);
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new PharmacyDispensingException(
                         "PHARMACY_DISPENSING_VERSION_CONFLICT", 409, "The dispensing changed; reload before retrying");
+            }
+            if (current.voidedAt() != null) {
+                throw stateInvalid();
             }
             if (request.transition() == PharmacyDispensingTransitionRequestWire.TransitionValue.VERIFY) {
                 if (!"PREPARED".equals(current.status())) {
@@ -122,6 +127,75 @@ final class PharmacyDispensingService {
         });
     }
 
+    PharmacyDispensingWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID dispensingId,
+            PharmacyDispensingUpdateRequestWire request) {
+        String drug = requireText(request.drugCode(), 2, "drug_code");
+        String batch = requireText(request.batchNumber(), 2, "batch_number");
+        String unit = requireText(request.quantityUnit(), 1, "quantity_unit");
+        if (request.quantity() == null || request.quantity() <= 0) {
+            throw invalid("quantity must be positive");
+        }
+        return transactions.execute(status -> {
+            beginCommand(identity, "PHARMACY_DISPENSING_UPDATE", idempotencyKey,
+                    sha256(dispensingId + "|" + request.expectedRowVersion() + "|" + drug + "|" + batch
+                            + "|" + request.quantity() + "|" + unit));
+            DispensingHead current = lockDispensing(identity, dispensingId, request.patientId(),
+                    request.encounterId(), request.facilityId());
+            requireVersion(current, request.expectedRowVersion());
+            if (!"PREPARED".equals(current.status()) || current.voidedAt() != null) {
+                throw new PharmacyDispensingException("PHARMACY_DISPENSING_STATE_INVALID", 409,
+                        "Only an active prepared dispensing can be edited");
+            }
+            int updated = jdbc.sql("""
+                    update pharmacy_dispensing set drug_code = :drug, batch_number = :batch,
+                      quantity = :quantity, quantity_unit = :unit,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and dispensing_id = :dispensing and row_version = :expected
+                    """).param("drug", drug).param("batch", batch)
+                    .param("quantity", BigDecimal.valueOf(request.quantity())).param("unit", unit)
+                    .param("tenant", identity.tenantId()).param("dispensing", dispensingId)
+                    .param("expected", current.rowVersion()).update();
+            if (updated != 1) throw versionConflict();
+            appendEvidence(identity, request.patientId(), dispensingId, current.rowVersion() + 1,
+                    "PHARMACY_DISPENSING_UPDATED", "PharmacyDispensingUpdated");
+            completeCommand(identity, "PHARMACY_DISPENSING_UPDATE", idempotencyKey, dispensingId);
+            return dispensing(identity.tenantId(), dispensingId, request.patientId());
+        });
+    }
+
+    PharmacyDispensingWire voidDispensing(
+            ClinicalIdentity identity, String idempotencyKey, UUID dispensingId,
+            PharmacyDispensingVoidRequestWire request) {
+        String reason = requireText(request.reason(), 4, "reason");
+        return transactions.execute(status -> {
+            beginCommand(identity, "PHARMACY_DISPENSING_VOID", idempotencyKey,
+                    sha256(dispensingId + "|" + request.expectedRowVersion() + "|" + reason));
+            DispensingHead current = lockDispensing(identity, dispensingId, request.patientId(),
+                    request.encounterId(), request.facilityId());
+            requireVersion(current, request.expectedRowVersion());
+            if (current.voidedAt() != null) {
+                throw new PharmacyDispensingException("PHARMACY_DISPENSING_STATE_INVALID", 409,
+                        "The pharmacy dispensing is already voided");
+            }
+            if ("DISPENSED".equals(current.status())) {
+                throw new PharmacyDispensingException("PHARMACY_DISPENSING_STATE_INVALID", 409,
+                        "A dispensed medication must use the medication return workflow");
+            }
+            int updated = jdbc.sql("""
+                    update pharmacy_dispensing set voided_at = now(), void_reason = :reason,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and dispensing_id = :dispensing and row_version = :expected
+                    """).param("reason", reason).param("tenant", identity.tenantId())
+                    .param("dispensing", dispensingId).param("expected", current.rowVersion()).update();
+            if (updated != 1) throw versionConflict();
+            appendEvidence(identity, request.patientId(), dispensingId, current.rowVersion() + 1,
+                    "PHARMACY_DISPENSING_VOIDED", "PharmacyDispensingVoided");
+            completeCommand(identity, "PHARMACY_DISPENSING_VOID", idempotencyKey, dispensingId);
+            return dispensing(identity.tenantId(), dispensingId, request.patientId());
+        });
+    }
+
     List<PharmacyDispensingWire> listDispensings(ClinicalIdentity identity, UUID patientId) {
         return jdbc.sql("""
                 select dispensing_id from pharmacy_dispensing
@@ -136,7 +210,7 @@ final class PharmacyDispensingService {
         return jdbc.sql("""
                 select dispensing_id, patient_id, encounter_id, facility_id, drug_code, batch_number,
                   quantity, quantity_unit, dispensed_by, verified_by, status,
-                  prepared_at, verified_at, dispensed_at, row_version
+                  prepared_at, verified_at, dispensed_at, voided_at, void_reason, row_version
                 from pharmacy_dispensing
                 where tenant_id = :tenant and dispensing_id = :dispensing and patient_id = :patient
                 """).param("tenant", tenantId).param("dispensing", dispensingId).param("patient", patientId)
@@ -152,6 +226,9 @@ final class PharmacyDispensingService {
                                 ? null : rs.getObject("verified_at", OffsetDateTime.class).toInstant(),
                         rs.getObject("dispensed_at", OffsetDateTime.class) == null
                                 ? null : rs.getObject("dispensed_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("voided_at", OffsetDateTime.class) == null
+                                ? null : rs.getObject("voided_at", OffsetDateTime.class).toInstant(),
+                        rs.getString("void_reason"),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(PharmacyDispensingService::contextDenied);
     }
@@ -164,6 +241,30 @@ final class PharmacyDispensingService {
                 """).param("tenant", tenantId).param("encounter", encounterId).param("patient", patientId)
                 .param("facility", facilityId).query(Long.class).single();
         if (count != 1) throw contextDenied();
+    }
+
+    private DispensingHead lockDispensing(
+            ClinicalIdentity identity, UUID dispensingId, UUID patientId, UUID encounterId, UUID facilityId) {
+        return jdbc.sql("""
+                select status, dispensed_by, row_version, voided_at from pharmacy_dispensing
+                where tenant_id = :tenant and dispensing_id = :dispensing
+                  and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                for update
+                """).param("tenant", identity.tenantId()).param("dispensing", dispensingId)
+                .param("patient", patientId).param("encounter", encounterId).param("facility", facilityId)
+                .query((rs, row) -> new DispensingHead(rs.getString("status"),
+                        rs.getObject("dispensed_by", UUID.class), rs.getLong("row_version"),
+                        rs.getObject("voided_at", OffsetDateTime.class)))
+                .optional().orElseThrow(PharmacyDispensingService::contextDenied);
+    }
+
+    private static void requireVersion(DispensingHead current, Long expectedRowVersion) {
+        if (expectedRowVersion == null || current.rowVersion() != expectedRowVersion) throw versionConflict();
+    }
+
+    private static PharmacyDispensingException versionConflict() {
+        return new PharmacyDispensingException(
+                "PHARMACY_DISPENSING_VERSION_CONFLICT", 409, "The dispensing changed; reload before retrying");
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {
@@ -255,5 +356,5 @@ final class PharmacyDispensingService {
         }
     }
 
-    private record DispensingHead(String status, UUID dispensedBy, long rowVersion) {}
+    private record DispensingHead(String status, UUID dispensedBy, long rowVersion, OffsetDateTime voidedAt) {}
 }

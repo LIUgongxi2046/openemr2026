@@ -16,6 +16,7 @@ import org.openemr2026.contracts.AppointmentBookRequestWire;
 import org.openemr2026.contracts.AppointmentCancelRequestWire;
 import org.openemr2026.contracts.AppointmentCheckInRequestWire;
 import org.openemr2026.contracts.AppointmentConsultRequestWire;
+import org.openemr2026.contracts.AppointmentRescheduleRequestWire;
 import org.openemr2026.contracts.AppointmentWire;
 import org.openemr2026.contracts.ScheduleSlotCreateRequestWire;
 import org.openemr2026.contracts.ScheduleSlotWire;
@@ -188,6 +189,78 @@ final class AppointmentService {
             appendEvidence(identity, current.patientId(), appointmentId, current.rowVersion() + 1,
                     "APPOINTMENT_CANCELLED", "AppointmentCancelled");
             completeCommand(identity, "APPOINTMENT_CANCEL", idempotencyKey, appointmentId);
+            return appointment(identity.tenantId(), appointmentId, request.patientId(), request.facilityId());
+        });
+    }
+
+    AppointmentWire rescheduleAppointment(
+            ClinicalIdentity identity, String idempotencyKey, UUID appointmentId,
+            AppointmentRescheduleRequestWire request) {
+        String reason = request.reason() == null ? null : request.reason().trim();
+        if (reason == null || reason.length() < 2) throw invalid("a reschedule reason is required");
+        return transactions.execute(status -> {
+            beginCommand(identity, "APPOINTMENT_RESCHEDULE", idempotencyKey,
+                    sha256(appointmentId + "|" + request.expectedRowVersion() + "|"
+                            + request.scheduleSlotId() + "|" + reason));
+            AppointmentHead current = jdbc.sql("""
+                    select status, row_version, schedule_slot_id, patient_id from appointment
+                    where tenant_id = :tenant and appointment_id = :appointment
+                      and patient_id = :patient and facility_id = :facility for update
+                    """).param("tenant", identity.tenantId()).param("appointment", appointmentId)
+                    .param("patient", request.patientId()).param("facility", request.facilityId())
+                    .query((rs, row) -> new AppointmentHead(
+                            rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("schedule_slot_id", UUID.class), rs.getObject("patient_id", UUID.class)))
+                    .optional().orElseThrow(() -> contextDenied());
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new AppointmentException(
+                        "APPOINTMENT_VERSION_CONFLICT", 409, "The appointment changed; reload before retrying");
+            }
+            if (!"BOOKED".equals(current.status())) {
+                throw new AppointmentException(
+                        "APPOINTMENT_STATE_INVALID", 409, "Only a booked appointment can be rescheduled");
+            }
+            if (current.scheduleSlotId().equals(request.scheduleSlotId())) {
+                throw invalid("the new schedule slot must differ from the current slot");
+            }
+            int reserved = jdbc.sql("""
+                    update schedule_slot set booked_count = booked_count + 1,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and schedule_slot_id = :slot
+                      and organization_id = :organization and facility_id = :facility
+                      and status = 'OPEN' and booked_count < total_capacity and slot_date >= current_date
+                    """).param("tenant", identity.tenantId()).param("slot", request.scheduleSlotId())
+                    .param("organization", request.organizationId()).param("facility", request.facilityId()).update();
+            if (reserved != 1) {
+                throw new AppointmentException(
+                        "SCHEDULE_SLOT_UNAVAILABLE", 409, "The new slot is full, closed, outside the facility or in the past");
+            }
+            int moved = jdbc.sql("""
+                    update appointment set schedule_slot_id = :new_slot,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and appointment_id = :appointment and row_version = :expected
+                    """).param("new_slot", request.scheduleSlotId()).param("tenant", identity.tenantId())
+                    .param("appointment", appointmentId).param("expected", current.rowVersion()).update();
+            if (moved != 1) {
+                throw new AppointmentException(
+                        "APPOINTMENT_VERSION_CONFLICT", 409, "The appointment changed; reload before retrying");
+            }
+            jdbc.sql("""
+                    update schedule_slot set booked_count = greatest(booked_count - 1, 0),
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and schedule_slot_id = :slot
+                    """).param("tenant", identity.tenantId()).param("slot", current.scheduleSlotId()).update();
+            jdbc.sql("""
+                    insert into appointment_event(
+                      tenant_id, appointment_event_id, appointment_id, event_type,
+                      previous_status, resulting_status, actor_user_id, reason)
+                    values (:tenant, gen_random_uuid(), :appointment, 'RESCHEDULED',
+                      'BOOKED', 'BOOKED', :actor, :reason)
+                    """).param("tenant", identity.tenantId()).param("appointment", appointmentId)
+                    .param("actor", identity.userId()).param("reason", reason).update();
+            appendEvidence(identity, current.patientId(), appointmentId, current.rowVersion() + 1,
+                    "APPOINTMENT_RESCHEDULED", "AppointmentRescheduled");
+            completeCommand(identity, "APPOINTMENT_RESCHEDULE", idempotencyKey, appointmentId);
             return appointment(identity.tenantId(), appointmentId, request.patientId(), request.facilityId());
         });
     }

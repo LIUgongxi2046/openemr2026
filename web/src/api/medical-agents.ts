@@ -7,7 +7,9 @@ import {
 } from '../clinical-api';
 import {
   medicalAgentFamilyWireSchema,
+  medicalAgentRunCancelRequestWireSchema,
   medicalAgentRunCreateRequestWireSchema,
+  medicalAgentRunRetryRequestWireSchema,
   medicalAgentRunWireSchema,
   type ContextLeaseWire,
   type MedicalAgentFamilyWire,
@@ -89,5 +91,56 @@ export async function getMedicalAgentRun(
   return medicalAgentRunWireSchema.parse(await request(
     `/medical-agents/runs/${encodeURIComponent(runId)}`,
     { headers: explicitContextHeaders(lease, patientId, encounterId) },
+  ));
+}
+
+export async function cancelMedicalAgentRun(
+  lease: ContextLeaseWire,
+  patientId: string,
+  encounterId: string,
+  runId: string,
+  expectedRowVersion: number,
+  reason = '医生取消当前医助任务',
+): Promise<MedicalAgentRunWire> {
+  const command = medicalAgentRunCancelRequestWireSchema.parse({
+    expected_row_version: expectedRowVersion,
+    reason,
+  });
+  return medicalAgentRunWireSchema.parse(await request(
+    `/medical-agents/runs/${encodeURIComponent(runId)}/cancellations`,
+    {
+      method: 'POST',
+      headers: {
+        ...explicitContextHeaders(lease, patientId, encounterId),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(command),
+    },
+  ));
+}
+
+export async function retryMedicalAgentRun(
+  lease: ContextLeaseWire,
+  patientId: string,
+  encounterId: string,
+  runId: string,
+  expectedRowVersion: number,
+): Promise<MedicalAgentRunWire> {
+  const command = medicalAgentRunRetryRequestWireSchema.parse({
+    organization_id: clinicalContext.organizationId,
+    facility_id: clinicalContext.facilityId,
+    context_lease_id: lease.lease_id,
+    expected_row_version: expectedRowVersion,
+  });
+  return medicalAgentRunWireSchema.parse(await request(
+    `/medical-agents/runs/${encodeURIComponent(runId)}/retries`,
+    {
+      method: 'POST',
+      headers: {
+        ...explicitContextHeaders(lease, patientId, encounterId),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(command),
+    },
   ));
 }

@@ -35,5 +35,18 @@ final class ContextLeasePolicyTest {
                 policy.issue(new ClinicalIdentity(UUID.randomUUID(), UUID.randomUUID(), List.of(UUID.randomUUID())),
                         UUID.randomUUID(), UUID.randomUUID(), null, null, null, " "));
     }
-}
 
+    @Test
+    void medicalAgentLeaseAllowsAnApprovedExternalModelOnlyWhenTheEnvironmentEnablesIt() {
+        var identity = new ClinicalIdentity(UUID.randomUUID(), UUID.randomUUID(), List.of(UUID.randomUUID()));
+        var externalPolicy = new ContextLeasePolicy(Clock.fixed(NOW, ZoneOffset.UTC), true);
+
+        var externalLease = externalPolicy.issue(identity, UUID.randomUUID(), UUID.randomUUID(),
+                UUID.randomUUID(), UUID.randomUUID(), null, "MEDICAL_AGENT_COLLABORATION");
+        var ordinaryLease = externalPolicy.issue(identity, UUID.randomUUID(), UUID.randomUUID(),
+                null, null, null, "DOCUMENT_DRAFT");
+
+        assertThat(externalLease.modelResidencyPolicy()).isEqualTo("APPROVED_EXTERNAL");
+        assertThat(ordinaryLease.modelResidencyPolicy()).isEqualTo("ON_PREM_ONLY");
+    }
+}

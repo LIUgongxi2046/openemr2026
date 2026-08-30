@@ -2,10 +2,11 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
-import { createMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog } from '../../api/medical-agents';
+import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
+import { medicalAgentRunStateLabel, presentMedicalAgentEvents, presentMedicalAgentResult } from '../medical-agent-run-presenter';
 import { evaDefaultPatientContexts, useEvaClinicalContext } from '../use-eva-clinical-context';
 import EvaComposerControls from './EvaComposerControls.vue';
 import EvaPatientPicker from './EvaPatientPicker.vue';
@@ -14,7 +15,7 @@ import XiaonanAgentTeamRail from './XiaonanAgentTeamRail.vue';
 type AuthorizationLevel = 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
 type ContextScope = 'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS';
 interface TaskEvent { id: string; label: string; detail: string; status: 'running' | 'done' | 'waiting' | 'failed' }
-interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; events?: TaskEvent[]; runId?: string }
+interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number }
 
 const props = defineProps<{ open: boolean; mode: 'center' | 'side'; routeId: string; contextLabel: string; patientId: string | null; encounterId: string | null; taskId: string | null }>();
 const emit = defineEmits<{ close: []; 'mode-change': [mode: 'center' | 'side'] }>();
@@ -67,7 +68,26 @@ function initialEvents(child: MedicalAgentReleaseWire): TaskEvent[] { return [
   { id: crypto.randomUUID(), label: `安排${doctorFacingAiText(child.display_name)}`, detail: doctorFacingAiText(child.current_action), status: 'waiting' },
   { id: crypto.randomUUID(), label: '执行模型与工具调用', detail: selectedModel.value?.display_name ?? '机构默认模型', status: 'waiting' },
 ] }
-function mapEvents(run: MedicalAgentRunWire): TaskEvent[] { const labels: Record<string,string> = { RunCreated: '任务与授权已记录', MainAgentStarted: '主医助开始规划', ChildAgentStarted: '诊疗环节医助开始处理', ChildContributionReady: '医助结果已生成', ChildHandoffReceived: 'Eva 已接收结果', RunReadyForReview: '结果已完成核对', BudgetConsumptionRecorded: '模型用量已记录' }; return run.events.map((event) => ({ id: `${run.run_id}-${event.sequence}`, label: labels[event.event_type] ?? '任务状态已更新', detail: event.event_type === 'RunCreated' ? `${selectedModel.value?.display_name ?? '机构默认模型'} · ${contextScopes.value.map(scopeLabel).join('、')}` : String(event.payload.current_action ?? `运行记录 #${event.sequence}`), status: 'done' })); }
+function mapEvents(run: MedicalAgentRunWire): TaskEvent[] { return presentMedicalAgentEvents(run, `${selectedModel.value?.display_name ?? '机构默认模型'} · ${contextScopes.value.map(scopeLabel).join('、')}`); }
+const terminalRunStates = new Set<MedicalAgentRunWire['state']>(['WAITING_FOR_REVIEW', 'COMPLETED', 'PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
+const retryableRunStates = new Set<MedicalAgentRunWire['state']>(['PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
+const delay = (duration: number) => new Promise((resolve) => window.setTimeout(resolve, duration));
+
+function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildName = '诊疗环节医助') {
+  message.events = mapEvents(run); message.runId = run.run_id; message.runState = run.state; message.rowVersion = run.row_version;
+  message.text = terminalRunStates.has(run.state)
+    ? `${presentMedicalAgentResult(run)}\n\n参与医助：${run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(fallbackChildName)}。`
+    : presentMedicalAgentResult(run);
+}
+
+async function pollRun(message: ChatMessage, lease: NonNullable<typeof runLeaseQuery.data.value>, patientId: string, encounterId: string, fallbackChildName: string) {
+  for (let poll = 0; poll < 300; poll += 1) {
+    if (!message.runId || terminalRunStates.has(message.runState!)) return;
+    await delay(800);
+    applyRun(message, await getMedicalAgentRun(lease, patientId, encounterId, message.runId), fallbackChildName);
+  }
+  message.text = '任务仍在后台处理，运行记录已保存。';
+}
 
 async function send() {
   const text = draft.value.trim(); const lease = runLeaseQuery.data.value; const agent = selectedAgent.value; const child = selectedChild.value ?? agent?.child_agents[0];
@@ -75,10 +95,22 @@ async function send() {
   busy.value = true; notice.value = ''; const responseId = crypto.randomUUID();
   messages.value.push({ id: crypto.randomUUID(), role: 'user', text }); messages.value.push({ id: responseId, role: 'assistant', text: '', events: initialEvents(child) }); draft.value = '';
   try {
-    const run = await createMedicalAgentRun(lease, { patientId: patient.current.value.patientId, encounterId: patient.current.value.encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
-    const response = messages.value.find((item) => item.id === responseId)!; response.events = mapEvents(run); response.runId = run.run_id;
-    const summary = typeof run.output.summary === 'string' ? run.output.summary : 'Eva 已汇总医助结果，等待医生审阅。'; response.text = `${doctorFacingAiText(summary)}\n参与医助：${run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(child.display_name)}。`;
+    const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId;
+    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const response = messages.value.find((item) => item.id === responseId)!; applyRun(response, run, child.display_name);
+    await pollRun(response, lease, patientId, encounterId, child.display_name);
   } catch (error) { const next = toClinicalIssue(error); const response = messages.value.find((item) => item.id === responseId)!; response.text = `任务未完成：${next.message}`; response.events = (response.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' }); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = false; }
+}
+async function cancelRun(message: ChatMessage) {
+  const lease = runLeaseQuery.data.value; if (!lease || !message.runId || !['QUEUED', 'RUNNING'].includes(message.runState ?? '')) return;
+  try { const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId; const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); if (!['QUEUED', 'RUNNING'].includes(latest.state)) { applyRun(message, latest); return; } applyRun(message, await cancelMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version)); }
+  catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+}
+async function retryRun(message: ChatMessage) {
+  if (!message.runId || !message.runState || !retryableRunStates.has(message.runState) || busy.value) return; busy.value = true; notice.value = '';
+  try { const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId; const lease = await issueMedicalAgentRunLease(patientId, encounterId); const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); const run = await retryMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version); applyRun(message, run); await pollRun(message, lease, patientId, encounterId, '诊疗环节医助'); }
+  catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = false; }
 }
 function newTask() { messages.value = []; draft.value = ''; notice.value = '已创建空白医助任务。'; }
@@ -99,7 +131,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
             <section class="eva-popup-thread" aria-live="polite">
               <div v-if="issue" class="eva-popup-empty error">Eva 工作区暂时不可用：{{ issue.message }}</div>
               <div v-else-if="messages.length === 0" class="eva-popup-empty illustrated"><img src="/brand/ai-medical-assistant-eva-workbench.png" alt="Eva 医疗任务工作台" /><strong>交给 Eva 一项完整任务</strong><p>任务规划、诊疗信息、模型、工具和医助处理过程都会在对话里呈现。</p></div>
-              <article v-for="message in messages" :key="message.id" class="eva-popup-message" :class="message.role"><header><b>{{ message.role === 'user' ? '医生' : 'Eva' }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `…${message.runId.slice(-8)}` : '执行中' }}</span></header><ol v-if="message.events?.length"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span></li></ol><p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'">Eva 正在继续处理…</p></article>
+              <article v-for="message in messages" :key="message.id" class="eva-popup-message" :class="message.role"><header><b>{{ message.role === 'user' ? '医生' : 'Eva' }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `…${message.runId.slice(-8)}` : '执行中' }}</span></header><ol v-if="message.events?.length"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span></li></ol><p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'">Eva 正在继续处理…</p><footer v-if="message.role === 'assistant' && message.runId" class="eva-popup-message-actions"><span>{{ message.runState ? medicalAgentRunStateLabel(message.runState) : '' }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重试</button></footer></article>
             </section>
             <form class="eva-popup-composer" @submit.prevent="send"><p v-if="notice" role="status" class="inline-notice">{{ notice }}</p><textarea v-model="draft" :disabled="busy" rows="4" placeholder="描述需要完成的诊疗任务……" @keydown.enter.exact.prevent="send" /><footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" compact /><div><button class="btn" type="button" @click="newTask">新任务</button><RouterLink class="btn" to="/ai-assistant" @click="requestClose">完整工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId">{{ busy ? '执行中…' : '发送' }}</button></div></footer></form>
           </main>
@@ -120,6 +152,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
 .global-ai-side-panel.eva-popup-root :deep(.xiaonan-harness-team-rail) { grid-column: 1; grid-row: 1 / -1; }
 .global-ai-side-panel.eva-popup-root .eva-popup-main { grid-column: 2; grid-row: 1; }
 .global-ai-side-panel.eva-popup-root :deep(.eva-patient-picker) { grid-column: 2; grid-row: 2; width: 100%; max-height: 220px; border-left: 0; border-top: 1px solid #d8e3ef; }
+.eva-popup-message-actions { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding-top: 6px; border-top: 1px solid #edf1f5; }.eva-popup-message-actions span { margin-right: auto; color: #7b8998; font-size: 7px; }.eva-popup-message-actions .btn { min-height: 26px; padding: 3px 8px; font-size: 8px; }
 @media (max-width: 980px) { .eva-popup-workspace { grid-template-columns: auto minmax(0,1fr); overflow-y: auto; } :deep(.eva-patient-picker) { grid-column: 1 / -1; } .eva-popup-header > b { display: none; } }
 @media (max-width: 700px) { :global(.global-ai-dialog.eva-popup-root) { width: calc(100vw - 12px); height: calc(100dvh - 12px); } .eva-popup-header { grid-template-columns: 42px minmax(0,1fr) auto 32px; gap: 7px; } .eva-popup-header > b { display: none; } .eva-popup-workspace { grid-template-columns: minmax(0,1fr); } .eva-popup-main { min-height: 560px; } .eva-popup-composer footer { align-items: stretch; flex-direction: column; } }
 </style>

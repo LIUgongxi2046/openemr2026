@@ -605,9 +605,32 @@ final class DocumentGovernanceService {
 
     private String sourceWatermark(UUID tenantId, UUID documentVersionId) {
         List<String> sources = jdbc.sql("""
-                select source_type, source_resource_id, source_version_ref
-                from clinical_document_source_reference
+                select source_type, source_resource_id, source_version_ref,
+                  coalesce((select string_agg(event_type||':'||reason||':'
+                    ||coalesce(effective_target_field_path,'')||':'||coalesce(effective_excerpt_hash,''), '|'
+                    order by occurred_at,lifecycle_event_id)
+                    from clinical_document_evidence_lifecycle_event lifecycle
+                    where lifecycle.tenant_id=reference.tenant_id
+                      and ((lifecycle.evidence_type='SOURCE_REFERENCE'
+                            and lifecycle.evidence_id=reference.source_reference_id)
+                        or (reference.source_type='ATTACHMENT' and lifecycle.evidence_type='ATTACHMENT'
+                            and lifecycle.evidence_id=reference.source_resource_id))), '') lifecycle_state
+                from clinical_document_source_reference reference
                 where tenant_id = :tenant and document_version_id = :version
+                  and not exists (
+                    select 1 from clinical_document_evidence_lifecycle_event terminal
+                    where terminal.tenant_id=reference.tenant_id
+                      and terminal.evidence_type='SOURCE_REFERENCE'
+                      and terminal.evidence_id=reference.source_reference_id
+                      and terminal.event_type in ('REVOKED','SUPERSEDED','VOIDED')
+                  )
+                  and not (reference.source_type='ATTACHMENT' and exists (
+                    select 1 from clinical_document_evidence_lifecycle_event terminal_attachment
+                    where terminal_attachment.tenant_id=reference.tenant_id
+                      and terminal_attachment.evidence_type='ATTACHMENT'
+                      and terminal_attachment.evidence_id=reference.source_resource_id
+                      and terminal_attachment.event_type in ('REVOKED','SUPERSEDED','VOIDED')
+                  ))
                 order by source_type, source_resource_id, source_version_ref, source_reference_id
                 """).param("tenant", tenantId).param("version", documentVersionId)
                 .query((rs, row) -> {
@@ -615,7 +638,8 @@ final class DocumentGovernanceService {
                     UUID resourceId = rs.getObject("source_resource_id", UUID.class);
                     String captured = rs.getString("source_version_ref");
                     String current = currentSourceVersionRef(tenantId, type, resourceId);
-                    return type + "|" + resourceId + "|" + captured + "|" + (current == null ? "MISSING" : current);
+                    return type + "|" + resourceId + "|" + captured + "|"
+                            + (current == null ? "MISSING" : current) + "|" + rs.getString("lifecycle_state");
                 }).list();
         return sha256(String.join("\n", sources));
     }

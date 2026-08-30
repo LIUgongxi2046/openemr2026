@@ -8,6 +8,7 @@ import org.openemr2026.contracts.AppointmentBookRequestWire;
 import org.openemr2026.contracts.AppointmentCancelRequestWire;
 import org.openemr2026.contracts.AppointmentCheckInRequestWire;
 import org.openemr2026.contracts.AppointmentConsultRequestWire;
+import org.openemr2026.contracts.AppointmentRescheduleRequestWire;
 import org.openemr2026.contracts.AppointmentWire;
 import org.openemr2026.contracts.ScheduleSlotCreateRequestWire;
 import org.openemr2026.contracts.ScheduleSlotWire;
@@ -97,6 +98,18 @@ final class AppointmentController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(appointments.cancelAppointment(identity, idempotencyKey, appointmentId, command));
+    }
+
+    @PostMapping("/appointments/{appointment_id}/reschedules")
+    ResponseEntity<AppointmentWire> reschedule(
+            HttpServletRequest request,
+            @PathVariable("appointment_id") UUID appointmentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody AppointmentRescheduleRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(appointments.rescheduleAppointment(identity, idempotencyKey, appointmentId, command));
     }
 
     @PostMapping("/appointments/{appointment_id}/check-ins")

@@ -32,6 +32,8 @@ import {
   nursingDischargeClosureWireSchema,
   pharmacyDispensingPrepareRequestWireSchema,
   pharmacyDispensingTransitionRequestWireSchema,
+  pharmacyDispensingUpdateRequestWireSchema,
+  pharmacyDispensingVoidRequestWireSchema,
   pharmacyDispensingWireSchema,
   priceCatalogVersionRequestWireSchema,
   priceCatalogVersionWireSchema,
@@ -305,6 +307,33 @@ export async function transitionInpatientPharmacyDispensing(
     `/pharmacy-dispensings/${dispensing.dispensing_id}/transitions`,
     inpatientJson('POST', lease, pharmacyDispensingTransitionRequestWireSchema.parse({
       ...inpatientScoped(), expected_row_version: dispensing.row_version, transition,
+    })),
+  ));
+}
+
+export async function updateInpatientPharmacyDispensing(
+  lease: ContextLeaseWire,
+  dispensing: PharmacyDispensingWire,
+  input: Pick<import('../generated/contracts').PharmacyDispensingUpdateRequestWire,
+    'drug_code' | 'batch_number' | 'quantity' | 'quantity_unit'>,
+): Promise<PharmacyDispensingWire> {
+  return pharmacyDispensingWireSchema.parse(await request(
+    `/pharmacy-dispensings/${dispensing.dispensing_id}`,
+    inpatientJson('PATCH', lease, pharmacyDispensingUpdateRequestWireSchema.parse({
+      ...inpatientScoped(), expected_row_version: dispensing.row_version, ...input,
+    })),
+  ));
+}
+
+export async function voidInpatientPharmacyDispensing(
+  lease: ContextLeaseWire,
+  dispensing: PharmacyDispensingWire,
+  reason: string,
+): Promise<PharmacyDispensingWire> {
+  return pharmacyDispensingWireSchema.parse(await request(
+    `/pharmacy-dispensings/${dispensing.dispensing_id}/voids`,
+    inpatientJson('POST', lease, pharmacyDispensingVoidRequestWireSchema.parse({
+      ...inpatientScoped(), expected_row_version: dispensing.row_version, reason,
     })),
   ));
 }

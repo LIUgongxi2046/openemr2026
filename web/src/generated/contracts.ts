@@ -114,7 +114,7 @@ export const outpatientFollowupWireSchema = z.object({
   "followup_type": z.enum(["EDUCATION","REVISIT","FOLLOWUP"]),
   "content": z.string().optional(),
   "outcome": z.string().nullable().optional(),
-  "status": z.enum(["PENDING","COMPLETED"]),
+  "status": z.enum(["PENDING","COMPLETED","CANCELLED"]),
   "due_at": z.string().nullable().optional(),
   "completed_at": z.string().nullable().optional(),
   "row_version": z.number().int(),
@@ -136,6 +136,20 @@ export const outpatientFollowupCompleteRequestWireSchema = z.object({
   "expected_row_version": z.number().int(),
 }).strict();
 export type OutpatientFollowupCompleteRequestWire = z.infer<typeof outpatientFollowupCompleteRequestWireSchema>;
+
+export const outpatientFollowupUpdateRequestWireSchema = z.object({
+  "followup_type": z.enum(["EDUCATION","REVISIT","FOLLOWUP"]),
+  "content": z.string(),
+  "due_at": z.string().nullable().optional(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type OutpatientFollowupUpdateRequestWire = z.infer<typeof outpatientFollowupUpdateRequestWireSchema>;
+
+export const outpatientFollowupCancelRequestWireSchema = z.object({
+  "reason": z.string(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type OutpatientFollowupCancelRequestWire = z.infer<typeof outpatientFollowupCancelRequestWireSchema>;
 
 export const metricSnapshotWireSchema = z.object({
   "snapshot_id": z.string().uuid(),
@@ -490,6 +504,16 @@ export const documentDraftSaveRequestWireSchema = z.object({
   "sections": z.record(z.string(), z.unknown()),
 }).strict();
 export type DocumentDraftSaveRequestWire = z.infer<typeof documentDraftSaveRequestWireSchema>;
+
+export const documentVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type DocumentVoidRequestWire = z.infer<typeof documentVoidRequestWireSchema>;
 
 export const documentDiffWireSchema = z.object({
   "document_id": z.string().uuid(),
@@ -1106,6 +1130,16 @@ export const appointmentCancelRequestWireSchema = z.object({
 }).strict();
 export type AppointmentCancelRequestWire = z.infer<typeof appointmentCancelRequestWireSchema>;
 
+export const appointmentRescheduleRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "schedule_slot_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type AppointmentRescheduleRequestWire = z.infer<typeof appointmentRescheduleRequestWireSchema>;
+
 export const waitingQueueEntryWireSchema = z.object({
   "waiting_queue_entry_id": z.string().uuid(),
   "appointment_id": z.string().uuid(),
@@ -1557,7 +1591,10 @@ export const modelDeploymentWireSchema = z.object({
   "evaluation_status": z.enum(["EVALUATING","APPROVED","REJECTED"]),
   "credential_configured": z.boolean(),
   "credential_hint": z.string().nullable(),
-  "connection_status": z.enum(["NOT_CONFIGURED","READY"]),
+  "connection_status": z.enum(["NOT_CONFIGURED","UNVERIFIED","READY","FAILED"]),
+  "last_connection_tested_at": z.string().nullable(),
+  "last_connection_latency_ms": z.number().int().nullable(),
+  "last_connection_error_code": z.string().nullable(),
   "row_version": z.number().int(),
 }).strict();
 export type ModelDeploymentWire = z.infer<typeof modelDeploymentWireSchema>;
@@ -1571,6 +1608,7 @@ export const modelDeploymentRegisterRequestWireSchema = z.object({
   "residency_policy": z.enum(["ON_PREM_ONLY","LOCAL_PREFERRED","CLOUD_ALLOWED"]),
   "endpoint_url": z.string().nullable().optional(),
   "api_key_ref": z.string().nullable().optional(),
+  "api_key": z.string().nullable().optional(),
 }).strict();
 export type ModelDeploymentRegisterRequestWire = z.infer<typeof modelDeploymentRegisterRequestWireSchema>;
 
@@ -1581,6 +1619,7 @@ export const modelDeploymentUpdateRequestWireSchema = z.object({
   "residency_policy": z.enum(["ON_PREM_ONLY","LOCAL_PREFERRED","CLOUD_ALLOWED"]),
   "endpoint_url": z.string().nullable().optional(),
   "api_key_ref": z.string().nullable().optional(),
+  "api_key": z.string().nullable().optional(),
   "credential_action": z.enum(["KEEP","REPLACE","CLEAR"]),
   "expected_row_version": z.number().int(),
 }).strict();
@@ -1592,6 +1631,13 @@ export const modelDeploymentDeactivateRequestWireSchema = z.object({
   "expected_row_version": z.number().int(),
 }).strict();
 export type ModelDeploymentDeactivateRequestWire = z.infer<typeof modelDeploymentDeactivateRequestWireSchema>;
+
+export const modelDeploymentConnectionTestRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type ModelDeploymentConnectionTestRequestWire = z.infer<typeof modelDeploymentConnectionTestRequestWireSchema>;
 
 export const researchDatasetRequestWireSchema = z.object({
   "request_id": z.string().uuid(),
@@ -2685,6 +2731,8 @@ export const pharmacyDispensingWireSchema = z.object({
   "prepared_at": z.string(),
   "verified_at": z.string().nullable().optional(),
   "dispensed_at": z.string().nullable().optional(),
+  "voided_at": z.string().nullable().optional(),
+  "void_reason": z.string().nullable().optional(),
   "row_version": z.number().int(),
 }).strict();
 export type PharmacyDispensingWire = z.infer<typeof pharmacyDispensingWireSchema>;
@@ -2701,6 +2749,29 @@ export const pharmacyDispensingPrepareRequestWireSchema = z.object({
   "prepared_at": z.string(),
 }).strict();
 export type PharmacyDispensingPrepareRequestWire = z.infer<typeof pharmacyDispensingPrepareRequestWireSchema>;
+
+export const pharmacyDispensingUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "drug_code": z.string(),
+  "batch_number": z.string(),
+  "quantity": z.number(),
+  "quantity_unit": z.string(),
+}).strict();
+export type PharmacyDispensingUpdateRequestWire = z.infer<typeof pharmacyDispensingUpdateRequestWireSchema>;
+
+export const pharmacyDispensingVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type PharmacyDispensingVoidRequestWire = z.infer<typeof pharmacyDispensingVoidRequestWireSchema>;
 
 export const pharmacyDispensingTransitionRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
@@ -2801,7 +2872,7 @@ export const referralWireSchema = z.object({
   "target_organization": z.string().nullable().optional(),
   "reason": z.string(),
   "clinical_summary": z.string(),
-  "status": z.enum(["DRAFT","SENT","ACCEPTED","REJECTED"]),
+  "status": z.enum(["DRAFT","SENT","ACCEPTED","REJECTED","CANCELLED"]),
   "sent_at": z.string().nullable().optional(),
   "resolved_at": z.string().nullable().optional(),
   "row_version": z.number().int(),
@@ -2827,9 +2898,23 @@ export const referralTransitionRequestWireSchema = z.object({
   "patient_id": z.string().uuid(),
   "encounter_id": z.string().uuid(),
   "expected_row_version": z.number().int(),
-  "transition": z.enum(["SEND","ACCEPT","REJECT"]),
+  "transition": z.enum(["SEND","ACCEPT","REJECT","CANCEL"]),
 }).strict();
 export type ReferralTransitionRequestWire = z.infer<typeof referralTransitionRequestWireSchema>;
+
+export const referralUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "referral_type": z.enum(["INTERNAL","EXTERNAL"]),
+  "target_department": z.string().nullable().optional(),
+  "target_organization": z.string().nullable().optional(),
+  "reason": z.string(),
+  "clinical_summary": z.string(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type ReferralUpdateRequestWire = z.infer<typeof referralUpdateRequestWireSchema>;
 
 export const promptReleaseWireSchema = z.object({
   "prompt_release_id": z.string().uuid(),
@@ -3451,6 +3536,98 @@ export const agentRunBudgetUpdateRequestWireSchema = z.object({
 }).strict();
 export type AgentRunBudgetUpdateRequestWire = z.infer<typeof agentRunBudgetUpdateRequestWireSchema>;
 
+export const emergencyNursingNoteCorrectionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "assessment": z.string(),
+  "intervention": z.string(),
+  "risk_flag": z.boolean(),
+  "recorded_at": z.string(),
+  "reason": z.string(),
+}).strict();
+export type EmergencyNursingNoteCorrectionRequestWire = z.infer<typeof emergencyNursingNoteCorrectionRequestWireSchema>;
+
+export const shiftHandoverCorrectionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "ward_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "shift_from": z.string(),
+  "shift_to": z.string(),
+  "incoming_user_id": z.string().uuid(),
+  "handover_summary": z.string(),
+  "reason": z.string(),
+}).strict();
+export type ShiftHandoverCorrectionRequestWire = z.infer<typeof shiftHandoverCorrectionRequestWireSchema>;
+
+export const shiftHandoverPatientCorrectionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "ward_id": z.string().uuid(),
+  "handover_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "summary": z.string(),
+  "risk_flag": z.boolean(),
+  "reason": z.string(),
+}).strict();
+export type ShiftHandoverPatientCorrectionRequestWire = z.infer<typeof shiftHandoverPatientCorrectionRequestWireSchema>;
+
+export const shiftHandoverPatientVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "ward_id": z.string().uuid(),
+  "handover_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type ShiftHandoverPatientVoidRequestWire = z.infer<typeof shiftHandoverPatientVoidRequestWireSchema>;
+
+export const emergencyPreadmissionUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "temporary_identifier": z.string(),
+  "reason": z.string(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type EmergencyPreadmissionUpdateRequestWire = z.infer<typeof emergencyPreadmissionUpdateRequestWireSchema>;
+
+export const emergencyPreadmissionVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type EmergencyPreadmissionVoidRequestWire = z.infer<typeof emergencyPreadmissionVoidRequestWireSchema>;
+
+export const encounterDomainSwitchCorrectionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "from_encounter_id": z.string().uuid(),
+  "to_encounter_id": z.string().uuid(),
+  "from_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
+  "to_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
+  "reason": z.string(),
+  "switched_at": z.string(),
+  "expected_row_version": z.number().int(),
+  "correction_reason": z.string(),
+}).strict();
+export type EncounterDomainSwitchCorrectionRequestWire = z.infer<typeof encounterDomainSwitchCorrectionRequestWireSchema>;
+
+export const encounterDomainSwitchVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type EncounterDomainSwitchVoidRequestWire = z.infer<typeof encounterDomainSwitchVoidRequestWireSchema>;
+
 export const emergencyNursingNoteWireSchema = z.object({
   "note_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -3540,7 +3717,33 @@ export const medicalRecordAssetWireSchema = z.object({
   "asset_type": z.enum(["PAPER","SCAN","DIGITAL"]),
   "location": z.string(),
   "content_hash": z.string(),
-  "status": z.enum(["ARCHIVED","BORROWED"]),
+  "status": z.enum(["ARCHIVED","BORROWED","RETIRED"]),
+  "display_name": z.string(),
+  "media_type": z.string(),
+  "page_count": z.number().int(),
+  "source_system": z.string(),
+  "custody_location": z.string(),
+  "integrity_status": z.enum(["PENDING","VERIFIED","FAILED"]),
+  "cda_status": z.enum(["NOT_APPLICABLE","PENDING","VERIFIED","FAILED"]),
+  "scan_status": z.enum(["NOT_APPLICABLE","CAPTURED","OCR_REVIEWED","INDEXED"]),
+  "preservation_status": z.enum(["NOT_SCHEDULED","SCHEDULED","SEALED","VERIFIED"]),
+  "retention_years": z.number().int(),
+  "original_filename": z.string().nullable().optional(),
+  "byte_size": z.number().int().nullable().optional(),
+  "storage_status": z.enum(["MISSING","AVAILABLE","SEALED"]),
+  "malware_scan_status": z.enum(["NOT_SCANNED","PASSED","REJECTED"]),
+  "ocr_status": z.enum(["NOT_REQUESTED","COMPLETED","FAILED"]),
+  "ocr_text": z.string().nullable().optional(),
+  "ocr_confidence": z.number().nullable().optional(),
+  "ocr_engine": z.string().nullable().optional(),
+  "ocr_completed_at": z.string().nullable().optional(),
+  "object_lock_status": z.enum(["UNLOCKED","LOCKED"]),
+  "worm_retain_until": z.string().nullable().optional(),
+  "last_verified_at": z.string().nullable().optional(),
+  "retired_by": z.string().uuid().nullable().optional(),
+  "retired_at": z.string().nullable().optional(),
+  "retirement_reason": z.string().nullable().optional(),
+  "created_at": z.string().optional(),
   "borrowed_by": z.string().uuid().nullable().optional(),
   "borrowed_at": z.string().nullable().optional(),
   "due_at": z.string().nullable().optional(),
@@ -3556,8 +3759,82 @@ export const medicalRecordAssetRegisterRequestWireSchema = z.object({
   "asset_type": z.enum(["PAPER","SCAN","DIGITAL"]),
   "location": z.string(),
   "content_hash": z.string(),
+  "display_name": z.string().optional(),
+  "media_type": z.string().optional(),
+  "page_count": z.number().int().optional(),
+  "source_system": z.string().optional(),
+  "cda_status": z.enum(["NOT_APPLICABLE","PENDING","VERIFIED","FAILED"]).optional(),
+  "scan_status": z.enum(["NOT_APPLICABLE","CAPTURED","OCR_REVIEWED","INDEXED"]).optional(),
+  "preservation_status": z.enum(["NOT_SCHEDULED","SCHEDULED","SEALED","VERIFIED"]).optional(),
+  "retention_years": z.number().int().optional(),
 }).strict();
 export type MedicalRecordAssetRegisterRequestWire = z.infer<typeof medicalRecordAssetRegisterRequestWireSchema>;
+
+export const medicalRecordAssetIngestRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid().nullable().optional(),
+  "asset_type": z.enum(["PAPER","SCAN","DIGITAL"]),
+  "location": z.string(),
+  "display_name": z.string(),
+  "original_filename": z.string(),
+  "media_type": z.string(),
+  "page_count": z.number().int(),
+  "source_system": z.string(),
+  "content_base64": z.string(),
+  "cda_status": z.enum(["NOT_APPLICABLE","PENDING","VERIFIED","FAILED"]).optional(),
+  "retention_years": z.number().int(),
+}).strict();
+export type MedicalRecordAssetIngestRequestWire = z.infer<typeof medicalRecordAssetIngestRequestWireSchema>;
+
+export const medicalRecordAssetActionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetActionRequestWire = z.infer<typeof medicalRecordAssetActionRequestWireSchema>;
+
+export const medicalRecordAssetDistributionCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "purpose": z.string(),
+  "recipient_name": z.string(),
+  "expires_at": z.string(),
+}).strict();
+export type MedicalRecordAssetDistributionCreateRequestWire = z.infer<typeof medicalRecordAssetDistributionCreateRequestWireSchema>;
+
+export const medicalRecordAssetDistributionDeliveryRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetDistributionDeliveryRequestWire = z.infer<typeof medicalRecordAssetDistributionDeliveryRequestWireSchema>;
+
+export const medicalRecordAssetDistributionPackageWireSchema = z.object({
+  "distribution_package_id": z.string().uuid(),
+  "medical_record_asset_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "purpose": z.string(),
+  "recipient_name": z.string(),
+  "watermark_text": z.string(),
+  "original_filename": z.string(),
+  "media_type": z.string(),
+  "byte_size": z.number().int(),
+  "content_hash": z.string(),
+  "status": z.enum(["READY","DELIVERED"]),
+  "expires_at": z.string(),
+  "created_by": z.string().uuid(),
+  "created_at": z.string(),
+  "delivered_by": z.string().uuid().nullable().optional(),
+  "delivered_at": z.string().nullable().optional(),
+  "row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetDistributionPackageWire = z.infer<typeof medicalRecordAssetDistributionPackageWireSchema>;
 
 export const medicalRecordAssetBorrowRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
@@ -3568,6 +3845,15 @@ export const medicalRecordAssetBorrowRequestWireSchema = z.object({
 }).strict();
 export type MedicalRecordAssetBorrowRequestWire = z.infer<typeof medicalRecordAssetBorrowRequestWireSchema>;
 
+export const medicalRecordAssetBorrowUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "due_at": z.string(),
+}).strict();
+export type MedicalRecordAssetBorrowUpdateRequestWire = z.infer<typeof medicalRecordAssetBorrowUpdateRequestWireSchema>;
+
 export const medicalRecordAssetReturnRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
@@ -3575,6 +3861,52 @@ export const medicalRecordAssetReturnRequestWireSchema = z.object({
   "expected_row_version": z.number().int(),
 }).strict();
 export type MedicalRecordAssetReturnRequestWire = z.infer<typeof medicalRecordAssetReturnRequestWireSchema>;
+
+export const medicalRecordAssetUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "display_name": z.string(),
+  "media_type": z.string(),
+  "page_count": z.number().int(),
+  "source_system": z.string(),
+  "custody_location": z.string(),
+  "cda_status": z.enum(["NOT_APPLICABLE","PENDING","VERIFIED","FAILED"]),
+  "scan_status": z.enum(["NOT_APPLICABLE","CAPTURED","OCR_REVIEWED","INDEXED"]),
+  "preservation_status": z.enum(["NOT_SCHEDULED","SCHEDULED","SEALED","VERIFIED"]),
+  "retention_years": z.number().int(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetUpdateRequestWire = z.infer<typeof medicalRecordAssetUpdateRequestWireSchema>;
+
+export const medicalRecordAssetRetireRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "reason": z.string(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetRetireRequestWire = z.infer<typeof medicalRecordAssetRetireRequestWireSchema>;
+
+export const medicalRecordAssetIntegrityCheckRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "observed_hash": z.string(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalRecordAssetIntegrityCheckRequestWire = z.infer<typeof medicalRecordAssetIntegrityCheckRequestWireSchema>;
+
+export const medicalRecordAssetIntegrityEventWireSchema = z.object({
+  "integrity_event_id": z.string().uuid(),
+  "medical_record_asset_id": z.string().uuid(),
+  "expected_hash": z.string(),
+  "observed_hash": z.string(),
+  "result": z.enum(["VERIFIED","FAILED"]),
+  "verified_by": z.string().uuid(),
+  "verified_at": z.string(),
+}).strict();
+export type MedicalRecordAssetIntegrityEventWire = z.infer<typeof medicalRecordAssetIntegrityEventWireSchema>;
 
 export const sourcePatientMatchCandidateWireSchema = z.object({
   "candidate_id": z.string().uuid(),
@@ -4327,6 +4659,20 @@ export const medicalAgentChildRunWireSchema = z.object({
 }).strict();
 export type MedicalAgentChildRunWire = z.infer<typeof medicalAgentChildRunWireSchema>;
 
+export const medicalAgentRunCancelRequestWireSchema = z.object({
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type MedicalAgentRunCancelRequestWire = z.infer<typeof medicalAgentRunCancelRequestWireSchema>;
+
+export const medicalAgentRunRetryRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "context_lease_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type MedicalAgentRunRetryRequestWire = z.infer<typeof medicalAgentRunRetryRequestWireSchema>;
+
 export const medicalAgentRunEventWireSchema = z.object({
   "sequence": z.number().int(),
   "event_type": z.string(),
@@ -4355,6 +4701,10 @@ export const medicalAgentRunWireSchema = z.object({
   "created_at": z.string(),
   "completed_at": z.string().nullable(),
   "row_version": z.number().int(),
+  "attempt": z.number().int(),
+  "max_attempts": z.number().int(),
+  "cancel_requested_at": z.string().nullable(),
+  "failure_code": z.string().nullable(),
   "child_runs": z.array(medicalAgentChildRunWireSchema),
   "events": z.array(medicalAgentRunEventWireSchema),
 }).strict();
@@ -4521,6 +4871,41 @@ export const organizationUnitDeactivateRequestWireSchema = z.object({
   "reason": z.string(),
 }).strict();
 export type OrganizationUnitDeactivateRequestWire = z.infer<typeof organizationUnitDeactivateRequestWireSchema>;
+
+export const practitionerCredentialWireSchema = z.object({
+  "credential_id": z.string().uuid(),
+  "person_id": z.string().uuid(),
+  "person_display_name": z.string(),
+  "credential_type": z.enum(["PHYSICIAN_LICENSE","NURSE_LICENSE","PHARMACIST_LICENSE","TECHNICIAN_LICENSE","OTHER"]),
+  "registration_number": z.string(),
+  "issuing_authority": z.string(),
+  "practice_scope": z.record(z.string(), z.unknown()),
+  "status": z.enum(["ACTIVE","SUSPENDED","EXPIRED","REVOKED"]),
+  "valid_from": z.string(),
+  "valid_until": z.string().nullable(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string(),
+}).strict();
+export type PractitionerCredentialWire = z.infer<typeof practitionerCredentialWireSchema>;
+
+export const practitionerCredentialWriteRequestWireSchema = z.object({
+  "person_id": z.string().uuid(),
+  "credential_type": z.enum(["PHYSICIAN_LICENSE","NURSE_LICENSE","PHARMACIST_LICENSE","TECHNICIAN_LICENSE","OTHER"]),
+  "registration_number": z.string(),
+  "issuing_authority": z.string(),
+  "practice_scope": z.record(z.string(), z.unknown()),
+  "valid_from": z.string(),
+  "valid_until": z.string().nullable(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type PractitionerCredentialWriteRequestWire = z.infer<typeof practitionerCredentialWriteRequestWireSchema>;
+
+export const practitionerCredentialRevokeRequestWireSchema = z.object({
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type PractitionerCredentialRevokeRequestWire = z.infer<typeof practitionerCredentialRevokeRequestWireSchema>;
 
 export const workforceIdentityWireSchema = z.object({
   "person_id": z.string().uuid(),
@@ -4716,6 +5101,8 @@ export const documentAttachmentCreateRequestWireSchema = z.object({
   "content_base64": z.string(),
   "expected_sha256": z.string().nullable().optional(),
   "target_field_path": z.string(),
+  "replaces_attachment_id": z.string().uuid().nullable().optional(),
+  "replacement_reason": z.string().nullable().optional(),
 }).strict();
 export type DocumentAttachmentCreateRequestWire = z.infer<typeof documentAttachmentCreateRequestWireSchema>;
 
@@ -4732,6 +5119,28 @@ export const documentSourceReferenceCreateRequestWireSchema = z.object({
 }).strict();
 export type DocumentSourceReferenceCreateRequestWire = z.infer<typeof documentSourceReferenceCreateRequestWireSchema>;
 
+export const documentEvidenceLifecycleRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "document_version_id": z.string().uuid(),
+  "reason": z.string(),
+}).strict();
+export type DocumentEvidenceLifecycleRequestWire = z.infer<typeof documentEvidenceLifecycleRequestWireSchema>;
+
+export const documentSourceReferenceCorrectionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "document_version_id": z.string().uuid(),
+  "target_field_path": z.string(),
+  "excerpt": z.string().nullable().optional(),
+  "reason": z.string(),
+}).strict();
+export type DocumentSourceReferenceCorrectionRequestWire = z.infer<typeof documentSourceReferenceCorrectionRequestWireSchema>;
+
 export const documentAttachmentWireSchema = z.object({
   "attachment_id": z.string().uuid(),
   "document_id": z.string().uuid(),
@@ -4742,6 +5151,9 @@ export const documentAttachmentWireSchema = z.object({
   "content_hash": z.string(),
   "storage_status": z.enum(["AVAILABLE","QUARANTINED","REJECTED","MISSING"]),
   "malware_scan_status": z.enum(["PASSED","PENDING","FAILED","UNAVAILABLE"]),
+  "evidence_state": z.enum(["ACTIVE","SUPERSEDED","VOID"]),
+  "superseded_by_attachment_id": z.string().uuid().nullable(),
+  "lifecycle_reason": z.string().nullable(),
   "uploaded_by": z.string().uuid(),
   "created_at": z.string(),
 }).strict();
@@ -4759,6 +5171,8 @@ export const documentSourceReferenceWireSchema = z.object({
   "target_field_path": z.string(),
   "display_label": z.string(),
   "excerpt_hash": z.string().nullable(),
+  "evidence_state": z.enum(["ACTIVE","CORRECTED","REVOKED","SUPERSEDED"]),
+  "lifecycle_reason": z.string().nullable(),
   "recorded_by": z.string().uuid(),
   "recorded_at": z.string(),
 }).strict();

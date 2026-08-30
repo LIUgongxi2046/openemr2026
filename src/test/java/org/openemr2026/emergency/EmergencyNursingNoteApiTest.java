@@ -8,6 +8,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyNursingNoteCreateRequestWire;
+import org.openemr2026.contracts.EmergencyNursingNoteCorrectionRequestWire;
 import org.openemr2026.contracts.EmergencyNursingNoteWire;
 import org.openemr2026.contracts.EmergencyClinicalFactVoidRequestWire;
 import org.openemr2026.security.ClinicalIdentity;
@@ -106,6 +107,22 @@ final class EmergencyNursingNoteApiTest {
         assertThat(voided.voidedAt()).isNotNull();
         assertThat(voided.voidReason()).isEqualTo("记录时间选择错误");
         assertThat(voided.assessment()).isEqualTo(created.assessment());
+    }
+
+    @Test
+    void givenNursingNote_whenCorrecting_thenReplacementAndVoidAreAtomic() {
+        Context context = seedContext();
+        EmergencyNursingNoteWire created = create(context, "患者神志清楚，生命体征稳定", "继续心电监护", false);
+        EmergencyNursingNoteWire corrected = notes.correct(identity(), "correct-" + UUID.randomUUID(),
+                created.noteId(), new EmergencyNursingNoteCorrectionRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), created.rowVersion(),
+                        "患者血氧下降，需密切观察", "吸氧并开放第二静脉通路", true, Instant.now(), "护理评估内容更正"));
+
+        assertThat(corrected.noteId()).isNotEqualTo(created.noteId());
+        assertThat(corrected.riskFlag()).isTrue();
+        List<EmergencyNursingNoteWire> listed = notes.listNotes(identity(), context.patientId());
+        assertThat(listed).filteredOn(item -> item.noteId().equals(created.noteId()))
+                .allMatch(item -> item.voidedAt() != null);
     }
 
     @Test

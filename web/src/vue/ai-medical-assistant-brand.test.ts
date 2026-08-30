@@ -129,8 +129,8 @@ describe('AI医助 Eva 品牌契约', () => {
 
     expect(models).toContain('模型服务与 API 配置');
     expect(models).toContain('AI 中心 → 模型服务 → 登记模型 API');
-    expect(models).toContain('API 密钥引用');
-    expect(models).toContain('env://DEEPSEEK_API_KEY');
-    expect(models).toContain('页面不保存明文密钥');
+    expect(models).toContain('<span>API Key</span>');
+    expect(models).toContain("type=\"showApiKey ? 'text' : 'password'\"");
+    expect(models).toContain('保存后只显示末四位');
   });
 });

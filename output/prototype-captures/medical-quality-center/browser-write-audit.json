@@ -1,0 +1,42 @@
+{
+  "runAt": "2026-08-30T16:09:01.587Z",
+  "baseUrl": "http://127.0.0.1:4190",
+  "suffix": "IAB-MTFZYIO9",
+  "results": [
+    {
+      "domain": "/quality-center/initiatives",
+      "create": true,
+      "edit": true,
+      "delete": true,
+      "persistedDelete": true
+    },
+    {
+      "domain": "/department-qc/cases",
+      "create": true,
+      "edit": true,
+      "delete": true,
+      "persistedDelete": true
+    },
+    {
+      "domain": "/quality-rating/assessments",
+      "create": true,
+      "edit": true,
+      "delete": true,
+      "persistedDelete": true
+    },
+    {
+      "domain": "/infection-events/clues",
+      "create": true,
+      "resolve": true,
+      "persisted": true
+    },
+    {
+      "domain": "/credentials/grants",
+      "create": true,
+      "edit": true,
+      "revoke": true,
+      "persisted": true
+    }
+  ],
+  "passed": true
+}

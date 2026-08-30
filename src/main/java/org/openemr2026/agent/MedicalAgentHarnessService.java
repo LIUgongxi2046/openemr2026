@@ -10,6 +10,7 @@ import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.security.ClinicalIdentity;
@@ -28,11 +29,20 @@ final class MedicalAgentHarnessService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper objectMapper;
+    private final MedicalAgentToolGateway toolGateway;
+    private final MedicalAgentModelGateway modelGateway;
 
-    MedicalAgentHarnessService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper) {
+    MedicalAgentHarnessService(
+            JdbcClient jdbc,
+            TransactionTemplate transactions,
+            ObjectMapper objectMapper,
+            MedicalAgentToolGateway toolGateway,
+            MedicalAgentModelGateway modelGateway) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
+        this.toolGateway = toolGateway;
+        this.modelGateway = modelGateway;
     }
 
     List<AgentFamilyView> catalog() {
@@ -75,9 +85,10 @@ final class MedicalAgentHarnessService {
             LeaseRow lease = lease(identity, command);
             validateTarget(identity.tenantId(), command);
             MainReleaseRow main = main(command.mainAgentCode());
-            ActiveBudget budget = ensureGovernanceReady(identity.tenantId(), main.agentCode());
+            ensureGovernanceReady(identity.tenantId(), main.agentCode());
             ModelSelection model = resolveModel(identity.tenantId(), command.modelDeploymentId());
-            List<NodeRow> nodes = nodes(main.compositionCode(), command.stageCode());
+            ensureModelResidency(lease.residencyPolicy(), model.residencyPolicy());
+            List<NodeRow> nodes = nodes(main.compositionCode(), main.compositionVersion(), command.stageCode());
             if (nodes.isEmpty()) {
                 throw new AgentRunException("AGENT_STAGE_UNSUPPORTED", 409,
                         "The selected main agent has no approved child for this clinical stage");
@@ -111,91 +122,207 @@ final class MedicalAgentHarnessService {
                     "candidate_only", true, "model_deployment_id", model.deploymentId(),
                     "model_display_name", model.displayName(), "authorization_level", command.authorizationLevel(),
                     "context_scopes", command.contextScopes()));
-            transition(identity.tenantId(), id, "RUNNING", "MainAgentStarted", Map.of(
-                    "root_agent_code", main.agentCode(), "composition_code", main.compositionCode()));
-            ContextFacts facts = contextFacts(identity.tenantId(), command.encounterId(), lease.watermark(),
-                    Set.copyOf(command.contextScopes()));
-            List<Map<String, Object>> contributions = new ArrayList<>();
-            boolean partial = false;
-            for (NodeRow node : nodes) {
-                UUID childRunId = UUID.randomUUID();
-                jdbc.sql("""
-                        insert into medical_agent_child_run(
-                          tenant_id, child_run_id, root_run_id, child_agent_code, child_agent_version,
-                          state, critical, started_at)
-                        values (:tenant, :child, :root, :code, :version, 'RUNNING', :critical, now())
-                        """).param("tenant", identity.tenantId()).param("child", childRunId).param("root", id)
-                        .param("code", node.agentCode()).param("version", node.agentVersion())
-                        .param("critical", node.critical()).update();
-                appendEvent(identity.tenantId(), id, childRunId, "ChildAgentStarted", Map.of(
-                        "child_agent_code", node.agentCode(), "display_name", node.displayName(),
-                        "current_action", node.currentAction()));
-                Map<String, Object> contribution = contribution(node, command, facts);
-                List<Map<String, Object>> sourceRefs = facts.sourceReferences();
-                String childState = sourceRefs.isEmpty() ? "PARTIAL" : "COMPLETED";
-                partial |= "PARTIAL".equals(childState);
-                jdbc.sql("""
-                        update medical_agent_child_run set state = :state,
-                          contribution = cast(:contribution as jsonb), source_references = cast(:sources as jsonb),
-                          completed_at = now()
-                        where tenant_id = :tenant and child_run_id = :child
-                        """).param("state", childState).param("contribution", json(contribution))
-                        .param("sources", json(sourceRefs)).param("tenant", identity.tenantId())
-                        .param("child", childRunId).update();
-                appendEvent(identity.tenantId(), id, childRunId, "ChildContributionReady", Map.of(
-                        "child_agent_code", node.agentCode(), "state", childState,
-                        "source_reference_count", sourceRefs.size(), "contribution_label", node.contributionLabel()));
-                appendEvent(identity.tenantId(), id, childRunId, "ChildHandoffReceived", Map.of(
-                        "from", node.agentCode(), "to", main.agentCode(), "state", childState));
-                contributions.add(contribution);
-            }
-            Map<String, Object> output = new LinkedHashMap<>();
-            output.put("candidate_only", true);
-            output.put("root_agent_code", main.agentCode());
-            output.put("stage_code", command.stageCode());
-            output.put("objective", command.objective().trim());
-            output.put("summary", "Eva 已汇总 " + contributions.size() + " 位医助的处理结果，等待医生审阅。");
-            output.put("model_deployment_id", model.deploymentId());
-            output.put("model_display_name", model.displayName());
-            output.put("authorization_level", command.authorizationLevel());
-            output.put("context_scopes", command.contextScopes());
-            output.put("context_counts", Map.of("documents", facts.documentCount(), "results", facts.resultCount(),
-                    "orders", facts.orderCount(), "open_tasks", facts.openTaskCount(),
-                    "attachments", facts.attachmentCount(), "open_critical_values", facts.openCriticalCount()));
-            output.put("contributions", contributions);
-            output.put("warnings", List.of("本结果为 AI 协作候选，不自动写入病历、诊断、医嘱、结果或任务终态。"));
-            String finalState = partial ? "PARTIAL" : "WAITING_FOR_REVIEW";
-            jdbc.sql("""
-                    update medical_agent_run set state = :state, output_payload = cast(:output as jsonb),
-                      sequence = sequence + 1, completed_at = now(), row_version = row_version + 1
-                    where tenant_id = :tenant and run_id = :run
-                    returning sequence
-                    """).param("state", finalState).param("output", json(output))
-                    .param("tenant", identity.tenantId()).param("run", id).query(Long.class).single();
-            insertEventAtCurrentSequence(identity.tenantId(), id, "RunReadyForReview", Map.of(
-                    "state", finalState, "child_count", contributions.size(), "candidate_only", true));
-            long tokensConsumed = Math.min(budget.maxTokens(),
-                    1_200L + contributions.size() * 900L + facts.documentCount() * 120L
-                            + facts.resultCount() * 80L);
-            int durationSeconds = (int) Math.min(budget.maxDurationSeconds(),
-                    Math.max(1L, contributions.size() * 3L + facts.documentCount()));
-            jdbc.sql("""
-                    insert into agent_run_budget_consumption(
-                      tenant_id, consumption_id, budget_id, run_id, tokens_consumed,
-                      duration_seconds, recorded_by, recorded_at)
-                    values (:tenant, :consumption, :budget, :run, :tokens, :duration, :actor, now())
-                    on conflict (tenant_id, budget_id, run_id) do nothing
-                    """).param("tenant", identity.tenantId()).param("consumption", UUID.randomUUID())
-                    .param("budget", budget.budgetId()).param("run", id).param("tokens", tokensConsumed)
-                    .param("duration", durationSeconds).param("actor", identity.userId()).update();
-            appendEvent(identity.tenantId(), id, null, "BudgetConsumptionRecorded", Map.of(
-                    "budget_code", budget.budgetCode(), "tokens_consumed", tokensConsumed,
-                    "duration_seconds", durationSeconds));
-            appendEvidence(identity, id, main.agentCode(), finalState);
             completeCommand(identity, idempotencyKey, id);
             return id;
         });
         return run(identity.tenantId(), runId);
+    }
+
+    void executeClaimed(UUID tenantId, UUID runId, UUID workerId, int leaseSeconds) {
+        long runStarted = System.nanoTime();
+        ExecutionSnapshot snapshot = executionSnapshot(tenantId, runId, workerId);
+        renewWorkerLease(tenantId, runId, workerId, leaseSeconds);
+        ClinicalIdentity identity = new ClinicalIdentity(tenantId, snapshot.createdBy(), List.of());
+        ActiveBudget budget = ensureGovernanceReady(tenantId, snapshot.rootAgentCode());
+        ModelSelection model = modelById(tenantId, snapshot.modelDeploymentId());
+        ensureModelResidency(snapshot.modelResidencyPolicy(), model.residencyPolicy());
+        CreateRunCommand command = snapshot.command();
+        List<NodeRow> nodes = nodes(snapshot.compositionCode(), snapshot.compositionVersion(), snapshot.stageCode());
+        appendEvent(tenantId, runId, null, "MainAgentStarted", Map.of(
+                "root_agent_code", snapshot.rootAgentCode(), "composition_code", snapshot.compositionCode(),
+                "attempt", snapshot.attempt()));
+        List<Map<String, Object>> contributions = new ArrayList<>();
+        ContextFacts facts = ContextFacts.empty();
+        boolean partial = false;
+        boolean criticalFailure = false;
+        long promptTokens = 0;
+        long completionTokens = 0;
+        long totalTokens = 0;
+        long modelDurationMs = 0;
+        int modelRequestCount = 0;
+        int toolCallCount = 0;
+        String executionMode = "NOT_STARTED";
+        for (NodeRow node : nodes) {
+            renewWorkerLease(tenantId, runId, workerId, leaseSeconds);
+            if (cancellationRequested(tenantId, runId, workerId)) {
+                finalizeCancellation(identity, runId, workerId, "CHECKPOINT_BEFORE_CHILD");
+                return;
+            }
+            UUID childRunId = startChild(tenantId, runId, node);
+            appendEvent(tenantId, runId, childRunId, "ChildAgentStarted", Map.of(
+                    "child_agent_code", node.agentCode(), "display_name", node.displayName(),
+                    "current_action", node.currentAction(), "attempt", snapshot.attempt()));
+            Map<String, Object> contribution;
+            List<Map<String, Object>> sourceRefs = List.of();
+            String childState;
+            String childFailureCode = null;
+            try {
+                appendEvent(tenantId, runId, childRunId, "ToolExecutionStarted", Map.of(
+                        "context_scopes", command.contextScopes(), "authorization_level",
+                        command.authorizationLevel()));
+                List<MedicalAgentToolGateway.ToolResult> toolResults = toolGateway.execute(
+                        tenantId, runId, childRunId, command.contextLeaseId(), command.patientId(),
+                        command.encounterId(), snapshot.watermark(), Set.copyOf(command.contextScopes()));
+                toolCallCount += toolResults.size();
+                for (MedicalAgentToolGateway.ToolResult tool : toolResults) {
+                    appendEvent(tenantId, runId, childRunId, "ToolCompleted", Map.of(
+                            "invocation_id", tool.invocationId(), "tool_code", tool.toolCode(),
+                            "tool_version", tool.toolVersion(), "item_count", tool.items().size(),
+                            "duration_ms", tool.durationMs()));
+                }
+                if (cancellationRequested(tenantId, runId, workerId)) {
+                    cancelChild(tenantId, childRunId);
+                    finalizeCancellation(identity, runId, workerId, "CHECKPOINT_AFTER_TOOLS");
+                    return;
+                }
+                ContextFacts childFacts = contextFacts(toolResults);
+                if (facts.totalCount() == 0) facts = childFacts;
+                sourceRefs = toolResults.stream().flatMap(tool -> tool.sourceReferences().stream()).toList();
+                appendEvent(tenantId, runId, childRunId, "ModelGenerationStarted", Map.of(
+                        "provider_code", model.providerCode(), "model_code", model.modelCode(),
+                        "model_display_name", model.displayName(), "model_deployment_id", model.deploymentId(),
+                        "tool_call_count", toolResults.size()));
+                modelRequestCount += 1;
+                MedicalAgentModelGateway.ModelResult generated = modelGateway.generate(
+                        new MedicalAgentModelGateway.ModelRequest(model.providerCode(), model.modelCode(),
+                                model.endpointUrl(), model.apiKeyReference(), node.agentCode(), node.displayName(),
+                                node.currentAction(), node.outputSchema(), command.objective().trim(),
+                                toolResults.stream().map(tool -> new MedicalAgentModelGateway.ToolEvidence(
+                                        tool.toolCode(), tool.displayName(), tool.items())).toList(), 2048));
+                renewWorkerLease(tenantId, runId, workerId, leaseSeconds);
+                if (cancellationRequested(tenantId, runId, workerId)) {
+                    cancelChild(tenantId, childRunId);
+                    finalizeCancellation(identity, runId, workerId, "CHECKPOINT_AFTER_MODEL");
+                    return;
+                }
+                promptTokens += generated.promptTokens();
+                completionTokens += generated.completionTokens();
+                totalTokens += generated.totalTokens();
+                modelDurationMs += generated.durationMs();
+                executionMode = generated.executionMode();
+                contribution = contribution(node, command, generated, toolResults);
+                childState = sourceRefs.isEmpty() ? "PARTIAL" : "COMPLETED";
+                partial |= "PARTIAL".equals(childState);
+                appendEvent(tenantId, runId, childRunId, "ModelGenerationCompleted", Map.of(
+                        "request_id", generated.requestId() == null ? "UNAVAILABLE" : generated.requestId(),
+                        "execution_mode", generated.executionMode(), "prompt_tokens", generated.promptTokens(),
+                        "completion_tokens", generated.completionTokens(), "total_tokens", generated.totalTokens(),
+                        "duration_ms", generated.durationMs()));
+            } catch (RuntimeException failure) {
+                String errorCode = errorCode(failure);
+                if (failure instanceof ModelProviderUnavailableException modelFailure) {
+                    promptTokens += modelFailure.promptTokens();
+                    completionTokens += modelFailure.completionTokens();
+                    totalTokens += modelFailure.totalTokens();
+                    modelDurationMs += modelFailure.durationMs();
+                    executionMode = modelFailure.executionMode();
+                    appendEvent(tenantId, runId, childRunId, "ModelGenerationFailed", Map.of(
+                            "request_id", modelFailure.requestId() == null
+                                    ? "UNAVAILABLE" : modelFailure.requestId(),
+                            "execution_mode", modelFailure.executionMode(),
+                            "prompt_tokens", modelFailure.promptTokens(),
+                            "completion_tokens", modelFailure.completionTokens(),
+                            "total_tokens", modelFailure.totalTokens(),
+                            "duration_ms", modelFailure.durationMs(),
+                            "error_code", modelFailure.code()));
+                }
+                childFailureCode = errorCode;
+                childState = "FAILED";
+                partial = true;
+                criticalFailure |= node.critical();
+                contribution = Map.of(
+                        "agent_code", node.agentCode(), "display_name", node.displayName(),
+                        "summary", "子医助执行失败，未生成临床候选。",
+                        "facts", List.of(), "gaps", List.of("未完成范围：" + node.contributionLabel()),
+                        "warnings", List.of("请转人工流程或在修复模型/工具后重试。"),
+                        "error_code", errorCode, "candidate_only", true);
+                appendEvent(tenantId, runId, childRunId, "ChildAgentFailed", Map.of(
+                        "child_agent_code", node.agentCode(), "error_code", errorCode,
+                        "critical", node.critical()));
+            }
+            completeChild(tenantId, childRunId, childState, contribution, sourceRefs);
+            appendEvent(tenantId, runId, childRunId, "ChildContributionReady", Map.of(
+                    "child_agent_code", node.agentCode(), "state", childState,
+                    "source_reference_count", sourceRefs.size(), "contribution_label", node.contributionLabel()));
+            appendEvent(tenantId, runId, childRunId, "ChildHandoffReceived", Map.of(
+                    "from", node.agentCode(), "to", snapshot.rootAgentCode(), "state", childState));
+            contributions.add(contribution);
+            if (node.critical() && childFailureCode != null) {
+                throw new AgentRunException(childFailureCode, 502,
+                        "A critical medical assistant step failed and will be retried when permitted");
+            }
+        }
+        String finalState = criticalFailure ? "FAILED" : partial ? "PARTIAL" : "WAITING_FOR_REVIEW";
+        Map<String, Object> output = output(snapshot, command, model, contributions, facts, criticalFailure, partial,
+                executionMode, promptTokens, completionTokens, totalTokens, modelRequestCount,
+                modelDurationMs, toolCallCount);
+        long actualDurationMs = Math.max(0, (System.nanoTime() - runStarted) / 1_000_000);
+        int updated = jdbc.sql("""
+                update medical_agent_run set state = :state, output_payload = cast(:output as jsonb),
+                  model_prompt_tokens = :prompt_tokens, model_completion_tokens = :completion_tokens,
+                  model_total_tokens = :total_tokens, actual_duration_ms = :duration_ms,
+                  model_request_count = :model_requests, tool_call_count = :tool_calls,
+                  sequence = sequence + 1, completed_at = now(), failure_code = :failure,
+                  worker_lease_owner = null, worker_lease_until = null, last_heartbeat_at = now(),
+                  row_version = row_version + 1
+                where tenant_id = :tenant and run_id = :run and state = 'RUNNING'
+                  and worker_lease_owner = :worker and cancel_requested_at is null
+                """).param("state", finalState).param("output", json(output))
+                .param("prompt_tokens", promptTokens).param("completion_tokens", completionTokens)
+                .param("total_tokens", totalTokens).param("duration_ms", actualDurationMs)
+                .param("model_requests", modelRequestCount).param("tool_calls", toolCallCount)
+                .param("failure", criticalFailure ? "MEDICAL_AGENT_CRITICAL_CHILD_FAILED" : null)
+                .param("tenant", tenantId).param("run", runId).param("worker", workerId).update();
+        if (updated != 1) {
+            if (cancellationRequested(tenantId, runId, workerId)) {
+                finalizeCancellation(identity, runId, workerId, "CHECKPOINT_BEFORE_FINALIZE");
+            }
+            return;
+        }
+        insertEventAtCurrentSequence(tenantId, runId,
+                criticalFailure ? "RunFailed" : "RunReadyForReview", Map.of(
+                "state", finalState, "child_count", contributions.size(), "candidate_only", true,
+                "attempt", snapshot.attempt()));
+        int durationSeconds = (int) Math.min(budget.maxDurationSeconds(),
+                Math.max(0L, (actualDurationMs + 999L) / 1000L));
+        jdbc.sql("""
+                insert into agent_run_budget_consumption(
+                  tenant_id, consumption_id, budget_id, run_id, tokens_consumed,
+                  duration_seconds, recorded_by, recorded_at, attempt)
+                values (:tenant, :consumption, :budget, :run, :tokens, :duration, :actor, now(), :attempt)
+                """).param("tenant", tenantId).param("consumption", UUID.randomUUID())
+                .param("budget", budget.budgetId()).param("run", runId).param("tokens", totalTokens)
+                .param("duration", durationSeconds).param("actor", identity.userId())
+                .param("attempt", snapshot.attempt()).update();
+        appendEvent(tenantId, runId, null, "BudgetConsumptionRecorded", Map.of(
+                "budget_code", budget.budgetCode(), "tokens_consumed", totalTokens,
+                "duration_seconds", durationSeconds, "attempt", snapshot.attempt()));
+        appendEvidence(identity, runId, snapshot.rootAgentCode(), finalState);
+    }
+
+    private void renewWorkerLease(UUID tenantId, UUID runId, UUID workerId, int leaseSeconds) {
+        int updated = jdbc.sql("""
+                update medical_agent_run set
+                  worker_lease_until = now() + (:lease_seconds * interval '1 second'),
+                  last_heartbeat_at = now()
+                where tenant_id = :tenant and run_id = :run and state = 'RUNNING'
+                  and worker_lease_owner = :worker and worker_lease_until > now()
+                """).param("lease_seconds", leaseSeconds).param("tenant", tenantId)
+                .param("run", runId).param("worker", workerId).update();
+        if (updated != 1) {
+            throw new AgentRunException("MEDICAL_AGENT_WORKER_FENCE_LOST", 409,
+                    "The worker no longer owns this medical assistant run");
+        }
     }
 
     RunView run(UUID tenantId, UUID runId) {
@@ -203,6 +330,7 @@ final class MedicalAgentHarnessService {
                 select run_id, context_lease_id, root_agent_code, root_agent_version, composition_code,
                   composition_version, requested_stage, patient_id, encounter_id, target_type, target_id,
                   objective, state, sequence, output_payload::text, created_at, completed_at, row_version
+                  , attempt, max_attempts, cancel_requested_at, failure_code
                 from medical_agent_run where tenant_id = :tenant and run_id = :run
                 """).param("tenant", tenantId).param("run", runId)
                 .query((rs, row) -> new RootRunRow(
@@ -214,7 +342,9 @@ final class MedicalAgentHarnessService {
                         rs.getObject("target_id", UUID.class), rs.getString("objective"), rs.getString("state"),
                         rs.getLong("sequence"), rs.getString("output_payload"),
                         rs.getObject("created_at", OffsetDateTime.class),
-                        rs.getObject("completed_at", OffsetDateTime.class), rs.getLong("row_version")))
+                        rs.getObject("completed_at", OffsetDateTime.class), rs.getLong("row_version"),
+                        rs.getInt("attempt"), rs.getInt("max_attempts"),
+                        rs.getObject("cancel_requested_at", OffsetDateTime.class), rs.getString("failure_code")))
                 .optional().orElseThrow(MedicalAgentHarnessService::contextDenied);
         List<ChildRunView> children = jdbc.sql("""
                 select child.child_run_id, child.child_agent_code, release.display_name, release.display_role,
@@ -243,7 +373,8 @@ final class MedicalAgentHarnessService {
         return new RunView(root.runId(), root.contextLeaseId(), root.rootAgentCode(), root.rootAgentVersion(),
                 root.compositionCode(), root.compositionVersion(), root.stageCode(), root.patientId(),
                 root.encounterId(), root.targetType(), root.targetId(), root.objective(), root.state(), root.sequence(),
-                map(root.output()), root.createdAt(), root.completedAt(), root.rowVersion(), children, events);
+                map(root.output()), root.createdAt(), root.completedAt(), root.rowVersion(), root.attempt(),
+                root.maxAttempts(), root.cancelRequestedAt(), root.failureCode(), children, events);
     }
 
     List<RunView> listRuns(UUID tenantId, UUID encounterId) {
@@ -255,17 +386,390 @@ final class MedicalAgentHarnessService {
         return ids.stream().map(id -> run(tenantId, id)).toList();
     }
 
+    Optional<WorkerClaim> claimNext(UUID workerId, int leaseSeconds) {
+        return transactions.execute(status -> {
+            Optional<WorkerClaim> claim = jdbc.sql("""
+                    with candidate as (
+                      select tenant_id, run_id from medical_agent_run
+                      where state = 'QUEUED' and available_at <= now() and cancel_requested_at is null
+                        and attempt < max_attempts
+                      order by available_at, created_at, run_id
+                      for update skip locked limit 1
+                    )
+                    update medical_agent_run run set state = 'RUNNING', attempt = run.attempt + 1,
+                      worker_lease_owner = :worker,
+                      worker_lease_until = now() + (:lease_seconds * interval '1 second'),
+                      last_heartbeat_at = now(), failure_code = null,
+                      sequence = run.sequence + 1, row_version = run.row_version + 1
+                    from candidate
+                    where run.tenant_id = candidate.tenant_id and run.run_id = candidate.run_id
+                    returning run.tenant_id, run.run_id, run.attempt, run.sequence
+                    """).param("worker", workerId).param("lease_seconds", leaseSeconds)
+                    .query((rs, row) -> new WorkerClaim(
+                            rs.getObject("tenant_id", UUID.class), rs.getObject("run_id", UUID.class),
+                            rs.getInt("attempt"), rs.getLong("sequence"))).optional();
+            claim.ifPresent(item -> insertEvent(item.tenantId(), item.runId(), item.sequence(), null,
+                    "RunClaimed", Map.of("worker_id", workerId, "attempt", item.attempt(),
+                            "lease_seconds", leaseSeconds)));
+            return claim;
+        });
+    }
+
+    int reclaimExpiredWorkerLeases() {
+        return transactions.execute(status -> {
+            List<ExpiredRun> expired = jdbc.sql("""
+                    update medical_agent_run set
+                      state = case when cancel_requested_at is null then 'QUEUED' else 'CANCELLED' end,
+                      available_at = case when cancel_requested_at is null then now() else available_at end,
+                      completed_at = case when cancel_requested_at is null then null else now() end,
+                      failure_code = case when cancel_requested_at is null then 'WORKER_LEASE_EXPIRED' else null end,
+                      worker_lease_owner = null, worker_lease_until = null,
+                      sequence = sequence + 1, row_version = row_version + 1
+                    where state = 'RUNNING' and worker_lease_until < now()
+                    returning tenant_id, run_id, state, sequence, attempt
+                    """).query((rs, row) -> new ExpiredRun(
+                            rs.getObject("tenant_id", UUID.class), rs.getObject("run_id", UUID.class),
+                            rs.getString("state"), rs.getLong("sequence"), rs.getInt("attempt"))).list();
+            for (ExpiredRun item : expired) {
+                insertEvent(item.tenantId(), item.runId(), item.sequence(), null,
+                        "CANCELLED".equals(item.state()) ? "RunCancelled" : "RunLeaseExpired", Map.of(
+                                "state", item.state(), "attempt", item.attempt(),
+                                "reason", "WORKER_LEASE_EXPIRED"));
+            }
+            return expired.size();
+        });
+    }
+
+    void recordWorkerFailure(WorkerClaim claim, UUID workerId, RuntimeException failure) {
+        transactions.executeWithoutResult(status -> {
+            WorkerFailureHead current = jdbc.sql("""
+                    select attempt, max_attempts, cancel_requested_at is not null as cancellation
+                    from medical_agent_run where tenant_id = :tenant and run_id = :run
+                      and state = 'RUNNING' and worker_lease_owner = :worker for update
+                    """).param("tenant", claim.tenantId()).param("run", claim.runId()).param("worker", workerId)
+                    .query((rs, row) -> new WorkerFailureHead(
+                            rs.getInt("attempt"), rs.getInt("max_attempts"), rs.getBoolean("cancellation")))
+                    .optional().orElse(null);
+            if (current == null) return;
+            String code = errorCode(failure);
+            boolean cancelled = current.cancellation();
+            boolean retry = !cancelled && current.attempt() < current.maxAttempts();
+            String state = cancelled ? "CANCELLED" : retry ? "QUEUED" : "FAILED";
+            long sequence = jdbc.sql("""
+                    update medical_agent_run set state = :state,
+                      available_at = case when :state = 'QUEUED'
+                        then now() + ((attempt * attempt) * interval '1 second') else available_at end,
+                      completed_at = case when :state in ('FAILED','CANCELLED') then now() else null end,
+                      failure_code = :failure, worker_lease_owner = null, worker_lease_until = null,
+                      sequence = sequence + 1, row_version = row_version + 1
+                    where tenant_id = :tenant and run_id = :run and worker_lease_owner = :worker
+                    returning sequence
+                    """).param("state", state).param("failure", cancelled ? null : code)
+                    .param("tenant", claim.tenantId()).param("run", claim.runId()).param("worker", workerId)
+                    .query(Long.class).single();
+            insertEvent(claim.tenantId(), claim.runId(), sequence, null,
+                    cancelled ? "RunCancelled" : retry ? "RunRetryScheduled" : "RunFailed", Map.of(
+                            "state", state, "attempt", current.attempt(),
+                            "error_code", cancelled ? "CANCELLED_BY_USER" : code));
+        });
+    }
+
+    RunView requestCancellation(
+            ClinicalIdentity identity, UUID runId, long expectedRowVersion, String reason) {
+        String normalizedReason = requireReason(reason);
+        transactions.executeWithoutResult(status -> {
+            RunControlHead current = runControlHead(identity.tenantId(), runId);
+            if (current.rowVersion() != expectedRowVersion) {
+                throw new AgentRunException("MEDICAL_AGENT_RUN_VERSION_CONFLICT", 409,
+                        "The medical assistant run changed; reload before cancelling");
+            }
+            if (!Set.of("QUEUED", "RUNNING").contains(current.state())) {
+                throw new AgentRunException("MEDICAL_AGENT_RUN_STATE_INVALID", 409,
+                        "Only a queued or running medical assistant task can be cancelled");
+            }
+            String targetState = "QUEUED".equals(current.state()) ? "CANCELLED" : "RUNNING";
+            long sequence = jdbc.sql("""
+                    update medical_agent_run set state = :state, cancel_requested_at = now(),
+                      cancel_requested_by = :actor,
+                      completed_at = case when :state = 'CANCELLED' then now() else completed_at end,
+                      worker_lease_owner = case when :state = 'CANCELLED' then null else worker_lease_owner end,
+                      worker_lease_until = case when :state = 'CANCELLED' then null else worker_lease_until end,
+                      sequence = sequence + 1, row_version = row_version + 1
+                    where tenant_id = :tenant and run_id = :run and row_version = :expected
+                    returning sequence
+                    """).param("state", targetState).param("actor", identity.userId())
+                    .param("tenant", identity.tenantId()).param("run", runId).param("expected", expectedRowVersion)
+                    .query(Long.class).single();
+            insertEvent(identity.tenantId(), runId, sequence, null,
+                    "CANCELLED".equals(targetState) ? "RunCancelled" : "RunCancellationRequested",
+                    Map.of("reason", normalizedReason, "requested_by", identity.userId(), "state", targetState));
+        });
+        return run(identity.tenantId(), runId);
+    }
+
+    RunView retry(
+            ClinicalIdentity identity, UUID runId, RetryRunCommand command) {
+        transactions.executeWithoutResult(status -> {
+            RunRetryHead current = jdbc.sql("""
+                    select state, row_version, patient_id, encounter_id
+                    from medical_agent_run where tenant_id = :tenant and run_id = :run for update
+                    """).param("tenant", identity.tenantId()).param("run", runId)
+                    .query((rs, row) -> new RunRetryHead(rs.getString("state"), rs.getLong("row_version"),
+                            rs.getObject("patient_id", UUID.class), rs.getObject("encounter_id", UUID.class)))
+                    .optional().orElseThrow(MedicalAgentHarnessService::contextDenied);
+            if (current.rowVersion() != command.expectedRowVersion()) {
+                throw new AgentRunException("MEDICAL_AGENT_RUN_VERSION_CONFLICT", 409,
+                        "The medical assistant run changed; reload before retrying");
+            }
+            if (!Set.of("FAILED", "BLOCKED", "PARTIAL", "CANCELLED").contains(current.state())) {
+                throw new AgentRunException("MEDICAL_AGENT_RUN_STATE_INVALID", 409,
+                        "Only a failed, blocked, partial or cancelled medical assistant task can be retried");
+            }
+            ensureRuntimeLease(identity, command, current.patientId(), current.encounterId());
+            long sequence = jdbc.sql("""
+                    update medical_agent_run set state = 'QUEUED', context_lease_id = :lease,
+                      attempt = 0, available_at = now(), completed_at = null, output_payload = '{}'::jsonb,
+                      worker_lease_owner = null, worker_lease_until = null, last_heartbeat_at = null,
+                      cancel_requested_at = null, cancel_requested_by = null, failure_code = null,
+                      model_prompt_tokens = 0, model_completion_tokens = 0, model_total_tokens = 0,
+                      actual_duration_ms = 0, model_request_count = 0, tool_call_count = 0,
+                      sequence = sequence + 1, row_version = row_version + 1
+                    where tenant_id = :tenant and run_id = :run and row_version = :expected
+                    returning sequence
+                    """).param("lease", command.contextLeaseId()).param("tenant", identity.tenantId())
+                    .param("run", runId).param("expected", command.expectedRowVersion())
+                    .query(Long.class).single();
+            insertEvent(identity.tenantId(), runId, sequence, null, "RunRetryRequested", Map.of(
+                    "previous_state", current.state(), "requested_by", identity.userId()));
+        });
+        return run(identity.tenantId(), runId);
+    }
+
+    private ExecutionSnapshot executionSnapshot(UUID tenantId, UUID runId, UUID workerId) {
+        return jdbc.sql("""
+                select run.context_lease_id, lease.organization_id, lease.facility_id,
+                  lease.authorization_watermark, lease.model_residency_policy,
+                  run.created_by, run.root_agent_code,
+                  run.root_agent_version, run.composition_code, run.composition_version,
+                  run.requested_stage, run.patient_id, run.encounter_id, run.target_type,
+                  run.target_id, run.objective, run.model_deployment_id, run.authorization_level,
+                  run.context_scopes::text, run.attempt
+                from medical_agent_run run
+                join context_lease lease on lease.tenant_id = run.tenant_id
+                  and lease.lease_id = run.context_lease_id
+                where run.tenant_id = :tenant and run.run_id = :run and run.state = 'RUNNING'
+                  and run.worker_lease_owner = :worker and run.worker_lease_until > now()
+                """).param("tenant", tenantId).param("run", runId).param("worker", workerId)
+                .query((rs, row) -> {
+                    UUID leaseId = rs.getObject("context_lease_id", UUID.class);
+                    UUID organizationId = rs.getObject("organization_id", UUID.class);
+                    UUID facilityId = rs.getObject("facility_id", UUID.class);
+                    UUID patientId = rs.getObject("patient_id", UUID.class);
+                    UUID encounterId = rs.getObject("encounter_id", UUID.class);
+                    CreateRunCommand command = new CreateRunCommand(
+                            organizationId, facilityId, patientId, encounterId, leaseId,
+                            rs.getString("root_agent_code"), rs.getString("requested_stage"),
+                            rs.getString("target_type"), rs.getObject("target_id", UUID.class),
+                            rs.getString("objective"), rs.getObject("model_deployment_id", UUID.class),
+                            rs.getString("authorization_level"),
+                            listOfStrings(rs.getString("context_scopes")));
+                    return new ExecutionSnapshot(rs.getString("root_agent_code"),
+                            rs.getString("root_agent_version"), rs.getString("composition_code"),
+                            rs.getString("composition_version"), rs.getString("requested_stage"),
+                            rs.getObject("created_by", UUID.class), rs.getString("authorization_watermark"),
+                            rs.getString("model_residency_policy"),
+                            rs.getObject("model_deployment_id", UUID.class), rs.getInt("attempt"), command);
+                }).optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_WORKER_FENCE_LOST", 409,
+                        "The worker no longer owns this medical assistant run"));
+    }
+
+    private ModelSelection modelById(UUID tenantId, UUID deploymentId) {
+        return jdbc.sql("""
+                select model_deployment_id, display_name, provider_code, model_code,
+                  endpoint_url, api_key_ref, residency_policy from model_deployment
+                where tenant_id = :tenant and model_deployment_id = :deployment
+                  and status = 'ACTIVE' and evaluation_status = 'APPROVED'
+                  and connection_status = 'READY'
+                """).param("tenant", tenantId).param("deployment", deploymentId)
+                .query((rs, row) -> new ModelSelection(
+                        rs.getObject("model_deployment_id", UUID.class), rs.getString("display_name"),
+                        rs.getString("provider_code"), rs.getString("model_code"),
+                        rs.getString("endpoint_url"), rs.getString("api_key_ref"),
+                        rs.getString("residency_policy")))
+                .optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_MODEL_UNAVAILABLE", 409,
+                        "The pinned model service is no longer available"));
+    }
+
+    private UUID startChild(UUID tenantId, UUID runId, NodeRow node) {
+        return jdbc.sql("""
+                insert into medical_agent_child_run(
+                  tenant_id, child_run_id, root_run_id, child_agent_code, child_agent_version,
+                  state, critical, contribution, source_references, started_at, completed_at)
+                values (:tenant, :child, :root, :code, :version, 'RUNNING', :critical,
+                  '{}'::jsonb, '[]'::jsonb, now(), null)
+                on conflict (tenant_id, root_run_id, child_agent_code) do update set
+                  state = 'RUNNING', critical = excluded.critical, contribution = '{}'::jsonb,
+                  source_references = '[]'::jsonb, started_at = now(), completed_at = null
+                returning child_run_id
+                """).param("tenant", tenantId).param("child", UUID.randomUUID()).param("root", runId)
+                .param("code", node.agentCode()).param("version", node.agentVersion())
+                .param("critical", node.critical()).query(UUID.class).single();
+    }
+
+    private void completeChild(UUID tenantId, UUID childRunId, String state,
+            Map<String, Object> contribution, List<Map<String, Object>> sourceRefs) {
+        jdbc.sql("""
+                update medical_agent_child_run set state = :state,
+                  contribution = cast(:contribution as jsonb), source_references = cast(:sources as jsonb),
+                  completed_at = now()
+                where tenant_id = :tenant and child_run_id = :child
+                """).param("state", state).param("contribution", json(contribution))
+                .param("sources", json(sourceRefs)).param("tenant", tenantId).param("child", childRunId).update();
+    }
+
+    private void cancelChild(UUID tenantId, UUID childRunId) {
+        jdbc.sql("""
+                update medical_agent_child_run set state = 'CANCELLED', completed_at = now()
+                where tenant_id = :tenant and child_run_id = :child and state = 'RUNNING'
+                """).param("tenant", tenantId).param("child", childRunId).update();
+    }
+
+    private boolean cancellationRequested(UUID tenantId, UUID runId, UUID workerId) {
+        return jdbc.sql("""
+                select count(*) from medical_agent_run where tenant_id = :tenant and run_id = :run
+                  and state = 'RUNNING' and worker_lease_owner = :worker and cancel_requested_at is not null
+                """).param("tenant", tenantId).param("run", runId).param("worker", workerId)
+                .query(Long.class).single() == 1;
+    }
+
+    private void finalizeCancellation(
+            ClinicalIdentity identity, UUID runId, UUID workerId, String checkpoint) {
+        transactions.executeWithoutResult(status -> {
+            jdbc.sql("""
+                    update medical_agent_child_run set state = 'CANCELLED', completed_at = now()
+                    where tenant_id = :tenant and root_run_id = :run and state in ('QUEUED','RUNNING')
+                    """).param("tenant", identity.tenantId()).param("run", runId).update();
+            Optional<Long> sequence = jdbc.sql("""
+                    update medical_agent_run set state = 'CANCELLED', completed_at = now(),
+                      worker_lease_owner = null, worker_lease_until = null, failure_code = null,
+                      sequence = sequence + 1, row_version = row_version + 1
+                    where tenant_id = :tenant and run_id = :run and state = 'RUNNING'
+                      and worker_lease_owner = :worker and cancel_requested_at is not null
+                    returning sequence
+                    """).param("tenant", identity.tenantId()).param("run", runId).param("worker", workerId)
+                    .query(Long.class).optional();
+            sequence.ifPresent(value -> insertEvent(identity.tenantId(), runId, value, null,
+                    "RunCancelled", Map.of("checkpoint", checkpoint, "state", "CANCELLED")));
+        });
+    }
+
+    private Map<String, Object> output(
+            ExecutionSnapshot snapshot, CreateRunCommand command, ModelSelection model,
+            List<Map<String, Object>> contributions, ContextFacts facts,
+            boolean criticalFailure, boolean partial, String executionMode,
+            long promptTokens, long completionTokens, long totalTokens,
+            int modelRequestCount, long modelDurationMs, int toolCallCount) {
+        Map<String, Object> output = new LinkedHashMap<>();
+        output.put("candidate_only", true);
+        output.put("root_agent_code", snapshot.rootAgentCode());
+        output.put("stage_code", command.stageCode());
+        output.put("objective", command.objective().trim());
+        output.put("summary", criticalFailure
+                ? "Eva 未能完成本次医助任务，关键诊疗环节执行失败，请检查模型或工具配置后重试。"
+                : partial ? "Eva 已完成部分医助任务，尚有诊疗环节需要人工处理。"
+                : "Eva 已汇总 " + contributions.size() + " 位医助的处理结果，等待医生审阅。");
+        output.put("model_deployment_id", model.deploymentId());
+        output.put("model_display_name", model.displayName());
+        output.put("model_code", model.modelCode());
+        output.put("provider_code", model.providerCode());
+        output.put("execution_mode", executionMode);
+        output.put("authorization_level", command.authorizationLevel());
+        output.put("context_scopes", command.contextScopes());
+        output.put("context_counts", Map.of("documents", facts.documentCount(), "results", facts.resultCount(),
+                "orders", facts.orderCount(), "open_tasks", facts.openTaskCount(),
+                "attachments", facts.attachmentCount(), "open_critical_values", facts.openCriticalCount()));
+        output.put("contributions", contributions);
+        output.put("model_usage", Map.of("prompt_tokens", promptTokens,
+                "completion_tokens", completionTokens, "total_tokens", totalTokens,
+                "request_count", modelRequestCount, "duration_ms", modelDurationMs));
+        output.put("tool_call_count", toolCallCount);
+        output.put("attempt", snapshot.attempt());
+        output.put("warnings", List.of("本结果为 AI 协作候选，不自动写入病历、诊断、医嘱、结果或任务终态。"));
+        return output;
+    }
+
+    private RunControlHead runControlHead(UUID tenantId, UUID runId) {
+        return jdbc.sql("""
+                select state, row_version from medical_agent_run
+                where tenant_id = :tenant and run_id = :run for update
+                """).param("tenant", tenantId).param("run", runId)
+                .query((rs, row) -> new RunControlHead(rs.getString("state"), rs.getLong("row_version")))
+                .optional().orElseThrow(MedicalAgentHarnessService::contextDenied);
+    }
+
+    private void ensureRuntimeLease(
+            ClinicalIdentity identity, RetryRunCommand command, UUID patientId, UUID encounterId) {
+        long valid = jdbc.sql("""
+                select count(*) from context_lease where tenant_id = :tenant and lease_id = :lease
+                  and organization_id = :organization and facility_id = :facility and user_id = :user
+                  and patient_id = :patient and encounter_id = :encounter
+                  and revoked_at is null and expires_at > now()
+                """).param("tenant", identity.tenantId()).param("lease", command.contextLeaseId())
+                .param("organization", command.organizationId()).param("facility", command.facilityId())
+                .param("user", identity.userId()).param("patient", patientId).param("encounter", encounterId)
+                .query(Long.class).single();
+        if (valid != 1) throw contextDenied();
+    }
+
+    private static String requireReason(String reason) {
+        String normalized = reason == null ? "" : reason.trim();
+        if (normalized.length() < 2 || normalized.length() > 500) {
+            throw new AgentRunException("MEDICAL_AGENT_RUN_REASON_INVALID", 400,
+                    "The cancellation reason must contain 2 to 500 characters");
+        }
+        return normalized;
+    }
+
+    private static String errorCode(RuntimeException failure) {
+        return failure instanceof ModelProviderUnavailableException unavailable ? unavailable.code()
+                : failure instanceof AgentRunException agentFailure ? agentFailure.code()
+                : "MEDICAL_AGENT_WORKER_FAILED";
+    }
+
+    private static void ensureModelResidency(String leasePolicy, String deploymentPolicy) {
+        boolean allowed = switch (leasePolicy) {
+            case "APPROVED_EXTERNAL" -> Set.of("ON_PREM_ONLY", "LOCAL_PREFERRED", "CLOUD_ALLOWED")
+                    .contains(deploymentPolicy);
+            case "CN_REGION_ONLY" -> Set.of("ON_PREM_ONLY", "LOCAL_PREFERRED").contains(deploymentPolicy);
+            case "ON_PREM_ONLY" -> "ON_PREM_ONLY".equals(deploymentPolicy);
+            default -> false;
+        };
+        if (!allowed) {
+            throw new AgentRunException("MODEL_RESIDENCY_DENIED", 403,
+                    "The selected model does not satisfy the medical-agent context residency policy");
+        }
+    }
+
     private ModelSelection resolveModel(UUID tenantId, UUID requestedDeploymentId) {
         String requested = requestedDeploymentId == null ? "" : " and model_deployment_id = :deployment";
+        String liveOnly = requestedDeploymentId == null
+                ? " and endpoint_url not like 'https://%.example/%'"
+                : "";
         JdbcClient.StatementSpec query = jdbc.sql("""
-                select model_deployment_id, display_name from model_deployment
+                select model_deployment_id, display_name, provider_code, model_code,
+                  endpoint_url, api_key_ref, residency_policy from model_deployment
                 where tenant_id = :tenant and status = 'ACTIVE' and evaluation_status = 'APPROVED'
                   and connection_status = 'READY'
-                """ + requested + " order by updated_at desc, model_deployment_id limit 1")
+                """ + requested + liveOnly + " order by updated_at desc, model_deployment_id limit 1")
                 .param("tenant", tenantId);
         if (requestedDeploymentId != null) query = query.param("deployment", requestedDeploymentId);
         return query.query((rs, row) -> new ModelSelection(
-                        rs.getObject("model_deployment_id", UUID.class), rs.getString("display_name")))
+                        rs.getObject("model_deployment_id", UUID.class), rs.getString("display_name"),
+                        rs.getString("provider_code"), rs.getString("model_code"),
+                        rs.getString("endpoint_url"), rs.getString("api_key_ref"),
+                        rs.getString("residency_policy")))
                 .optional().orElseThrow(() -> new AgentRunException(
                         "MEDICAL_AGENT_MODEL_UNAVAILABLE", 409,
                         requestedDeploymentId == null
@@ -343,7 +847,7 @@ final class MedicalAgentHarnessService {
 
     private LeaseRow lease(ClinicalIdentity identity, CreateRunCommand command) {
         return jdbc.sql("""
-                select authorization_watermark from context_lease
+                select authorization_watermark, model_residency_policy from context_lease
                 where tenant_id = :tenant and lease_id = :lease and organization_id = :organization
                   and facility_id = :facility and user_id = :user and patient_id = :patient
                   and encounter_id = :encounter and revoked_at is null and expires_at > now()
@@ -351,7 +855,8 @@ final class MedicalAgentHarnessService {
                 .param("organization", command.organizationId()).param("facility", command.facilityId())
                 .param("user", identity.userId()).param("patient", command.patientId())
                 .param("encounter", command.encounterId())
-                .query((rs, row) -> new LeaseRow(rs.getString("authorization_watermark")))
+                .query((rs, row) -> new LeaseRow(rs.getString("authorization_watermark"),
+                        rs.getString("model_residency_policy")))
                 .optional().orElseThrow(() -> new AgentRunException(
                         "CONTEXT_NOT_PERMITTED", 403, "The medical-agent context lease is invalid or expired"));
     }
@@ -398,7 +903,7 @@ final class MedicalAgentHarnessService {
                         "AGENT_RELEASE_NOT_ACTIVE", 409, "The selected main-agent release is not active"));
     }
 
-    private List<NodeRow> nodes(String compositionCode, String stageCode) {
+    private List<NodeRow> nodes(String compositionCode, String compositionVersion, String stageCode) {
         String stagePredicate = "ALL".equals(stageCode) ? "" : " and node.stage_code = :stage";
         JdbcClient.StatementSpec query = jdbc.sql("""
                 select node.child_agent_code, release.release_version, release.display_name,
@@ -406,9 +911,10 @@ final class MedicalAgentHarnessService {
                   release.output_schema, node.critical
                 from medical_agent_composition_node node
                 join medical_agent_release release on release.agent_code = node.child_agent_code
-                  and release.release_version = node.release_version and release.status = 'ACTIVE'
-                where node.composition_code = :composition
-                """ + stagePredicate + " order by node.node_order").param("composition", compositionCode);
+                  and release.release_version = node.release_version
+                where node.composition_code = :composition and node.release_version = :composition_version
+                """ + stagePredicate + " order by node.node_order").param("composition", compositionCode)
+                .param("composition_version", compositionVersion);
         if (!"ALL".equals(stageCode)) query = query.param("stage", stageCode);
         return query.query((rs, row) -> new NodeRow(rs.getString("child_agent_code"),
                 rs.getString("release_version"), rs.getString("display_name"), rs.getString("display_role"),
@@ -416,62 +922,30 @@ final class MedicalAgentHarnessService {
                 rs.getString("output_schema"), rs.getBoolean("critical"))).list();
     }
 
-    private ContextFacts contextFacts(UUID tenantId, UUID encounterId, String watermark, Set<String> scopes) {
-        List<Map<String, Object>> references = new ArrayList<>();
-        if (scopes.contains("RECORDS")) references.addAll(jdbc.sql("""
-                select document.document_id, document.current_version_id, document.document_type_code,
-                  document.status, version.content_hash
-                from clinical_document document
-                join clinical_document_version version on version.tenant_id = document.tenant_id
-                  and version.document_id = document.document_id
-                  and version.document_version_id = document.current_version_id
-                where document.tenant_id = :tenant and document.encounter_id = :encounter
-                order by document.updated_at desc, document.document_id limit 20
-                """).param("tenant", tenantId).param("encounter", encounterId)
-                .query((rs, row) -> Map.<String, Object>of(
-                        "source_type", "DOCUMENT_VERSION", "source_id", rs.getObject("current_version_id", UUID.class),
-                        "document_id", rs.getObject("document_id", UUID.class),
-                        "document_type", rs.getString("document_type_code"), "status", rs.getString("status"),
-                        "content_hash", rs.getString("content_hash"), "authorization_watermark", watermark)).list());
-        if (scopes.contains("RESULTS")) references.addAll(jdbc.sql("""
-                select result_id, current_version_id, report_type
-                from clinical_result where tenant_id = :tenant and encounter_id = :encounter
-                order by updated_at desc, result_id limit 20
-                """).param("tenant", tenantId).param("encounter", encounterId)
-                .query((rs, row) -> Map.<String, Object>of(
-                        "source_type", "RESULT_VERSION", "source_id", rs.getObject("current_version_id", UUID.class),
-                        "result_id", rs.getObject("result_id", UUID.class), "report_type", rs.getString("report_type"),
-                        "authorization_watermark", watermark)).list());
-        long documents = scopes.contains("RECORDS") ? count(
-                "select count(*) from clinical_document where tenant_id = :tenant and encounter_id = :encounter",
-                tenantId, encounterId) : 0;
-        long orders = scopes.contains("ORDERS") ? count(
-                "select count(*) from clinical_order where tenant_id = :tenant and encounter_id = :encounter",
-                tenantId, encounterId) : 0;
-        long results = scopes.contains("RESULTS") ? count(
-                "select count(*) from clinical_result where tenant_id = :tenant and encounter_id = :encounter",
-                tenantId, encounterId) : 0;
-        long tasks = scopes.contains("TASKS") ? count("""
-                select count(*) from clinical_task where tenant_id = :tenant and encounter_id = :encounter
-                  and state not in ('COMPLETED', 'WITHDRAWN', 'EXPIRED')
-                """, tenantId, encounterId) : 0;
-        long attachments = scopes.contains("ATTACHMENTS") ? count("""
-                select count(*) from clinical_document_attachment
-                where tenant_id = :tenant and encounter_id = :encounter
-                  and storage_status = 'AVAILABLE' and malware_scan_status = 'PASSED'
-                """, tenantId, encounterId) : 0;
-        long critical = scopes.contains("RESULTS") ? count("""
-                select count(*) from critical_value_case where tenant_id = :tenant and encounter_id = :encounter
-                  and state <> 'DISPOSED'
-                """, tenantId, encounterId) : 0;
-        return new ContextFacts(documents, orders, results, tasks, attachments, critical, List.copyOf(references));
+    private ContextFacts contextFacts(List<MedicalAgentToolGateway.ToolResult> tools) {
+        long documents = itemCount(tools, "CLINICAL_DOCUMENT_READ");
+        long orders = itemCount(tools, "CLINICAL_ORDER_READ");
+        long results = itemCount(tools, "CLINICAL_RESULT_READ");
+        long tasks = itemCount(tools, "CLINICAL_TASK_READ");
+        long attachments = itemCount(tools, "CLINICAL_ATTACHMENT_READ");
+        long critical = tools.stream().filter(tool -> "CLINICAL_RESULT_READ".equals(tool.toolCode()))
+                .flatMap(tool -> tool.items().stream())
+                .filter(item -> Boolean.TRUE.equals(item.get("open_critical"))).count();
+        List<Map<String, Object>> references = tools.stream()
+                .flatMap(tool -> tool.sourceReferences().stream()).toList();
+        return new ContextFacts(documents, orders, results, tasks, attachments, critical, references);
     }
 
-    private long count(String sql, UUID tenantId, UUID encounterId) {
-        return jdbc.sql(sql).param("tenant", tenantId).param("encounter", encounterId).query(Long.class).single();
+    private static long itemCount(List<MedicalAgentToolGateway.ToolResult> tools, String code) {
+        return tools.stream().filter(tool -> code.equals(tool.toolCode()))
+                .mapToLong(tool -> tool.items().size()).sum();
     }
 
-    private Map<String, Object> contribution(NodeRow node, CreateRunCommand command, ContextFacts facts) {
+    private Map<String, Object> contribution(
+            NodeRow node,
+            CreateRunCommand command,
+            MedicalAgentModelGateway.ModelResult generated,
+            List<MedicalAgentToolGateway.ToolResult> tools) {
         Map<String, Object> contribution = new LinkedHashMap<>();
         contribution.put("agent_code", node.agentCode());
         contribution.put("display_name", node.displayName());
@@ -479,18 +953,19 @@ final class MedicalAgentHarnessService {
         contribution.put("action", node.currentAction());
         contribution.put("contribution_label", node.contributionLabel());
         contribution.put("output_schema", node.outputSchema());
-        contribution.put("summary", node.displayName() + "已完成当前诊疗范围核对，并将可定位事实交回 Eva 汇总。");
-        contribution.put("facts", List.of(
-                "当前就诊可定位文书 " + facts.documentCount() + " 份",
-                "已授权医嘱记录 " + facts.orderCount() + " 项",
-                "已确认结果记录 " + facts.resultCount() + " 项",
-                "未闭环任务 " + facts.openTaskCount() + " 项",
-                "已通过安全检查的附件 " + facts.attachmentCount() + " 份",
-                "未处置危急值 " + facts.openCriticalCount() + " 项"));
-        contribution.put("gaps", facts.sourceReferences().isEmpty()
-                ? List.of("当前作用域没有可定位文书版本，贡献降级为 PARTIAL。") : List.of());
-        contribution.put("warnings", List.of("不把计划当执行，不把未报告结果解释为阴性，不生成正式临床终态。"));
-        contribution.put("source_references", facts.sourceReferences());
+        contribution.putAll(generated.output());
+        contribution.put("candidate_only", true);
+        contribution.put("execution_mode", generated.executionMode());
+        contribution.put("model_request_id", generated.requestId());
+        contribution.put("model_usage", Map.of("prompt_tokens", generated.promptTokens(),
+                "completion_tokens", generated.completionTokens(), "total_tokens", generated.totalTokens(),
+                "duration_ms", generated.durationMs()));
+        contribution.put("tools", tools.stream().map(tool -> Map.of(
+                "tool_code", tool.toolCode(), "tool_version", tool.toolVersion(),
+                "invocation_id", tool.invocationId(), "item_count", tool.items().size(),
+                "duration_ms", tool.durationMs())).toList());
+        contribution.put("source_references", tools.stream()
+                .flatMap(tool -> tool.sourceReferences().stream()).toList());
         contribution.put("objective", command.objective().trim());
         contribution.put("objective_trust", "UNTRUSTED_USER_INPUT");
         return contribution;
@@ -508,7 +983,8 @@ final class MedicalAgentHarnessService {
 
     private void appendEvent(UUID tenantId, UUID runId, UUID childRunId, String eventType, Map<String, Object> payload) {
         long sequence = jdbc.sql("""
-                update medical_agent_run set sequence = sequence + 1, row_version = row_version + 1
+                update medical_agent_run set sequence = sequence + 1, row_version = row_version + 1,
+                  last_heartbeat_at = case when state = 'RUNNING' then now() else last_heartbeat_at end
                 where tenant_id = :tenant and run_id = :run returning sequence
                 """).param("tenant", tenantId).param("run", runId).query(Long.class).single();
         insertEvent(tenantId, runId, sequence, childRunId, eventType, payload);
@@ -680,6 +1156,10 @@ final class MedicalAgentHarnessService {
             UUID targetId, String objective, UUID modelDeploymentId, String authorizationLevel,
             List<String> contextScopes) {}
 
+    record RetryRunCommand(UUID organizationId, UUID facilityId, UUID contextLeaseId, long expectedRowVersion) {}
+
+    record WorkerClaim(UUID tenantId, UUID runId, int attempt, long sequence) {}
+
     record AgentFamilyView(AgentReleaseView mainAgent, List<AgentReleaseView> childAgents) {}
 
     record AgentReleaseView(String agentCode, String releaseVersion, String displayName, String agentLevel,
@@ -692,6 +1172,7 @@ final class MedicalAgentHarnessService {
             String compositionCode, String compositionVersion, String requestedStage, UUID patientId,
             UUID encounterId, String targetType, UUID targetId, String objective, String state, long sequence,
             Map<String, Object> output, OffsetDateTime createdAt, OffsetDateTime completedAt, long rowVersion,
+            int attempt, int maxAttempts, OffsetDateTime cancelRequestedAt, String failureCode,
             List<ChildRunView> childRuns, List<RunEventView> events) {}
 
     record ChildRunView(UUID childRunId, String childAgentCode, String displayName, String displayRole,
@@ -714,12 +1195,25 @@ final class MedicalAgentHarnessService {
             String compositionVersion) {}
     private record NodeRow(String agentCode, String agentVersion, String displayName, String displayRole,
             String currentAction, String contributionLabel, String outputSchema, boolean critical) {}
-    private record LeaseRow(String watermark) {}
+    private record LeaseRow(String watermark, String residencyPolicy) {}
     private record ContextFacts(long documentCount, long orderCount, long resultCount, long openTaskCount,
-            long attachmentCount, long openCriticalCount, List<Map<String, Object>> sourceReferences) {}
-    private record ModelSelection(UUID deploymentId, String displayName) {}
+            long attachmentCount, long openCriticalCount, List<Map<String, Object>> sourceReferences) {
+        static ContextFacts empty() { return new ContextFacts(0, 0, 0, 0, 0, 0, List.of()); }
+        long totalCount() { return documentCount + orderCount + resultCount + openTaskCount + attachmentCount; }
+    }
+    private record ModelSelection(UUID deploymentId, String displayName, String providerCode,
+            String modelCode, String endpointUrl, String apiKeyReference, String residencyPolicy) {}
+    private record ExecutionSnapshot(String rootAgentCode, String rootAgentVersion,
+            String compositionCode, String compositionVersion, String stageCode, UUID createdBy,
+            String watermark, String modelResidencyPolicy, UUID modelDeploymentId,
+            int attempt, CreateRunCommand command) {}
+    private record ExpiredRun(UUID tenantId, UUID runId, String state, long sequence, int attempt) {}
+    private record WorkerFailureHead(int attempt, int maxAttempts, boolean cancellation) {}
+    private record RunControlHead(String state, long rowVersion) {}
+    private record RunRetryHead(String state, long rowVersion, UUID patientId, UUID encounterId) {}
     private record RootRunRow(UUID runId, UUID contextLeaseId, String rootAgentCode, String rootAgentVersion,
             String compositionCode, String compositionVersion, String stageCode, UUID patientId, UUID encounterId,
             String targetType, UUID targetId, String objective, String state, long sequence, String output,
-            OffsetDateTime createdAt, OffsetDateTime completedAt, long rowVersion) {}
+            OffsetDateTime createdAt, OffsetDateTime completedAt, long rowVersion, int attempt, int maxAttempts,
+            OffsetDateTime cancelRequestedAt, String failureCode) {}
 }

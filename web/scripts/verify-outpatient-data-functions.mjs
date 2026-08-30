@@ -123,7 +123,8 @@ try {
   });
   await check('outpatient-summary-has-realistic-workflow-data', async () => {
     await page.locator('.queue-list article').first().waitFor({ state: 'visible' });
-    await page.locator('.summary-grid article').nth(3).waitFor({ state: 'visible' });
+    await page.locator('.encounter-editor').waitFor({ state: 'visible' });
+    await page.locator('.patient-context').waitFor({ state: 'visible' });
     if (await page.locator('.queue-list article').count() < 3) throw new Error('候诊队列数据不足 3 条');
   });
 
@@ -157,6 +158,16 @@ try {
     await page.getByLabel('状态').selectOption('ALL');
   });
   await check('orders-create-modal', () => expectDialogFromButton('新增医嘱', '新建医嘱草稿'));
+  await check('orders-edit-modal', async () => {
+    if (!await page.getByRole('button', { name: '编辑草稿', exact: true }).count()) {
+      await page.getByRole('button', { name: '新增医嘱', exact: true }).click();
+      const createDialog = page.getByRole('dialog').filter({ hasText: '新建医嘱草稿' });
+      await createDialog.getByRole('button', { name: '保存医嘱草稿', exact: true }).click();
+      await createDialog.waitFor({ state: 'hidden' });
+      await page.getByRole('button', { name: '编辑草稿', exact: true }).first().waitFor({ state: 'visible' });
+    }
+    await expectDialogFromButton('编辑草稿', '编辑医嘱草稿');
+  });
   await check('orders-delete-lifecycle-modal', async () => {
     const stop = page.getByRole('button', { name: '停止医嘱', exact: true });
     const cancel = page.getByRole('button', { name: '取消医嘱', exact: true });
@@ -184,7 +195,8 @@ try {
     if (await rows.count() < 2) throw new Error('会诊转诊数据少于 2 条');
   });
   await check('consult-create-modal', () => expectDialogFromButton('新建会诊 / 转诊', '新建会诊 / 转诊'));
-  await check('consult-delete-lifecycle-modal', () => expectDialogFromButton('拒绝', '拒绝会诊 / 转诊'));
+  await check('consult-edit-modal', () => expectDialogFromButton('编辑', '编辑会诊 / 转诊草稿'));
+  await check('consult-delete-lifecycle-modal', () => expectDialogFromButton('删除', '删除会诊 / 转诊草稿'));
 
   await openRoute('opd-followup');
   await check('followup-data-and-actions', async () => {
@@ -193,7 +205,9 @@ try {
     if (await rows.count() < 4) throw new Error('随访终诊数据少于 4 条');
   });
   await check('followup-create-modal', () => expectDialogFromButton('登记随访', '登记随访计划'));
-  await check('followup-edit-modal', () => expectDialogFromButton('填写结局', '填写随访结局'));
+  await check('followup-edit-modal', () => expectDialogFromButton('编辑', '编辑随访计划'));
+  await check('followup-complete-modal', () => expectDialogFromButton('填写结局', '填写随访结局'));
+  await check('followup-delete-lifecycle-modal', () => expectDialogFromButton('删除', '删除随访计划'));
 
   for (const viewport of [{ width: 1440, height: 1000, label: 'desktop' }, { width: 390, height: 844, label: 'mobile' }]) {
     await page.setViewportSize(viewport);

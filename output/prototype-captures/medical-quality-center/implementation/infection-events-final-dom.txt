@@ -1,0 +1,197 @@
+- link "跳到主要内容":
+  - /url: "#main-content"
+- banner:
+  - link "OpenEMR2026 首页":
+    - /url: "#/clinical"
+    - strong: OpenEMR2026
+    - generic: 电子病历系统
+  - button "选择医院":
+    - text: 江城大学附属医院
+    - generic: ⌄
+  - button "选择角色":
+    - text: 管理与治理工作台
+    - generic: ⌄
+  - search:
+    - text: ⌕
+    - searchbox "全局搜索"
+    - button "提交全局搜索": 搜索
+  - button "打开AI医助Eva":
+    - generic: AI医助 Eva
+  - button "打开操作指引":
+  - button "通知，3 条未读":
+    - generic: "3"
+  - button "用户登录与账户": 林
+  - generic "当前医生与出诊时间":
+    - text: 林伟 / William Lin
+    - text: 今日 08:00–17:00 · 2026-08-30
+- complementary "一级导航":
+  - paragraph: 临床工作域
+  - link "临床业务门户":
+    - /url: "#/clinical"
+    - generic: ⌂
+    - generic: 临床业务门户
+  - link "门诊工作台 6":
+    - /url: "#/outpatient"
+    - generic: ◫
+    - generic: 门诊工作台
+    - generic: "6"
+  - link "急诊工作台 6":
+    - /url: "#/emergency"
+    - generic: ✚
+    - generic: 急诊工作台
+    - generic: "6"
+  - link "住院工作站 5":
+    - /url: "#/inpatient"
+    - generic: ▥
+    - generic: 住院工作站
+    - generic: "5"
+  - paragraph: 病历与质量
+  - link "全院病历中心 3":
+    - /url: "#/record"
+    - generic: ▤
+    - generic: 全院病历中心
+    - generic: "3"
+  - link "医疗质量中心 7":
+    - /url: "#/quality-center"
+    - generic: ◈
+    - generic: 医疗质量中心
+    - generic: "7"
+  - link "病案资产中心 3":
+    - /url: "#/archive-assets"
+    - generic: ▣
+    - generic: 病案资产中心
+    - generic: "3"
+  - paragraph: 业务协同
+  - link "诊疗执行中心 12":
+    - /url: "#/care-operations"
+    - generic: ✚
+    - generic: 诊疗执行中心
+    - generic: "12"
+  - link "任务中心 9":
+    - /url: "#/clinical-tasks"
+    - generic: ☑
+    - generic: 任务中心
+    - generic: "9"
+  - paragraph: 平台中心
+  - link "数据中心 6":
+    - /url: "#/data-center"
+    - generic: ⌁
+    - generic: 数据中心
+    - generic: "6"
+  - link "AI 中心 9":
+    - /url: "#/ai-center"
+    - generic: ✦
+    - generic: AI 中心
+    - generic: "9"
+  - link "模拟接口 13":
+    - /url: "#/mock-interfaces"
+    - generic: ⇄
+    - generic: 模拟接口
+    - generic: "13"
+  - paragraph: 管理与配置
+  - link "业务配置":
+    - /url: "#/workflow"
+    - generic: ⌘
+    - generic: 业务配置
+  - link "系统管理 7":
+    - /url: "#/admin"
+    - generic: ⚙
+    - generic: 系统管理
+    - generic: "7"
+- main:
+  - navigation "医疗质量中心二级导航":
+    - generic: 医疗质量中心
+    - link "质量总览":
+      - /url: "#/quality-center"
+    - link "院科质控":
+      - /url: "#/department-qc"
+    - link "评级取证":
+      - /url: "#/quality-rating"
+    - link "院感事件":
+      - /url: "#/infection-events"
+    - link "临床资质":
+      - /url: "#/credentials"
+  - heading "院感、传染病与不良事件" [level=1]
+  - paragraph: 智能线索、人工排除、上报时限、重试和整改闭环
+  - button "导出清单"
+  - button "审核高风险线索"
+  - region "质量指标":
+    - article:
+      - generic: 待处理
+      - strong: "1"
+      - generic: 可下钻到业务对象
+    - article:
+      - generic: 已完成人工复核
+      - strong: "6"
+      - generic: 可下钻到业务对象
+    - article:
+      - generic: 风险阻断
+      - strong: "3"
+      - generic: 可下钻到业务对象
+    - article:
+      - generic: 数据完整
+      - strong: 100.0%
+      - generic: 可下钻到业务对象
+  - generic: 当前工作队列
+  - generic: 实时业务数据
+  - table:
+    - rowgroup:
+      - row "对象 关键资料 进度/来源 状态":
+        - columnheader "对象"
+        - columnheader "关键资料"
+        - columnheader "进度/来源"
+        - columnheader "状态"
+    - rowgroup:
+      - row "高风险待办 1 3 项已确认 需处理":
+        - cell "高风险待办"
+        - cell "1"
+        - cell "3 项已确认"
+        - cell "需处理":
+          - generic: 需处理
+      - row "人工复核率 85.7% 7 条线索 降级":
+        - cell "人工复核率"
+        - cell "85.7%"
+        - cell "7 条线索"
+        - cell "降级":
+          - generic: 降级
+      - row "数据完整率 100.0% 来源：院感线索台账 达标":
+        - cell "数据完整率"
+        - cell "100.0%"
+        - cell "来源：院感线索台账"
+        - cell "达标":
+          - generic: 达标
+  - generic "处理流程":
+    - article:
+      - generic: "1"
+      - generic: 选择业务对象
+    - generic: ›
+    - article:
+      - generic: "2"
+      - generic: 核验上下文
+    - generic: ›
+    - article:
+      - generic: "3"
+      - generic: 执行处理
+    - generic: ›
+    - article:
+      - generic: "4"
+      - generic: 复核结果
+    - generic: ›
+    - article:
+      - generic: "5"
+      - generic: 完成或恢复
+  - complementary:
+    - generic: 安全与恢复
+    - text: 发现 1 项需要人工核验的高风险差异
+    - paragraph: 系统保留原对象与处理证据，不以页面操作直接覆盖临床事实。
+    - term: 责任角色
+    - definition: 已按岗位授权
+    - term: 当前范围
+    - definition: 本机构 / 当前业务对象
+    - term: 版本
+    - definition: v2026.08
+    - term: 审计
+    - definition: 完整
+    - term: 失败恢复
+    - definition: 可重试/回退
+    - button "进入处理详情"

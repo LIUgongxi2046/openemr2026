@@ -40,6 +40,7 @@ const dailyCourseOpen = ref(false);
 const eventType = ref<ClinicalEventType>('RESCUE_COMPLETED');
 const eventSummary = ref('');
 const rejectionTaskId = ref<string | null>(null);
+const startTaskId = ref<string | null>(null);
 const rejectionReason = ref('');
 const selectedActorKey = ref<InpatientSyntheticActorKey>(getInpatientSyntheticActor()?.key ?? 'AUTHOR');
 const issue = computed(() => inpatient.error.value ? toClinicalIssue(inpatient.error.value) : null);
@@ -49,6 +50,8 @@ const rules = computed(() => inpatient.data.value?.documentRules ?? []);
 const pendingCount = computed(() => overview.value?.document_tasks.filter((task) => task.task_state !== 'COMPLETED').length ?? 0);
 const overdueCount = computed(() => overview.value?.document_tasks.filter((task) => task.task_state === 'OVERDUE').length ?? 0);
 const activeActor = computed(() => inpatientSyntheticActors.find((actor) => actor.key === selectedActorKey.value));
+const rejectionTask = computed(() => overview.value?.document_tasks.find((task) => task.task_id === rejectionTaskId.value) ?? null);
+const startTaskTarget = computed(() => overview.value?.document_tasks.find((task) => task.task_id === startTaskId.value) ?? null);
 
 async function execute(label: string, action: () => Promise<void>) {
   if (busy.value) return;
@@ -90,7 +93,7 @@ function startTask(task: InpatientDocumentTaskWire) {
   const data = inpatient.data.value; if (!data) return;
   void execute(`start:${task.task_id}`, async () => {
     const rule = data.documentRules.find((candidate) => candidate.document_type_code === task.document_type_code);
-    await startInpatientDocumentTask(data.encounterLease, task, rule); notice.value = '住院文书草稿已建立';
+    await startInpatientDocumentTask(data.encounterLease, task, rule); startTaskId.value = null; notice.value = '住院文书草稿已建立';
   });
 }
 function beginReject(task: InpatientDocumentTaskWire) { rejectionTaskId.value = task.task_id; rejectionReason.value = ''; }
@@ -145,7 +148,27 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { m
         <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
         <BusinessActionDialog :open="dailyCourseOpen" title="新增日常病程任务" description="确认后会产生真实待办并纳入文书时限与审签流程。" confirm-label="确认新增病程" :busy="Boolean(busy)" @cancel="dailyCourseOpen = false" @confirm="createDailyCourse"><p class="dialog-warning">当前患者：{{ overview.patient_display_name }} · {{ overview.bed_label }}床</p></BusinessActionDialog>
         <BusinessActionDialog :open="eventOpen && admission.status === 'ADMITTED'" title="记录住院临床事件" description="事件事实与对应文书任务同事务提交；重复来源事件不会重复建任务。" confirm-label="确认并生成文书任务" :busy="Boolean(busy)" width="wide" @cancel="eventOpen = false" @confirm="createClinicalEvent"><label>事件类型<select v-model="eventType"><option value="CONSULTATION_REQUESTED">发起会诊</option><option value="PREOPERATIVE_DECISION">确定手术方案</option><option value="OPERATION_COMPLETED">手术完成</option><option value="RESCUE_COMPLETED">抢救结束</option><option value="TRANSFUSION_COMPLETED">输血完成</option><option value="CRITICAL_ILLNESS_DECLARED">宣布病危/病重</option><option value="DEATH_CONFIRMED">确认死亡</option></select></label><label>事件摘要<textarea v-model="eventSummary" required rows="4" maxlength="1000" placeholder="记录时间、关键事实、参与人员与结果" /></label></BusinessActionDialog>
-        <div class="task-table-wrap"><table class="task-table"><thead><tr><th>住院文书任务</th><th>截止时间</th><th>状态</th><th>动作</th></tr></thead><tbody><tr v-for="task in overview.document_tasks" :key="task.task_id"><td><strong>{{ documentLabel(task.document_type_code, rules) }}</strong><small>{{ task.document_type_code }}</small></td><td>{{ formatDate(task.due_at) }}</td><td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ signatureProgress(task) }}</small></td><td><RouterLink v-if="task.task_state === 'COMPLETED' && (task.completed_document_id || task.working_document_id)" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink><template v-else-if="task.working_document_id"><RouterLink v-if="canActOnTask(task)" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">{{ task.review_status === 'IN_REVIEW' && task.next_signature_level !== 'AUTHOR' ? '进入审签' : '继续书写' }}</RouterLink><span v-else class="review-wait">等待{{ task.next_signature_level ? signatureLabel(task.next_signature_level) : '前序处理' }}</span><template v-if="canActOnTask(task) && task.review_status === 'IN_REVIEW' && task.next_signature_level && task.next_signature_level !== 'AUTHOR'"><button class="task-action task-reject-toggle" @click="beginReject(task)">退回修改</button><div v-if="rejectionTaskId === task.task_id" class="task-reject-panel"><textarea v-model="rejectionReason" aria-label="审签退回原因" maxlength="1000" rows="2" placeholder="填写可执行的退回原因" /><button class="task-action" :disabled="Boolean(busy) || !rejectionReason.trim()" @click="rejectTask(task)">{{ busy === `reject:${task.task_id}` ? '正在退回…' : '确认退回' }}</button></div></template></template><button v-else class="task-action" :disabled="Boolean(busy) || selectedActorKey !== 'AUTHOR'" @click="startTask(task)">{{ selectedActorKey !== 'AUTHOR' ? '等待作者建稿' : (busy === `start:${task.task_id}` ? '正在建立草稿…' : '开始书写') }}</button></td></tr></tbody></table></div></section>
+        <BusinessActionDialog :open="Boolean(rejectionTask)" title="退回住院病历修改" description="退回会撤销当前审签推进，作者必须形成新版本并重新质控；旧版本和签名证据仍保留。" confirm-label="确认退回修改" :busy="Boolean(busy)" :confirm-disabled="rejectionReason.trim().length < 4" danger @cancel="rejectionTaskId = null; rejectionReason = ''" @confirm="rejectionTask && rejectTask(rejectionTask)"><p v-if="rejectionTask" class="dialog-warning">{{ documentLabel(rejectionTask.document_type_code, rules) }} · 当前待 {{ rejectionTask.next_signature_level }}</p><label>退回原因（至少 4 字）<textarea v-model="rejectionReason" aria-label="审签退回原因" maxlength="1000" rows="4" placeholder="填写明确、可执行的修改要求" /></label></BusinessActionDialog>
+        <BusinessActionDialog :open="Boolean(startTaskTarget)" title="建立住院病历草稿" description="将依据文书规则创建真实结构化草稿并把任务推进到处理中；后续修改通过版本化保存完成。" confirm-label="确认建立草稿" :busy="Boolean(busy)" @cancel="startTaskId = null" @confirm="startTaskTarget && startTask(startTaskTarget)"><p v-if="startTaskTarget" class="dialog-warning">{{ documentLabel(startTaskTarget.document_type_code, rules) }} · 截止 {{ formatDate(startTaskTarget.due_at) }}</p></BusinessActionDialog>
+        <div class="task-table-wrap">
+          <table class="task-table">
+            <thead><tr><th>住院文书任务</th><th>截止时间</th><th>状态</th><th>动作</th></tr></thead>
+            <tbody><tr v-for="task in overview.document_tasks" :key="task.task_id">
+              <td><strong>{{ documentLabel(task.document_type_code, rules) }}</strong><small>{{ task.document_type_code }}</small></td>
+              <td>{{ formatDate(task.due_at) }}</td>
+              <td><span class="task-state" :class="task.task_state.toLowerCase()">{{ task.task_state }}</span><small>{{ signatureProgress(task) }}</small></td>
+              <td>
+                <RouterLink v-if="task.task_state === 'COMPLETED' && (task.completed_document_id || task.working_document_id)" :to="{ path: '/inpatient-doc-versions', query: { document_id: task.completed_document_id || task.working_document_id } }">查看版本证据</RouterLink>
+                <template v-else-if="task.working_document_id">
+                  <RouterLink v-if="canActOnTask(task)" :to="{ path: '/inpatient-doc-editor', query: { document_id: task.working_document_id } }">{{ task.review_status === 'IN_REVIEW' && task.next_signature_level !== 'AUTHOR' ? '进入审签' : '继续书写' }}</RouterLink>
+                  <span v-else class="review-wait">等待{{ task.next_signature_level ? signatureLabel(task.next_signature_level) : '前序处理' }}</span>
+                  <button v-if="canActOnTask(task) && task.review_status === 'IN_REVIEW' && task.next_signature_level && task.next_signature_level !== 'AUTHOR'" class="task-action task-reject-toggle" @click="beginReject(task)">退回修改</button>
+                </template>
+                <button v-else class="task-action" :disabled="Boolean(busy) || selectedActorKey !== 'AUTHOR'" @click="startTaskId = task.task_id">{{ selectedActorKey !== 'AUTHOR' ? '等待作者建稿' : '开始书写' }}</button>
+              </td>
+            </tr></tbody>
+          </table>
+        </div></section>
         <InpatientPrototypeRail mode="worklist" :patient-name="overview.patient_display_name" :bed-label="overview.bed_label" :ward-name="overview.ward_display_name" :pending-count="pendingCount" :overdue-count="overdueCount" />
       </div>
     </template>

@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.EmergencyPreadmissionLinkRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionRegisterRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionUpdateRequestWire;
+import org.openemr2026.contracts.EmergencyPreadmissionVoidRequestWire;
 import org.openemr2026.contracts.EmergencyPreadmissionWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
@@ -13,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,5 +65,29 @@ final class EmergencyPreadmissionController {
                 request, command.organizationId(), command.facilityId(), command.registeredPatientId(), null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(preadmissions.link(identity, idempotencyKey, preadmissionId, command));
+    }
+
+    @PutMapping("/emergency-preadmissions/{preadmission_id}")
+    ResponseEntity<EmergencyPreadmissionWire> update(
+            HttpServletRequest request,
+            @PathVariable("preadmission_id") UUID preadmissionId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EmergencyPreadmissionUpdateRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(preadmissions.update(identity, idempotencyKey, preadmissionId, command));
+    }
+
+    @PostMapping("/emergency-preadmissions/{preadmission_id}/voids")
+    ResponseEntity<EmergencyPreadmissionWire> voidPreadmission(
+            HttpServletRequest request,
+            @PathVariable("preadmission_id") UUID preadmissionId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody EmergencyPreadmissionVoidRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(preadmissions.voidPreadmission(identity, idempotencyKey, preadmissionId, command));
     }
 }

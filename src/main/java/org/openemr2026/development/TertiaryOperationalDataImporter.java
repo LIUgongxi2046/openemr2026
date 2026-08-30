@@ -212,7 +212,8 @@ final class TertiaryOperationalDataImporter {
                   batch_number, quantity, quantity_unit, dispensed_by, verified_by, status,
                   prepared_at, verified_at, dispensed_at)
                 select :tenant,
-                  md5('tertiary-operational-v1:dispensing:' || encounter_id || ':' || drug_code)::uuid,
+                  overlay(overlay(md5('tertiary-operational-v1:dispensing:' || encounter_id || ':' || drug_code)
+                    placing '4' from 13 for 1) placing 'a' from 17 for 1)::uuid,
                   patient_id, encounter_id, facility_id, drug_code, batch_number, quantity, quantity_unit,
                   :operator, case when ordinal % 4 = 1 then null else :verifier end,
                   case when ordinal % 4 = 1 then 'PREPARED' when ordinal % 4 = 2 then 'VERIFIED' else 'DISPENSED' end,
