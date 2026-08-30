@@ -39,6 +39,7 @@ import {
   shiftHandoverCreateRequestWireSchema,
   shiftHandoverPatientCreateRequestWireSchema,
   shiftHandoverPatientWireSchema,
+  shiftHandoverVoidRequestWireSchema,
   shiftHandoverWireSchema,
   surgicalProcedureScheduleRequestWireSchema,
   surgicalProcedureTransitionRequestWireSchema,
@@ -444,6 +445,22 @@ export async function completeShiftHandover(lease: ContextLeaseWire, handover: S
       method: 'POST',
       headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(shiftHandoverCompleteRequestWireSchema.parse({ ...wardScope(), expected_row_version: handover.row_version })),
+    },
+  ));
+}
+
+export async function voidShiftHandover(
+  lease: ContextLeaseWire,
+  handover: ShiftHandoverWire,
+  reason: string,
+): Promise<ShiftHandoverWire> {
+  return shiftHandoverWireSchema.parse(await request(
+    `/shift-handovers/${handover.handover_id}/voids`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(shiftHandoverVoidRequestWireSchema.parse({
+        ...wardScope(), expected_row_version: handover.row_version, reason,
+      })),
     },
   ));
 }

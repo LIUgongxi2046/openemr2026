@@ -1,6 +1,6 @@
 {
-  "run_at": "2026-08-28T11:18:07.016Z",
-  "base_url": "http://127.0.0.1:4178",
+  "run_at": "2026-08-30T04:48:24.363Z",
+  "base_url": "http://127.0.0.1:4177",
   "passed": 3,
   "failed": 0,
   "checks": [
@@ -20,7 +20,7 @@
       "detail": "9/9 路由在 390px 无页面横向溢出，弹窗不越界"
     }
   ],
-  "api_response_count": 47,
+  "api_response_count": 50,
   "api_statuses": [
     200
   ],

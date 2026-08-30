@@ -146,3 +146,48 @@ final result: passed
 本轮已使用既有原型/实现同屏对照图定位主从布局、表格溢出和控件缺失，但修正后的 12 页新截图尚未通过用户选定的应用内浏览器重拍与同屏比较。因此当前只能判定“功能端到端通过”，不应将“修正后视觉一比一”标记为通过。
 
 final result: functional-passed / visual-recapture-pending
+
+---
+
+# 住院工作台九个二级菜单原型还原与 CRUD 闭环验收
+
+- 验收日期：2026-08-30
+- 参考原型：`http://127.0.0.1:4180/app/index.html#<route>`
+- 当前实现：`http://127.0.0.1:4177/#/<route>`
+- 桌面基准：CSS viewport 1440 × 1000，DPR 1，相同登录身份与默认业务状态
+- 移动端基准：CSS viewport 390 × 844，DPR 1
+- 覆盖：`inpatient`、`inpatient-overview`、`inpatient-course`、`ip-orders`、`ip-results`、`ip-consult`、`ip-pathway`、`ward`、`inpatient-discharge`
+
+## 原型结构与业务闭环
+
+| 二级菜单 | 原型核心结构 | 实现与真实数据作用 |
+| --- | --- | --- |
+| 患者列表 | 250px 病区患者列表 + 今日任务 + 315px 患者摘要右栏 | 真实在院工作清单、患者选择与上下文租约重签，文书新建/事件/审签进入正式流程 |
+| 患者总览 | 临床摘要、待办和完整度右栏 | 住院天数、文书时限、完成度和业务水印均由当前住院事实计算 |
+| 病历文书 | 230px 文书目录 + 文书任务主区 + 330px 质控/来源/审签右栏 | 新建任务用弹窗，文书版本只追加，分级审签与逾期事实保留 |
+| 医嘱与用药 | 医嘱列表 + 用药安全/执行右栏 | 草稿新建与编辑、确定性安全预检、签署、执行、取消/停止均调用真实 API；执行事实不删除 |
+| 检查检验 | 报告列表 + 异常/危急值闭环右栏 | 结果关联已完成执行；危急值接收与处置分离；删除语义为追加更正版本 |
+| 查房会诊 | 会诊队列 + 证据时间轴 + 意见处理右栏 | 申请、独立医生接诊、意见签署、申请方确认和退回形成职责分离状态机 |
+| 临床路径 | 230px 阶段栏 + 真实来源任务 + 330px 变异右栏 | 入径固定版本，任务由文书/医嘱状态驱动，豁免或退径须独立审核变异 |
+| 护理摘要 | 床位卡 + 本班待办右栏 + 交接台账 | 真实在院清单驱动床位卡；交接新建、加入患者、完成、带原因作废全部使用弹窗和真实 API |
+| 出院病案 | 出院门禁主区 + 准备度/责任链右栏 | 必需文书、岗位、并发版本由服务端重新校验；通过后床位、在院状态、审计与 Outbox 同事务变更 |
+
+## 同屏视觉 QA
+
+- 参考截图：`output/playwright/inpatient-full-fidelity/source-20260830/*-{1440,390}.png`
+- 最终实现：`output/playwright/inpatient-full-fidelity/implementation-final-20260830/*-{1440,390}.png`
+- 合并对照输入：`output/playwright/inpatient-full-fidelity/comparison-final.html` 与 `comparison-final.png`
+- 九页均保留深色主导航、住院二级导航、患者条、原型主列宽度和业务责任右栏；文书、路径与护理页恢复三列骨架。
+- 五个保真面：导航/信息架构、字体层级、蓝白灰与风险色、卡片/表格密度、弹窗与右栏交互均完成同屏对照。
+- 实现没有复制原型在 390px 下的 64–289px 横向溢出；九页移动端 `scrollWidth === clientWidth === 390`，弹窗不越界。
+- 最终实现截图的九页右栏数均为 1，桌面与移动端控制台/pageerror 均为 0。
+
+## 交互、API 与构建证据
+
+- `npm test -- --run src/vue/inpatient-dialog-interactions.test.ts`：1 个文件、5 项通过。
+- `npm run build`：无 React 门禁、Vue 类型检查和 Vite 生产构建通过。
+- `node scripts/verify-inpatient-workstation.mjs`：3/3 检查通过；9/9 路由、右栏、导航和响应式通过；8 个可变更页面弹窗通过；50 次相关 API 响应状态均为 200。
+- `node scripts/verify-inpatient-crud.mjs`：医嘱“新建 → 编辑 → 安全预检/签署 → 取消”与护理交接“新建 → 带原因作废”两条真实写入闭环通过。
+- 后端专项测试启动到 `compileJava`，但被工作区中另一组未完成的 `MedicalAgentHarnessController` / `MedicalAgentRunWire` 构造器参数改动阻断；该编译错误不在本次住院变更文件中。当前运行后端的两条真实写入闭环已通过。
+
+final result: passed

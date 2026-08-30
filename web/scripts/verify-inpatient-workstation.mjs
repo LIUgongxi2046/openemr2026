@@ -19,8 +19,8 @@ const routes = [
   { id: 'ip-results', heading: '住院检查检验与危急值', open: '录入结果', minimumText: '已签发报告' },
   { id: 'ip-consult', heading: '住院查房、会诊与协同', open: '新建会诊', minimumText: '当前住院会诊' },
   { id: 'ip-pathway', heading: '住院临床路径执行中心', open: '记录路径变异', minimumText: '心力衰竭住院标准路径' },
-  { id: 'ward', heading: '病区看板', open: '新增交接班', minimumText: '护理交接规则' },
-  { id: 'inpatient-discharge', heading: '出院病历与病案归档闭环', open: '打开出院办理', minimumText: '出院就绪度' },
+  { id: 'ward', heading: '心内科一病区 · 护理工作台', open: '新增交接班', minimumText: '床位与重点患者' },
+  { id: 'inpatient-discharge', heading: '出院病历与病案归档闭环', open: '打开出院办理', minimumText: '出院准备度' },
 ];
 
 await mkdir(outputDir, { recursive: true });
@@ -79,6 +79,8 @@ try {
       if (await page.locator('.center-nav.domain a.router-link-active').count() !== 1) {
         throw new Error(`${route.id} 活动导航不唯一`);
       }
+      const rightRailSelector = route.id === 'ip-pathway' ? '.pathway-variance-panel' : '.prototype-right-rail';
+      if (await page.locator(rightRailSelector).count() !== 1) throw new Error(`${route.id} 缺少唯一原型责任右栏`);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
       if (overflow) throw new Error(`${route.id} 在 1440px 存在横向溢出`);
       await page.screenshot({ path: resolve(outputDir, `${route.id}-1440x1000.png`), fullPage: true });

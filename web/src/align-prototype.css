@@ -82,6 +82,7 @@
 .inpatient-grid { grid-template-columns: 250px minmax(0, 1fr) 315px; gap: 14px; align-items: start; min-width: 0; }
 .inpatient-grid > *, .prototype-secondary-grid > *, .prototype-primary-stack > * { min-width: 0; }
 .prototype-secondary-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; align-items: start; min-width: 0; }
+.prototype-secondary-grid.prototype-course-grid { grid-template-columns: 230px minmax(0, 1fr) 330px; }
 .prototype-primary-stack { display: grid; gap: 14px; min-width: 0; }
 .prototype-right-rail { min-width: 0; height: min(685px, calc(100dvh - 150px)); overflow: auto; }
 .prototype-right-rail .card-head { display: flex; align-items: center; gap: 8px; }
@@ -102,19 +103,57 @@
 .prototype-checks span { color: var(--muted); font-size: 10px; }
 .prototype-checks b { font-size: 10px; }
 .prototype-checks b.green { color: var(--green); }.prototype-checks b.amber { color: var(--amber); }.prototype-checks b.red { color: var(--red); }
+.prototype-document-tree { min-width: 0; overflow: hidden; }
+.prototype-document-tree .card-head { display: flex; justify-content: space-between; gap: 10px; }
+.prototype-document-list { display: grid; max-height: 685px; overflow: auto; }
+.prototype-document-list button { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 8px; min-width: 0; padding: 11px 13px; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: #fff; cursor: pointer; }
+.prototype-document-list button:hover, .prototype-document-list button.active { background: #f2f7fd; box-shadow: inset 3px 0 var(--blue); }
+.prototype-document-list strong { overflow: hidden; color: var(--ink); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.prototype-document-list small { grid-column: 1; color: var(--muted); font-size: 9px; }
+.prototype-document-list .task-state { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+
+/* 住院二级页面继续使用原型的主业务区 + 330px 责任右栏，中间列允许收缩以防止表格溢出。 */
+.prototype-secondary-grid > .result-layout { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.prototype-secondary-grid > .result-layout > .result-safety { display: none; }
+.prototype-consult-grid { grid-template-columns: minmax(230px, 28%) minmax(0, 1fr) 330px; }
+.prototype-consult-grid > * { min-width: 0; }
+.pathway-prototype-grid { display: grid; grid-template-columns: 230px minmax(0, 1fr) 330px; gap: 14px; align-items: start; min-width: 0; }
+.pathway-prototype-grid > .pathway-stage-strip { grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0; }
+.pathway-prototype-grid > .pathway-stage-strip button { grid-template-columns: 28px minmax(0, 1fr) auto; }
+.pathway-prototype-grid > .pathway-workspace { display: contents; }
+.pathway-prototype-grid .pathway-task-panel,
+.pathway-prototype-grid .pathway-variance-panel { min-width: 0; }
+.pathway-prototype-grid .pathway-variance-panel { height: min(685px, calc(100dvh - 150px)); overflow: auto; }
+.prototype-ward-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 14px; align-items: start; margin-bottom: 14px; min-width: 0; }
+.prototype-ward-grid > * { min-width: 0; }
+.ward-patient-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 14px; }
+.ward-patient-grid button { display: grid; gap: 5px; min-width: 0; padding: 13px; text-align: left; border: 1px solid var(--line); border-radius: 9px; background: #fff; cursor: pointer; }
+.ward-patient-grid button:hover, .ward-patient-grid button.active { border-color: #75a7e8; background: #f2f7fd; box-shadow: inset 3px 0 var(--blue); }
+.ward-patient-grid button.risk { border-top-color: #e6a1a1; }
+.ward-patient-grid span { color: var(--blue); font-size: 11px; font-weight: 800; }
+.ward-patient-grid strong { overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.ward-patient-grid small { color: var(--muted); font-size: 10px; }
 
 @media (max-width: 1180px) {
   .inpatient-grid { grid-template-columns: 220px minmax(0, 1fr); }
   .inpatient-grid > .prototype-right-rail { grid-column: 1 / -1; }
   .prototype-secondary-grid { grid-template-columns: minmax(0, 1fr); }
+  .prototype-secondary-grid.prototype-course-grid { grid-template-columns: 220px minmax(0, 1fr); }
+  .prototype-course-grid > .prototype-right-rail { grid-column: 1 / -1; }
   .prototype-right-rail { height: auto; max-height: none; }
   .prototype-secondary-grid > .prototype-right-rail .prototype-rail-body,
   .inpatient-grid > .prototype-right-rail .prototype-rail-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .prototype-secondary-grid > .prototype-right-rail .card-head,
   .inpatient-grid > .prototype-right-rail .card-head { grid-column: 1 / -1; }
+  .prototype-consult-grid { grid-template-columns: minmax(230px, 30%) minmax(0, 1fr); }
+  .prototype-consult-grid > .prototype-right-rail { grid-column: 1 / -1; }
+  .pathway-prototype-grid { grid-template-columns: 220px minmax(0, 1fr); }
+  .pathway-prototype-grid .pathway-variance-panel { grid-column: 1 / -1; height: auto; }
+  .prototype-ward-grid { grid-template-columns: minmax(0, 1fr); }
+  .ward-patient-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
-  .inpatient-grid, .prototype-secondary-grid { grid-template-columns: minmax(0, 1fr); }
+  .inpatient-grid, .prototype-secondary-grid, .prototype-secondary-grid.prototype-course-grid, .prototype-consult-grid, .pathway-prototype-grid, .prototype-ward-grid { grid-template-columns: minmax(0, 1fr); }
   .inpatient-grid > .prototype-right-rail { grid-column: auto; }
   .prototype-secondary-grid > .prototype-right-rail .prototype-rail-body,
   .inpatient-grid > .prototype-right-rail .prototype-rail-body { display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -123,4 +162,8 @@
   .page-head .head-actions > *, .page-heading .toolbar-actions > * { max-width: 100%; }
   .card-toolbar { flex-wrap: wrap; }
   .card-toolbar > *, .toolbar-actions { min-width: 0; }
+  .prototype-consult-grid > .prototype-right-rail,
+  .pathway-prototype-grid .pathway-variance-panel,
+  .prototype-course-grid > .prototype-right-rail { grid-column: auto; }
+  .ward-patient-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

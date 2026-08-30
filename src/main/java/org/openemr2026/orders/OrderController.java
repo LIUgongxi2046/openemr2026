@@ -18,6 +18,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -80,6 +81,25 @@ final class OrderController {
         return ResponseEntity.ok().eTag("\"" + order.rowVersion() + "\"")
                 .header("X-Data-Watermark", order.dataWatermark())
                 .cacheControl(CacheControl.noStore()).body(order);
+    }
+
+    @PatchMapping("/orders/{orderId}")
+    ResponseEntity<ClinicalOrderWire> update(
+            HttpServletRequest httpRequest,
+            @PathVariable UUID orderId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestHeader("If-Match") String ifMatch,
+            @RequestBody ClinicalOrderCreateRequestWire request) {
+        ClinicalIdentity identity = security.authorize(
+                httpRequest, request.organizationId(), request.facilityId(),
+                request.patientId(), request.encounterId());
+        long expectedVersion;
+        try {
+            expectedVersion = Long.parseLong(ifMatch.replace("\"", "").trim());
+        } catch (NumberFormatException error) {
+            throw new OrderException("ORDER_VERSION_INVALID", 400, "If-Match must contain the current row version");
+        }
+        return orderResponse(orders.update(identity, idempotencyKey, orderId, expectedVersion, request));
     }
 
     @PostMapping("/orders/{orderId}/sign")

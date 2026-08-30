@@ -94,6 +94,66 @@ final class OrderService {
         });
     }
 
+    ClinicalOrderWire update(
+            ClinicalIdentity identity, String idempotencyKey, UUID orderId, long expectedVersion,
+            ClinicalOrderCreateRequestWire request) {
+        validateCreate(request);
+        return transactions.execute(status -> {
+            LockedOrder current = lockOrder(
+                    identity.tenantId(), orderId, request.patientId(), request.encounterId(), request.facilityId());
+            if (current.rowVersion() != expectedVersion) {
+                throw new OrderException("ORDER_VERSION_CONFLICT", 409, "The draft order changed; reload before editing");
+            }
+            if (!"DRAFT".equals(current.status())) {
+                throw new OrderException("ORDER_STATE_INVALID", 409, "Only a draft order can be edited");
+            }
+            beginCommand(identity, "ORDER_UPDATE", idempotencyKey,
+                    sha256(orderId + "|" + expectedVersion + "|" + request.orderScope() + "|"
+                            + request.clinicalIndication().trim() + "|" + request.items()));
+            int updated = jdbc.sql("""
+                    update clinical_order set order_scope = :scope, clinical_indication = :indication,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and order_id = :order and status = 'DRAFT'
+                      and row_version = :expected
+                    """).param("scope", request.orderScope().name())
+                    .param("indication", request.clinicalIndication().trim())
+                    .param("tenant", identity.tenantId()).param("order", orderId)
+                    .param("expected", expectedVersion).update();
+            if (updated != 1) throw new OrderException("ORDER_VERSION_CONFLICT", 409, "The draft order changed");
+            jdbc.sql("delete from clinical_order_item where tenant_id = :tenant and order_id = :order")
+                    .param("tenant", identity.tenantId()).param("order", orderId).update();
+            for (ClinicalOrderItemCreateRequestWire item : request.items()) {
+                MedicationCatalog medication = "MEDICATION".equals(item.itemType().name())
+                        ? requireActiveMedication(identity.tenantId(), item.catalogCode().trim()) : null;
+                jdbc.sql("""
+                        insert into clinical_order_item(
+                          tenant_id, order_item_id, order_id, item_type, catalog_code,
+                          display_name, requested_quantity, quantity_unit, instructions, item_state,
+                          medication_catalog_version_id, drug_code, ingredient_code,
+                          dose_value, dose_unit, route_code, frequency_code)
+                        values (:tenant, :item_id, :order_id, :item_type, :catalog_code,
+                          :display_name, :quantity, :unit, :instructions, 'DRAFT',
+                          :medication_version, :drug_code, :ingredient_code,
+                          :dose_value, :dose_unit, :route_code, :frequency_code)
+                        """).param("tenant", identity.tenantId()).param("item_id", UUID.randomUUID())
+                        .param("order_id", orderId).param("item_type", item.itemType().name())
+                        .param("catalog_code", item.catalogCode().trim()).param("display_name", item.displayName().trim())
+                        .param("quantity", decimal(item.requestedQuantity())).param("unit", item.quantityUnit().trim())
+                        .param("instructions", blankToNull(item.instructions()))
+                        .param("medication_version", medication == null ? null : medication.versionId())
+                        .param("drug_code", medication == null ? null : medication.drugCode())
+                        .param("ingredient_code", medication == null ? null : medication.ingredientCode())
+                        .param("dose_value", item.doseValue() == null ? null : decimal(item.doseValue()))
+                        .param("dose_unit", blankToNull(item.doseUnit())).param("route_code", blankToNull(item.routeCode()))
+                        .param("frequency_code", blankToNull(item.frequencyCode())).update();
+            }
+            appendEvidence(identity, request.patientId(), orderId, expectedVersion + 1,
+                    "ORDER_DRAFT_UPDATED", "ClinicalOrderDraftUpdated");
+            completeCommand(identity, "ORDER_UPDATE", idempotencyKey, 200, orderId);
+            return snapshot(identity.tenantId(), orderId, request.patientId(), request.encounterId(), request.facilityId());
+        });
+    }
+
     ClinicalOrderWire get(
             ClinicalIdentity identity, UUID orderId, UUID patientId, UUID encounterId, UUID facilityId) {
         return snapshot(identity.tenantId(), orderId, patientId, encounterId, facilityId);

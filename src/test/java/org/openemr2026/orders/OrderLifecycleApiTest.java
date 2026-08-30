@@ -40,6 +40,34 @@ final class OrderLifecycleApiTest {
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 
     @Test
+    void givenDraftOrder_whenEditing_thenVersionedContentChangesBeforeSigning() throws Exception {
+        Encounter context = seedEncounter();
+        Lease lease = issueLease(context);
+        HttpResponse<String> created = send("POST", "/api/v1/orders", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "order_scope":"TEMPORARY","clinical_indication":"初始检查计划",
+                 "items":[{"item_type":"LAB","catalog_code":"LAB-CBC","display_name":"血常规",
+                   "requested_quantity":1,"quantity_unit":"次","instructions":"初始说明"}]}
+                """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
+                lease, context, UUID.randomUUID().toString());
+        JsonNode draft = objectMapper.readTree(created.body());
+
+        HttpResponse<String> edited = sendWithIfMatch("PATCH", "/api/v1/orders/" + draft.path("order_id").stringValue(), """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "order_scope":"TEMPORARY","clinical_indication":"复核后调整检查计划",
+                 "items":[{"item_type":"LAB","catalog_code":"LAB-CRP","display_name":"C反应蛋白",
+                   "requested_quantity":1,"quantity_unit":"次","instructions":"当日完成"}]}
+                """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
+                lease, context, UUID.randomUUID().toString(), draft.path("row_version").longValue());
+
+        assertThat(edited.statusCode()).isEqualTo(200);
+        JsonNode updated = objectMapper.readTree(edited.body());
+        assertThat(updated.path("row_version").longValue()).isEqualTo(2);
+        assertThat(updated.path("clinical_indication").stringValue()).isEqualTo("复核后调整检查计划");
+        assertThat(updated.path("items").get(0).path("catalog_code").stringValue()).isEqualTo("LAB-CRP");
+    }
+
+    @Test
     void givenOneEncounter_whenSigningAndPartiallyExecuting_thenEveryFactTracesToTheOrderAndWrongPatientIsDenied()
             throws Exception {
         Encounter context = seedEncounter();
@@ -253,6 +281,23 @@ final class OrderLifecycleApiTest {
         if (idempotencyKey != null) request.header("Idempotency-Key", idempotencyKey);
         if (body == null) request.method(method, HttpRequest.BodyPublishers.noBody());
         else request.header("Content-Type", "application/json")
+                .method(method, HttpRequest.BodyPublishers.ofString(body));
+        return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> sendWithIfMatch(
+            String method, String path, String body, Lease lease, Encounter context,
+            String idempotencyKey, long expectedVersion) throws Exception {
+        HttpRequest.Builder request = baseRequest(path)
+                .header("X-Context-Lease-Id", lease.id())
+                .header("X-Authorization-Watermark", lease.watermark())
+                .header("X-Organization-Context", ORGANIZATION)
+                .header("X-Facility-Context", FACILITY)
+                .header("X-Patient-Context", context.patientId().toString())
+                .header("X-Encounter-Context", context.encounterId().toString())
+                .header("Idempotency-Key", idempotencyKey)
+                .header("If-Match", "\"" + expectedVersion + "\"")
+                .header("Content-Type", "application/json")
                 .method(method, HttpRequest.BodyPublishers.ofString(body));
         return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
     }

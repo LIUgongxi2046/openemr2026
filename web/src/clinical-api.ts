@@ -871,6 +871,42 @@ export async function createClinicalOrder(
   }));
 }
 
+export async function updateClinicalOrder(
+  lease: ContextLeaseWire,
+  mode: 'outpatient' | 'inpatient',
+  order: ClinicalOrderWire,
+  input: {
+    orderScope: 'LONG_TERM' | 'TEMPORARY'; clinicalIndication: string;
+    itemType: 'MEDICATION' | 'LAB' | 'IMAGING' | 'TREATMENT' | 'NURSING' | 'DIET' | 'OTHER';
+    catalogCode: string; displayName: string; requestedQuantity: number; quantityUnit: string;
+    doseValue?: number; doseUnit?: string; routeCode?: string; frequencyCode?: string; instructions: string;
+  },
+): Promise<ClinicalOrderWire> {
+  const context = orderContext(mode);
+  return clinicalOrderWireSchema.parse(await request(`/orders/${order.order_id}`, {
+    method: 'PATCH',
+    headers: {
+      ...orderHeaders(lease, mode), 'Content-Type': 'application/json',
+      'Idempotency-Key': crypto.randomUUID(), 'If-Match': `"${order.row_version}"`,
+    },
+    body: JSON.stringify({
+      organization_id: clinicalContext.organizationId,
+      facility_id: clinicalContext.facilityId,
+      patient_id: context.patientId,
+      encounter_id: context.encounterId,
+      order_scope: input.orderScope,
+      clinical_indication: input.clinicalIndication,
+      items: [{
+        item_type: input.itemType, catalog_code: input.catalogCode, display_name: input.displayName,
+        requested_quantity: input.requestedQuantity, quantity_unit: input.quantityUnit,
+        dose_value: input.doseValue ?? null, dose_unit: input.doseUnit || null,
+        route_code: input.routeCode || null, frequency_code: input.frequencyCode || null,
+        instructions: input.instructions || null,
+      }],
+    }),
+  }));
+}
+
 export async function checkClinicalOrderSafety(
   lease: ContextLeaseWire,
   mode: 'outpatient' | 'inpatient',

@@ -966,6 +966,33 @@
             }
           }
         }
+      },
+      "patch": {
+        "operationId": "updateClinicalOrderDraft",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalOrderCreateRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "draft order updated with optimistic locking",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ClinicalOrder" } } }
+          }
+        }
       }
     },
     "/orders/{order_id}/safety-check": {

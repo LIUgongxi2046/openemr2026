@@ -30,6 +30,19 @@ describe('住院工作台九子菜单交互契约', () => {
     expect(views['./views/ResultsWorkspacePage.vue']).toContain('title="追加结果更正版本"');
     expect(views['./views/InpatientConsultationPage.vue']).toContain("action === 'reject'");
     expect(views['./views/InpatientPathwayPage.vue']).toContain('title="新建路径变异申请"');
+    expect(views['./views/WardPage.vue']).toContain('title="作废交接班草稿"');
+    expect(views['./views/WardPage.vue']).toContain('voidShiftHandover');
+  });
+
+  it('原型右侧责任栏覆盖全部九个住院二级菜单', () => {
+    expect(views['./views/InpatientWorkspacePage.vue']).toContain('mode="worklist"');
+    const journey = views['./views/InpatientJourneyPage.vue'];
+    for (const mode of ['overview', 'course', 'discharge']) expect(journey).toContain(`mode="${mode}"`);
+    expect(views['./views/OrdersWorkspacePage.vue']).toContain('mode="orders"');
+    expect(views['./views/ResultsWorkspacePage.vue']).toContain('mode="results"');
+    expect(views['./views/InpatientConsultationPage.vue']).toContain('mode="consult"');
+    expect(views['./views/InpatientPathwayPage.vue']).toContain('pathway-variance-panel');
+    expect(views['./views/WardPage.vue']).toContain('mode="ward"');
   });
 
   it('九个二级菜单仍由住院工作台导航契约完整承载', () => {
