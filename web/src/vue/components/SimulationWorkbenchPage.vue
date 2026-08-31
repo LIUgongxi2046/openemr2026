@@ -4,6 +4,7 @@ import { computed, reactive, ref, watch } from 'vue';
 import type { ConfigurationItemWire, ConfigurationLifecycleRequestWire, MockInterfaceWire, MockInvocationResultWire } from '../../generated/contracts';
 import { defineConfiguration, issueConfigurationLease, listConfigurations, transitionConfiguration, updateConfiguration } from '../../api/config';
 import { invokeMockInterface, issueMockLease, listMockInterfaces } from '../../api/mock';
+import { authSession } from '../../auth-session';
 import { clinicalContext } from '../../clinical-api';
 import type { SimulationWorkbenchDefinition } from '../simulation-workbenches';
 import AdminActionDialog from './AdminActionDialog.vue';
@@ -49,6 +50,7 @@ const selectedProfile = computed(() => activeProfiles.value.find((item) => item.
 const visibleResultFocus = computed(() => ['data_profile', ...props.definition.resultFocus].filter((key, index, keys) => keys.indexOf(key) === index).filter((key) =>
   result.value && Object.prototype.hasOwnProperty.call(result.value.payload, key)));
 const batchRecordCount = computed(() => Number((result.value?.payload?.data_profile as Record<string, unknown> | undefined)?.record_count ?? 0));
+const execution = computed(() => (result.value?.payload?.execution ?? null) as Record<string, unknown> | null);
 
 watch(() => props.definition.id, () => {
   entityValue.value = props.definition.defaultEntity; selectedCode.value = ''; selectedProfileId.value = '';
@@ -85,7 +87,7 @@ async function runScenario() {
     });
     notice.value = scenario.value === 'DEGRADED'
       ? '降级结果已返回；流程停在人工复核，不允许自动进入临床事实。'
-      : `场景执行完成，已使用生产启用配置“${selectedProfile.value.display_name}”。`;
+      : `场景执行完成，已使用已发布仿真配置“${selectedProfile.value.display_name}”。`;
   } catch (error) {
     const next = toClinicalIssue(error); failure.value = next;
     notice.value = next.code === 'MOCK_DEPENDENCY_UNAVAILABLE'
@@ -109,7 +111,7 @@ function resetForm(item?: ConfigurationItemWire | null) {
 }
 function openCreate() {
   editing.value = null; source.value = null; form.key = `${props.definition.id}-`; form.name = '';
-  form.description = `江城大学附属医院${props.definition.title}仿真配置`; resetForm(); editorOpen.value = true;
+  form.description = `${authSession.user?.organization_name ?? '当前医疗机构'}${props.definition.title}仿真配置`; resetForm(); editorOpen.value = true;
 }
 function openEdit(item: ConfigurationItemWire) {
   source.value = item; editing.value = item.status === 'DRAFT' ? item : null;
@@ -119,16 +121,34 @@ function openEdit(item: ConfigurationItemWire) {
 }
 function requestDelete(item: ConfigurationItemWire) { source.value = item; deleteOpen.value = true; }
 function payload() {
-  return {
+  const config: Record<string, unknown> = {
     schema_version: 1, workbench_id: props.definition.id, interface_code: form.interfaceCode,
-    hospital_level: '三级甲等', organization: '江城大学附属医院', facility: '本部院区',
+    hospital_level: '三级甲等',
+    organization: authSession.user?.organization_name ?? '当前登录医疗机构',
+    organization_code: authSession.user?.organization_id ?? 'SYNTHETIC-ORGANIZATION',
+    facility: authSession.user?.facility_name ?? '当前登录院区',
+    facility_code: authSession.user?.facility_id ?? 'SYNTHETIC-FACILITY',
     description: form.description.trim(), default_entity: form.defaultEntity.trim(), default_scenario: form.defaultScenario,
     owner_department: form.ownerDepartment.trim(), operating_window: form.operatingWindow.trim(),
     timeout_ms: Number(form.timeoutMs), retry_limit: Number(form.retryLimit), manual_fallback: form.manualFallback.trim(),
-    generation_method: 'DETERMINISTIC_SEEDED', generator_version: 'tertiary-business-v2',
+    generation_method: 'DETERMINISTIC_SEEDED', generator_version: 'tertiary-business-cn-v3',
     default_record_count: Number(form.recordCount), record_count_range: [12, 200], contains_real_phi: false,
-    documentation_version: 'v1.0 / 2026-08-28',
+    production_adapter_state: 'SYNTHETIC_ONLY',
+    china_standard_profile: {
+      hospital_platform: 'WS/T 846.1-846.11—2024', hospital_platform_function: 'WS/T 847—2024',
+      medical_record_management: '医疗机构病历管理规定（2013年版）', data_minimization: true, cross_border_allowed: false,
+    },
+    agent_policy: { mode: 'RULE_GUARDED', clinical_write_allowed: false, human_review_on_degraded: true, block_on_identity_mismatch: true },
+    documentation_version: 'v2.0 / 2026-08-31',
   };
+  if (form.interfaceCode === 'LIS_RESULTS') {
+    config.critical_value_policy = {
+      policy_code: 'JC-LAB-CRITICAL-2026-01', policy_name: '院级成人检验危急值演练目录',
+      requires_recheck: true, requires_reporter_receiver_ack: true, requires_closed_loop: true,
+      thresholds: { WBC: { low: 1, high: 30 }, HGB: { low: 50, high: 200 }, PLT: { low: 20, high: 1000 }, K: { low: 2.5, high: 6.5 }, NA: { low: 120, high: 160 }, CREA: { high: 707 }, GLU: { low: 2.8, high: 22.2 } },
+    };
+  }
+  return config;
 }
 async function save() {
   const lease = configLeaseQuery.data.value;
@@ -164,7 +184,7 @@ function nextAction(item: ConfigurationItemWire): ConfigurationLifecycleRequestW
   if (item.status === 'DRAFT') return 'SUBMIT'; if (item.status === 'PENDING_APPROVAL') return 'APPROVE';
   if (item.status === 'APPROVED') return 'PUBLISH'; return null;
 }
-function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '生产启用', DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已批准' } as Record<string, string>)[item.status] ?? item.status; }
+function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '仿真启用', DRAFT: '草稿', PENDING_APPROVAL: '待审批', APPROVED: '已批准' } as Record<string, string>)[item.status] ?? item.status; }
 </script>
 
 <template>
@@ -175,19 +195,19 @@ function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '生产启�
     <ClinicalPageState v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value || configLeaseQuery.isPending.value || profilesQuery.isPending.value" kind="loading" message="正在加载模拟接口、文档与三级医院配置" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="profilesQuery.refetch()" />
     <template v-else>
-      <section class="admin-metrics" aria-label="模拟接口配置统计"><article><span>配置版本</span><strong>{{ profiles.length }}</strong><small>当前子菜单</small></article><article><span>生产启用</span><strong>{{ activeProfiles.length }}</strong><small>直接控制场景调用</small></article><article><span>待发布草稿</span><strong>{{ draftProfiles.length }}</strong><small>不影响当前流量</small></article><article><span>医院基线</span><strong>三级甲等</strong><small>江城大学附属医院</small></article></section>
+      <section class="admin-metrics" aria-label="模拟接口配置统计"><article><span>配置版本</span><strong>{{ profiles.length }}</strong><small>当前子菜单</small></article><article><span>仿真启用</span><strong>{{ activeProfiles.length }}</strong><small>直接控制场景调用</small></article><article><span>待发布草稿</span><strong>{{ draftProfiles.length }}</strong><small>不影响当前流量</small></article><article><span>医院基线</span><strong>三级甲等</strong><small>{{ authSession.user?.organization_name ?? '当前医疗机构' }}</small></article></section>
       <p v-if="notice" class="admin-notice" :class="{ danger: failure }" role="status">{{ notice }}</p>
 
-      <section class="admin-panel profile-catalog"><header><div><h2>仿真配置与流程影响</h2><p>仅“生产启用”版本可进入运行流程；新建、编辑与删除均使用弹窗。</p></div><button class="btn primary" type="button" @click="openCreate">新建配置</button></header>
-        <div v-if="profiles.length" class="profile-grid"><article v-for="profile in profiles" :key="profile.config_id" class="profile-card" :class="{ selected: profile.config_id === selectedProfile?.config_id }"><div><code>{{ profile.config_key }}</code><span class="status" :class="profile.status === 'ACTIVE' ? 'green' : profile.status === 'DRAFT' ? 'blue' : 'amber'">{{ stateLabel(profile) }}</span></div><h3>{{ profile.display_name }}</h3><p>{{ profile.payload?.description }}</p><dl><div><dt>责任科室</dt><dd>{{ profile.payload?.owner_department }}</dd></div><div><dt>默认场景</dt><dd>{{ profile.payload?.default_scenario }}</dd></div><div><dt>生成规模</dt><dd>{{ profile.payload?.default_record_count ?? 36 }} 条 / 批</dd></div><div><dt>超时 / 重试</dt><dd>{{ profile.payload?.timeout_ms }} ms / {{ profile.payload?.retry_limit }} 次</dd></div></dl><div class="profile-actions"><button v-if="profile.status === 'ACTIVE'" class="btn sm" type="button" @click="selectedProfileId = profile.config_id">用于当前流程</button><button class="btn sm" type="button" @click="openEdit(profile)">{{ profile.status === 'DRAFT' ? '编辑' : '创建变更版' }}</button><button v-if="nextAction(profile)" class="btn sm primary" type="button" :disabled="Boolean(busy)" @click="lifecycle(profile, nextAction(profile)!)">{{ actionLabels[nextAction(profile)!] }}</button><button class="btn sm danger" type="button" :disabled="Boolean(busy)" @click="requestDelete(profile)">删除</button></div></article></div>
+      <section class="admin-panel profile-catalog"><header><div><h2>仿真配置与流程影响</h2><p>仅“仿真启用”版本可进入运行流程；新建、编辑与删除均使用弹窗。</p></div><button class="btn primary" type="button" @click="openCreate">新建配置</button></header>
+        <div v-if="profiles.length" class="profile-grid"><article v-for="profile in profiles" :key="profile.config_id" class="profile-card" :class="{ selected: profile.config_id === selectedProfile?.config_id }"><div><code>{{ profile.config_key }}</code><span class="status" :class="profile.status === 'ACTIVE' ? 'green' : profile.status === 'DRAFT' ? 'blue' : 'amber'">{{ stateLabel(profile) }}</span></div><h3>{{ profile.display_name }}</h3><p>{{ profile.payload?.description }}</p><dl><div><dt>责任科室</dt><dd>{{ profile.payload?.owner_department }}</dd></div><div><dt>默认场景</dt><dd>{{ profile.payload?.default_scenario }}</dd></div><div><dt>生成规模</dt><dd>{{ profile.payload?.default_record_count ?? 36 }} 条 / 批</dd></div><div><dt>超时 / 重试</dt><dd>{{ profile.payload?.timeout_ms }} ms / {{ profile.payload?.retry_limit }} 次</dd></div></dl><div class="profile-actions"><RouterLink class="btn sm" :to="`/mock-interfaces/${definition.id}/profiles/${profile.config_key}`">三级·配置详情</RouterLink><button v-if="profile.status === 'ACTIVE'" class="btn sm" type="button" @click="selectedProfileId = profile.config_id">用于当前流程</button><button class="btn sm" type="button" @click="openEdit(profile)">{{ profile.status === 'DRAFT' ? '编辑' : '创建变更版' }}</button><button v-if="nextAction(profile)" class="btn sm primary" type="button" :disabled="Boolean(busy)" @click="lifecycle(profile, nextAction(profile)!)">{{ actionLabels[nextAction(profile)!] }}</button><button class="btn sm danger" type="button" :disabled="Boolean(busy)" @click="requestDelete(profile)">删除</button></div></article></div>
         <div v-else class="admin-empty rich"><strong>暂无有效仿真配置</strong><p>请新建并按校验、审批、发布流程启用；无启用版本时场景严格阻断。</p><button class="button primary" @click="openCreate">新建三级医院仿真配置</button></div>
       </section>
 
-      <section class="simulation-controls" aria-label="模拟场景参数"><label>生产启用配置<select v-model="selectedProfileId" :disabled="!activeProfiles.length"><option v-for="item in activeProfiles" :key="item.config_id" :value="item.config_id">{{ item.display_name }}</option></select></label><label>适配器<select v-model="selectedCode"><option v-for="item in interfaces" :key="item.code" :value="item.code">{{ item.display_name }}</option></select></label><label>{{ definition.entityLabel }}<input v-model="entityValue" autocomplete="off" /></label><label>运行场景<select v-model="scenario"><option value="SUCCESS">成功 · 完整响应</option><option value="DEGRADED">降级 · 部分响应</option><option value="UNAVAILABLE">不可用 · 503</option></select></label><button class="button primary run-button" type="button" :disabled="busy === 'run' || !selected || !selectedProfile" @click="runScenario">{{ busy === 'run' ? '执行中…' : '运行场景' }}</button></section>
-      <div v-if="!activeProfiles.length" class="inline-notice error" role="status">没有生产启用的配置，调用流程已安全阻断。</div>
+      <section class="simulation-controls" aria-label="模拟场景参数"><label>仿真启用配置<select v-model="selectedProfileId" :disabled="!activeProfiles.length"><option v-for="item in activeProfiles" :key="item.config_id" :value="item.config_id">{{ item.display_name }}</option></select></label><label>适配器<select v-model="selectedCode"><option v-for="item in interfaces" :key="item.code" :value="item.code">{{ item.display_name }}</option></select></label><label>{{ definition.entityLabel }}<input v-model="entityValue" autocomplete="off" /></label><label>运行场景<select v-model="scenario"><option value="SUCCESS">成功 · 完整响应</option><option value="DEGRADED">降级 · 部分响应</option><option value="UNAVAILABLE">不可用 · 503</option></select></label><button class="button primary run-button" type="button" :disabled="busy === 'run' || !selected || !selectedProfile" @click="runScenario">{{ busy === 'run' ? '执行中…' : '运行场景' }}</button><RouterLink v-if="selectedProfile" class="button secondary run-button" :to="`/mock-interfaces/${definition.id}/profiles/${selectedProfile.config_key}/scenarios/${scenario}`">四级·场景治理</RouterLink></section>
+      <div v-if="!activeProfiles.length" class="inline-notice error" role="status">没有仿真启用的配置，调用流程已安全阻断。</div>
       <section class="simulation-stepper" aria-label="业务流程"><article v-for="(step,index) in definition.steps" :key="step" :class="{ complete: result, blocked: (failure && index > 0) || !activeProfiles.length }"><span>{{ index + 1 }}</span><strong>{{ step }}</strong><small>{{ !activeProfiles.length ? '配置未启用' : failure && index > 0 ? '依赖不可用，进入人工路径' : result ? '合成证据已生成' : '待执行' }}</small></article></section>
       <div class="simulation-layout">
-        <section class="admin-panel"><header><div><h2>场景结果</h2><p>{{ selected?.standard_interface ?? '标准接口' }}</p></div><span v-if="result" class="admin-status" :class="result.scenario === 'DEGRADED' ? 'warning' : 'active'">{{ result.scenario }}</span></header><div v-if="failure" class="simulation-unavailable"><strong>{{ failure.code }}</strong><p>{{ failure.message }}</p><ol><li>保留当前输入和上下文</li><li>转人工工作队列</li><li>恢复后使用相同业务键幂等重放</li></ol></div><div v-else-if="!result" class="admin-empty rich"><strong>待生成确定性场景证据</strong><p>选择生产启用配置后执行。</p></div><template v-else><dl class="simulation-evidence"><div><dt>确定性键</dt><dd><code>{{ result.deterministic_key }}</code></dd></div><div><dt>请求 ID</dt><dd><code>{{ result.request_id }}</code></dd></div><div><dt>业务批次</dt><dd>{{ batchRecordCount }} 条</dd></div><div><dt>合成时间</dt><dd>{{ new Date(result.produced_at).toLocaleString('zh-CN', { hour12: false }) }}</dd></div></dl><div class="simulation-focus"><article v-for="key in visibleResultFocus" :key="key"><span>{{ key }}</span><pre>{{ JSON.stringify(valueFor(key), null, 2) }}</pre></article></div></template></section>
+        <section class="admin-panel"><header><div><h2>场景结果</h2><p>{{ selected?.standard_interface ?? '标准接口' }}</p></div><span v-if="result" class="admin-status" :class="result.scenario === 'DEGRADED' ? 'warning' : 'active'">{{ result.scenario }}</span></header><div v-if="failure" class="simulation-unavailable"><strong>{{ failure.code }}</strong><p>{{ failure.message }}</p><ol><li>保留当前输入和上下文</li><li>转人工工作队列</li><li>恢复后使用相同业务键幂等重放</li></ol></div><div v-else-if="!result" class="admin-empty rich"><strong>待生成确定性场景证据</strong><p>选择仿真启用配置后执行。</p></div><template v-else><dl class="simulation-evidence"><div><dt>确定性键</dt><dd><code>{{ result.deterministic_key }}</code></dd></div><div><dt>请求 ID</dt><dd><code>{{ result.request_id }}</code></dd></div><div><dt>业务批次</dt><dd>{{ batchRecordCount }} 条</dd></div><div><dt>合成时间</dt><dd>{{ new Date(result.produced_at).toLocaleString('zh-CN', { hour12: false }) }}</dd></div></dl><div v-if="execution && selectedProfile" class="result-drilldown"><RouterLink class="button secondary" :to="`/mock-interfaces/${definition.id}/profiles/${selectedProfile.config_key}/scenarios/${scenario}/runs`">五级·运行历史</RouterLink><RouterLink class="button primary" :to="`/mock-interfaces/${definition.id}/profiles/${selectedProfile.config_key}/scenarios/${scenario}/runs/${execution.run_id}`">六级·运行详情</RouterLink></div><div class="simulation-focus"><article v-for="key in visibleResultFocus" :key="key"><span>{{ key }}</span><pre>{{ JSON.stringify(valueFor(key), null, 2) }}</pre></article></div></template></section>
         <aside class="admin-panel api-documentation"><header><div><h2>接口文档与替换契约</h2><p>{{ selected?.display_name ?? '请选择适配器' }}</p></div></header><template v-if="selected"><dl class="api-facts"><div><dt>调用方式</dt><dd><code>POST /api/v1/mock-interfaces/{{ selected.code }}/invoke</code></dd></div><div><dt>业务标准</dt><dd>{{ selected.standard_interface }}</dd></div><div><dt>认证与幂等</dt><dd>Bearer 会话 + 机构/院区上下文 + Idempotency-Key</dd></div><div><dt>用途边界</dt><dd>{{ selected.description }}</dd></div></dl><details open><summary>请求 JSON Schema</summary><pre class="mock-payload">{{ JSON.stringify(selected.request_schema, null, 2) }}</pre></details><details><summary>响应 JSON Schema</summary><pre class="mock-payload">{{ JSON.stringify(selected.response_schema, null, 2) }}</pre></details><details><summary>错误码与恢复</summary><ul><li><code>422 MOCK_SCENARIO_INVALID</code>：修正参数</li><li><code>503 MOCK_DEPENDENCY_UNAVAILABLE</code>：转人工队列并幂等重放</li><li><code>404 MOCK_INTERFACE_UNKNOWN</code>：核对适配器编码</li></ul></details><section class="replacement-guide"><strong>替换真实适配器</strong><ol><li>实现同一请求/响应契约</li><li>使用 Secret 引用，不保存明文凭据</li><li>通过成功、降级、不可用和幂等测试</li><li>独立审批、分阶段发布并保留回退</li></ol><p>{{ selected.integration_doc }}</p></section><ul class="simulation-safeguards"><li v-for="item in definition.safeguards" :key="item">{{ item }}</li></ul></template></aside>
       </div>
     </template>
@@ -260,8 +280,8 @@ function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '生产启�
 .profile-actions .btn { width: auto; min-width: 72px; }
 .simulation-controls {
   display: grid;
-  grid-template-columns: 1.2fr 1.1fr 1.2fr 1fr auto;
-  gap: 14px;
+  grid-template-columns: 1.1fr 1fr 1fr .9fr auto auto;
+  gap: 10px;
   align-items: end;
   padding: 15px 16px;
   border: 1px solid var(--line);
@@ -308,6 +328,7 @@ function stateLabel(item: ConfigurationItemWire) { return ({ ACTIVE: '生产启�
 .simulation-evidence div { min-width: 0; }
 .simulation-evidence dt, .api-facts dt { font-size: 11px; color: #697586; }
 .simulation-evidence dd, .api-facts dd { margin: 6px 0; overflow-wrap: anywhere; }
+.result-drilldown { display: flex; flex-wrap: wrap; gap: 10px; padding: 0 16px 14px; }
 .simulation-focus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0 16px 16px; }
 .simulation-focus article { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; }
 .simulation-focus span { font-size: 11px; color: #536273; }

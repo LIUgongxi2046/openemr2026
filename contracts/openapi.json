@@ -14392,6 +14392,16 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
           }
         ],
         "requestBody": {
@@ -14399,15 +14409,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true
+                "$ref": "#/components/schemas/MockInterfaceInvokeRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "deterministic synthetic response",
+            "description": "profile-bound, durable and idempotent synthetic response",
             "content": {
               "application/json": {
                 "schema": {
@@ -14415,7 +14424,55 @@
                 }
               }
             }
+          },
+          "409": { "description": "profile inactive, interface mismatch, or idempotency conflict" },
+          "422": { "description": "invalid simulation scenario, identifier, or record count" },
+          "503": { "description": "simulated upstream unavailable; failed run evidence retained" }
+        }
+      }
+    },
+    "/mock-interfaces/runs": {
+      "get": {
+        "operationId": "listMockInterfaceRuns",
+        "parameters": [
+          { "name": "workbench_id", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 96 } },
+          { "name": "profile_key", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 128 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "durable mock interface run history",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/MockInterfaceRun" } } } }
           }
+        }
+      }
+    },
+    "/mock-interfaces/runs/{run_id}": {
+      "get": {
+        "operationId": "getMockInterfaceRun",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "mock interface run, agent assessment and event timeline",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MockInterfaceRunDetail" } } }
+          },
+          "404": { "description": "run not found in current tenant" }
+        }
+      }
+    },
+    "/mock-interfaces/runs/{run_id}/evidence": {
+      "get": {
+        "operationId": "getMockInterfaceRunEvidence",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "immutable mock interface execution evidence",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MockInterfaceEvidence" } } }
+          },
+          "404": { "description": "run evidence not found in current tenant" }
         }
       }
     },
@@ -14702,6 +14759,90 @@
             "type": "string",
             "maxLength": 512
           }
+        }
+      },
+      "MockInterfaceInvokeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["profile_key", "simulation_scenario"],
+        "properties": {
+          "profile_key": { "type": "string", "minLength": 1, "maxLength": 128, "description": "approved and ACTIVE MOCK_INTERFACE_PROFILE key" },
+          "simulation_scenario": { "type": "string", "enum": ["SUCCESS", "DEGRADED", "UNAVAILABLE"] },
+          "record_count": { "type": "integer", "minimum": 12, "maximum": 200, "default": 36 },
+          "patient_id": { "type": "string", "format": "uuid", "pattern": "^018f0000-0000-7000-8000-000000[0-9a-fA-F]{6}$", "description": "isolated synthetic patient identifier only" },
+          "encounter_id": { "type": "string", "format": "uuid", "pattern": "^018f0000-0000-7000-8000-000000[0-9a-fA-F]{6}$", "description": "isolated synthetic encounter identifier only" },
+          "contains_real_phi": { "type": "boolean", "const": false },
+          "subject": { "type": "string", "maxLength": 256 },
+          "audio_ref": { "type": "string", "maxLength": 512 },
+          "model": { "type": "string", "maxLength": 256 },
+          "route_policy": { "type": "string", "maxLength": 256 },
+          "device_id": { "type": "string", "maxLength": 256 },
+          "trace_key": { "type": "string", "maxLength": 256 },
+          "batch_id": { "type": "string", "maxLength": 256 },
+          "content_ref": { "type": "string", "maxLength": 512 },
+          "specimen_id": { "type": "string", "maxLength": 256 },
+          "therapy_id": { "type": "string", "maxLength": 256 }
+        }
+      },
+      "MockInterfaceRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "profile_id", "workbench_id", "interface_code", "scenario", "status", "idempotency_key", "profile_version", "record_count", "evidence_hash", "started_at"],
+        "properties": {
+          "run_id": { "type": "string", "format": "uuid" },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "workbench_id": { "type": "string", "maxLength": 96 },
+          "interface_code": { "type": "string", "maxLength": 64 },
+          "scenario": { "type": "string", "enum": ["SUCCESS", "DEGRADED", "UNAVAILABLE"] },
+          "status": { "type": "string", "enum": ["COMPLETED", "REVIEW_REQUIRED", "BLOCKED", "FAILED"] },
+          "idempotency_key": { "type": "string", "maxLength": 128 },
+          "profile_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "record_count": { "type": "integer", "minimum": 0, "maximum": 200 },
+          "evidence_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "started_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "MockInterfaceRunDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "profile_id", "workbench_id", "interface_code", "scenario", "status", "idempotency_key", "request_hash", "profile_version", "record_count", "payload", "agent_assessment", "events", "evidence_hash", "created_by", "started_at", "completed_at"],
+        "properties": {
+          "run_id": { "type": "string", "format": "uuid" },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "workbench_id": { "type": "string" },
+          "interface_code": { "type": "string" },
+          "scenario": { "type": "string" },
+          "status": { "type": "string" },
+          "idempotency_key": { "type": "string", "maxLength": 128 },
+          "request_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "profile_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "record_count": { "type": "integer", "minimum": 0, "maximum": 200 },
+          "payload": { "type": "object", "additionalProperties": true },
+          "agent_assessment": { "type": "object", "additionalProperties": true },
+          "events": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+          "evidence_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "created_by": { "type": "string", "format": "uuid" },
+          "started_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": ["string", "null"], "format": "date-time" }
+        }
+      },
+      "MockInterfaceEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["run_id", "evidence_hash", "request_hash", "profile_id", "profile_version", "created_by", "started_at", "completed_at", "agent_assessment", "events", "verification"],
+        "properties": {
+          "run_id": { "type": "string", "format": "uuid" },
+          "evidence_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "request_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "profile_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "created_by": { "type": "string", "format": "uuid" },
+          "started_at": { "type": "string", "format": "date-time" },
+          "completed_at": { "type": "string", "format": "date-time" },
+          "agent_assessment": { "type": "object", "additionalProperties": true },
+          "events": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+          "verification": { "type": "string" }
         }
       },
       "ConfigurationItem": {

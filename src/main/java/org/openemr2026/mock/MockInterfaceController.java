@@ -23,10 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
 final class MockInterfaceController {
     private final ClinicalCommandSecurity security;
     private final MockInterfaceService mocks;
+    private final MockInterfaceExecutionService executions;
 
-    MockInterfaceController(ClinicalCommandSecurity security, MockInterfaceService mocks) {
+    MockInterfaceController(
+            ClinicalCommandSecurity security, MockInterfaceService mocks,
+            MockInterfaceExecutionService executions) {
         this.security = security;
         this.mocks = mocks;
+        this.executions = executions;
     }
 
     @GetMapping("/mock-interfaces")
@@ -42,11 +46,47 @@ final class MockInterfaceController {
     ResponseEntity<MockInvocationResultWire> invoke(
             HttpServletRequest request,
             @PathVariable("code") String code,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody Map<String, Object> payload,
             @RequestHeader("X-Organization-Context") UUID organizationId,
             @RequestHeader("X-Facility-Context") UUID facilityId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(mocks.invoke(code, payload == null ? Map.of() : payload));
+                .body(executions.invoke(identity, idempotencyKey, code, payload == null ? Map.of() : payload));
+    }
+
+    @GetMapping("/mock-interfaces/runs")
+    ResponseEntity<List<Map<String, Object>>> runs(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @org.springframework.web.bind.annotation.RequestParam(value = "workbench_id", required = false)
+                    String workbenchId,
+            @org.springframework.web.bind.annotation.RequestParam(value = "profile_key", required = false)
+                    String profileKey) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(executions.listRuns(identity, workbenchId, profileKey));
+    }
+
+    @GetMapping("/mock-interfaces/runs/{run_id}")
+    ResponseEntity<Map<String, Object>> run(
+            HttpServletRequest request,
+            @PathVariable("run_id") UUID runId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(executions.run(identity, runId));
+    }
+
+    @GetMapping("/mock-interfaces/runs/{run_id}/evidence")
+    ResponseEntity<Map<String, Object>> evidence(
+            HttpServletRequest request,
+            @PathVariable("run_id") UUID runId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId) {
+        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(executions.evidence(identity, runId));
     }
 }

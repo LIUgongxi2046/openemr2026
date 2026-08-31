@@ -24,6 +24,7 @@ final class ConfigurationApiTest {
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
+    private static final String ADMIN_ROLE = "018f0000-0000-7000-8000-00000000aa09";
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
     private static final String APPROVER = "018f0000-0000-7000-8000-00000000aa06";
     private static final String APPROVER_ROLE = "018f0000-0000-7000-8000-00000000aa07";
@@ -38,6 +39,11 @@ final class ConfigurationApiTest {
     private ClinicalIdentity approver() {
         return new ClinicalIdentity(
                 UUID.fromString(TENANT), UUID.fromString(APPROVER), List.of(UUID.fromString(APPROVER_ROLE)));
+    }
+
+    private ClinicalIdentity administrator() {
+        return new ClinicalIdentity(
+                UUID.fromString(TENANT), UUID.fromString(USER), List.of(UUID.fromString(ADMIN_ROLE)));
     }
 
     @Test
@@ -254,23 +260,45 @@ final class ConfigurationApiTest {
 
     @Test
     void givenCompleteMockInterfaceProfile_whenValidating_thenItCanEnterGovernedFlow() {
-        ConfigurationItemWire draft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+        ConfigurationItemWire draft = configurations.define(administrator(), "cfg-" + UUID.randomUUID(),
                 new ConfigurationItemDefineRequestWire("MOCK_INTERFACE_PROFILE",
                         "MOCK-" + UUID.randomUUID(), "LIS 三级医院仿真配置", Map.ofEntries(
                         Map.entry("schema_version", 1), Map.entry("workbench_id", "integration-connectors"),
                         Map.entry("interface_code", "LIS_RESULTS"), Map.entry("hospital_level", "三级甲等"),
-                        Map.entry("organization", "江城大学附属医院"), Map.entry("facility", "本部院区"),
+                        Map.entry("organization", "江城大学附属医院"), Map.entry("organization_code", TENANT),
+                        Map.entry("facility", "本部院区"), Map.entry("facility_code", "JC-BENBU"),
                         Map.entry("description", "检验结果与危急值回传"), Map.entry("default_entity", "SYN-001"),
                         Map.entry("default_scenario", "SUCCESS"), Map.entry("owner_department", "信息中心"),
                         Map.entry("operating_window", "7×24"), Map.entry("timeout_ms", 5000),
                         Map.entry("retry_limit", 3), Map.entry("manual_fallback", "转人工检验结果队列"),
-                        Map.entry("documentation_version", "v1.0 / 2026-08-28"))));
+                        Map.entry("default_record_count", 36), Map.entry("contains_real_phi", false),
+                        Map.entry("production_adapter_state", "SYNTHETIC_ONLY"),
+                        Map.entry("china_standard_profile", Map.of(
+                                "hospital_platform", "WS/T 846.1-846.11—2024",
+                                "hospital_platform_function", "WS/T 847—2024",
+                                "cross_border_allowed", false)),
+                        Map.entry("agent_policy", Map.of("clinical_write_allowed", false)),
+                        Map.entry("critical_value_policy", Map.of(
+                                "policy_code", "JC-LAB-CRITICAL-2026-01",
+                                "requires_reporter_receiver_ack", true,
+                                "requires_closed_loop", true)),
+                        Map.entry("documentation_version", "v2.0 / 2026-08-31"))));
 
-        ConfigurationItemWire validated = transition(identity(), draft,
+        ConfigurationItemWire validated = transition(administrator(), draft,
                 ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验模拟接口配置完整性");
 
         assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
         assertThat(validated.validationErrors()).isEmpty();
+    }
+
+    @Test
+    void givenClinicianRole_whenChangingMockProfile_thenAdministrationBoundaryDeniesWrite() {
+        assertThatThrownBy(() -> configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("MOCK_INTERFACE_PROFILE",
+                        "MOCK-DENIED-" + UUID.randomUUID(), "越权配置", Map.of())))
+                .isInstanceOf(ConfigurationException.class)
+                .satisfies(error -> assertThat(((ConfigurationException) error).code())
+                        .isEqualTo("MOCK_CONFIG_ADMIN_REQUIRED"));
     }
 
     @Test

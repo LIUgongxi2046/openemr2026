@@ -101,14 +101,47 @@ final class MockInterfaceService {
             String code, String name, String type, String desc,
             String standardInterface, Map<String, Object> requestSchema,
             Map<String, Object> responseSchema, String integrationDoc) {
-        Map<String, Object> enrichedRequestSchema = new java.util.LinkedHashMap<>(requestSchema);
-        enrichedRequestSchema.put("record_count", "int(12..200), default 36");
-        Map<String, Object> enrichedResponseSchema = new java.util.LinkedHashMap<>(responseSchema);
-        enrichedResponseSchema.put("data_profile", "tertiary-hospital generation metadata");
-        enrichedResponseSchema.put("business_records", "array<generated business record>");
-        enrichedResponseSchema.put("record_summary", "object");
+        Map<String, Object> requestProperties = new java.util.LinkedHashMap<>();
+        requestSchema.forEach((field, descriptor) -> requestProperties.put(field, Map.of(
+                "type", jsonType(String.valueOf(descriptor)), "description", String.valueOf(descriptor))));
+        requestProperties.put("profile_key", Map.of("type", "string", "description", "已批准并发布的工作台配置键"));
+        requestProperties.put("simulation_scenario", Map.of(
+                "type", "string", "enum", List.of("SUCCESS", "DEGRADED", "UNAVAILABLE")));
+        requestProperties.put("record_count", Map.of(
+                "type", "integer", "minimum", 12, "maximum", 200, "default", 36));
+        Map<String, Object> enrichedRequestSchema = Map.of(
+                "$schema", "https://json-schema.org/draft/2020-12/schema",
+                "title", code + " 仿真请求",
+                "type", "object",
+                "additionalProperties", false,
+                "required", List.of("profile_key", "simulation_scenario"),
+                "properties", requestProperties);
+        Map<String, Object> responseProperties = new java.util.LinkedHashMap<>();
+        responseSchema.forEach((field, descriptor) -> responseProperties.put(field, Map.of(
+                "type", jsonType(String.valueOf(descriptor)), "description", String.valueOf(descriptor))));
+        responseProperties.put("data_profile", Map.of("type", "object", "description", "三级医院、院区、标准和合成数据声明"));
+        responseProperties.put("business_records", Map.of("type", "array", "items", Map.of("type", "object")));
+        responseProperties.put("record_summary", Map.of("type", "object"));
+        responseProperties.put("safety_agent", Map.of("type", "object", "description", "规则型安全 Agent 的 PASS/REVIEW/BLOCK 结论"));
+        responseProperties.put("execution", Map.of("type", "object", "description", "持久运行、配置版本、幂等与证据标识"));
+        Map<String, Object> enrichedResponseSchema = Map.of(
+                "$schema", "https://json-schema.org/draft/2020-12/schema",
+                "title", code + " 仿真响应",
+                "type", "object",
+                "required", List.of("data_profile", "business_records", "record_summary", "safety_agent", "execution"),
+                "properties", responseProperties);
         return new MockInterfaceWire(code, name, type, desc,
                 standardInterface, enrichedRequestSchema, enrichedResponseSchema, integrationDoc);
+    }
+
+    private static String jsonType(String descriptor) {
+        String value = descriptor.toLowerCase();
+        if (value.startsWith("array") || value.endsWith("[]")) return "array";
+        if (value.contains("int")) return "integer";
+        if (value.contains("decimal") || value.contains("number")) return "number";
+        if (value.contains("bool")) return "boolean";
+        if (value.contains("object")) return "object";
+        return "string";
     }
 
     MockInvocationResultWire invoke(String code, Map<String, Object> payload) {

@@ -20,6 +20,13 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 final class ConfigurationService {
+    private static final List<String> MOCK_CONFIGURATION_ADMIN_ROLES =
+            List.of("SYSTEM_ADMIN", "CLINICAL_ADMIN", "INTEGRATION_OPERATOR");
+    private static final List<String> CONFIGURATION_AUTHOR_ROLES = List.of(
+            "SYSTEM_ADMIN", "CLINICAL_ADMIN", "CONFIG_AUTHOR", "CONFIG_APPROVER",
+            "AUTHORIZATION_ADMIN", "INTEGRATION_OPERATOR");
+    private static final List<String> CONFIGURATION_APPROVER_ROLES = List.of(
+            "SYSTEM_ADMIN", "CLINICAL_ADMIN", "CONFIG_APPROVER");
     private static final Map<String, List<String>> REQUIRED_FIELDS = Map.ofEntries(
             Map.entry("WORKFLOW", List.of("schema_version", "nodes", "edges", "protected_nodes", "timeout_policy")),
             Map.entry("FORM_TEMPLATE", List.of("schema_version", "fields", "groups", "terminology_mapping", "print_template")),
@@ -42,8 +49,10 @@ final class ConfigurationService {
             Map.entry("RELEASE_GATE", List.of("schema_version", "candidate_commit", "required_gates", "artifact_checksum", "rollback_entry")),
             Map.entry("MOCK_INTERFACE_PROFILE", List.of(
                     "schema_version", "workbench_id", "interface_code", "hospital_level", "organization",
-                    "facility", "description", "default_entity", "default_scenario", "owner_department",
-                    "operating_window", "timeout_ms", "retry_limit", "manual_fallback", "documentation_version")),
+                    "organization_code", "facility", "facility_code", "description", "default_entity",
+                    "default_scenario", "owner_department", "operating_window", "timeout_ms", "retry_limit",
+                    "manual_fallback", "production_adapter_state", "china_standard_profile", "agent_policy",
+                    "contains_real_phi", "documentation_version")),
             Map.entry("INTEGRATION_CONNECTOR", List.of("schema_version", "system_type", "protocol", "capabilities", "endpoint", "secret_reference", "timeout_retry", "circuit_breaker", "connector_version")),
             Map.entry("DEVICE_CATALOG", List.of("schema_version", "device_type", "manufacturer_model", "department", "gateway", "standard_interface", "calibration_due", "clock_offset_seconds", "binding_policy")),
             Map.entry("RESEARCH_PROJECT", List.of("schema_version", "project_type", "principal_investigator", "registry_number", "ethics_approval", "approved_purpose", "data_scope", "member_count", "expires_at")),
@@ -89,6 +98,8 @@ final class ConfigurationService {
 
     ConfigurationItemWire define(
             ClinicalIdentity identity, String idempotencyKey, ConfigurationItemDefineRequestWire request) {
+        requireConfigurationRole(identity, CONFIGURATION_AUTHOR_ROLES, "CONFIG_AUTHOR_REQUIRED");
+        requireMockConfigurationAdmin(identity, request.configType());
         String requestHash = sha256(idempotencyKey + "|" + request.configType() + "|" + request.configKey()
                 + "|" + json(request.payload()));
         return transactions.execute(status -> {
@@ -117,11 +128,13 @@ final class ConfigurationService {
     ConfigurationItemWire update(
             ClinicalIdentity identity, UUID configId, String idempotencyKey,
             ConfigurationItemUpdateRequestWire request) {
+        requireConfigurationRole(identity, CONFIGURATION_AUTHOR_ROLES, "CONFIG_AUTHOR_REQUIRED");
         String requestHash = sha256(idempotencyKey + "|" + configId + "|" + request.expectedVersion()
                 + "|" + request.displayName() + "|" + json(request.payload()));
         return transactions.execute(status -> {
             beginCommand(identity, "CONFIG_UPDATE", idempotencyKey, requestHash);
             ConfigState current = state(identity.tenantId(), configId, true);
+            requireMockConfigurationAdmin(identity, current.configType());
             requireVersion(current, request.expectedVersion());
             requireState(current, "DRAFT");
             int updated = jdbc.sql("""
@@ -154,6 +167,7 @@ final class ConfigurationService {
         return transactions.execute(status -> {
             beginCommand(identity, "CONFIG_LIFECYCLE", idempotencyKey, requestHash);
             ConfigState current = state(identity.tenantId(), configId, true);
+            requireMockConfigurationAdmin(identity, current.configType());
             requireVersion(current, request.expectedVersion());
             List<String> errors = validate(current.configType(), current.payload());
             String action = request.action().name();
@@ -210,6 +224,21 @@ final class ConfigurationService {
 
     private void publishTransition(ClinicalIdentity identity, ConfigState current) {
         requireState(current, "APPROVED");
+        if ("MOCK_INTERFACE_PROFILE".equals(current.configType())) {
+            String workbenchId = text(current.payload().get("workbench_id"));
+            if (workbenchId.isBlank()) {
+                throw new ConfigurationException(
+                        "CONFIG_VALIDATION_FAILED", 422, "模拟接口配置缺少 workbench_id");
+            }
+            jdbc.sql("""
+                    update config_item set status = 'ARCHIVED', published_at = null,
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
+                      and status = 'ACTIVE' and config_id <> :config
+                      and payload->>'workbench_id' = :workbench
+                    """).param("tenant", identity.tenantId()).param("config", current.configId())
+                    .param("workbench", workbenchId).update();
+        }
         jdbc.sql("""
                 update config_item set status = 'ACTIVE', published_at = now(),
                   row_version = row_version + 1, updated_at = now()
@@ -290,12 +319,56 @@ final class ConfigurationService {
             case "CAPABILITY_PACK_COMPOSITION" -> validateCapabilityComposition(payload, errors);
             case "CLINICAL_TASK_RULE" -> validateClinicalTaskRule(payload, errors);
             case "CLINICAL_PATHWAY" -> validateClinicalPathway(payload, errors);
+            case "MOCK_INTERFACE_PROFILE" -> validateMockInterfaceProfile(payload, errors);
             case "QUALITY_INITIATIVE", "DEPARTMENT_QC_CASE", "QUALITY_RATING_EVIDENCE",
                     "INFECTION_CONTROL_CASE", "CLINICAL_CREDENTIAL_GRANT" ->
                     validateQualityOperation(configType, payload, errors);
             default -> { }
         }
         return List.copyOf(errors);
+    }
+
+    private void validateMockInterfaceProfile(Map<String, Object> payload, List<String> errors) {
+        if (!"SYNTHETIC_ONLY".equals(text(payload.get("production_adapter_state")))) {
+            errors.add("模拟接口配置必须明确标记 production_adapter_state=SYNTHETIC_ONLY");
+        }
+        if (Boolean.TRUE.equals(payload.get("contains_real_phi"))) {
+            errors.add("模拟接口禁止配置为包含真实医疗健康数据");
+        }
+        if (!List.of("SUCCESS", "DEGRADED", "UNAVAILABLE").contains(text(payload.get("default_scenario")))) {
+            errors.add("模拟接口默认场景无效");
+        }
+        long timeout = number(payload.get("timeout_ms"));
+        long retry = number(payload.get("retry_limit"));
+        long count = number(payload.getOrDefault("default_record_count", 36));
+        if (timeout < 100 || timeout > 120_000) errors.add("超时必须为 100 至 120000 毫秒");
+        if (retry < 0 || retry > 10) errors.add("重试次数必须为 0 至 10");
+        if (count < 12 || count > 200) errors.add("每批记录数必须为 12 至 200");
+        Map<String, Object> standards = objectValue(payload.get("china_standard_profile"));
+        if (!"WS/T 846.1-846.11—2024".equals(text(standards.get("hospital_platform")))
+                || !"WS/T 847—2024".equals(text(standards.get("hospital_platform_function")))) {
+            errors.add("中国医院信息平台仿真必须绑定 WS/T 846/847—2024 配置");
+        }
+        if (Boolean.TRUE.equals(standards.get("cross_border_allowed"))) {
+            errors.add("模拟接口默认禁止医疗健康数据跨境");
+        }
+        Map<String, Object> agent = objectValue(payload.get("agent_policy"));
+        if (!Boolean.FALSE.equals(agent.get("clinical_write_allowed"))) {
+            errors.add("模拟接口 Agent 必须明确禁止临床事实写入");
+        }
+        if ("LIS_RESULTS".equals(text(payload.get("interface_code")))) {
+            Map<String, Object> critical = objectValue(payload.get("critical_value_policy"));
+            if (text(critical.get("policy_code")).isBlank()
+                    || !Boolean.TRUE.equals(critical.get("requires_reporter_receiver_ack"))
+                    || !Boolean.TRUE.equals(critical.get("requires_closed_loop"))) {
+                errors.add("LIS 仿真配置必须包含院级危急值复核、报告接收和闭环策略");
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> objectValue(Object value) {
+        return value instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
     }
 
     private static List<String> qualityOperationFields() {
@@ -514,6 +587,45 @@ final class ConfigurationService {
 
     private void requireVersion(ConfigState current, Long expectedVersion) {
         if (expectedVersion == null || current.rowVersion() != expectedVersion) throw versionConflict();
+    }
+
+    private void requireMockConfigurationAdmin(ClinicalIdentity identity, String configType) {
+        if (!"MOCK_INTERFACE_PROFILE".equals(configType)) return;
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new ConfigurationException("MOCK_CONFIG_ADMIN_REQUIRED", 403,
+                    "模拟接口配置只允许集成或系统管理岗位变更");
+        }
+        long allowed = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id = :tenant and user_id = :user
+                  and role_assignment_id in (:assignments) and role_code in (:roles)
+                  and status = 'ACTIVE' and valid_from <= now()
+                  and (valid_until is null or valid_until > now())
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds())
+                .param("roles", MOCK_CONFIGURATION_ADMIN_ROLES).query(Long.class).single();
+        if (allowed == 0) {
+            throw new ConfigurationException("MOCK_CONFIG_ADMIN_REQUIRED", 403,
+                    "当前岗位无权变更模拟接口配置");
+        }
+    }
+
+    private void requireConfigurationRole(ClinicalIdentity identity, List<String> allowedRoles, String code) {
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new ConfigurationException(code, 403, "当前岗位无权执行配置变更");
+        }
+        long allowed = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id = :tenant and user_id = :user
+                  and role_assignment_id in (:assignments) and role_code in (:roles)
+                  and status = 'ACTIVE' and valid_from <= now()
+                  and (valid_until is null or valid_until > now())
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", allowedRoles)
+                .query(Long.class).single();
+        if (allowed == 0) {
+            throw new ConfigurationException(code, 403, "当前岗位无权执行配置变更");
+        }
     }
 
     private void requireState(ConfigState current, String expected) {

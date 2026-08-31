@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import workbenchSource from './components/SimulationWorkbenchPage.vue?raw';
+import hierarchySource from './views/SimulationHierarchyPage.vue?raw';
+import routerSource from './router.ts?raw';
 import { mockInterfaceSubmenus, simulationWorkbenches } from './simulation-workbenches';
 
 describe('mock interface submenu contract', () => {
@@ -21,5 +23,23 @@ describe('mock interface submenu contract', () => {
 
   it('keeps the scenario result and API documentation panels top-aligned', () => {
     expect(workbenchSource).toContain('.simulation-layout > .admin-panel + .admin-panel { margin-top: 0; }');
+  });
+
+  it('implements profile, scenario, run, detail and evidence as real third-to-seventh-level routes', () => {
+    for (const routeName of [
+      'mock-interface-profile', 'mock-interface-scenario', 'mock-interface-runs',
+      'mock-interface-run-detail', 'mock-interface-run-evidence',
+    ]) expect(routerSource).toContain(`name: '${routeName}'`);
+    expect(hierarchySource).toContain('listMockInterfaceRuns');
+    expect(hierarchySource).toContain('getMockInterfaceRun');
+    expect(hierarchySource).toContain('getMockInterfaceEvidence');
+    expect(hierarchySource).toContain('规则型、可复现、无临床写权');
+  });
+
+  it('binds invocations to published profiles and exposes durable run drill-downs', () => {
+    expect(workbenchSource).toContain('production_adapter_state: \'SYNTHETIC_ONLY\'');
+    expect(workbenchSource).toContain('critical_value_policy');
+    expect(workbenchSource).toContain('五级·运行历史');
+    expect(workbenchSource).toContain('六级·运行详情');
   });
 });

@@ -34,6 +34,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
     static final UUID ADMIN_ROLE_ASSIGNMENT_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa09");
     static final UUID COLLABORATOR_USER_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa06");
     static final UUID COLLABORATOR_ROLE_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa07");
+    static final UUID CONFIG_AUTHOR_ROLE_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa18");
+    static final UUID CONFIG_APPROVER_ROLE_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa19");
     static final UUID SYNTHETIC_DEPARTMENT_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa08");
     static final UUID SYNTHETIC_WARD_ID = UUID.fromString("018f0000-0000-7000-8000-00000000bb01");
     static final UUID SYNTHETIC_BED_ID = UUID.fromString("018f0000-0000-7000-8000-00000000bb02");
@@ -1266,12 +1268,27 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   approval_state, approved_by, published_at, created_by)
                 select :tenant, seed.config_id::uuid, 'MOCK_INTERFACE_PROFILE', seed.config_key,
                   seed.display_name, cast(seed.payload as jsonb) || jsonb_build_object(
-                    'fixture_source', 'tertiary-business-generator-v2',
+                    'fixture_source', 'tertiary-business-generator-v3',
                     'generation_method', 'DETERMINISTIC_SEEDED',
-                    'generator_version', 'tertiary-business-v2',
+                    'generator_version', 'tertiary-business-cn-v3',
                     'default_record_count', 36,
                     'record_count_range', jsonb_build_array(12, 200),
-                    'contains_real_phi', false),
+                    'contains_real_phi', false,
+                    'organization_code', cast(:tenant as text),
+                    'facility_code', 'JC-BENBU',
+                    'production_adapter_state', 'SYNTHETIC_ONLY',
+                    'china_standard_profile', jsonb_build_object(
+                      'hospital_platform', 'WS/T 846.1-846.11—2024',
+                      'hospital_platform_function', 'WS/T 847—2024',
+                      'medical_record_management', '医疗机构病历管理规定（2013年版）',
+                      'data_minimization', true, 'cross_border_allowed', false),
+                    'agent_policy', jsonb_build_object(
+                      'mode', 'RULE_GUARDED', 'clinical_write_allowed', false,
+                      'human_review_on_degraded', true, 'block_on_identity_mismatch', true),
+                    'critical_value_policy', case when cast(seed.payload as jsonb)->>'interface_code' = 'LIS_RESULTS'
+                      then '{"policy_code":"JC-LAB-CRITICAL-2026-01","policy_name":"院级成人检验危急值演练目录","requires_recheck":true,"requires_reporter_receiver_ack":true,"requires_closed_loop":true,"thresholds":{"WBC":{"low":1.0,"high":30.0},"HGB":{"low":50.0,"high":200.0},"PLT":{"low":20.0,"high":1000.0},"K":{"low":2.5,"high":6.5},"NA":{"low":120.0,"high":160.0},"CREA":{"high":707.0},"GLU":{"low":2.8,"high":22.2}}}'::jsonb
+                      else '{}'::jsonb end,
+                    'documentation_version', 'v2.0 / 2026-08-31'),
                   'ACTIVE', 1, 1, 'VALID',
                   '[]'::jsonb, 'APPROVED', :approver, now() - interval '10 days', :author
                 from (values
@@ -1476,7 +1493,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                       published_at = excluded.published_at,
                       updated_at = now()
                     where config_item.payload->>'fixture_source' in (
-                      'tertiary-data-center-v1', 'tertiary-business-generator-v2')
+                      'tertiary-data-center-v1', 'tertiary-business-generator-v3')
                     """).param("tenant", TENANT_ID)
                     .param("id", required(row, "id")).param("type", required(row, "config_type"))
                     .param("key", required(row, "config_key")).param("name", required(row, "display_name"))
@@ -2760,6 +2777,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 """).param("tenant", TENANT_ID).param("role", COLLABORATOR_ROLE_ID)
                 .param("user", COLLABORATOR_USER_ID).param("org", ORGANIZATION_ID)
                 .param("facility", FACILITY_ID).update();
+        upsertConfigurationRole(CONFIG_AUTHOR_ROLE_ID, USER_ID, "CONFIG_AUTHOR");
+        upsertConfigurationRole(CONFIG_APPROVER_ROLE_ID, COLLABORATOR_USER_ID, "CONFIG_APPROVER");
         upsertDevelopmentCredential();
         jdbc.sql("""
                 insert into ai_use_case_policy(
@@ -2779,6 +2798,20 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   is distinct from (excluded.enabled, excluded.provider_code,
                     excluded.model_code, excluded.model_residency_policy, excluded.prompt_version)
                 """).param("tenant", TENANT_ID).update();
+    }
+
+    private void upsertConfigurationRole(UUID roleAssignmentId, UUID userId, String roleCode) {
+        jdbc.sql("""
+                insert into role_assignment(tenant_id, role_assignment_id, user_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                values (:tenant, :role, :user, :org, :facility, :role_code, now(), 'ACTIVE')
+                on conflict (tenant_id, role_assignment_id) do update
+                set user_id = excluded.user_id, organization_id = excluded.organization_id,
+                  facility_id = excluded.facility_id, role_code = excluded.role_code,
+                  status = 'ACTIVE', valid_until = null
+                """).param("tenant", TENANT_ID).param("role", roleAssignmentId).param("user", userId)
+                .param("org", ORGANIZATION_ID).param("facility", FACILITY_ID)
+                .param("role_code", roleCode).update();
     }
 
     void upsertDevelopmentCredential() {

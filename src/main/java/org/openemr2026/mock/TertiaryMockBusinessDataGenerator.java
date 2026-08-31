@@ -21,7 +21,7 @@ final class TertiaryMockBusinessDataGenerator {
     static final int DEFAULT_RECORD_COUNT = 36;
     static final int MIN_RECORD_COUNT = 12;
     static final int MAX_RECORD_COUNT = 200;
-    static final String GENERATOR_VERSION = "tertiary-business-v2";
+    static final String GENERATOR_VERSION = "tertiary-business-cn-v3";
 
     private static final List<String> CAMPUSES = List.of("本部院区", "东院区", "感染病院区");
     private static final List<String> DEPARTMENTS = List.of(
@@ -30,18 +30,18 @@ final class TertiaryMockBusinessDataGenerator {
             "妇产科", "儿科", "重症医学科", "麻醉科", "病理科", "医学影像科", "检验科",
             "康复医学科", "病案管理科", "信息中心");
     private static final List<TestDefinition> LAB_TESTS = List.of(
-            new TestDefinition("WBC", "白细胞计数", "10^9/L", 3.5, 9.5),
-            new TestDefinition("HGB", "血红蛋白", "g/L", 115, 150),
-            new TestDefinition("PLT", "血小板计数", "10^9/L", 125, 350),
-            new TestDefinition("K", "血钾", "mmol/L", 3.5, 5.3),
-            new TestDefinition("NA", "血钠", "mmol/L", 137, 147),
-            new TestDefinition("CREA", "肌酐", "μmol/L", 44, 106),
-            new TestDefinition("ALT", "丙氨酸氨基转移酶", "U/L", 7, 40),
-            new TestDefinition("CRP", "C 反应蛋白", "mg/L", 0, 8),
-            new TestDefinition("TNI", "高敏肌钙蛋白 I", "ng/L", 0, 34.2),
-            new TestDefinition("DD", "D-二聚体", "mg/L FEU", 0, 0.5),
-            new TestDefinition("GLU", "葡萄糖", "mmol/L", 3.9, 6.1),
-            new TestDefinition("PCT", "降钙素原", "ng/mL", 0, 0.05));
+            new TestDefinition("WBC", "白细胞计数", "10^9/L", 3.5, 9.5, 1.0, 30.0),
+            new TestDefinition("HGB", "血红蛋白", "g/L", 115, 150, 50.0, 200.0),
+            new TestDefinition("PLT", "血小板计数", "10^9/L", 125, 350, 20.0, 1000.0),
+            new TestDefinition("K", "血钾", "mmol/L", 3.5, 5.3, 2.5, 6.5),
+            new TestDefinition("NA", "血钠", "mmol/L", 137, 147, 120.0, 160.0),
+            new TestDefinition("CREA", "肌酐", "μmol/L", 44, 106, null, 707.0),
+            new TestDefinition("ALT", "丙氨酸氨基转移酶", "U/L", 7, 40, null, null),
+            new TestDefinition("CRP", "C 反应蛋白", "mg/L", 0, 8, null, null),
+            new TestDefinition("TNI", "高敏肌钙蛋白 I", "ng/L", 0, 34.2, null, null),
+            new TestDefinition("DD", "D-二聚体", "mg/L FEU", 0, 0.5, null, null),
+            new TestDefinition("GLU", "葡萄糖", "mmol/L", 3.9, 6.1, 2.8, 22.2),
+            new TestDefinition("PCT", "降钙素原", "ng/mL", 0, 0.05, null, null));
 
     Map<String, Object> generate(String code, Map<String, Object> payload, Instant producedAt) {
         int count = recordCount(payload);
@@ -52,7 +52,7 @@ final class TertiaryMockBusinessDataGenerator {
         }
 
         LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("data_profile", dataProfile(count, records));
+        response.put("data_profile", dataProfile(count, records, payload));
         response.put("business_records", records);
         response.put("record_summary", recordSummary(records));
         addCompatibilityProjection(code, payload, producedAt, response, records);
@@ -88,7 +88,7 @@ final class TertiaryMockBusinessDataGenerator {
             int index, int count) {
         LinkedHashMap<String, Object> record = new LinkedHashMap<>();
         record.put("business_id", stableUuid(code, payload, "business-" + index).toString());
-        boolean requestSubject = index == 0 && (payload.containsKey("patient_id") || payload.containsKey("encounter_id"));
+        boolean requestSubject = payload.containsKey("patient_id") || payload.containsKey("encounter_id");
         record.put("patient_id", requestSubject
                 ? str(payload, "patient_id", stableUuid(code, payload, "patient-0").toString())
                 : stableUuid(code, payload, "patient-" + (index % Math.max(12, count / 2))).toString());
@@ -104,9 +104,15 @@ final class TertiaryMockBusinessDataGenerator {
 
     private void labRecord(Map<String, Object> record, Instant producedAt, int index, SplittableRandom random) {
         TestDefinition test = LAB_TESTS.get(index % LAB_TESTS.size());
-        boolean critical = index > 0 && index % 17 == 0;
+        boolean criticalCandidate = index > 0 && index % 17 == 0
+                && (test.criticalLow() != null || test.criticalHigh() != null);
+        boolean highCritical = criticalCandidate && test.criticalHigh() != null
+                && (index % 2 == 0 || test.criticalLow() == null);
+        boolean critical = criticalCandidate;
         double value = critical
-                ? (index % 2 == 0 ? test.high() * 1.45 : Math.max(0, test.low() * 0.55))
+                ? highCritical
+                    ? test.criticalHigh() * 1.03
+                    : Math.max(0, test.criticalLow() * 0.97)
                 : test.low() + random.nextDouble() * (test.high() - test.low());
         record.put("specimen_id", "SPM-" + compactId(record, index));
         record.put("test_code", test.code());
@@ -114,7 +120,18 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("value", decimal(value, value < 10 ? 2 : 1));
         record.put("unit", test.unit());
         record.put("reference_range", decimal(test.low(), 1) + "–" + decimal(test.high(), 1));
-        record.put("flag", critical ? (value > test.high() ? "HH" : "LL") : "N");
+        record.put("flag", critical ? (highCritical ? "HH" : "LL") : "N");
+        record.put("critical", critical);
+        record.put("critical_policy_code", "JC-LAB-CRITICAL-2026-01");
+        record.put("critical_threshold", critical
+                ? decimal(highCritical ? test.criticalHigh() : test.criticalLow(), value < 10 ? 2 : 1)
+                : null);
+        record.put("critical_recheck_status", critical ? "RECHECK_CONFIRMED" : "NOT_APPLICABLE");
+        record.put("critical_reporter", critical ? "SYNTHETIC-LAB-TECH" : null);
+        record.put("critical_receiver", critical ? "SYNTHETIC-RESPONSIBLE-CLINICIAN" : null);
+        record.put("critical_acknowledged_at", critical ? producedAt.minusSeconds(60).toString() : null);
+        record.put("critical_handling", critical ? "合成演练：复核后电话报告并由临床接收确认" : null);
+        record.put("critical_closed_loop_status", critical ? "SIMULATION_CLOSED" : "NOT_APPLICABLE");
         record.put("status", index % 13 == 0 ? "PENDING_REVIEW" : "CONFIRMED");
         record.put("observed_at", producedAt.minusSeconds((long) index * 420L).toString());
     }
@@ -134,17 +151,25 @@ final class TertiaryMockBusinessDataGenerator {
     }
 
     private void settlementRecord(Map<String, Object> record, int index, SplittableRandom random) {
-        List<String> categories = List.of("检验", "检查", "药品", "治疗", "材料", "床位", "护理", "手术");
+        List<String> categories = List.of("诊疗项目", "医疗服务项目", "药品", "医用耗材", "检验", "检查", "床位", "手术");
         BigDecimal amount = BigDecimal.valueOf(18 + random.nextDouble() * 2480).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal ratio = BigDecimal.valueOf(0.55 + random.nextDouble() * 0.35).setScale(2, RoundingMode.HALF_UP);
+        String insuranceType = index % 3 == 0 ? "URRBMI" : "UEBMI";
+        BigDecimal ratio = BigDecimal.valueOf("UEBMI".equals(insuranceType) ? 0.80 : 0.70);
+        String category = categories.get(index % categories.size());
         record.put("claim_item_id", "CLMI-" + compactId(record, index));
-        record.put("item_code", "MED-" + String.format("%05d", 10000 + index));
-        record.put("item_name", categories.get(index % categories.size()) + "项目 " + String.format("%03d", index + 1));
-        record.put("category", categories.get(index % categories.size()));
+        record.put("item_code", "SYN-NHSA-" + String.format("%06d", 100000 + index));
+        record.put("local_item_code", "JC-" + String.format("%06d", 200000 + index));
+        record.put("code_system", "国家医疗保障信息业务编码标准（合成仿真）");
+        record.put("item_name", category + "仿真项目 " + String.format("%03d", index + 1));
+        record.put("category", category);
+        record.put("insurance_type", insuranceType);
+        record.put("policy_region", "江城市城镇基本医疗保险仿真政策");
+        record.put("catalog_eligibility", index % 11 == 0 ? "LIMITED_PAYMENT_REVIEW" : "ELIGIBLE");
         record.put("amount", amount.toPlainString());
         record.put("reimbursement_ratio", ratio);
         record.put("reimbursed_amount", amount.multiply(ratio).setScale(2, RoundingMode.HALF_UP).toPlainString());
-        record.put("settlement_status", index > 0 && index % 19 == 0 ? "MANUAL_REVIEW" : "SETTLED");
+        record.put("settlement_status", index > 0 && (index % 19 == 0 || index % 11 == 0) ? "MANUAL_REVIEW" : "SETTLED");
+        record.put("reconciliation_status", index % 19 == 0 ? "PENDING_RECONCILIATION" : "RECONCILED");
     }
 
     private void signatureRecord(Map<String, Object> record, Map<String, Object> payload, Instant producedAt, int index) {
@@ -154,7 +179,10 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("certificate_serial", "CA-SYN-" + compactId(record, index));
         record.put("signed_at", producedAt.minusSeconds((long) index * 180L).toString());
         record.put("algorithm", "SHA256withRSA");
-        record.put("verification_status", "VALID");
+        record.put("verification_status", "SYNTHETIC_NOT_LEGAL_EVIDENCE");
+        record.put("certificate_chain_verified", false);
+        record.put("revocation_checked", false);
+        record.put("legal_effect", false);
     }
 
     private void exchangeRecord(Map<String, Object> record, Map<String, Object> payload, int index, SplittableRandom random) {
@@ -201,6 +229,10 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("unit", metric.equals("SpO2") ? "%" : metric.equals("TEMP") ? "°C" : metric.startsWith("NIBP") || metric.equals("ETCO2") ? "mmHg" : metric.equals("HR") ? "bpm" : "rpm");
         record.put("quality", index % 23 == 0 ? "SUSPECT" : "VERIFIED");
         record.put("alarm_level", index % 17 == 0 ? "HIGH" : index % 11 == 0 ? "MEDIUM" : "NONE");
+        record.put("device_clock_offset_seconds", Math.floorMod(index, 9));
+        record.put("calibration_status", index % 29 == 0 ? "DUE_REVIEW" : "VALID");
+        record.put("binding_verified", true);
+        record.put("alarm_ack_status", index % 17 == 0 ? "PENDING_HUMAN_ACK" : "NOT_REQUIRED");
         record.put("observed_at", producedAt.minusSeconds((long) index * 10L).toString());
     }
 
@@ -251,7 +283,14 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("content_hash", str(payload, "content_hash", "sha256:" + compactId(record, index).toLowerCase()));
         record.put("format", formats.get(index % formats.size()));
         record.put("size_bytes", 64_000L + random.nextLong(80_000_000L));
-        record.put("retention_years", index % 8 == 0 ? 50 : 30);
+        String recordType = index % 3 == 0 ? "OUTPATIENT_EMERGENCY_RECORD" : "INPATIENT_MEDICAL_RECORD";
+        record.put("record_type", recordType);
+        record.put("retention_years", "OUTPATIENT_EMERGENCY_RECORD".equals(recordType) ? 15 : 30);
+        record.put("retention_basis", "OUTPATIENT_EMERGENCY_RECORD".equals(recordType)
+                ? "自患者最后一次就诊之日起不少于15年"
+                : "自患者最后一次出院之日起不少于30年");
+        record.put("legal_hold", index % 41 == 0);
+        record.put("destruction_approval_status", "NOT_DUE");
         record.put("sealed", true);
         record.put("restore_verification", index % 12 == 0 ? "SAMPLED_OK" : "NOT_DUE");
     }
@@ -287,8 +326,9 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("scheduled_slot", String.format("%02d:%02d", 8 + index % 10, (index % 4) * 15));
         record.put("patient_checked", true);
         record.put("order_checked", true);
-        record.put("dual_sign", index == 0 || index % 8 != 0);
-        record.put("status", index > 0 && index % 13 == 0 ? "PENDING_SECOND_CHECK" : "COMPLETED");
+        boolean dualSign = index == 0 || index % 8 != 0;
+        record.put("dual_sign", dualSign);
+        record.put("status", dualSign ? "COMPLETED" : "PENDING_SECOND_CHECK");
         record.put("adverse_event", index > 0 && index % 31 == 0 ? "MILD_REACTION_REPORTED" : "NONE");
         record.put("duration_minutes", 20 + random.nextInt(101));
     }
@@ -388,10 +428,14 @@ final class TertiaryMockBusinessDataGenerator {
         }
     }
 
-    private Map<String, Object> dataProfile(int count, List<Map<String, Object>> records) {
+    private Map<String, Object> dataProfile(
+            int count, List<Map<String, Object>> records, Map<String, Object> payload) {
+        Map<String, Object> runtime = valueMap(payload.get("_runtime_profile"));
         LinkedHashMap<String, Object> profile = new LinkedHashMap<>();
-        profile.put("hospital_level", "三级甲等");
-        profile.put("organization", "江城大学附属医院（业务仿真）");
+        profile.put("hospital_level", runtime.getOrDefault("hospital_level", "三级甲等"));
+        profile.put("organization", runtime.getOrDefault("organization", "江城大学附属医院（业务仿真）"));
+        profile.put("organization_code", runtime.getOrDefault("organization_code", "SYNTHETIC-ORGANIZATION"));
+        profile.put("facility_code", runtime.getOrDefault("facility_code", "SYNTHETIC-FACILITY"));
         profile.put("campuses", CAMPUSES);
         profile.put("business_domains", List.of("门急诊", "住院", "医技", "手术麻醉", "病案", "运营与集成"));
         profile.put("generation_scope", "TERTIARY_HOSPITAL_OPERATIONAL_BATCH");
@@ -403,6 +447,10 @@ final class TertiaryMockBusinessDataGenerator {
         profile.put("encounter_count", records.stream().map(item -> item.get("encounter_id")).filter(java.util.Objects::nonNull).distinct().count());
         profile.put("synthetic", true);
         profile.put("contains_real_phi", false);
+        profile.put("china_standard_profile", runtime.getOrDefault("china_standard_profile", Map.of(
+                "hospital_platform", "WS/T 846.1-846.11—2024",
+                "hospital_platform_function", "WS/T 847—2024")));
+        profile.put("production_adapter_state", "SYNTHETIC_ONLY");
         return profile;
     }
 
@@ -485,5 +533,12 @@ final class TertiaryMockBusinessDataGenerator {
         }
     }
 
-    private record TestDefinition(String code, String name, String unit, double low, double high) {}
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> valueMap(Object value) {
+        return value instanceof Map<?, ?> map ? (Map<String, Object>) map : Map.of();
+    }
+
+    private record TestDefinition(
+            String code, String name, String unit, double low, double high,
+            Double criticalLow, Double criticalHigh) {}
 }
