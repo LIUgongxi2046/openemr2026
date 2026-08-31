@@ -66,6 +66,78 @@ export const mockInvocationResultWireSchema = z.object({
 }).strict();
 export type MockInvocationResultWire = z.infer<typeof mockInvocationResultWireSchema>;
 
+export const mockInterfaceInvokeRequestWireSchema = z.object({
+  "profile_key": z.string(),
+  "simulation_scenario": z.enum(["SUCCESS","DEGRADED","UNAVAILABLE"]),
+  "record_count": z.number().int().optional(),
+  "patient_id": z.string().uuid().optional(),
+  "encounter_id": z.string().uuid().optional(),
+  "contains_real_phi": z.boolean().optional(),
+  "subject": z.string().optional(),
+  "audio_ref": z.string().optional(),
+  "model": z.string().optional(),
+  "route_policy": z.string().optional(),
+  "device_id": z.string().optional(),
+  "trace_key": z.string().optional(),
+  "batch_id": z.string().optional(),
+  "content_ref": z.string().optional(),
+  "specimen_id": z.string().optional(),
+  "therapy_id": z.string().optional(),
+}).strict();
+export type MockInterfaceInvokeRequestWire = z.infer<typeof mockInterfaceInvokeRequestWireSchema>;
+
+export const mockInterfaceRunWireSchema = z.object({
+  "run_id": z.string().uuid(),
+  "profile_id": z.string().uuid(),
+  "workbench_id": z.string(),
+  "interface_code": z.string(),
+  "scenario": z.enum(["SUCCESS","DEGRADED","UNAVAILABLE"]),
+  "status": z.enum(["COMPLETED","REVIEW_REQUIRED","BLOCKED","FAILED"]),
+  "idempotency_key": z.string(),
+  "profile_version": z.number().int(),
+  "record_count": z.number().int(),
+  "evidence_hash": z.string(),
+  "started_at": z.string(),
+  "completed_at": z.string().nullable().optional(),
+}).strict();
+export type MockInterfaceRunWire = z.infer<typeof mockInterfaceRunWireSchema>;
+
+export const mockInterfaceRunDetailWireSchema = z.object({
+  "run_id": z.string().uuid(),
+  "profile_id": z.string().uuid(),
+  "workbench_id": z.string(),
+  "interface_code": z.string(),
+  "scenario": z.string(),
+  "status": z.string(),
+  "idempotency_key": z.string(),
+  "request_hash": z.string(),
+  "profile_version": z.number().int(),
+  "record_count": z.number().int(),
+  "payload": z.record(z.string(), z.unknown()),
+  "agent_assessment": z.record(z.string(), z.unknown()),
+  "events": z.array(z.record(z.string(), z.unknown())),
+  "evidence_hash": z.string(),
+  "created_by": z.string().uuid(),
+  "started_at": z.string(),
+  "completed_at": z.string().nullable(),
+}).strict();
+export type MockInterfaceRunDetailWire = z.infer<typeof mockInterfaceRunDetailWireSchema>;
+
+export const mockInterfaceEvidenceWireSchema = z.object({
+  "run_id": z.string().uuid(),
+  "evidence_hash": z.string(),
+  "request_hash": z.string(),
+  "profile_id": z.string().uuid(),
+  "profile_version": z.number().int(),
+  "created_by": z.string().uuid(),
+  "started_at": z.string(),
+  "completed_at": z.string(),
+  "agent_assessment": z.record(z.string(), z.unknown()),
+  "events": z.array(z.record(z.string(), z.unknown())),
+  "verification": z.string(),
+}).strict();
+export type MockInterfaceEvidenceWire = z.infer<typeof mockInterfaceEvidenceWireSchema>;
+
 export const configurationItemWireSchema = z.object({
   "config_id": z.string().uuid(),
   "config_type": z.string(),
@@ -93,6 +165,21 @@ export const configurationItemDefineRequestWireSchema = z.object({
 }).strict();
 export type ConfigurationItemDefineRequestWire = z.infer<typeof configurationItemDefineRequestWireSchema>;
 
+export const configurationRevisionWireSchema = z.object({
+  "revision_no": z.number().int(),
+  "display_name": z.string(),
+  "payload": z.record(z.string(), z.unknown()),
+  "schema_version": z.number().int(),
+  "status": z.string(),
+  "validation_state": z.string(),
+  "validation_errors": z.array(z.string()),
+  "approval_state": z.string(),
+  "changed_by": z.string().uuid().nullable().optional(),
+  "change_reason": z.string().nullable().optional(),
+  "created_at": z.string(),
+}).strict();
+export type ConfigurationRevisionWire = z.infer<typeof configurationRevisionWireSchema>;
+
 export const configurationItemUpdateRequestWireSchema = z.object({
   "display_name": z.string(),
   "payload": z.record(z.string(), z.unknown()),
@@ -106,6 +193,57 @@ export const configurationLifecycleRequestWireSchema = z.object({
   "reason": z.string(),
 }).strict();
 export type ConfigurationLifecycleRequestWire = z.infer<typeof configurationLifecycleRequestWireSchema>;
+
+export const configurationRuntimeCommandRequestWireSchema = z.object({
+  "subject_type": z.string().nullable().optional(),
+  "subject_id": z.string().uuid().nullable().optional(),
+  "facts": z.record(z.string(), z.unknown()).optional(),
+}).strict();
+export type ConfigurationRuntimeCommandRequestWire = z.infer<typeof configurationRuntimeCommandRequestWireSchema>;
+
+export const configurationRuntimeTransitionRequestWireSchema = z.object({
+  "expected_version": z.number().int(),
+  "event_code": z.string(),
+  "facts": z.record(z.string(), z.unknown()).optional(),
+}).strict();
+export type ConfigurationRuntimeTransitionRequestWire = z.infer<typeof configurationRuntimeTransitionRequestWireSchema>;
+
+export const configurationRuntimeExecutionWireSchema = z.object({
+  "execution_id": z.string().uuid(),
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid().nullable().optional(),
+  "encounter_id": z.string().uuid().nullable().optional(),
+  "config_id": z.string().uuid(),
+  "config_type": z.string(),
+  "config_key": z.string(),
+  "config_row_version": z.number().int(),
+  "operation": z.enum(["WORKFLOW_START","WORKFLOW_TRANSITION","FORM_VALIDATE","RULE_EVALUATE","SCOPE_AUTHORIZE"]),
+  "subject_type": z.string().nullable().optional(),
+  "subject_id": z.string().uuid().nullable().optional(),
+  "state": z.enum(["ACTIVE","COMPLETED","PASSED","BLOCKED","DENIED","FAILED"]),
+  "current_node": z.string().nullable().optional(),
+  "input_payload": z.record(z.string(), z.unknown()),
+  "output_payload": z.record(z.string(), z.unknown()),
+  "configuration_watermark": z.string(),
+  "executed_by": z.string().uuid(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string(),
+}).strict();
+export type ConfigurationRuntimeExecutionWire = z.infer<typeof configurationRuntimeExecutionWireSchema>;
+
+export const configurationRuntimeEvidenceWireSchema = z.object({
+  "audit_event_id": z.string().uuid(),
+  "occurred_at": z.string(),
+  "actor_user_id": z.string().uuid().nullable().optional(),
+  "action_code": z.string(),
+  "trace_id": z.string(),
+  "previous_hash": z.string().nullable().optional(),
+  "event_hash": z.string(),
+  "details": z.record(z.string(), z.unknown()),
+}).strict();
+export type ConfigurationRuntimeEvidenceWire = z.infer<typeof configurationRuntimeEvidenceWireSchema>;
 
 export const outpatientFollowupWireSchema = z.object({
   "followup_id": z.string().uuid(),
@@ -4639,7 +4777,7 @@ export const medicalAgentRunCreateRequestWireSchema = z.object({
   "objective": z.string(),
   "model_deployment_id": z.string().uuid().nullable().optional(),
   "authorization_level": z.enum(["READ_ONLY","STANDARD","EXTENDED"]).optional(),
-  "context_scopes": z.array(z.enum(["RECORDS","ORDERS","RESULTS","TASKS","ATTACHMENTS"])).min(1).optional(),
+  "context_scopes": z.array(z.enum(["RECORDS","ORDERS","RESULTS","TASKS","ATTACHMENTS","CONFIGURATION"])).min(1).optional(),
 }).strict();
 export type MedicalAgentRunCreateRequestWire = z.infer<typeof medicalAgentRunCreateRequestWireSchema>;
 

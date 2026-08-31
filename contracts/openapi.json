@@ -14286,6 +14286,19 @@
       }
     },
     "/configurations/{config_id}": {
+      "get": {
+        "operationId": "getConfiguration",
+        "parameters": [{
+          "name": "config_id", "in": "path", "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "responses": {
+          "200": {
+            "description": "configuration item by tenant-scoped identifier",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationItem" } } }
+          }
+        }
+      },
       "put": {
         "operationId": "updateConfiguration",
         "parameters": [
@@ -14319,6 +14332,21 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/configurations/{config_id}/revisions": {
+      "get": {
+        "operationId": "listConfigurationRevisions",
+        "parameters": [{
+          "name": "config_id", "in": "path", "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "responses": {
+          "200": {
+            "description": "immutable configuration revision history",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationRevision" } } } }
           }
         }
       }
@@ -14357,6 +14385,150 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/workflows/{config_key}/instances": {
+      "post": {
+        "operationId": "startConfigurationWorkflow",
+        "parameters": [{
+          "name": "config_key",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "maxLength": 128 }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeCommandRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "version-bound workflow execution created from an approved active configuration",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/workflows/instances/{execution_id}/transitions": {
+      "post": {
+        "operationId": "transitionConfigurationWorkflow",
+        "parameters": [{
+          "name": "execution_id",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeTransitionRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "workflow execution transitioned after version and guard checks",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/forms/{config_key}/validate": {
+      "post": {
+        "operationId": "validateConfigurationForm",
+        "parameters": [{
+          "name": "config_key", "in": "path", "required": true,
+          "schema": { "type": "string", "maxLength": 128 }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "form values validated against the published template",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/rules/{config_key}/evaluate": {
+      "post": {
+        "operationId": "evaluateConfigurationRules",
+        "parameters": [{
+          "name": "config_key", "in": "path", "required": true,
+          "schema": { "type": "string", "maxLength": 128 }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "rule decisions generated from published evidence-bound rules",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/scopes/{config_key}/authorize": {
+      "post": {
+        "operationId": "authorizeConfigurationScope",
+        "parameters": [{
+          "name": "config_key", "in": "path", "required": true,
+          "schema": { "type": "string", "maxLength": 128 }
+        }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "minimum-necessary scope decision recorded",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/executions": {
+      "get": {
+        "operationId": "listConfigurationRuntimeExecutions",
+        "parameters": [
+          { "name": "config_type", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 64 } },
+          { "name": "config_key", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 128 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "authorized configuration runtime execution evidence",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/executions/{execution_id}": {
+      "get": {
+        "operationId": "getConfigurationRuntimeExecution",
+        "parameters": [{
+          "name": "execution_id", "in": "path", "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "responses": {
+          "200": {
+            "description": "configuration runtime execution with version watermark and evidence output",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ConfigurationRuntimeExecution" } } }
+          }
+        }
+      }
+    },
+    "/configuration-runtime/executions/{execution_id}/evidence": {
+      "get": {
+        "operationId": "listConfigurationRuntimeEvidence",
+        "parameters": [{
+          "name": "execution_id", "in": "path", "required": true,
+          "schema": { "type": "string", "format": "uuid" }
+        }],
+        "responses": {
+          "200": {
+            "description": "tamper-evident audit chain entries for one configuration execution",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigurationRuntimeEvidence" } } } }
           }
         }
       }
@@ -14975,6 +15147,24 @@
           }
         }
       },
+      "ConfigurationRevision": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision_no", "display_name", "payload", "schema_version", "status", "validation_state", "validation_errors", "approval_state", "created_at"],
+        "properties": {
+          "revision_no": { "type": "integer", "format": "int64", "minimum": 1 },
+          "display_name": { "type": "string", "maxLength": 256 },
+          "payload": { "type": "object", "additionalProperties": true },
+          "schema_version": { "type": "integer", "format": "int32", "minimum": 1 },
+          "status": { "type": "string" },
+          "validation_state": { "type": "string" },
+          "validation_errors": { "type": "array", "items": { "type": "string" } },
+          "approval_state": { "type": "string" },
+          "changed_by": { "type": ["string", "null"], "format": "uuid" },
+          "change_reason": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "ConfigurationItemUpdateRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -15029,6 +15219,78 @@
             "minLength": 8,
             "maxLength": 500
           }
+        }
+      },
+      "ConfigurationRuntimeCommandRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "subject_type": { "type": ["string", "null"], "maxLength": 64 },
+          "subject_id": { "type": ["string", "null"], "format": "uuid" },
+          "facts": { "type": "object", "additionalProperties": true, "maxProperties": 128 }
+        }
+      },
+      "ConfigurationRuntimeTransitionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expected_version", "event_code"],
+        "properties": {
+          "expected_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "event_code": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "facts": { "type": "object", "additionalProperties": true, "maxProperties": 128 }
+        }
+      },
+      "ConfigurationRuntimeExecution": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "execution_id", "organization_id", "facility_id", "config_id", "config_type", "config_key", "config_row_version",
+          "operation", "state", "input_payload", "output_payload", "configuration_watermark",
+          "executed_by", "row_version", "created_at", "updated_at"
+        ],
+        "properties": {
+          "execution_id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": ["string", "null"], "format": "uuid" },
+          "encounter_id": { "type": ["string", "null"], "format": "uuid" },
+          "config_id": { "type": "string", "format": "uuid" },
+          "config_type": { "type": "string", "maxLength": 64 },
+          "config_key": { "type": "string", "maxLength": 128 },
+          "config_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "operation": {
+            "type": "string",
+            "enum": ["WORKFLOW_START", "WORKFLOW_TRANSITION", "FORM_VALIDATE", "RULE_EVALUATE", "SCOPE_AUTHORIZE"]
+          },
+          "subject_type": { "type": ["string", "null"] },
+          "subject_id": { "type": ["string", "null"], "format": "uuid" },
+          "state": {
+            "type": "string",
+            "enum": ["ACTIVE", "COMPLETED", "PASSED", "BLOCKED", "DENIED", "FAILED"]
+          },
+          "current_node": { "type": ["string", "null"] },
+          "input_payload": { "type": "object", "additionalProperties": true },
+          "output_payload": { "type": "object", "additionalProperties": true },
+          "configuration_watermark": { "type": "string" },
+          "executed_by": { "type": "string", "format": "uuid" },
+          "row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ConfigurationRuntimeEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["audit_event_id", "occurred_at", "action_code", "trace_id", "event_hash", "details"],
+        "properties": {
+          "audit_event_id": { "type": "string", "format": "uuid" },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "actor_user_id": { "type": ["string", "null"], "format": "uuid" },
+          "action_code": { "type": "string" },
+          "trace_id": { "type": "string" },
+          "previous_hash": { "type": ["string", "null"], "minLength": 64, "maxLength": 64 },
+          "event_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "details": { "type": "object", "additionalProperties": true }
         }
       },
       "OutpatientFollowup": {
@@ -34602,7 +34864,7 @@
             "type": "array",
             "minItems": 1,
             "uniqueItems": true,
-            "items": { "type": "string", "enum": ["RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS"] }
+            "items": { "type": "string", "enum": ["RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS", "CONFIGURATION"] }
           }
         }
       },

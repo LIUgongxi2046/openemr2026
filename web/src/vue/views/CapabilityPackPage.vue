@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import type { CapabilityPackReleaseWire, CapabilityPackWire } from '../../generated/contracts';
 import type { ConfigurationItemWire } from '../../generated/contracts';
 import {
@@ -46,39 +47,32 @@ const targetPack = ref<CapabilityPackWire | null>(null);
 const compositionLease = useQuery({ queryKey: ['capability', 'composition-lease'], queryFn: issueConfigurationLease, retry: false, staleTime: 300000, gcTime: 0 });
 const compositionsQuery = useQuery({ queryKey: ['capability', 'compositions'], queryFn: () => listConfigurations(compositionLease.data.value!, 'CAPABILITY_PACK_COMPOSITION'), enabled: () => Boolean(compositionLease.data.value), retry: false });
 const composition = ref<ConfigurationItemWire | null>(null);
-const selectedModules = ref<string[]>(['CORE_PATIENT', 'CLINICAL_RECORD', 'ORDER_RESULT', 'DIGITAL_SIGNATURE', 'AUDIT_OUTBOX', 'SPECIALTY_CARDIOLOGY']);
-const moduleCatalog = [
-  { code: 'CORE_PATIENT', name: '患者与就诊核心', group: '公共内核', protected: true, requires: [] },
-  { code: 'CLINICAL_RECORD', name: '结构化病历', group: '公共内核', protected: true, requires: ['CORE_PATIENT'] },
-  { code: 'ORDER_RESULT', name: '医嘱与结果闭环', group: '临床业务', protected: false, requires: ['CORE_PATIENT'] },
-  { code: 'DIGITAL_SIGNATURE', name: '数字签署', group: '安全治理', protected: true, requires: ['CLINICAL_RECORD'] },
-  { code: 'AUDIT_OUTBOX', name: '审计与可靠事件', group: '安全治理', protected: true, requires: ['CORE_PATIENT'] },
-  { code: 'OUTPATIENT', name: '门诊诊疗闭环', group: '临床业务', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'EMERGENCY', name: '急诊急救绿色通道', group: '临床业务', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'INPATIENT', name: '住院诊疗与转科', group: '临床业务', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'NURSING', name: '护理执行与交接班', group: '临床业务', protected: false, requires: ['CORE_PATIENT', 'ORDER_RESULT'] },
-  { code: 'SURGERY', name: '围术期与手术安全', group: '临床业务', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'ANESTHESIA', name: '麻醉评估与复苏', group: '临床业务', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'CRITICAL_CARE', name: '重症监护与早期预警', group: '急危重症', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'MEDICAL_TECH', name: '检验影像病理协同', group: '医技协同', protected: false, requires: ['ORDER_RESULT'] },
-  { code: 'QUALITY_RESEARCH', name: '医疗质控与科研', group: '质控科研', protected: false, requires: ['CLINICAL_RECORD', 'AUDIT_OUTBOX'] },
-  { code: 'SPECIALTY_CARDIOLOGY', name: '心血管专科增强', group: '专科能力', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'SPECIALTY_PEDIATRICS', name: '儿科剂量与生长曲线', group: '专科能力', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'SPECIALTY_MENTAL_HEALTH', name: '精神心理与危机干预', group: '专科能力', protected: false, requires: ['CLINICAL_RECORD'] },
-  { code: 'SPECIALTY_ONCOLOGY', name: '肿瘤 MDT 与治疗计划', group: '专科能力', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'SPECIALTY_OBSTETRICS', name: '产前分娩与产后闭环', group: '专科能力', protected: false, requires: ['CLINICAL_RECORD', 'ORDER_RESULT'] },
-  { code: 'LEGACY_EXPORT', name: '旧版全量导出', group: '兼容能力', protected: false, requires: ['CORE_PATIENT'] },
-] as const;
-const missingDependencies = computed(() => moduleCatalog.flatMap(module => selectedModules.value.includes(module.code)
-  ? module.requires.filter(required => !selectedModules.value.includes(required)).map(required => `${module.name} 依赖 ${moduleCatalog.find(item => item.code === required)?.name ?? required}`) : []));
+type CapabilityModule = { code: string; name: string; group: string; protected: boolean; requires: string[] };
+const selectedModules = ref<string[]>([]);
+const moduleCatalog = computed<CapabilityModule[]>(() => {
+  const configs = compositionsQuery.data.value ?? [];
+  const raw = composition.value?.payload?.module_catalog
+    ?? configs.find(item => Array.isArray(item.payload?.module_catalog))?.payload?.module_catalog;
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((value) => {
+    if (!value || typeof value !== 'object') return [];
+    const row = value as Record<string, unknown>;
+    const code = String(row.code ?? '').trim(); const name = String(row.name ?? '').trim();
+    if (!code || !name) return [];
+    return [{ code, name, group: String(row.group ?? '未分组'), protected: row.protected === true,
+      requires: Array.isArray(row.requires) ? row.requires.map(String) : [] }];
+  });
+});
+const missingDependencies = computed(() => moduleCatalog.value.flatMap(module => selectedModules.value.includes(module.code)
+  ? module.requires.filter(required => !selectedModules.value.includes(required)).map(required => `${module.name} 依赖 ${moduleCatalog.value.find(item => item.code === required)?.name ?? required}`) : []));
 const conflicts = computed(() => selectedModules.value.includes('LEGACY_EXPORT')
   && selectedModules.value.some(code => code === 'QUALITY_RESEARCH' || code.startsWith('SPECIALTY_'))
   ? ['旧版全量导出与专科/质控的最小必要数据范围冲突'] : []);
 const rating = computed(() => {
   if (missingDependencies.value.length || conflicts.value.length) return '阻断发布';
-  if (selectedModules.value.length >= 10) return '三级医院综合 · A+';
-  if (selectedModules.value.some(code => code.startsWith('SPECIALTY_') || ['CRITICAL_CARE', 'SURGERY', 'ANESTHESIA'].includes(code))) return '三级医院闭环 · A';
-  return '通用可用 · B';
+  if (!moduleCatalog.value.length) return '数据库模块目录缺失';
+  const selected = selectedModules.value.length; const total = moduleCatalog.value.length;
+  return `内部运行就绪度 ${Math.round(selected / total * 100)}%`;
 });
 
 watch(packs, (value) => { if (!selectedPackId.value && value[0]) selectedPackId.value = value[0].capability_pack_id; }, { immediate: true });
@@ -87,7 +81,7 @@ watch([selectedPack, () => compositionsQuery.data.value], ([pack, configs]) => {
   const key = `composition-${pack.pack_code.toLowerCase()}`;
   composition.value = (configs ?? []).find(item => item.config_key === key) ?? null;
   const modules = composition.value?.payload?.selected_modules;
-  selectedModules.value = Array.isArray(modules) ? modules.map(String) : ['CORE_PATIENT', 'CLINICAL_RECORD', 'ORDER_RESULT', 'DIGITAL_SIGNATURE', 'AUDIT_OUTBOX', ...(pack.pack_code.includes('CARDIOLOGY') ? ['SPECIALTY_CARDIOLOGY'] : [])];
+  selectedModules.value = Array.isArray(modules) ? modules.map(String) : moduleCatalog.value.filter(item => item.protected).map(item => item.code);
 }, { immediate: true });
 
 async function saveComposition() {
@@ -95,12 +89,14 @@ async function saveComposition() {
   if (!lease || !pack || busy.value) return;
   busy.value = 'composition'; notice.value = '';
   const payload = {
-    schema_version: 2, capability_pack_id: pack.capability_pack_id, inherits_from: pack.inherits_from,
+    schema_version: 3, capability_pack_id: pack.capability_pack_id, inherits_from: pack.inherits_from,
+    module_catalog: moduleCatalog.value,
     selected_modules: selectedModules.value,
-    dependencies: moduleCatalog.flatMap(module => module.requires.map(required => ({ module: module.code, requires: required }))),
+    dependencies: moduleCatalog.value.flatMap(module => module.requires.map(required => ({ module: module.code, requires: required }))),
     conflicts: [{ left: 'LEGACY_EXPORT', right: 'QUALITY_RESEARCH' }],
-    protected_modules: moduleCatalog.filter(module => module.protected).map(module => module.code),
+    protected_modules: moduleCatalog.value.filter(module => module.protected).map(module => module.code),
     scope_overrides: [{ scope: pack.pack_name, module: selectedModules.value.at(-1) ?? 'CORE_PATIENT', effect: 'ENABLE' }],
+    rating_framework: { code: 'INTERNAL_OPERATIONAL_READINESS_V1', official_hospital_grade: false, description: '内部配置完整度与发布就绪度，不代表医院等级评审结论' },
     rating_impact: rating.value, rollout_tasks: ['运行依赖解析', '合成病例回放', '科室负责人联合签署'],
   };
   try {
@@ -233,10 +229,10 @@ async function transition(release: CapabilityPackReleaseWire, action: 'canary' |
       </div>
 
       <section class="admin-panel composition-panel" v-if="selectedPack">
-        <header><div><h2>能力组合与依赖解析 · {{ selectedPack.pack_name }}</h2><p>模块组合影响最终能力评级、依赖解析与科室发布范围。</p></div><button class="button primary" :disabled="Boolean(busy)" @click="capabilityDialog='composition-edit'">编辑能力组合</button></header>
+        <header><div><h2>能力组合与依赖解析 · {{ selectedPack.pack_name }}</h2><p>模块目录与组合均取自数据库；就绪度仅用于内部发布门禁，不代表医院等级评审结论。</p></div><div class="row-actions"><RouterLink v-if="composition" class="button secondary" :to="`/business-config/capability-pack/${composition.config_id}`">深层详情</RouterLink><button class="button primary" :disabled="Boolean(busy)||!moduleCatalog.length" @click="capabilityDialog='composition-edit'">编辑能力组合</button></div></header>
         <div class="composition-layout">
-          <div class="module-catalog module-catalog--readonly"><article v-for="module in moduleCatalog" :key="module.code" :class="{ selected: selectedModules.includes(module.code), protected: module.protected }"><span><b>{{ module.name }}</b><code>{{ module.code }}</code></span><em>{{ selectedModules.includes(module.code) ? '已启用' : '未启用' }} · {{ module.group }}</em></article></div>
-          <aside class="composition-summary"><h3>最终生效解析</h3><div class="rating" :class="{ blocked: missingDependencies.length || conflicts.length }"><span>能力评级</span><b>{{ rating }}</b></div><section><b>继承链</b><p>平台安全基线 → {{ selectedPack.inherits_from || '独立能力包' }} → {{ selectedPack.pack_code }} → 科室范围覆盖</p></section><section><b>依赖与冲突</b><p v-if="!missingDependencies.length && !conflicts.length" class="ok">依赖完整，无互斥冲突</p><ul><li v-for="item in missingDependencies" :key="item">{{ item }}</li><li v-for="item in conflicts" :key="item">{{ item }}</li></ul></section><section><b>发布任务</b><p>合成病例回放 · 科室负责人联合签署 · 灰度观察 · 审计留痕</p></section></aside>
+          <div class="module-catalog module-catalog--readonly"><p v-if="!moduleCatalog.length" class="admin-empty">数据库尚未登记能力模块目录，禁止用页面常量回退。</p><article v-for="module in moduleCatalog" :key="module.code" :class="{ selected: selectedModules.includes(module.code), protected: module.protected }"><span><b>{{ module.name }}</b><code>{{ module.code }}</code></span><em>{{ selectedModules.includes(module.code) ? '已启用' : '未启用' }} · {{ module.group }}</em></article></div>
+          <aside class="composition-summary"><h3>最终生效解析</h3><div class="rating" :class="{ blocked: missingDependencies.length || conflicts.length || !moduleCatalog.length }"><span>内部运行就绪度</span><b>{{ rating }}</b></div><section><b>继承链</b><p>平台安全基线 → {{ selectedPack.inherits_from || '独立能力包' }} → {{ selectedPack.pack_code }} → 科室范围覆盖</p></section><section><b>依赖与冲突</b><p v-if="moduleCatalog.length&&!missingDependencies.length&&!conflicts.length" class="ok">依赖完整，无互斥冲突</p><ul><li v-for="item in missingDependencies" :key="item">{{ item }}</li><li v-for="item in conflicts" :key="item">{{ item }}</li></ul></section><section><b>发布任务</b><p>合成病例回放 · 科室负责人联合签署 · 灰度观察 · 审计留痕</p></section></aside>
         </div>
       </section>
 

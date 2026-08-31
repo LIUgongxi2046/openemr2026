@@ -68,7 +68,7 @@ final class MedicalAgentHarnessController {
                 requestWire.targetId(), requestWire.objective(), requestWire.modelDeploymentId(),
                 requestWire.authorizationLevel() == null ? "STANDARD" : requestWire.authorizationLevel().name(),
                 requestWire.contextScopes() == null || requestWire.contextScopes().isEmpty()
-                        ? List.of("RECORDS", "ORDERS", "RESULTS", "TASKS")
+                        ? List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "CONFIGURATION")
                         : requestWire.contextScopes().stream().map(Enum::name).toList());
         ClinicalIdentity identity = security.authorize(request, command.organizationId(), command.facilityId(),
                 command.patientId(), command.encounterId());

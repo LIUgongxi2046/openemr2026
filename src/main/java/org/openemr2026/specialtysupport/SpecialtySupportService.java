@@ -178,6 +178,10 @@ final class SpecialtySupportService {
                 == DepartmentSupportAssessmentPutRequestWire.SupportLevelValue.GENERAL_AVAILABLE
                 || request.supportLevel()
                 == DepartmentSupportAssessmentPutRequestWire.SupportLevelValue.BASIC_CLOSED_LOOP;
+        if (positive && request.packReleaseId() == null) {
+            throw new SpecialtySupportException(
+                    "PACK_REQUIRED", 409, "A positive support declaration requires an active specialty pack release");
+        }
         if (positive && (request.evidenceBundleHash() == null || !HASH.matcher(request.evidenceBundleHash()).matches())) {
             throw new SpecialtySupportException(
                     "SAFETY_GATE_MISSING", 409, "A positive support declaration requires a verified evidence bundle hash");

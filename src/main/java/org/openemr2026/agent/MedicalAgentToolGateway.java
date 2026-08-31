@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.openemr2026.configuration.ConfigurationRuntimeService;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
@@ -23,21 +24,25 @@ final class MedicalAgentToolGateway {
             "ORDERS", new ToolDefinition("CLINICAL_ORDER_READ", "当前就诊医嘱读取"),
             "RESULTS", new ToolDefinition("CLINICAL_RESULT_READ", "当前就诊结果读取"),
             "TASKS", new ToolDefinition("CLINICAL_TASK_READ", "当前就诊任务读取"),
-            "ATTACHMENTS", new ToolDefinition("CLINICAL_ATTACHMENT_READ", "当前就诊附件元数据读取"));
+            "ATTACHMENTS", new ToolDefinition("CLINICAL_ATTACHMENT_READ", "当前就诊附件元数据读取"),
+            "CONFIGURATION", new ToolDefinition("BUSINESS_CONFIGURATION_READ", "已发布业务配置与运行时证据读取"));
 
     private final JdbcClient jdbc;
     private final ObjectMapper objectMapper;
+    private final ConfigurationRuntimeService configurationRuntime;
 
-    MedicalAgentToolGateway(JdbcClient jdbc, ObjectMapper objectMapper) {
+    MedicalAgentToolGateway(
+            JdbcClient jdbc, ObjectMapper objectMapper, ConfigurationRuntimeService configurationRuntime) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
+        this.configurationRuntime = configurationRuntime;
     }
 
     List<ToolResult> execute(
             UUID tenantId, UUID runId, UUID childRunId, UUID leaseId, UUID patientId, UUID encounterId,
             String authorizationWatermark, Set<String> scopes) {
         List<ToolResult> results = new ArrayList<>();
-        for (String scope : List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS")) {
+        for (String scope : List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS", "CONFIGURATION")) {
             if (scopes.contains(scope)) {
                 results.add(executeOne(tenantId, runId, childRunId, leaseId, patientId, encounterId,
                         authorizationWatermark, TOOLS.get(scope)));
@@ -104,6 +109,7 @@ final class MedicalAgentToolGateway {
             case "CLINICAL_RESULT_READ" -> results(tenantId, patientId, encounterId);
             case "CLINICAL_TASK_READ" -> tasks(tenantId, patientId, encounterId);
             case "CLINICAL_ATTACHMENT_READ" -> attachments(tenantId, patientId, encounterId);
+            case "BUSINESS_CONFIGURATION_READ" -> configurationRuntime.activeConfigurationsForAgent(tenantId);
             default -> throw new AgentRunException("MEDICAL_AGENT_TOOL_NOT_ALLOWED", 403,
                     "The requested tool is not in the medical-agent allowlist");
         };

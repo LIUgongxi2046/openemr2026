@@ -24,7 +24,8 @@ final class MedicalAgentHarnessService {
 
     private static final Set<String> TARGET_TYPES = Set.of("ENCOUNTER", "DOCUMENT", "RESULT", "TASK", "CARE_PLAN");
     private static final Set<String> AUTHORIZATION_LEVELS = Set.of("READ_ONLY", "STANDARD", "EXTENDED");
-    private static final Set<String> CONTEXT_SCOPES = Set.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS");
+    private static final Set<String> CONTEXT_SCOPES = Set.of(
+            "RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS", "CONFIGURATION");
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;

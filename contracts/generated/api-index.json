@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 488,
+  "operation_count": 501,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -153,6 +153,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:approveResearchDatasetRequest",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "authorizeConfigurationScope",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/configuration-runtime/scopes/{config_key}/authorize",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ConfigurationRuntimeCommandRequest",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:authorizeConfigurationScope",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2563,6 +2580,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "evaluateConfigurationRules",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/configuration-runtime/rules/{config_key}/evaluate",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ConfigurationRuntimeCommandRequest",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:evaluateConfigurationRules",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "expireOverdueClinicalTasks",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2712,6 +2746,40 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:getClinicalOrder",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getConfiguration",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/configurations/{config_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ConfigurationItem",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getConfiguration",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getConfigurationRuntimeExecution",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/configuration-runtime/executions/{execution_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getConfigurationRuntimeExecution",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2886,6 +2954,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "getMockInterfaceRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/mock-interfaces/runs/{run_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MockInterfaceRunDetail",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getMockInterfaceRun",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getMockInterfaceRunEvidence",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/mock-interfaces/runs/{run_id}/evidence",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MockInterfaceEvidence",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getMockInterfaceRunEvidence",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "getPatientTimeline",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -2942,7 +3044,7 @@
       "method": "POST",
       "path": "/mock-interfaces/{code}/invoke",
       "auth": "OIDC_SESSION + ContextLease + domain authorization",
-      "input_schema": "object",
+      "input_schema": "MockInterfaceInvokeRequest",
       "output_schema": "MockInvocationResult",
       "error_refs": [
         "API_ERROR"
@@ -3426,6 +3528,57 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listClinicalTaskTeamQueues",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listConfigurationRevisions",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/configurations/{config_id}/revisions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ConfigurationRevision[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listConfigurationRevisions",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listConfigurationRuntimeEvidence",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/configuration-runtime/executions/{execution_id}/evidence",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ConfigurationRuntimeEvidence[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listConfigurationRuntimeEvidence",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listConfigurationRuntimeExecutions",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/configuration-runtime/executions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ConfigurationRuntimeExecution[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listConfigurationRuntimeExecutions",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -4395,6 +4548,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listMetricSnapshots",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listMockInterfaceRuns",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/mock-interfaces/runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "MockInterfaceRun[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMockInterfaceRuns",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7502,6 +7672,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "startConfigurationWorkflow",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/configuration-runtime/workflows/{config_key}/instances",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ConfigurationRuntimeCommandRequest",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:startConfigurationWorkflow",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "startEmergencyObservation",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7736,6 +7923,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:transitionConfigurationLifecycle",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "transitionConfigurationWorkflow",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/configuration-runtime/workflows/instances/{execution_id}/transitions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ConfigurationRuntimeTransitionRequest",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:transitionConfigurationWorkflow",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8059,6 +8263,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:uploadDocumentAttachment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "validateConfigurationForm",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/configuration-runtime/forms/{config_key}/validate",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ConfigurationRuntimeCommandRequest",
+      "output_schema": "ConfigurationRuntimeExecution",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:validateConfigurationForm",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

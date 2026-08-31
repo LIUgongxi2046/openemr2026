@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watch } from 'vue';
+import { RouterLink } from 'vue-router';
 import type { DepartmentSupportAssessmentWire } from '../../generated/contracts';
 import { createSpecialtySupportAssessment, deleteSpecialtySupportAssessment, issueSpecialtySupportLease, loadSpecialtySupportAssessments, updateSpecialtySupportAssessment } from '../../clinical-api';
 import { toClinicalIssue } from '../clinical-error';
@@ -27,7 +28,25 @@ const scopeName: Record<string, string> = {
 };
 const filtered = computed(() => filter.value === 'ALL' ? assessments.value : assessments.value.filter(item => item.support_level === filter.value));
 function levelLabel(level: string) { return ({ GENERAL_AVAILABLE: '通用可用', BASIC_CLOSED_LOOP: '基础闭环', PACK_PENDING: '能力包待配', UNSUPPORTED: '暂不支持' } as Record<string, string>)[level] ?? level; }
-function coverage(level: string) { return level === 'GENERAL_AVAILABLE' ? 100 : level === 'BASIC_CLOSED_LOOP' ? 78 : level === 'PACK_PENDING' ? 42 : 18; }
+function dimensionChecks(item: DepartmentSupportAssessmentWire) {
+  const gates = item.missing_safety_gates;
+  const positive = ['GENERAL_AVAILABLE', 'BASIC_CLOSED_LOOP'].includes(item.support_level);
+  const expiryValid = Boolean(item.expires_at && new Date(item.expires_at).getTime() > Date.now());
+  return [
+    { name: dimensions[0], passed: item.support_level !== 'UNSUPPORTED' },
+    { name: dimensions[1], passed: positive },
+    { name: dimensions[2], passed: /^[A-Z][A-Z0-9_-]{1,63}$/.test(item.clinical_scope_code) },
+    { name: dimensions[3], passed: Boolean(item.pack_release_id) },
+    { name: dimensions[4], passed: !gates.some(gate => gate.includes('DEVICE') || gate.includes('INTERFACE')) },
+    { name: dimensions[5], passed: gates.length === 0 },
+    { name: dimensions[6], passed: !gates.some(gate => gate.includes('RECOVERY')) },
+    { name: dimensions[7], passed: Boolean(item.evidence_bundle_hash?.match(/^[a-f0-9]{64}$/)) && expiryValid && !gates.some(gate => gate.includes('MIGRATION')) },
+  ];
+}
+function coverage(item: DepartmentSupportAssessmentWire) {
+  const checks = dimensionChecks(item);
+  return Math.round(checks.filter(check => check.passed).length / checks.length * 100);
+}
 function select(item: DepartmentSupportAssessmentWire) { selected.value = item; notice.value = ''; }
 function fillForm(item?: DepartmentSupportAssessmentWire | null) {
   form.department_id = item?.department_id ?? assessments.value[0]?.department_id ?? '';
@@ -82,16 +101,17 @@ const evidenceChecks = computed(() => selected.value ? [
   { name: '证据哈希可追溯', passed: Boolean(selected.value.evidence_bundle_hash?.match(/^[a-f0-9]{64}$/)) },
   { name: '恢复与迁移演练', passed: !selected.value.missing_safety_gates.some(gate => gate.includes('RECOVERY') || gate.includes('MIGRATION')) },
 ] : []);
+const selectedDimensions = computed(() => selected.value ? dimensionChecks(selected.value) : []);
 const dialogTitle = computed(() => coverageDialog.value === 'create' ? '新建科室支持声明' : coverageDialog.value === 'edit' ? `编辑${selected.value ? (scopeName[selected.value.clinical_scope_code] ?? selected.value.clinical_scope_code) : ''}支持声明` : '删除科室支持声明');
 </script>
 
 <template>
   <section data-page-root class="content vue-native-page specialty-page">
-    <div class="page-head"><div class="page-title"><p class="eyebrow">业务配置 / 科室适配</p><h1>科室与专科适配工作台</h1><p>按科室核对公共内核、专业工作台、字段、流程、设备、质控、恢复、迁移与证据，阻断项自动降级。</p></div><div class="head-actions"><button class="btn" @click="assessmentsQuery.refetch()">刷新证据</button><button class="btn" :disabled="!selected" @click="openEdit">编辑</button><button class="btn danger" :disabled="!selected" @click="openDelete">删除</button><button class="btn primary" @click="openCreate">新建支持声明</button></div></div>
+    <div class="page-head"><div class="page-title"><p class="eyebrow">业务配置 / 科室适配</p><h1>科室与专科适配工作台</h1><p>按科室核对公共内核、专业工作台、字段、流程、设备、质控、恢复、迁移与证据，阻断项自动降级。</p></div><div class="head-actions"><RouterLink v-if="selected" class="btn" :to="`/business-config/specialty-coverage/${selected.department_support_assessment_id}`">深层详情</RouterLink><button class="btn" @click="assessmentsQuery.refetch()">刷新证据</button><button class="btn" :disabled="!selected" @click="openEdit">编辑</button><button class="btn danger" :disabled="!selected" @click="openDelete">删除</button><button class="btn primary" @click="openCreate">新建支持声明</button></div></div>
     <div v-if="issue" class="specialty-notice error">{{ issue.code }}：{{ issue.message }}。数据库不可用时不展示伪造回退数据。</div><div v-if="notice" class="specialty-notice">{{ notice }}</div>
     <div class="coverage-summary"><article><span>已评估专科</span><b>{{ assessments.length }}</b><small>数据库真实记录</small></article><article><span>通用 / 闭环</span><b>{{ assessments.filter(item=>['GENERAL_AVAILABLE','BASIC_CLOSED_LOOP'].includes(item.support_level)).length }}</b><small>影响专科入口门禁</small></article><article><span>待补安全门</span><b>{{ assessments.reduce((count,item)=>count+item.missing_safety_gates.length,0) }}</b><small>自动阻断升级</small></article><article><span>证据即将到期</span><b>{{ assessments.filter(item=>item.expires_at&&new Date(item.expires_at).getTime()-Date.now()<120*86400000).length }}</b><small>120 天内</small></article></div>
-    <div v-if="assessments.length" class="coverage-shell"><aside class="scope-list"><header><b>科室 / 专科范围</b><select v-model="filter"><option value="ALL">全部等级</option><option value="GENERAL_AVAILABLE">通用可用</option><option value="BASIC_CLOSED_LOOP">基础闭环</option><option value="PACK_PENDING">能力包待配</option><option value="UNSUPPORTED">暂不支持</option></select></header><button v-for="item in filtered" :key="item.department_support_assessment_id" :class="{active:selected?.department_support_assessment_id===item.department_support_assessment_id}" @click="select(item)"><span><b>{{ scopeName[item.clinical_scope_code]??item.clinical_scope_code }}</b><small>{{ item.clinical_scope_code }}</small></span><em :class="item.support_level.toLowerCase()">{{ levelLabel(item.support_level) }}</em><i><strong>{{ coverage(item.support_level) }}%</strong><small>{{ item.missing_safety_gates.length }} 个缺口</small></i></button></aside>
-      <main v-if="selected" class="coverage-main"><section class="matrix"><header><div><h2>{{ scopeName[selected.clinical_scope_code]??selected.clinical_scope_code }} · 覆盖矩阵</h2><p>数据库版本 v{{ selected.row_version }} · 评估时间 {{ new Date(selected.assessed_at).toLocaleString('zh-CN',{hour12:false}) }}</p></div><span :class="selected.support_level.toLowerCase()">{{ levelLabel(selected.support_level) }}</span></header><div class="dimension-grid"><article v-for="(dimension,index) in dimensions" :key="dimension" :class="{gap:index>=Math.ceil(coverage(selected.support_level)/12.5)}"><span>{{ String(index+1).padStart(2,'0') }}</span><b>{{ dimension }}</b><em>{{ index<Math.ceil(coverage(selected.support_level)/12.5)?'证据已核验':'待补齐' }}</em><small>{{ index===0?'平台公共内核':index===1?'科室角色工作台':index===2?'字段和值集':index===3?'路径与任务':index===4?'设备/LIS/PACS':index===5?'质控指标与门禁':index===6?'恢复演练报告':'迁移与联合签署' }}</small></article></div></section>
+    <div v-if="assessments.length" class="coverage-shell"><aside class="scope-list"><header><b>科室 / 专科范围</b><select v-model="filter"><option value="ALL">全部等级</option><option value="GENERAL_AVAILABLE">通用可用</option><option value="BASIC_CLOSED_LOOP">基础闭环</option><option value="PACK_PENDING">能力包待配</option><option value="UNSUPPORTED">暂不支持</option></select></header><button v-for="item in filtered" :key="item.department_support_assessment_id" :class="{active:selected?.department_support_assessment_id===item.department_support_assessment_id}" @click="select(item)"><span><b>{{ scopeName[item.clinical_scope_code]??item.clinical_scope_code }}</b><small>{{ item.clinical_scope_code }}</small></span><em :class="item.support_level.toLowerCase()">{{ levelLabel(item.support_level) }}</em><i><strong>{{ coverage(item) }}%</strong><small>{{ item.missing_safety_gates.length }} 个缺口</small></i></button></aside>
+      <main v-if="selected" class="coverage-main"><section class="matrix"><header><div><h2>{{ scopeName[selected.clinical_scope_code]??selected.clinical_scope_code }} · 覆盖矩阵</h2><p>数据库版本 v{{ selected.row_version }} · 评估时间 {{ new Date(selected.assessed_at).toLocaleString('zh-CN',{hour12:false}) }} · 百分比按当前证据字段实时计算</p></div><span :class="selected.support_level.toLowerCase()">{{ levelLabel(selected.support_level) }}</span></header><div class="dimension-grid"><article v-for="(dimension,index) in selectedDimensions" :key="dimension.name" :class="{gap:!dimension.passed}"><span>{{ String(index+1).padStart(2,'0') }}</span><b>{{ dimension.name }}</b><em>{{ dimension.passed?'证据已核验':'待补齐' }}</em><small>{{ index===0?'平台公共内核':index===1?'科室角色工作台':index===2?'字段和值集':index===3?'路径与任务':index===4?'设备/LIS/PACS':index===5?'质控指标与门禁':index===6?'恢复演练报告':'迁移与联合签署' }}</small></article></div></section>
         <div class="coverage-lower"><section class="evidence-panel"><h3>证据与发布门禁</h3><div v-for="check in evidenceChecks" :key="check.name" class="evidence-row"><span :class="{passed:check.passed}">{{ check.passed?'通过':'阻断' }}</span><b>{{ check.name }}</b></div><h3>缺失安全门</h3><ul v-if="selected.missing_safety_gates.length"><li v-for="gate in selected.missing_safety_gates" :key="gate">{{ gate }}</li></ul><p v-else class="ok">无缺失安全门</p></section><section class="runtime-panel"><h3>运行时流程影响</h3><div class="impact-rating"><span>当前支持等级</span><b>{{ levelLabel(selected.support_level) }}</b></div><p>专科页面和流程入口读取该等级；证据过期或安全门未清零时自动降级并阻断发布。</p><p>删除声明后，此科室专科范围不再进入有效支持集合，但审计事件保留。</p><div class="panel-actions"><button class="btn" @click="openEdit">编辑声明</button><button class="btn danger" @click="openDelete">删除声明</button></div></section></div>
       </main></div>
     <section v-else class="coverage-empty"><b>暂无科室支持声明</b><p>数据库中没有可用记录。请新建真实科室范围，不再使用前端硬编码演示数据。</p><button class="btn primary" @click="openCreate">新建第一条声明</button></section>

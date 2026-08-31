@@ -322,15 +322,15 @@ final class TertiaryBusinessConfigurationCatalog {
         String core = "SYN-CORE-CLINICAL";
         String tertiary = "SYN-TERTIARY-HOSPITAL";
         return List.of(
-                pack("c301", "c601", "c701", core, "临床核心能力包", null,
+                pack("c301", "d601", "c701", core, "临床核心能力包", null,
                         "全院公共内核", List.of("CORE_PATIENT", "CLINICAL_RECORD", "ORDER_RESULT", "DIGITAL_SIGNATURE", "AUDIT_OUTBOX")),
-                pack("c302", "c602", "c702", tertiary, "三级医院综合能力包", core,
+                pack("c302", "d602", "c702", tertiary, "三级医院综合能力包", core,
                         "全院门急住医技", List.of("CORE_PATIENT", "CLINICAL_RECORD", "ORDER_RESULT", "DIGITAL_SIGNATURE", "AUDIT_OUTBOX", "OUTPATIENT", "EMERGENCY", "INPATIENT", "NURSING", "MEDICAL_TECH", "QUALITY_RESEARCH")),
-                pack("c331", "c603", "c703", "SYN-OUTPATIENT", "门诊诊疗能力包", tertiary,
+                pack("c331", "d603", "c703", "SYN-OUTPATIENT", "门诊诊疗能力包", tertiary,
                         "门诊部", baseline("OUTPATIENT")),
-                pack("c332", "c604", "c704", "SYN-EMERGENCY", "急诊急救能力包", tertiary,
+                pack("c332", "d604", "c704", "SYN-EMERGENCY", "急诊急救能力包", tertiary,
                         "急诊医学科", baseline("EMERGENCY", "CRITICAL_CARE")),
-                pack("c333", "c605", "c705", "SYN-INPATIENT", "住院诊疗能力包", tertiary,
+                pack("c333", "d605", "c705", "SYN-INPATIENT", "住院诊疗能力包", tertiary,
                         "住院部", baseline("INPATIENT", "NURSING")),
                 pack("c334", "c606", "c706", "SYN-NURSING", "临床护理能力包", tertiary,
                         "护理部", baseline("NURSING")),
@@ -477,16 +477,51 @@ final class TertiaryBusinessConfigurationCatalog {
             if (!"CORE_PATIENT".equals(module)) dependencies.add(object("module", module, "requires", "CORE_PATIENT"));
         }
         return object(
-                "schema_version", 2,
+                "schema_version", 3,
                 "capability_pack_id", pack.packId().toString(),
                 "inherits_from", pack.inheritsFrom(),
+                "module_catalog", moduleCatalog(),
                 "selected_modules", pack.modules(),
                 "dependencies", dependencies,
                 "conflicts", List.of(object("left", "LEGACY_EXPORT", "right", "QUALITY_RESEARCH")),
                 "protected_modules", PROTECTED_MODULES,
                 "scope_overrides", List.of(object("scope", pack.scope(), "module", pack.modules().getLast(), "effect", "ENABLE")),
-                "rating_impact", pack.packCode().equals("SYN-CORE-CLINICAL") ? "通用可用 · B" : "三级医院闭环 · A",
+                "rating_framework", object(
+                        "code", "INTERNAL_OPERATIONAL_READINESS_V1",
+                        "official_hospital_grade", false,
+                        "description", "内部配置完整度与发布就绪度，不代表医院等级评审结论"),
+                "rating_impact", "内部运行就绪度由依赖、冲突、发布证据和安全门动态计算",
                 "rollout_tasks", List.of("依赖解析", "128 例合成病例回放", "科室负责人联合签署", "灰度观察 72 小时", "审计与回退演练"));
+    }
+
+    private static List<Map<String, Object>> moduleCatalog() {
+        return List.of(
+                module("CORE_PATIENT", "患者与就诊核心", "公共内核", true),
+                module("CLINICAL_RECORD", "结构化病历", "公共内核", true, "CORE_PATIENT"),
+                module("ORDER_RESULT", "医嘱与结果闭环", "临床业务", false, "CORE_PATIENT"),
+                module("DIGITAL_SIGNATURE", "可靠电子签名与验真", "安全治理", true, "CLINICAL_RECORD"),
+                module("AUDIT_OUTBOX", "审计与可靠事件", "安全治理", true, "CORE_PATIENT"),
+                module("OUTPATIENT", "门诊诊疗闭环", "临床业务", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("EMERGENCY", "急诊急救绿色通道", "临床业务", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("INPATIENT", "住院诊疗与转科", "临床业务", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("NURSING", "护理执行与交接班", "临床业务", false, "CORE_PATIENT", "ORDER_RESULT"),
+                module("SURGERY", "围术期与手术安全", "临床业务", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("ANESTHESIA", "麻醉评估与复苏", "临床业务", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("CRITICAL_CARE", "重症监护与早期预警", "急危重症", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("MEDICAL_TECH", "检验影像病理协同", "医技协同", false, "ORDER_RESULT"),
+                module("QUALITY_RESEARCH", "医疗质控与合规科研", "质控科研", false, "CLINICAL_RECORD", "AUDIT_OUTBOX"),
+                module("SPECIALTY_CARDIOLOGY", "心血管专科增强", "专科能力", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("SPECIALTY_PEDIATRICS", "儿科剂量与生长曲线", "专科能力", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("SPECIALTY_MENTAL_HEALTH", "精神心理与危机干预", "专科能力", false, "CLINICAL_RECORD"),
+                module("SPECIALTY_ONCOLOGY", "肿瘤 MDT 与治疗计划", "专科能力", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("SPECIALTY_OBSTETRICS", "产前分娩与产后闭环", "专科能力", false, "CLINICAL_RECORD", "ORDER_RESULT"),
+                module("LEGACY_EXPORT", "受控历史数据导出", "兼容能力", false, "CORE_PATIENT"));
+    }
+
+    private static Map<String, Object> module(
+            String code, String name, String group, boolean protectedModule, String... requires) {
+        return object("code", code, "name", name, "group", group,
+                "protected", protectedModule, "requires", List.of(requires));
     }
 
     private static Map<String, Object> workflowPayload() {
@@ -628,8 +663,8 @@ final class TertiaryBusinessConfigurationCatalog {
 
     private static Payload base(String description) {
         return new Payload(object(
-                "schema_version", 2,
-                "fixture_source", "tertiary-hospital-business-config-v2",
+                "schema_version", 3,
+                "fixture_source", "tertiary-hospital-business-config-v3",
                 "hospital_level", "三级甲等",
                 "organization", "江城大学附属医院",
                 "description", description,
@@ -638,8 +673,22 @@ final class TertiaryBusinessConfigurationCatalog {
                 "owner", "三级医院配置管理委员会",
                 "effective_scope", List.of("江城大学附属医院", "总院区", "门诊/急诊/住院/医技/科研"),
                 "controls", List.of("双人审批", "最小权限", "审计留痕", "失败关闭", "灰度发布", "可验证回退"),
-                "evidence", object("dataset", "tertiary-hospital-business-config-v2", "case_count", 256,
-                        "last_verified", "2026-08-28", "standards", List.of("医疗质量安全核心制度要点", "病历书写基本规范", "三级医院评审标准"))));
+                "china_compliance", object(
+                        "profile", "CN_MEDICAL_PRODUCTION_2026",
+                        "data_element_standard", "WS/T 363.1-2023",
+                        "electronic_record_dataset", "WS 445.1-2014~WS 445.17-2014",
+                        "diagnosis_code_system", "国家临床版 ICD-10（年度受控版本）",
+                        "procedure_code_system", "国家临床版 ICD-9-CM-3（年度受控版本）",
+                        "signature_policy", "可靠电子签名 + CA 证书 + 可信时间戳 + 签名验真",
+                        "retention_policy", "门急诊病历不少于15年；住院病历不少于30年；归档后更正留痕",
+                        "minimum_necessary", true,
+                        "effective_from", "2026-09-01T00:00:00+08:00",
+                        "review_due", "2027-03-01T00:00:00+08:00"),
+                "evidence", object("dataset", "tertiary-hospital-business-config-v3", "case_count", 256,
+                        "last_verified", "2026-08-31", "standards", List.of(
+                                "医疗质量安全核心制度要点", "电子病历应用管理规范（试行）",
+                                "WS/T 363.1-2023", "WS 445.1-2014~WS 445.17-2014",
+                                "国家临床版疾病诊断和手术操作分类代码"))));
     }
 
     private static CapabilityPackSeed pack(
@@ -677,7 +726,10 @@ final class TertiaryBusinessConfigurationCatalog {
     }
 
     private static Map<String, Object> edge(String from, String to, String condition, boolean compensation) {
-        return object("from", from, "to", to, "condition", condition, "compensation", compensation);
+        return object("from", from, "to", to, "condition", condition,
+                "event_code", from.toUpperCase().replace('-', '_') + "_TO_" + to.toUpperCase().replace('-', '_'),
+                "guard", object("fact_path", "events." + from + ".completed", "operator", "EQ", "expected", true),
+                "compensation", compensation);
     }
 
     private static Map<String, Object> group(String id, String name, int columns) {
@@ -688,7 +740,7 @@ final class TertiaryBusinessConfigurationCatalog {
                                               boolean required, boolean protectedField,
                                               String terminology, String calculation) {
         return object("id", id, "label", label, "type", type, "group", group, "required", required,
-                "protected", protectedField, "terminology", terminology, "calculation", calculation,
+                "protected", protectedField, "terminology", chinaTerminology(terminology), "calculation", calculation,
                 "visibility", "ALWAYS");
     }
 
@@ -696,13 +748,39 @@ final class TertiaryBusinessConfigurationCatalog {
                                              String condition, String action, String evidence) {
         return object("id", id, "name", name, "layer", layer, "priority", priority,
                 "condition", condition, "action", action, "evidence", evidence, "enabled", true,
+                "fact_path", id, "operator", "EQ", "expected", true,
+                "action_code", layer.contains("HARD") ? "BLOCK_AND_CREATE_REVIEW_TASK" : "CREATE_REVIEW_TASK",
+                "evidence_meta", object("authority", "国家卫生健康委员会/医院授权委员会",
+                        "source", evidence, "version", "2026受控版", "effective_from", "2026-09-01",
+                        "review_due", "2027-03-01", "evidence_class", "CLINICAL_GOVERNANCE"),
+                "human_approval_required", true,
                 "exception", layer.contains("HARD") ? "必须记录授权例外与双签" : "允许责任人说明原因后关闭提醒");
     }
 
     private static Map<String, Object> permission(String role, String resource, String action, String scope,
                                                    String effect, int hours, String sod) {
         return object("role", role, "resource", resource, "action", action, "scope", scope,
-                "effect", effect, "temporary_hours", hours, "sod", sod);
+                "role_code", "ROLE-" + sha256(role).substring(0, 12).toUpperCase(),
+                "resource_code", "RESOURCE-" + sha256(resource).substring(0, 12).toUpperCase(),
+                "action_code", "ACTION-" + sha256(action).substring(0, 12).toUpperCase(),
+                "scope_code", "SCOPE-" + sha256(scope).substring(0, 12).toUpperCase(),
+                "effect", effect, "temporary_hours", hours, "sod", sod,
+                "relationship_required", scope.contains("患者") || scope.contains("接诊") || scope.contains("医疗组"),
+                "shift_required", role.contains("医生") || role.contains("护士") || role.contains("药师"),
+                "approval_required", action.contains("导出") || action.contains("管理") || action.contains("归档"));
+    }
+
+    private static String chinaTerminology(String terminology) {
+        if (terminology == null) return null;
+        return switch (terminology) {
+            case "ICD-10-CN" -> "ICD-10-NATIONAL-CLINICAL-2026";
+            case "ICD-9-CM-3" -> "ICD-9-CM-3-NATIONAL-CLINICAL-2026";
+            case "SNOMED-CT" -> "WS/T-363-2023+SNOMED-MAPPING";
+            case "LOINC" -> "WS/T-363-2023+LOINC-MAPPING";
+            case "ATC" -> "NMPA-DRUG-CODE+ATC-MAPPING";
+            case "UCUM" -> "WS/T-363-2023+UCUM-MAPPING";
+            default -> "LOCAL-GOVERNED:" + terminology;
+        };
     }
 
     private static Map<String, Object> object(Object... pairs) {

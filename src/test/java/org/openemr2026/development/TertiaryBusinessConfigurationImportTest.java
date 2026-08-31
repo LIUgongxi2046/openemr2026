@@ -58,9 +58,9 @@ final class TertiaryBusinessConfigurationImportTest {
                     and payload->>'organization' = '江城大学附属医院'
                     and coalesce(payload->>'interface_code', '') <> ''
                     and coalesce(payload->>'manual_fallback', '') <> ''
-                    and payload->>'fixture_source' = 'tertiary-business-generator-v2'
+                    and payload->>'fixture_source' = 'tertiary-business-generator-v3'
                     and payload->>'generation_method' = 'DETERMINISTIC_SEEDED'
-                    and payload->>'generator_version' = 'tertiary-business-v2'
+                    and payload->>'generator_version' = 'tertiary-business-cn-v3'
                     and (payload->>'default_record_count')::int between 12 and 200
                     and payload->'record_count_range' = '[12, 200]'::jsonb
                     and payload->>'contains_real_phi' = 'false') as complete_profiles
@@ -119,8 +119,8 @@ final class TertiaryBusinessConfigurationImportTest {
                         "ids", rs.getInt("ids"),
                         "complete", rs.getInt("complete")))
                 .single();
-        assertThat(evaluationFixtures).containsEntry("evaluations", 10)
-                .containsEntry("ids", 10).containsEntry("complete", 10);
+        assertThat(evaluationFixtures).containsEntry("evaluations", 5)
+                .containsEntry("ids", 5).containsEntry("complete", 5);
     }
 
     @Test
@@ -128,19 +128,27 @@ final class TertiaryBusinessConfigurationImportTest {
         Map<String, Integer> catalog = jdbc.sql("""
                 select
                   (select count(*) from model_deployment where tenant_id = :tenant
-                    and status = 'ACTIVE' and connection_status = 'READY') as ready_models,
+                    and status = 'ACTIVE' and connection_status = 'READY'
+                    and evaluation_status = 'APPROVED'
+                    and endpoint_url not like '%.example/%') as ready_live_models,
+                  (select count(*) from model_deployment where tenant_id = :tenant
+                    and endpoint_url like '%.example/%'
+                    and status = 'INACTIVE' and connection_status = 'NOT_CONFIGURED'
+                    and evaluation_status = 'REJECTED') as retired_simulation_models,
                   (select count(*) from skill_registry where tenant_id = :tenant
                     and status = 'ACTIVE') as active_skills,
                   (select count(*) from tool_registry where tenant_id = :tenant
                     and status = 'ACTIVE') as active_tools
                 """).param("tenant", SyntheticDataImporter.TENANT_ID)
                 .query((rs, row) -> Map.of(
-                        "models", rs.getInt("ready_models"),
+                        "live_models", rs.getInt("ready_live_models"),
+                        "retired_models", rs.getInt("retired_simulation_models"),
                         "skills", rs.getInt("active_skills"),
                         "tools", rs.getInt("active_tools")))
                 .single();
-        assertThat(catalog).containsEntry("models", 6)
-                .containsEntry("skills", 24).containsEntry("tools", 24);
+        assertThat(catalog).containsEntry("live_models", 0)
+                .containsEntry("retired_models", 6)
+                .containsEntry("skills", 24).containsEntry("tools", 29);
     }
 
     @Test
