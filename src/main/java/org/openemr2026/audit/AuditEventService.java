@@ -13,6 +13,8 @@ import tools.jackson.databind.ObjectMapper;
 
 @Service
 final class AuditEventService {
+    private static final List<String> AUDIT_ROLES = List.of(
+            "SYSTEM_ADMIN", "SECURITY_AUDITOR", "CLINICAL_ADMIN");
     private final JdbcClient jdbc;
     private final ObjectMapper objectMapper;
 
@@ -24,6 +26,7 @@ final class AuditEventService {
     List<AuditEventWire> list(
             ClinicalIdentity identity, String actionCode, String resourceType,
             UUID resourceId, Instant from, Instant to) {
+        requireAuditRole(identity);
         StringBuilder sql = new StringBuilder("""
                 select audit_event_id, occurred_at, actor_user_id, action_code, resource_type,
                        resource_id, patient_ref_hash, trace_id, previous_hash, event_hash, details
@@ -56,6 +59,24 @@ final class AuditEventService {
                 rs.getString("event_hash"),
                 details(rs.getString("details"))))
                 .list();
+    }
+
+    private void requireAuditRole(ClinicalIdentity identity) {
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new AuditEventException("AUDIT_ROLE_REQUIRED", 403, "当前岗位无权读取审计记录");
+        }
+        long allowed = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id = :tenant and user_id = :user
+                  and role_assignment_id in (:assignments) and role_code in (:roles)
+                  and status = 'ACTIVE' and valid_from <= now()
+                  and (valid_until is null or valid_until > now())
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", AUDIT_ROLES)
+                .query(Long.class).single();
+        if (allowed == 0) {
+            throw new AuditEventException("AUDIT_ROLE_REQUIRED", 403, "当前岗位无权读取审计记录");
+        }
     }
 
     private Map<String, Object> details(String json) {

@@ -24,10 +24,10 @@ final class ConfigurationApiTest {
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
+    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa18";
     private static final String ADMIN_ROLE = "018f0000-0000-7000-8000-00000000aa09";
-    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
     private static final String APPROVER = "018f0000-0000-7000-8000-00000000aa06";
-    private static final String APPROVER_ROLE = "018f0000-0000-7000-8000-00000000aa07";
+    private static final String APPROVER_ROLE = "018f0000-0000-7000-8000-00000000aa19";
 
     @Autowired
     private ConfigurationService configurations;
@@ -90,7 +90,7 @@ final class ConfigurationApiTest {
                 ConfigurationLifecycleRequestWire.ActionValue.APPROVE, "作者尝试批准自己配置"))
                 .isInstanceOf(ConfigurationException.class)
                 .satisfies(e -> assertThat(((ConfigurationException) e).code())
-                        .isEqualTo("CONFIG_SEPARATION_OF_DUTIES"));
+                        .isEqualTo("CONFIG_APPROVER_REQUIRED"));
         ConfigurationItemWire approved = transition(approver(), pending,
                 ConfigurationLifecycleRequestWire.ActionValue.APPROVE, "独立审批人核对差异和证据");
         ConfigurationItemWire active = transition(approver(), approved,
@@ -101,6 +101,31 @@ final class ConfigurationApiTest {
                 ConfigurationLifecycleRequestWire.ActionValue.ROLLBACK, "演练回退到上一个有效载荷");
         assertThat(rolledBack.payload().get("nodes").toString()).contains("专家意见");
         assertThat(rolledBack.status()).isEqualTo(ConfigurationItemWire.StatusValue.ACTIVE);
+    }
+
+    @Test
+    void givenActiveConfiguration_whenPublishingParallelDraft_thenOldVersionRemainsLiveUntilCutover() {
+        String key = "WF-VERSION-" + UUID.randomUUID().toString().substring(0, 8);
+        ConfigurationItemWire firstDraft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("WORKFLOW", key, "设备接入流程 v1",
+                        workflowPayload("首版复核")));
+        ConfigurationItemWire firstActive = publish(firstDraft, "发布首版设备接入流程");
+
+        ConfigurationItemWire secondDraft = configurations.define(identity(), "cfg-" + UUID.randomUUID(),
+                new ConfigurationItemDefineRequestWire("WORKFLOW", key, "设备接入流程 v2",
+                        workflowPayload("新版复核")));
+        assertThat(secondDraft.status()).isEqualTo(ConfigurationItemWire.StatusValue.DRAFT);
+        assertThat(configurations.list(identity(), "WORKFLOW").stream()
+                .filter(item -> item.configKey().equals(key) && item.status() == ConfigurationItemWire.StatusValue.ACTIVE))
+                .extracting(ConfigurationItemWire::configId).containsExactly(firstActive.configId());
+
+        ConfigurationItemWire secondActive = publish(secondDraft, "发布新版设备接入流程");
+        List<ConfigurationItemWire> versions = configurations.list(identity(), "WORKFLOW").stream()
+                .filter(item -> item.configKey().equals(key)).toList();
+        assertThat(versions).filteredOn(item -> item.status() == ConfigurationItemWire.StatusValue.ACTIVE)
+                .extracting(ConfigurationItemWire::configId).containsExactly(secondActive.configId());
+        assertThat(configurations.get(identity(), firstActive.configId()).status())
+                .isEqualTo(ConfigurationItemWire.StatusValue.ARCHIVED);
     }
 
     @Test
@@ -325,7 +350,7 @@ final class ConfigurationApiTest {
             ConfigurationItemWire validated = transition(identity(), edited,
                     ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, "校验医疗质量工作项流程字段");
             assertThat(validated.validationState()).isEqualTo(ConfigurationItemWire.ValidationStateValue.VALID);
-            ConfigurationItemWire archived = transition(identity(), validated,
+            ConfigurationItemWire archived = transition(approver(), validated,
                     ConfigurationLifecycleRequestWire.ActionValue.ARCHIVE, "逻辑删除并保留医疗质量审计证据");
             assertThat(archived.status()).isEqualTo(ConfigurationItemWire.StatusValue.ARCHIVED);
             assertThat(configurations.list(identity(), type)).extracting(ConfigurationItemWire::configId)
@@ -398,13 +423,51 @@ final class ConfigurationApiTest {
                 new ConfigurationLifecycleRequestWire(action, item.rowVersion(), reason));
     }
 
+    private ConfigurationItemWire publish(ConfigurationItemWire draft, String reason) {
+        ConfigurationItemWire validated = transition(identity(), draft,
+                ConfigurationLifecycleRequestWire.ActionValue.VALIDATE, reason + "并完成校验");
+        ConfigurationItemWire pending = transition(identity(), validated,
+                ConfigurationLifecycleRequestWire.ActionValue.SUBMIT, reason + "并提交审批");
+        ConfigurationItemWire approved = transition(approver(), pending,
+                ConfigurationLifecycleRequestWire.ActionValue.APPROVE, reason + "并独立审批");
+        return transition(approver(), approved, ConfigurationLifecycleRequestWire.ActionValue.PUBLISH, reason);
+    }
+
     private Map<String, Object> workflowPayload(String reviewNode) {
-        return Map.of(
-                "schema_version", 1,
-                "nodes", List.of("发起", reviewNode, "签署", "审计", "完成"),
-                "edges", List.of("发起->" + reviewNode, reviewNode + "->签署", "签署->审计", "审计->完成"),
-                "protected_nodes", List.of("签署", "审计"),
-                "timeout_policy", "2 小时提醒，4 小时升级");
+        return Map.ofEntries(
+                Map.entry("schema_version", 3),
+                Map.entry("china_compliance", chinaCompliance()),
+                Map.entry("nodes", List.of(
+                        Map.of("id", "start", "name", "发起", "type", "START", "owner", "经治医生"),
+                        Map.of("id", "review", "name", reviewNode, "type", "TASK", "owner", "会诊医生"),
+                        Map.of("id", "sign", "name", "签署", "type", "SIGN", "owner", "会诊医生", "protected", true),
+                        Map.of("id", "audit", "name", "审计", "type", "AUDIT", "owner", "病案管理员", "protected", true),
+                        Map.of("id", "end", "name", "完成", "type", "END", "owner", "系统", "terminal", true))),
+                Map.entry("edges", List.of(
+                        edge("start", "review", "START_REVIEW"), edge("review", "sign", "REVIEW_SIGNED"),
+                        edge("sign", "audit", "SIGNATURE_VERIFIED"), edge("audit", "end", "AUDIT_PASSED"))),
+                Map.entry("protected_nodes", List.of("sign", "audit")),
+                Map.entry("timeout_policy", "2 小时提醒，4 小时升级"));
+    }
+
+    private Map<String, Object> edge(String from, String to, String eventCode) {
+        return Map.of("from", from, "to", to, "condition", eventCode,
+                "event_code", eventCode, "guard", Map.of(
+                        "fact_path", "events." + from + ".completed", "operator", "EQ", "expected", true));
+    }
+
+    private Map<String, Object> chinaCompliance() {
+        return Map.ofEntries(
+                Map.entry("profile", "CN_MEDICAL_PRODUCTION_2026"),
+                Map.entry("data_element_standard", "WS/T 363.1-2023"),
+                Map.entry("electronic_record_dataset", "WS 445.1-2014~WS 445.17-2014"),
+                Map.entry("diagnosis_code_system", "国家临床版 ICD-10"),
+                Map.entry("procedure_code_system", "国家临床版 ICD-9-CM-3"),
+                Map.entry("signature_policy", "可靠电子签名 + CA + 可信时间戳 + 验真"),
+                Map.entry("retention_policy", "门急诊15年；住院30年；归档更正留痕"),
+                Map.entry("minimum_necessary", true),
+                Map.entry("effective_from", "2026-09-01T00:00:00+08:00"),
+                Map.entry("review_due", "2027-03-01T00:00:00+08:00"));
     }
 
     private Map<String, Object> qualityOperationPayload(String type, String status, int score) {

@@ -18,7 +18,7 @@ final class AuditEventApiTest {
 
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
-    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
+    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa09";
 
     @Autowired
     private AuditEventService events;

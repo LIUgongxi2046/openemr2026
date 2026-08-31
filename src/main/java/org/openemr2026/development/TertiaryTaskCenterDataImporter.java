@@ -2,6 +2,7 @@ package org.openemr2026.development;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
@@ -42,7 +43,7 @@ final class TertiaryTaskCenterDataImporter {
         transactions.executeWithoutResult(status -> {
             seedTaskRules(dataset);
             seedPathwayCatalogAndRules(dataset);
-            seedOperationalTasks();
+            seedOperationalTasks(dataset);
             seedTaskEvents();
             seedTeamQueue();
             seedNotifications();
@@ -53,6 +54,7 @@ final class TertiaryTaskCenterDataImporter {
         try (var input = new ClassPathResource(RESOURCE).getInputStream()) {
             JsonNode root = objectMapper.readTree(input);
             if (!root.path("task_rules").isArray() || root.path("task_rules").size() < 8
+                    || !root.path("operational_tasks").isArray() || root.path("operational_tasks").size() < 24
                     || !root.path("pathways").isArray() || root.path("pathways").size() < 8) {
                 throw new IllegalStateException("Tertiary task-center dataset is incomplete");
             }
@@ -167,7 +169,7 @@ final class TertiaryTaskCenterDataImporter {
                 values (:tenant, :id, :type, :key, :name, cast(:payload as jsonb),
                   'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
                   now() - interval '30 days', :author)
-                on conflict (tenant_id, config_type, config_key) do update set
+                on conflict (tenant_id, config_type, config_key) where status = 'ACTIVE' do update set
                   display_name = excluded.display_name, payload = excluded.payload,
                   status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
                   approval_state = 'APPROVED', approved_by = excluded.approved_by,
@@ -181,50 +183,53 @@ final class TertiaryTaskCenterDataImporter {
                 .param("payload", payload.toString()).param("approver", APPROVER_ID).param("author", USER_ID).update();
     }
 
-    private void seedOperationalTasks() {
-        jdbc.sql("""
-                with seed as (
-                  select * from (values
-                    (1,'inpatient','CRITICAL_VALUE','TCV2_SEPSIS_BUNDLE','脓毒症一小时集束化处置','CRITICAL','IN_PROGRESS','复苏目标动态复评中','/ip-pathway',45),
-                    (2,'inpatient','DOCUMENT','TCV2_VTE_ASSESSMENT','住院24小时VTE风险评估','HIGH','CLAIMED','主管医师已接手','/inpatient-course',360),
-                    (3,'inpatient','ORDER_EXECUTION','TCV2_ANTIMICROBIAL_REVIEW','抗菌药物72小时再评估','HIGH','CLAIMED','等待病原学结果与疗效复核','/orders',600),
-                    (4,'inpatient','PATHWAY','TCV2_PATHWAY_VARIANCE','临床路径变异原因审核','HIGH','IN_PROGRESS','路径管理员审核中','/ip-pathway',90),
-                    (5,'inpatient','DOCUMENT','TCV2_DISCHARGE_MED_REC','出院用药重整与教育','HIGH','PENDING','待医师与药师联合核对','/discharge',480),
-                    (6,'inpatient','ORDER_EXECUTION','TCV2_TRANSFUSION_OBS','输血开始后不良反应监测','CRITICAL','ASSIGNED','责任护士已接收监测任务','/blood-transfusion',15),
-                    (7,'inpatient','DOCUMENT','TCV2_SURGERY_TIMEOUT','手术安全核查三方确认','CRITICAL','VIEWED','已查看，等待三方共同确认','/surgery',30),
-                    (8,'inpatient','DOCUMENT','TCV2_PRESSURE_INJURY','压疮风险复评与护理措施','HIGH','PENDING','待责任护士复评','/nursing',240),
-                    (9,'inpatient','DISCHARGE_REMEDIATION','TCV2_RECORD_QC','出院病案首页质控整改','ROUTINE','PENDING','病案质控规则命中待整改','/record-center',1440),
-                    (10,'inpatient','CONSULTATION','TCV2_MDT_CONSULT','疑难病例多学科会诊准备','HIGH','ASSIGNED','资料汇总与参会确认中','/consultations',720),
-                    (11,'outpatient','CRITICAL_VALUE','TCV2_TROPONIN','高敏肌钙蛋白危急值回读','CRITICAL','IN_PROGRESS','已电话回读，等待临床处置闭环','/diagnostics/lab',15),
-                    (12,'outpatient','DOCUMENT','TCV2_CHRONIC_FOLLOWUP','高血压分级管理随访计划','ROUTINE','CLAIMED','主管医师制定随访计划中','/outpatient-followup',1440),
-                    (13,'outpatient','ORDER_EXECUTION','TCV2_IMAGING_REVIEW','胸部CT异常结果复核','HIGH','PENDING','待门诊医师解释与转诊评估','/diagnostics/imaging',120),
-                    (14,'outpatient','AI_APPROVAL','TCV2_AI_MED_REVIEW','智能用药建议人工复核','HIGH','VIEWED','AI建议仅供参考，等待医师确认','/ai-approval',60),
-                    (15,'outpatient','CONSULTATION','TCV2_REFERRAL','专科转诊资料完整性核验','ROUTINE','ASSIGNED','转诊资料待补全','/referrals',480),
-                    (16,'outpatient','DOCUMENT','TCV2_DIABETES_EDU','糖尿病门诊自我管理教育','ROUTINE','CLAIMED','教育护士已接手','/outpatient-followup',720)
-                  ) v(ordinal, domain, source_type, task_type, title, risk_level, state, business_state, source_route, due_minutes)
-                ), context as (
-                  select s.*,
-                    case when domain='inpatient' then '018f0000-0000-7000-8000-000000000002'::uuid
-                         else '018f0000-0000-7000-8000-000000000001'::uuid end patient_id,
-                    case when domain='inpatient' then '018f0000-0000-7000-8000-000000000102'::uuid
-                         else '018f0000-0000-7000-8000-000000000101'::uuid end encounter_id,
-                    md5('tertiary-task-center-v2:task:' || ordinal)::uuid task_id,
-                    md5('tertiary-task-center-v2:source:' || ordinal)::uuid source_id
-                  from seed s
-                )
-                insert into clinical_task(
-                  tenant_id, task_id, patient_id, encounter_id, facility_id, ward_id,
-                  source_type, source_id, task_type, title, risk_level, state, business_state,
-                  assigned_user_id, claimed_by, due_at, source_route, row_version, created_at, updated_at)
-                select :tenant, task_id, patient_id, encounter_id, :facility,
-                  case when domain='inpatient' then :ward else null end,
-                  source_type, source_id, task_type, title, risk_level, state, business_state,
-                  :author, case when state in ('CLAIMED','IN_PROGRESS') then :author else null end,
-                  now() + due_minutes * interval '1 minute', source_route, 1,
-                  now() - (ordinal * 17) * interval '1 minute', now() - (ordinal * 5) * interval '1 minute'
-                from context on conflict (tenant_id, source_type, source_id, task_type) do nothing
-                """).param("tenant", TENANT_ID).param("facility", FACILITY_ID)
-                .param("ward", WARD_ID).param("author", USER_ID).update();
+    private void seedOperationalTasks(JsonNode dataset) {
+        for (JsonNode task : dataset.path("operational_tasks")) {
+            int ordinal = task.path("ordinal").asInt();
+            String domain = required(task, "domain");
+            UUID patientId = switch (domain) {
+                case "outpatient" -> UUID.fromString("018f0000-0000-7000-8000-000000000001");
+                case "inpatient" -> UUID.fromString("018f0000-0000-7000-8000-000000000002");
+                case "emergency" -> UUID.fromString("018f0000-0000-7000-8000-000000000003");
+                default -> throw new IllegalStateException("Unsupported task-center domain: " + domain);
+            };
+            UUID encounterId = switch (domain) {
+                case "outpatient" -> UUID.fromString("018f0000-0000-7000-8000-000000000101");
+                case "inpatient" -> UUID.fromString("018f0000-0000-7000-8000-000000000102");
+                case "emergency" -> UUID.fromString("018f0000-0000-7000-8000-000000000103");
+                default -> throw new IllegalStateException("Unsupported task-center domain: " + domain);
+            };
+            String state = required(task, "state");
+            jdbc.sql("""
+                    insert into clinical_task(
+                      tenant_id, task_id, patient_id, encounter_id, facility_id, ward_id,
+                      source_type, source_id, task_type, title, risk_level, state, business_state,
+                      assigned_user_id, claimed_by, due_at, source_route, row_version, created_at, updated_at)
+                    values (:tenant,
+                      overlay(overlay(md5(:task_seed) placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid,
+                      :patient, :encounter, :facility, cast(:ward as uuid), :source_type,
+                      overlay(overlay(md5(:source_seed) placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid,
+                      :task_type, :title,
+                      :risk, :state, :business_state, :author, cast(:claimed_by as uuid),
+                      now() + :due_minutes * interval '1 minute', :route, 1,
+                      now() - :created_minutes * interval '1 minute',
+                      now() - :updated_minutes * interval '1 minute')
+                    on conflict (tenant_id, source_type, source_id, task_type) do nothing
+                    """).param("tenant", TENANT_ID)
+                    .param("task_seed", "tertiary-task-center-v2:task:" + ordinal)
+                    .param("source_seed", "tertiary-task-center-v2:source:" + ordinal)
+                    .param("patient", patientId).param("encounter", encounterId).param("facility", FACILITY_ID)
+                    .param("ward", "inpatient".equals(domain) ? WARD_ID : null)
+                    .param("source_type", required(task, "source_type"))
+                    .param("task_type", required(task, "task_type")).param("title", required(task, "title"))
+                    .param("risk", required(task, "risk_level")).param("state", state)
+                    .param("business_state", required(task, "business_state"))
+                    .param("author", USER_ID)
+                    .param("claimed_by", List.of("CLAIMED", "IN_PROGRESS").contains(state) ? USER_ID : null)
+                    .param("due_minutes", task.path("due_minutes").asInt())
+                    .param("route", required(task, "source_route"))
+                    .param("created_minutes", ordinal * 17).param("updated_minutes", ordinal * 5).update();
+        }
     }
 
     private void seedTaskEvents() {
@@ -232,7 +237,9 @@ final class TertiaryTaskCenterDataImporter {
                 insert into clinical_task_event(
                   tenant_id, task_event_id, task_id, event_type, previous_state,
                   resulting_state, actor_user_id, reason, occurred_at)
-                select :tenant, md5('tertiary-task-center-v2:event:' || task_id)::uuid,
+                select :tenant,
+                  overlay(overlay(md5('tertiary-task-center-v2:event:' || task_id) placing '3' from 13 for 1)
+                    placing '8' from 17 for 1)::uuid,
                   task_id, 'CREATED', null, state, :author,
                   '由三级医院业务规则生成的仿真任务', created_at
                 from clinical_task
@@ -251,7 +258,9 @@ final class TertiaryTaskCenterDataImporter {
                 insert into clinical_task_team_queue(
                   tenant_id, queue_id, facility_id, department_id, clinical_task_id,
                   queue_status, enqueued_by, enqueued_at, claimed_by, claimed_at, row_version)
-                select :tenant, md5('tertiary-task-center-v2:queue:' || task_id)::uuid,
+                select :tenant,
+                  overlay(overlay(md5('tertiary-task-center-v2:queue:' || task_id) placing '3' from 13 for 1)
+                    placing '8' from 17 for 1)::uuid,
                   :facility, :department, task_id,
                   case when ordinal % 3=0 then 'COMPLETED' when ordinal % 2=0 then 'CLAIMED' else 'ENQUEUED' end,
                   :author, now()-(ordinal*13)*interval '1 minute',
@@ -259,7 +268,7 @@ final class TertiaryTaskCenterDataImporter {
                   case when ordinal % 3=0 or ordinal % 2=0 then now()-(ordinal*8)*interval '1 minute' else null end,
                   case when ordinal % 3=0 or ordinal % 2=0 then 2 else 1 end
                 from ranked
-                on conflict (tenant_id, queue_id) do nothing
+                on conflict do nothing
                 """).param("tenant", TENANT_ID).param("facility", FACILITY_ID)
                 .param("department", DEPARTMENT_ID).param("author", USER_ID).update();
     }
@@ -277,7 +286,9 @@ final class TertiaryTaskCenterDataImporter {
                   tenant_id, notification_id, task_id, recipient_user_id, kind, channel,
                   status, attempt_count, delivered_at, last_error, row_version,
                   created_at, updated_at, scheduled_at)
-                select :tenant, md5('tertiary-task-center-v2:notification:' || task.task_id || ':' || kinds.ordinal)::uuid,
+                select :tenant,
+                  overlay(overlay(md5('tertiary-task-center-v2:notification:' || task.task_id || ':' || kinds.ordinal)
+                    placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   task.task_id, case when kinds.ordinal=2 then :collaborator else :author end,
                   kinds.kind, kinds.channel, kinds.status, kinds.attempt_count,
                   case when kinds.status='DELIVERED' then now()-interval '12 minutes' else null end,
@@ -289,6 +300,20 @@ final class TertiaryTaskCenterDataImporter {
                 where task.tenant_id=:tenant and task.task_type like 'TCV2_%'
                 on conflict (tenant_id, notification_id) do nothing
                 """).param("tenant", TENANT_ID).param("author", USER_ID).param("collaborator", APPROVER_ID).update();
+        jdbc.sql("""
+                insert into clinical_task_in_app_delivery(
+                  tenant_id, delivery_id, notification_id, recipient_user_id, delivered_at)
+                select notification.tenant_id,
+                  overlay(overlay(md5('tertiary-task-center-v2:delivery:' || notification.notification_id)
+                    placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid,
+                  notification.notification_id, notification.recipient_user_id, notification.delivered_at
+                from clinical_task_notification notification
+                join clinical_task task on task.tenant_id = notification.tenant_id
+                  and task.task_id = notification.task_id
+                where notification.tenant_id = :tenant and task.task_type like 'TCV2_%'
+                  and notification.channel = 'IN_APP' and notification.status = 'DELIVERED'
+                on conflict (tenant_id, notification_id) do nothing
+                """).param("tenant", TENANT_ID).update();
     }
 
     private static UUID id(String key) {

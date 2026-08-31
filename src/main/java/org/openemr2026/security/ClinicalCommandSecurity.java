@@ -1,6 +1,7 @@
 package org.openemr2026.security;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.security.AuthorizationDecisionService.AuthorizationContext;
 import org.openemr2026.security.AuthorizationDecisionService.DepartmentWardScope;
@@ -31,6 +32,16 @@ public final class ClinicalCommandSecurity {
             UUID facilityId,
             UUID patientId,
             UUID encounterId) {
+        return authorizeForPurposes(request, organizationId, facilityId, patientId, encounterId, Set.of());
+    }
+
+    public ClinicalIdentity authorizeForPurposes(
+            HttpServletRequest request,
+            UUID organizationId,
+            UUID facilityId,
+            UUID patientId,
+            UUID encounterId,
+            Set<String> allowedPurposeCodes) {
         ClinicalIdentity identity = identities.current(request);
         UUID leaseId = requiredUuidHeader(request, "X-Context-Lease-Id");
         String watermark = requiredHeader(request, "X-Authorization-Watermark");
@@ -85,6 +96,11 @@ public final class ClinicalCommandSecurity {
         if (purposeCode == null) {
             throw new ClinicalAccessDeniedException(
                     "CONTEXT_NOT_PERMITTED", "The requested clinical context is not permitted");
+        }
+        if (allowedPurposeCodes != null && !allowedPurposeCodes.isEmpty()
+                && !allowedPurposeCodes.contains(purposeCode)) {
+            throw new ClinicalAccessDeniedException(
+                    "PURPOSE_NOT_PERMITTED", "The context lease purpose is not permitted for this operation");
         }
         requireCurrentAuthorization(identity, organizationId, facilityId, patientId, encounterId, purposeCode);
         return identity;

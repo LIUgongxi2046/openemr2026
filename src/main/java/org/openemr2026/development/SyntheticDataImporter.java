@@ -101,6 +101,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
         upsertAgentCatalog();
         upsertAiPlatformCatalog();
         upsertConfigurationFixtures();
+        upsertSystemAdministrationRuntimeFixtures();
         upsertAiAgentConfigurationFixtures();
         upsertBusinessConfigurationFixtures();
         upsertDocumentTemplates(root);
@@ -408,7 +409,12 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f215', 'BLOOD_TRANSFUSION_READ', '输血记录只读工具', 'DATABASE_QUERY'),
                   ('018f0000-0000-7000-8000-00000000f216', 'INFECTION_EVENT_READ', '院感事件只读工具', 'DATABASE_QUERY'),
                   ('018f0000-0000-7000-8000-00000000f217', 'PATHOLOGY_REPORT_READ', '病理报告只读工具', 'DATABASE_QUERY'),
-                  ('018f0000-0000-7000-8000-00000000f218', 'MDT_RECORD_READ', 'MDT 记录只读工具', 'DATABASE_QUERY')
+                  ('018f0000-0000-7000-8000-00000000f218', 'MDT_RECORD_READ', 'MDT 记录只读工具', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f221', 'CLINICAL_DOCUMENT_READ', '当前就诊文书版本读取', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f222', 'CLINICAL_ORDER_READ', '当前就诊医嘱读取', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f223', 'CLINICAL_RESULT_READ', '当前就诊结果读取', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f225', 'CLINICAL_ATTACHMENT_READ', '当前就诊附件元数据读取', 'DATABASE_QUERY'),
+                  ('018f0000-0000-7000-8000-00000000f226', 'BUSINESS_CONFIGURATION_READ', '已发布业务配置与运行时证据读取', 'DATABASE_QUERY')
                 ) as seed(tool_registry_id, tool_code, tool_name, tool_type)
                 on conflict (tenant_id, tool_code, tool_version) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -917,6 +923,193 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 """).param("tenant", TENANT_ID).param("author", USER_ID).update();
     }
 
+    private void upsertSystemAdministrationRuntimeFixtures() {
+        jdbc.sql("""
+                insert into config_item(
+                  tenant_id, config_id, config_type, config_key, display_name, payload,
+                  status, row_version, schema_version, validation_state, validation_errors,
+                  approval_state, approved_by, published_at, created_by)
+                select :tenant, seed.config_id::uuid, 'PARAMETER', seed.config_key, seed.display_name,
+                  jsonb_build_object(
+                    'schema_version', 1, 'description', seed.description, 'value_type', 'INTEGER',
+                    'configured_value', seed.configured_value, 'scope', 'GLOBAL',
+                    'inheritance', 'FACILITY -> ORGANIZATION -> GLOBAL',
+                    'secret_reference', 'env://OPENEMR2026_PARAMETER_NOT_SECRET',
+                    'effective_at', '2026-01-01T00:00:00+08:00'),
+                  'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
+                  now() - interval '30 days', :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000c601', 'auth-max-failed-attempts', '连续登录失败上限', '连续失败达到上限后锁定本地应急账号', '5'),
+                  ('018f0000-0000-7000-8000-00000000c602', 'auth-lockout-minutes', '账号锁定分钟数', '锁定时间由发布参数直接控制登录服务', '15'),
+                  ('018f0000-0000-7000-8000-00000000c603', 'auth-session-absolute-minutes', '会话绝对时限', '管理与临床会话最长存续分钟数', '480'),
+                  ('018f0000-0000-7000-8000-00000000c604', 'auth-session-idle-minutes', '会话闲置时限', '超过闲置分钟数后服务端撤销会话', '15'),
+                  ('018f0000-0000-7000-8000-00000000c605', 'auth-max-concurrent-sessions', '并发会话上限', '同一账号允许保留的有效会话数', '3')
+                ) as seed(config_id, config_key, display_name, description, configured_value)
+                on conflict (tenant_id, config_id) do update set display_name = excluded.display_name,
+                  payload = excluded.payload, status = 'ACTIVE', validation_state = 'VALID',
+                  validation_errors = '[]'::jsonb, approval_state = 'APPROVED', approved_by = :approver,
+                  published_at = coalesce(config_item.published_at, excluded.published_at), updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
+        jdbc.sql("""
+                insert into config_item(
+                  tenant_id, config_id, config_type, config_key, display_name, payload,
+                  status, row_version, schema_version, validation_state, validation_errors,
+                  approval_state, approved_by, published_at, created_by)
+                select :tenant, seed.config_id::uuid, 'MASTER_DATA', seed.config_key, seed.display_name,
+                  jsonb_build_object(
+                    'schema_version', 1, 'description', seed.description, 'code_system', seed.code_system,
+                    'hierarchy', string_to_array(seed.hierarchy, '>'),
+                    'effective_period', '2026-01-01/2099-12-31',
+                    'import_policy', '重复本地编码阻断；标准映射冲突进入治理队列；临床历史引用仅允许停用'),
+                  'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
+                  now() - interval '20 days', :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000c611', 'runtime-diagnosis-catalog-v1', '医保疾病诊断目录 · 当前在效', 'NHSA-DIAGNOSIS-2.0', '诊断>系统章节>病种', '国家医疗保障局医保疾病诊断分类与代码'),
+                  ('018f0000-0000-7000-8000-00000000c612', 'runtime-procedure-catalog-v1', '医保手术操作目录 · 当前在效', 'NHSA-PROCEDURE-2.0', '手术操作>系统章节>项目', '国家医疗保障局医保手术操作分类与代码'),
+                  ('018f0000-0000-7000-8000-00000000c613', 'runtime-drug-catalog-v1', '药品本位码与院内药品目录 · 当前在效', 'NMPA-DRUG-CODE', '药品>药理分类>通用名>规格', '国家药品监督管理局药品本位码与院内药事目录'),
+                  ('018f0000-0000-7000-8000-00000000c614', 'runtime-lab-catalog-v1', '检验项目与单位目录 · 当前在效', 'WS-LAB-LOCAL', '检验>专业组>项目', '卫生行业标准与院内LIS映射'),
+                  ('018f0000-0000-7000-8000-00000000c615', 'runtime-department-catalog-v1', '三级医院科室主数据 · 当前在效', 'HOSPITAL-DEPARTMENT', '医院>院区>科室>病区', '江城大学附属医院组织机构主数据')
+                ) as seed(config_id, config_key, display_name, code_system, hierarchy, description)
+                on conflict (tenant_id, config_id) do update set display_name = excluded.display_name,
+                  payload = excluded.payload, status = 'ACTIVE', validation_state = 'VALID',
+                  validation_errors = '[]'::jsonb, approval_state = 'APPROVED', approved_by = :approver,
+                  published_at = coalesce(config_item.published_at, excluded.published_at), updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
+        jdbc.sql("""
+                insert into master_data_record(
+                  tenant_id, record_id, config_id, code_system, national_code, local_code,
+                  display_name, category_path, national_version, authoritative_source,
+                  mapping_status, status, effective_from, attributes, created_by)
+                select :tenant,
+                  overlay(overlay(md5('runtime-master:' || seed.code_system || ':' || seed.local_code)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
+                  seed.config_id::uuid, seed.code_system, seed.national_code, seed.local_code,
+                  seed.display_name, seed.category_path, seed.national_version, seed.authoritative_source,
+                  seed.mapping_status, 'ACTIVE', timestamptz '2026-01-01 00:00:00+08',
+                  jsonb_build_object('maintaining_department', seed.owner, 'source', 'DEV_SYNTHETIC_TERTIARY_HOSPITAL'),
+                  :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000c611','NHSA-DIAGNOSIS-2.0','I25.10','DX-I25.10','冠状动脉粥样硬化性心脏病','诊断>循环系统疾病>缺血性心脏病','医保版2.0','国家医疗保障局','MATCHED','病案统计室'),
+                  ('018f0000-0000-7000-8000-00000000c611','NHSA-DIAGNOSIS-2.0','J18.900','DX-J18.900','肺炎，病原体未特指','诊断>呼吸系统疾病>肺炎','医保版2.0','国家医疗保障局','MATCHED','病案统计室'),
+                  ('018f0000-0000-7000-8000-00000000c611','NHSA-DIAGNOSIS-2.0','E11.900','DX-E11.900','2型糖尿病','诊断>内分泌疾病>糖尿病','医保版2.0','国家医疗保障局','MATCHED','病案统计室'),
+                  ('018f0000-0000-7000-8000-00000000c611','NHSA-DIAGNOSIS-2.0',null,'DX-LOCAL-CHEST-PAIN','胸痛待查','诊断>症状与体征>院内扩展','院内2026.1','江城大学附属医院','LOCAL_ONLY','医务处'),
+                  ('018f0000-0000-7000-8000-00000000c612','NHSA-PROCEDURE-2.0','00.6601','OP-PCI-001','经皮冠状动脉球囊扩张术','手术操作>心血管系统>介入治疗','医保版2.0','国家医疗保障局','MATCHED','病案统计室'),
+                  ('018f0000-0000-7000-8000-00000000c612','NHSA-PROCEDURE-2.0','88.7200','OP-ECHO-001','经胸超声心动图检查','手术操作>影像检查>超声','医保版2.0','国家医疗保障局','MATCHED','超声医学科'),
+                  ('018f0000-0000-7000-8000-00000000c613','NMPA-DRUG-CODE','86900000000001','DRUG-AMLO-5','苯磺酸氨氯地平片 5mg','药品>心血管系统用药>钙通道阻滞剂','国家药品本位码2026','国家药品监督管理局','MATCHED','药学部'),
+                  ('018f0000-0000-7000-8000-00000000c613','NMPA-DRUG-CODE','86900000000002','DRUG-ASP-100','阿司匹林肠溶片 100mg','药品>血液系统用药>抗血小板药','国家药品本位码2026','国家药品监督管理局','MATCHED','药学部'),
+                  ('018f0000-0000-7000-8000-00000000c613','NMPA-DRUG-CODE',null,'DRUG-COMPOUND-001','院内制剂复方护心颗粒','药品>院内制剂>心血管用药','院内制剂2026.1','江城大学附属医院药学部','UNMATCHED','药学部'),
+                  ('018f0000-0000-7000-8000-00000000c614','WS-LAB-LOCAL','718-7','LAB-HGB','血红蛋白测定','检验>临床血液学>血常规','LIS映射2026.2','卫生行业标准与院内LIS','MATCHED','检验科'),
+                  ('018f0000-0000-7000-8000-00000000c614','WS-LAB-LOCAL','2160-0','LAB-CREA','血清肌酐测定','检验>临床生化>肾功能','LIS映射2026.2','卫生行业标准与院内LIS','MATCHED','检验科'),
+                  ('018f0000-0000-7000-8000-00000000c614','WS-LAB-LOCAL',null,'LAB-HS-TNI-NEW','高敏肌钙蛋白I（新平台）','检验>临床生化>心肌标志物','LIS映射2026.3-候选','院内LIS设备映射','CONFLICT','检验科'),
+                  ('018f0000-0000-7000-8000-00000000c615','HOSPITAL-DEPARTMENT',null,'CARDIOLOGY','心血管内科','医院>本部院区>内科系统>心血管内科','组织版本2026.8','江城大学附属医院','LOCAL_ONLY','人力资源部'),
+                  ('018f0000-0000-7000-8000-00000000c615','HOSPITAL-DEPARTMENT',null,'EMERGENCY','急诊医学科','医院>本部院区>门急诊系统>急诊医学科','组织版本2026.8','江城大学附属医院','LOCAL_ONLY','人力资源部'),
+                  ('018f0000-0000-7000-8000-00000000c615','HOSPITAL-DEPARTMENT',null,'PHARMACY','药学部','医院>本部院区>医技系统>药学部','组织版本2026.8','江城大学附属医院','LOCAL_ONLY','人力资源部')
+                ) as seed(config_id, code_system, national_code, local_code, display_name,
+                  category_path, national_version, authoritative_source, mapping_status, owner)
+                on conflict (tenant_id, code_system, local_code) do update set
+                  national_code = excluded.national_code, display_name = excluded.display_name,
+                  category_path = excluded.category_path, national_version = excluded.national_version,
+                  authoritative_source = excluded.authoritative_source, mapping_status = excluded.mapping_status,
+                  attributes = excluded.attributes, status = 'ACTIVE', effective_until = null, updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID).update();
+        jdbc.sql("""
+                insert into config_item(
+                  tenant_id, config_id, config_type, config_key, display_name, payload,
+                  status, row_version, schema_version, validation_state, validation_errors,
+                  approval_state, approved_by, published_at, created_by)
+                select :tenant, seed.config_id::uuid, 'JOB', seed.config_key, seed.display_name,
+                  jsonb_build_object(
+                    'schema_version', 1, 'description', seed.description, 'job_kind', seed.job_kind,
+                    'schedule', seed.schedule, 'batch_size', 500,
+                    'retry_policy', '只重试失败批次；1分钟/5分钟/15分钟；最多3次',
+                    'reconciliation_rule', '处理总数必须等于成功数与失败数之和；治理问题单独闭环',
+                    'notification_channels', jsonb_build_array('站内信','短信','邮件'),
+                    'channel_owner', seed.owner),
+                  'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
+                  now() - interval '10 days', :author
+                from (values
+                  ('018f0000-0000-7000-8000-00000000c621','admin-governance-agent-v1','系统管理治理智能体','ADMIN_GOVERNANCE_AGENT','0 30 2 * * *','综合检查审计链、角色冲突、资质、主数据和事务事件','信息中心运维组'),
+                  ('018f0000-0000-7000-8000-00000000c622','audit-chain-verify-v1','审计链完整性每日核验','AUDIT_CHAIN_VERIFY','0 0 3 * * *','逐条核对审计事件前序摘要连续性','信息安全组'),
+                  ('018f0000-0000-7000-8000-00000000c623','role-conflict-review-v1','特权角色职责冲突复核','ROLE_CONFLICT_REVIEW','0 0 4 * * 1','复核系统管理、审计、授权和配置审批职责分离','信息安全组'),
+                  ('018f0000-0000-7000-8000-00000000c624','credential-expiry-review-v1','执业资质到期复核','CREDENTIAL_EXPIRY_REVIEW','0 0 5 * * *','提前30天发现到期或已过期执业资质','医务处'),
+                  ('018f0000-0000-7000-8000-00000000c625','master-data-reconcile-v1','主数据标准映射对账','MASTER_DATA_RECONCILIATION','0 0 1 * * *','发现未匹配、冲突和院内扩展编码','主数据管理组'),
+                  ('018f0000-0000-7000-8000-00000000c626','notification-reconcile-v1','通知与事务事件对账','NOTIFICATION_RECONCILIATION','0 */5 * * * *','发现超过5分钟未发布的事务事件','信息中心运维组')
+                ) as seed(config_id, config_key, display_name, job_kind, schedule, description, owner)
+                on conflict (tenant_id, config_id) do update set display_name = excluded.display_name,
+                  payload = excluded.payload, status = 'ACTIVE', validation_state = 'VALID',
+                  validation_errors = '[]'::jsonb, approval_state = 'APPROVED', approved_by = :approver,
+                  published_at = coalesce(config_item.published_at, excluded.published_at), updated_at = now()
+                """).param("tenant", TENANT_ID).param("author", USER_ID)
+                .param("approver", COLLABORATOR_USER_ID).update();
+        jdbc.sql("""
+                insert into administration_job_run(
+                  tenant_id, run_id, config_id, job_kind, status, requested_by, idempotency_key,
+                  attempt, processed_count, succeeded_count, failed_count, result,
+                  error_code, error_message, started_at, finished_at, created_at, updated_at)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000c631','018f0000-0000-7000-8000-00000000c621','ADMIN_GOVERNANCE_AGENT','PARTIAL',:author,'fixture-admin-governance-20260830',1,126,124,2,
+                    jsonb_build_object('summary','完成五类系统治理规则检查，2项问题进入人工闭环','finding_count',2,'engine','DETERMINISTIC_RULE_ENGINE'),null,null,now()-interval '1 day 35 minutes',now()-interval '1 day 31 minutes',now()-interval '1 day 36 minutes',now()-interval '1 day 31 minutes'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c632','018f0000-0000-7000-8000-00000000c622','AUDIT_CHAIN_VERIFY','SUCCEEDED',:author,'fixture-audit-chain-20260830',1,8642,8642,0,
+                    jsonb_build_object('summary','审计链前序摘要连续，未发现断链','verified_events',8642),null,null,now()-interval '1 day 3 hours',now()-interval '1 day 2 hours 57 minutes',now()-interval '1 day 3 hours 1 minute',now()-interval '1 day 2 hours 57 minutes'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c633','018f0000-0000-7000-8000-00000000c625','MASTER_DATA_RECONCILIATION','FAILED',:author,'fixture-master-reconcile-20260829',3,15280,15220,60,
+                    jsonb_build_object('summary','国家编码增量包校验失败，未发布到临床选择器','rollback_applied',true),'SOURCE_PACKAGE_CHECKSUM_MISMATCH','国家医保编码增量包校验和与登记值不一致，任务安全失败并保留当前在效版本',now()-interval '2 days 1 hour',now()-interval '2 days 45 minutes',now()-interval '2 days 1 hour 2 minutes',now()-interval '2 days 45 minutes'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c634','018f0000-0000-7000-8000-00000000c624','CREDENTIAL_EXPIRY_REVIEW','SUCCEEDED',:author,'fixture-credential-review-20260831',1,21,21,0,
+                    jsonb_build_object('summary','执业资质有效期复核完成','expiring_within_30_days',0),null,null,now()-interval '4 hours',now()-interval '3 hours 58 minutes',now()-interval '4 hours 1 minute',now()-interval '3 hours 58 minutes')
+                on conflict (tenant_id, run_id) do update set
+                  config_id = excluded.config_id, job_kind = excluded.job_kind, status = excluded.status,
+                  processed_count = excluded.processed_count, succeeded_count = excluded.succeeded_count,
+                  failed_count = excluded.failed_count, result = excluded.result, error_code = excluded.error_code,
+                  error_message = excluded.error_message, started_at = excluded.started_at,
+                  finished_at = excluded.finished_at, updated_at = excluded.updated_at
+                """).param("tenant", TENANT_ID).param("author", USER_ID).update();
+        jdbc.sql("""
+                insert into administration_governance_finding(
+                  tenant_id, finding_id, run_id, finding_type, severity, resource_type, resource_id,
+                  summary, recommendation, evidence, status, resolved_by, resolved_at, created_at, updated_at)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000c661','018f0000-0000-7000-8000-00000000c631','MASTER_DATA_MAPPING_CONFLICT','HIGH','MASTER_DATA_RECORD',null,
+                    '检验项目高敏肌钙蛋白I存在新旧平台映射冲突','由检验科与主数据管理组确认设备平台、单位和参考区间后再发布映射',jsonb_build_object('local_code','LAB-HS-TNI-NEW','code_system','WS-LAB-LOCAL','owner','检验科'),'OPEN',null,null,now()-interval '1 day 31 minutes',now()-interval '1 day 31 minutes'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c662','018f0000-0000-7000-8000-00000000c631','WORKGROUP_COVERAGE','MEDIUM','ADMINISTRATION_WORKGROUP',null,
+                    '通知任务运维组缺少第二复核人','补充信息安全岗作为任务失败重试和外发通知的独立复核人',jsonb_build_object('workgroup_code','WG-SECURITY-GOVERNANCE','required_role','SECOND_REVIEWER'),'RESOLVED',:approver,now()-interval '20 hours',now()-interval '1 day 31 minutes',now()-interval '20 hours')
+                on conflict (tenant_id, finding_id) do update set
+                  severity = excluded.severity, summary = excluded.summary,
+                  recommendation = excluded.recommendation, evidence = excluded.evidence,
+                  status = excluded.status, resolved_by = excluded.resolved_by,
+                  resolved_at = excluded.resolved_at, updated_at = excluded.updated_at
+                """).param("tenant", TENANT_ID).param("approver", COLLABORATOR_USER_ID).update();
+        UUID owner = syntheticAdministrationId("person:guoqiang.xiao");
+        UUID auditor = syntheticAdministrationId("person:zimo.dong");
+        UUID pharmacist = syntheticAdministrationId("person:qinghua.deng");
+        jdbc.sql("""
+                insert into administration_workgroup(
+                  tenant_id, workgroup_id, workgroup_code, display_name, purpose,
+                  organization_id, facility_id, owner_person_id, status, effective_from, created_by)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000c641', 'WG-SECURITY-GOVERNANCE', '信息安全治理工作组', '安全审计、权限冲突和高风险账户处置', :organization, :facility, :auditor, 'ACTIVE', now()-interval '180 days', :author),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c642', 'WG-MASTER-DATA', '医院主数据管理组', '国家标准、医保编码和院内主数据映射维护', :organization, :facility, :owner, 'ACTIVE', now()-interval '180 days', :author),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c643', 'WG-MEDICATION-SAFETY', '合理用药与药事治理组', '药品目录、处方规则和高风险用药治理', :organization, :facility, :pharmacist, 'ACTIVE', now()-interval '180 days', :author)
+                on conflict (tenant_id, workgroup_id) do update set display_name = excluded.display_name,
+                  purpose = excluded.purpose, owner_person_id = excluded.owner_person_id,
+                  status = 'ACTIVE', effective_until = null, updated_at = now()
+                """).param("tenant", TENANT_ID).param("organization", ORGANIZATION_ID)
+                .param("facility", FACILITY_ID).param("owner", owner).param("auditor", auditor)
+                .param("pharmacist", pharmacist).param("author", USER_ID).update();
+        jdbc.sql("""
+                insert into administration_workgroup_member(
+                  tenant_id, member_id, workgroup_id, person_id, role_code, responsibility,
+                  status, effective_from, created_by)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000c651','018f0000-0000-7000-8000-00000000c641',:auditor,'SECURITY_AUDITOR','审计链核验与安全事件复核','ACTIVE',now()-interval '180 days',:author),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c652','018f0000-0000-7000-8000-00000000c642',:owner,'CLINICAL_ADMIN','主数据变更发起与影响评估','ACTIVE',now()-interval '180 days',:author),
+                  (:tenant,'018f0000-0000-7000-8000-00000000c653','018f0000-0000-7000-8000-00000000c643',:pharmacist,'PHARMACIST','药品目录与处方规则复核','ACTIVE',now()-interval '180 days',:author)
+                on conflict (tenant_id, member_id) do update set responsibility = excluded.responsibility,
+                  status = 'ACTIVE', effective_until = null, updated_at = now()
+                """).param("tenant", TENANT_ID).param("owner", owner).param("auditor", auditor)
+                .param("pharmacist", pharmacist).param("author", USER_ID).update();
+    }
+
     private void upsertBusinessConfigurationFixtures() {
         jdbc.sql("""
                 insert into config_item(
@@ -1224,9 +1417,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   approval_state, approved_by, published_at, created_by)
                 select :tenant, seed.config_id::uuid, seed.config_type, seed.config_key,
                   seed.display_name, cast(seed.payload as jsonb) || jsonb_build_object(
-                    'fixture_source', 'tertiary-business-generator-v2',
+                    'fixture_source', 'tertiary-business-generator-v3',
                     'generation_method', 'DETERMINISTIC_SEEDED',
-                    'generator_version', 'tertiary-business-v2',
+                    'generator_version', 'tertiary-business-cn-v3',
                     'default_record_count', 36,
                     'record_count_range', jsonb_build_array(12, 200),
                     'contains_real_phi', false),
@@ -1247,7 +1440,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f131','INTEGRATION_INCIDENT','tr-882177','TR-882177 · WADO-RS 调阅超时','{"schema_version":1,"fixture_source":"tertiary-data-center-v1","hospital_level":"三级甲等","organization":"江城大学附属医院","description":"PACS 图像只读调阅超时，报告仍可用","trace_id":"TR-882177","direction":"EMR_TO_PACS","event_type":"WADO-RS","business_object":"Study 8821","result":"TIMEOUT","latency":"5.0s","clinical_impact":"报告可用，图像暂不可用；临床页明确显示降级","retry_policy":"沿用父 Trace 和 Study UID 幂等重试，三次失败转影像科人工队列"}'),
                   ('018f0000-0000-7000-8000-00000000f132','INTEGRATION_INCIDENT','tr-882151','TR-882151 · 区域 CDA 待回执','{"schema_version":1,"fixture_source":"tertiary-data-center-v1","hospital_level":"三级甲等","organization":"江城大学附属医院","description":"区域平台 CDA 上传后回执延迟","trace_id":"TR-882151","direction":"EMR_TO_HIE","event_type":"CDA_UPLOAD","business_object":"CDA-21018","result":"PENDING_ACK","latency":"12m","clinical_impact":"不影响院内签署，区域共享状态保持待确认","retry_policy":"回执查询只读重试；上传使用文档哈希防止重复副作用"}')
                 ) as seed(config_id, config_type, config_key, display_name, payload)
-                on conflict (tenant_id, config_type, config_key) do update set
+                on conflict (tenant_id, config_type, config_key) where status = 'ACTIVE' do update set
                   display_name = excluded.display_name, payload = excluded.payload,
                   validation_state = 'VALID', validation_errors = '[]'::jsonb,
                   approval_state = 'APPROVED', approved_by = excluded.approved_by,
@@ -1480,7 +1673,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     values (:tenant, cast(:id as uuid), :type, :key, :name, cast(:payload as jsonb),
                       'ACTIVE', 1, 1, 'VALID', '[]'::jsonb, 'APPROVED', :approver,
                       now() - interval '14 days', :author)
-                    on conflict (tenant_id, config_type, config_key) do update set
+                    on conflict (tenant_id, config_type, config_key) where status = 'ACTIVE' do update set
                       display_name = excluded.display_name,
                       payload = excluded.payload,
                       status = 'ACTIVE',
@@ -1992,6 +2185,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 new AdministrationStaff("JC-IT-5003", "董子墨 / Zimo Dong", "zimo.dong", "SECURITY_AUDITOR", "INFORMATION-CENTER", "信息安全工程师", null),
                 new AdministrationStaff("JC-RG-5004", "袁梦涵 / Menghan Yuan", "menghan.yuan", "REGISTRAR", "MEDICAL-AFFAIRS", "门诊服务专员", null),
                 new AdministrationStaff("JC-RS-5005", "潘博文 / Bowen Pan", "bowen.pan", "RESEARCHER", "MEDICAL-AFFAIRS", "临床研究协调员", null));
+        String workforcePasswordHash = new BCryptPasswordEncoder(12).encode(loginPassword);
         int sequence = 1;
         for (AdministrationStaff member : staff) {
             UUID personId = syntheticAdministrationId("person:" + member.externalSubject());
@@ -2020,6 +2214,18 @@ final class SyntheticDataImporter implements ApplicationRunner {
                       display_name = excluded.display_name, status = 'ACTIVE'
                     """).param("tenant", TENANT_ID).param("user", userId).param("person", personId)
                     .param("subject", member.externalSubject()).param("name", member.displayName()).update();
+            jdbc.sql("""
+                    insert into dev_user_credential(tenant_id, user_id, username, password_hash)
+                    values (:tenant, :user, :username, :password_hash)
+                    on conflict (tenant_id, user_id) do update
+                    set username = excluded.username,
+                      password_hash = excluded.password_hash,
+                      failed_attempts = 0,
+                      locked_until = null,
+                      updated_at = now()
+                    """).param("tenant", TENANT_ID).param("user", userId)
+                    .param("username", member.externalSubject()).param("password_hash", workforcePasswordHash)
+                    .update();
             jdbc.sql("""
                     insert into role_assignment(
                       tenant_id, role_assignment_id, user_id, person_id, organization_id,
@@ -3319,10 +3525,12 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 update workforce_assignment set department_id = :department, ward_id = :ward,
                   position_code = case when position_code = 'CLINICIAN' then 'ATTENDING_PHYSICIAN' else position_code end,
                   updated_at = now(), row_version = row_version + 1
-                where tenant_id = :tenant and source_role_assignment_id in (:clinician, :attending, :chief)
+                where tenant_id = :tenant
+                  and source_role_assignment_id in (:clinician, :collaborator, :attending, :chief)
                   and (department_id is distinct from :department or ward_id is distinct from :ward)
                 """).param("department", SYNTHETIC_DEPARTMENT_ID).param("ward", SYNTHETIC_WARD_ID)
                 .param("tenant", TENANT_ID).param("clinician", ROLE_ASSIGNMENT_ID)
+                .param("collaborator", COLLABORATOR_ROLE_ID)
                 .param("attending", ATTENDING_ROLE_ID).param("chief", CHIEF_ROLE_ID).update();
         jdbc.sql("""
                 insert into ward_role_scope(tenant_id, ward_id, role_assignment_id)

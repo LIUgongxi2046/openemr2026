@@ -24,6 +24,8 @@ import {
   inpatientPathwayWorkspaceWireSchema,
   clinicalOrderWireSchema,
   clinicalTaskWireSchema,
+  clinicalTaskCollaboratorWireSchema,
+  clinicalTaskDetailWireSchema,
   clinicalTaskTeamQueueWireSchema,
   clinicalTaskNotificationWireSchema,
   medicationSafetyEvaluationWireSchema,
@@ -73,6 +75,8 @@ import {
   type InpatientPathwayWorkspaceWire,
   type ClinicalOrderWire,
   type ClinicalTaskWire,
+  type ClinicalTaskCollaboratorWire,
+  type ClinicalTaskDetailWire,
   type ClinicalTaskTeamQueueWire,
   type ClinicalTaskNotificationWire,
   type MedicationSafetyEvaluationWire,
@@ -427,7 +431,9 @@ export async function issueOrderLease(mode: 'outpatient' | 'inpatient'): Promise
   return issueContextLease(context.patientId, context.encounterId, 'ORDER_WORKFLOW');
 }
 
-export async function issueClinicalTaskLease(mode: 'outpatient' | 'inpatient'): Promise<ContextLeaseWire> {
+export type ClinicalTaskMode = 'outpatient' | 'emergency' | 'inpatient';
+
+export async function issueClinicalTaskLease(mode: ClinicalTaskMode): Promise<ContextLeaseWire> {
   const context = orderContext(mode);
   return issueContextLease(context.patientId, context.encounterId, 'CLINICAL_TASK_WORKFLOW');
 }
@@ -651,13 +657,17 @@ export function explicitContextHeaders(
   };
 }
 
-function orderContext(mode: 'outpatient' | 'inpatient') {
-  return mode === 'inpatient'
-    ? { patientId: clinicalContext.inpatientPatientId, encounterId: clinicalContext.inpatientEncounterId }
-    : { patientId: clinicalContext.patientId, encounterId: clinicalContext.encounterId };
+function orderContext(mode: ClinicalTaskMode) {
+  if (mode === 'inpatient') {
+    return { patientId: clinicalContext.inpatientPatientId, encounterId: clinicalContext.inpatientEncounterId };
+  }
+  if (mode === 'emergency') {
+    return { patientId: clinicalContext.emergencyPatientId, encounterId: clinicalContext.emergencyEncounterId };
+  }
+  return { patientId: clinicalContext.patientId, encounterId: clinicalContext.encounterId };
 }
 
-export function orderHeaders(lease: ContextLeaseWire, mode: 'outpatient' | 'inpatient') {
+export function orderHeaders(lease: ContextLeaseWire, mode: ClinicalTaskMode) {
   const context = orderContext(mode);
   return {
     'X-Context-Lease-Id': lease.lease_id,
@@ -671,7 +681,7 @@ export function orderHeaders(lease: ContextLeaseWire, mode: 'outpatient' | 'inpa
 
 export async function listClinicalOrders(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
 ): Promise<ClinicalOrderWire[]> {
   const context = orderContext(mode);
   return clinicalOrderWireSchema.array().parse(await request(
@@ -682,7 +692,7 @@ export async function listClinicalOrders(
 
 export async function listClinicalTasks(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
 ): Promise<ClinicalTaskWire[]> {
   const context = orderContext(mode);
   return clinicalTaskWireSchema.array().parse(await request(
@@ -693,7 +703,7 @@ export async function listClinicalTasks(
 
 export async function commandClinicalTask(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   task: ClinicalTaskWire,
   action: 'views' | 'claims',
 ): Promise<ClinicalTaskWire> {
@@ -715,11 +725,12 @@ export async function commandClinicalTask(
 
 export async function collaborateClinicalTask(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   task: ClinicalTaskWire,
   action: 'delegations' | 'transfers' | 'escalations',
   targetUserId: string,
   reason: string,
+  validUntil?: string | null,
 ): Promise<ClinicalTaskWire> {
   const context = orderContext(mode);
   return clinicalTaskWireSchema.parse(await request(`/clinical-tasks/${task.task_id}/${action}`, {
@@ -735,8 +746,27 @@ export async function collaborateClinicalTask(
       expected_row_version: task.row_version,
       target_user_id: targetUserId,
       reason,
-      valid_until: action === 'delegations' ? new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() : null,
+      valid_until: action === 'delegations' ? validUntil : null,
     }),
+  }));
+}
+
+export async function listEligibleClinicalTaskCollaborators(
+  lease: ContextLeaseWire,
+  mode: ClinicalTaskMode,
+): Promise<ClinicalTaskCollaboratorWire[]> {
+  return clinicalTaskCollaboratorWireSchema.array().parse(await request('/clinical-tasks/collaborators', {
+    headers: orderHeaders(lease, mode),
+  }));
+}
+
+export async function getClinicalTaskDetail(
+  lease: ContextLeaseWire,
+  mode: ClinicalTaskMode,
+  taskId: string,
+): Promise<ClinicalTaskDetailWire> {
+  return clinicalTaskDetailWireSchema.parse(await request(`/clinical-tasks/${taskId}`, {
+    headers: orderHeaders(lease, mode),
   }));
 }
 
@@ -787,7 +817,7 @@ export async function transitionClinicalTaskTeamQueue(
 
 export async function listClinicalTaskNotifications(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   taskId: string,
 ): Promise<ClinicalTaskNotificationWire[]> {
   return clinicalTaskNotificationWireSchema.array().parse(await request(
@@ -798,7 +828,7 @@ export async function listClinicalTaskNotifications(
 
 export async function createClinicalTaskNotification(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   input: {
     taskId: string;
     recipientUserId: string;
@@ -827,7 +857,7 @@ export async function createClinicalTaskNotification(
 
 export async function transitionClinicalTaskNotification(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   notification: ClinicalTaskNotificationWire,
   action: 'deliveries' | 'failures',
   error?: string,
@@ -852,7 +882,7 @@ export async function transitionClinicalTaskNotification(
 
 export async function recoverClinicalTaskNotifications(
   lease: ContextLeaseWire,
-  mode: 'outpatient' | 'inpatient',
+  mode: ClinicalTaskMode,
   taskId: string,
 ): Promise<number> {
   const context = orderContext(mode);
@@ -2336,6 +2366,26 @@ export async function endWorkforceRole(identity: WorkforceIdentityWire, reason: 
       }),
     },
   ));
+}
+
+export async function assignWorkforceRole(input: {
+  role_assignment_id: string;
+  user_id: string;
+  person_id: string;
+  role_code: string;
+  position_code: string;
+  organization_id: string;
+  facility_id: string;
+  department_id?: string;
+  ward_id?: string;
+  valid_from: string;
+  valid_until?: string;
+}): Promise<WorkforceIdentityWire> {
+  return workforceIdentityWireSchema.parse(await adminRequest('/admin/workforce/role-assignments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(input),
+  }));
 }
 
 export async function loadAuthorizationPolicies(): Promise<AuthorizationPolicyWire[]> {

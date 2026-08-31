@@ -29,7 +29,11 @@ final class DevelopmentSessionService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final BCryptPasswordEncoder PASSWORDS = new BCryptPasswordEncoder(12);
-    private static final int MAX_FAILURES = 5;
+    private static final int DEFAULT_MAX_FAILURES = 5;
+    private static final int DEFAULT_LOCKOUT_MINUTES = 15;
+    private static final int DEFAULT_SESSION_ABSOLUTE_MINUTES = 480;
+    private static final int DEFAULT_SESSION_IDLE_MINUTES = 15;
+    private static final int DEFAULT_MAX_CONCURRENT_SESSIONS = 3;
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
 
@@ -61,25 +65,36 @@ final class DevelopmentSessionService {
             if (credential.lockedUntil() != null && credential.lockedUntil().isAfter(OffsetDateTime.now())) {
                 return LoginAttempt.lockedAttempt();
             }
+            int maximumFailures = integerParameter(
+                    credential.tenantId(), "auth-max-failed-attempts", DEFAULT_MAX_FAILURES, 3, 20);
+            int lockoutMinutes = integerParameter(
+                    credential.tenantId(), "auth-lockout-minutes", DEFAULT_LOCKOUT_MINUTES, 1, 1440);
             if (request.password() == null || !PASSWORDS.matches(request.password(), credential.passwordHash())) {
                 int failures = credential.failedAttempts() + 1;
                 jdbc.sql("""
                         update dev_user_credential
                         set failed_attempts = :failures,
-                          locked_until = case when :failures >= :maximum then now() + interval '15 minutes' else null end,
+                          locked_until = case when :failures >= :maximum
+                            then now() + make_interval(mins => :lockout_minutes) else null end,
                           updated_at = now()
                         where tenant_id = :tenant and user_id = :user
-                        """).param("failures", failures).param("maximum", MAX_FAILURES)
+                        """).param("failures", failures).param("maximum", maximumFailures)
+                        .param("lockout_minutes", lockoutMinutes)
                         .param("tenant", credential.tenantId()).param("user", credential.userId()).update();
                 appendAudit(credential.tenantId(), credential.userId(), UUID.randomUUID(), "LOGIN_FAILED");
-                return failures >= MAX_FAILURES ? LoginAttempt.lockedAttempt() : LoginAttempt.invalid();
+                return failures >= maximumFailures ? LoginAttempt.lockedAttempt() : LoginAttempt.invalid();
             }
 
             byte[] raw = new byte[32];
             RANDOM.nextBytes(raw);
             String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
             UUID sessionId = UUID.randomUUID();
-            Instant expiresAt = Instant.now().plusSeconds(8 * 60 * 60);
+            int sessionMinutes = integerParameter(
+                    credential.tenantId(), "auth-session-absolute-minutes", DEFAULT_SESSION_ABSOLUTE_MINUTES, 5, 1440);
+            int maximumSessions = integerParameter(
+                    credential.tenantId(), "auth-max-concurrent-sessions", DEFAULT_MAX_CONCURRENT_SESSIONS, 1, 10);
+            revokeExcessSessions(credential.tenantId(), credential.userId(), maximumSessions - 1);
+            Instant expiresAt = Instant.now().plusSeconds(sessionMinutes * 60L);
             jdbc.sql("""
                     insert into user_session(
                       tenant_id, session_id, user_id, token_hash, issued_at, expires_at, last_seen_at)
@@ -134,21 +149,67 @@ final class DevelopmentSessionService {
     private SessionHead requireSession(String authorization, boolean touch) {
         String token = bearer(authorization);
         SessionHead result = jdbc.sql("""
-                select tenant_id, session_id, user_id, expires_at
+                select tenant_id, session_id, user_id, expires_at, last_seen_at
                 from user_session
                 where token_hash = :hash and revoked_at is null and expires_at > now()
                 """).param("hash", sha256Bytes(token))
                 .query((rs, row) -> new SessionHead(
                         rs.getObject("tenant_id", UUID.class), rs.getObject("session_id", UUID.class),
                         rs.getObject("user_id", UUID.class),
-                        rs.getObject("expires_at", OffsetDateTime.class).toInstant()))
+                        rs.getObject("expires_at", OffsetDateTime.class).toInstant(),
+                        rs.getObject("last_seen_at", OffsetDateTime.class).toInstant()))
                 .optional().orElseThrow(() -> new ClinicalAccessDeniedException(
                         "AUTHENTICATION_REQUIRED", "登录会话无效或已过期"));
+        int idleMinutes = integerParameter(
+                result.tenantId(), "auth-session-idle-minutes", DEFAULT_SESSION_IDLE_MINUTES, 1, 240);
+        if (result.lastSeenAt().isBefore(Instant.now().minusSeconds(idleMinutes * 60L))) {
+            jdbc.sql("""
+                    update user_session set revoked_at = now(), revoke_reason = 'IDLE_TIMEOUT'
+                    where tenant_id = :tenant and session_id = :session and revoked_at is null
+                    """).param("tenant", result.tenantId()).param("session", result.sessionId()).update();
+            throw new ClinicalAccessDeniedException("SESSION_IDLE_TIMEOUT", "登录会话因长时间未操作已失效");
+        }
         if (touch) {
             jdbc.sql("update user_session set last_seen_at = now() where tenant_id = :tenant and session_id = :session")
                     .param("tenant", result.tenantId()).param("session", result.sessionId()).update();
         }
         return result;
+    }
+
+    private int integerParameter(UUID tenantId, String key, int fallback, int minimum, int maximum) {
+        String raw = jdbc.sql("""
+                select payload ->> 'configured_value'
+                from config_item
+                where tenant_id = :tenant and config_type = 'PARAMETER' and config_key = :key
+                  and status = 'ACTIVE'
+                  and case
+                    when payload ->> 'effective_at' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}T'
+                      then (payload ->> 'effective_at')::timestamptz
+                    else 'infinity'::timestamptz
+                  end <= now()
+                order by published_at desc nulls last, row_version desc
+                limit 1
+                """).param("tenant", tenantId).param("key", key)
+                .query(String.class).optional().orElse(null);
+        if (raw == null) return fallback;
+        try {
+            int value = Integer.parseInt(raw.trim());
+            return value >= minimum && value <= maximum ? value : fallback;
+        } catch (NumberFormatException invalid) {
+            return fallback;
+        }
+    }
+
+    private void revokeExcessSessions(UUID tenantId, UUID userId, int sessionsToKeep) {
+        jdbc.sql("""
+                update user_session set revoked_at = now(), revoke_reason = 'CONCURRENT_SESSION_LIMIT'
+                where tenant_id = :tenant and user_id = :user and revoked_at is null and expires_at > now()
+                  and session_id not in (
+                    select session_id from user_session
+                    where tenant_id = :tenant and user_id = :user and revoked_at is null and expires_at > now()
+                    order by last_seen_at desc, issued_at desc limit :keep
+                  )
+                """).param("tenant", tenantId).param("user", userId).param("keep", sessionsToKeep).update();
     }
 
     private SessionUserWire sessionUser(UUID tenantId, UUID userId, Instant expiresAt) {
@@ -253,7 +314,7 @@ final class DevelopmentSessionService {
             return new LoginAttempt(null, true);
         }
     }
-    private record SessionHead(UUID tenantId, UUID sessionId, UUID userId, Instant expiresAt) {}
+    private record SessionHead(UUID tenantId, UUID sessionId, UUID userId, Instant expiresAt, Instant lastSeenAt) {}
     private record Account(String displayName, UUID organizationId, String organizationName,
                            UUID facilityId, String facilityName) {}
     private record Role(UUID id, String code) {}

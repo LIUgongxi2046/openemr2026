@@ -207,6 +207,64 @@ final class WorkforceAdministrationService {
         });
     }
 
+    WorkforceIdentityWire assignRole(
+            ClinicalIdentity identity,
+            String idempotencyKey,
+            RoleAssignmentCreateRequest request) {
+        requireAdministrator(identity);
+        if (request == null || request.roleAssignmentId() == null || request.userId() == null
+                || request.personId() == null || request.organizationId() == null || request.facilityId() == null
+                || request.roleCode() == null || request.roleCode().isBlank()
+                || request.positionCode() == null || request.positionCode().isBlank()
+                || request.validFrom() == null
+                || (request.validUntil() != null && !request.validUntil().isAfter(request.validFrom()))
+                || (request.wardId() != null && request.departmentId() == null)) {
+            throw invalid("Complete account, person, role, organization scope, position and validity are required");
+        }
+        return transactions.execute(status -> {
+            begin(identity, "WORKFORCE_ROLE_ASSIGN", idempotencyKey, sha256(request.toString()));
+            requireActiveScope(identity.tenantId(), new WorkforceOnboardingRequest(
+                    request.personId(), "EXISTING", "EXISTING", request.userId(), "EXISTING",
+                    request.roleAssignmentId(), request.roleCode(), request.positionCode(),
+                    request.organizationId(), request.facilityId(), request.departmentId(), request.wardId(),
+                    request.validFrom(), request.validUntil(), null, null, null, null, Map.of()));
+            long account = jdbc.sql("""
+                    select count(*) from app_user where tenant_id = :tenant and user_id = :user
+                      and person_id = :person and status = 'ACTIVE'
+                    """).param("tenant", identity.tenantId()).param("user", request.userId())
+                    .param("person", request.personId()).query(Long.class).single();
+            if (account != 1) throw new OrganizationAdministrationException(
+                    "WORKFORCE_ACCOUNT_NOT_ACTIVE", 409, "The person account is not active");
+            try {
+                jdbc.sql("""
+                        insert into role_assignment(
+                          tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                          facility_id, role_code, valid_from, valid_until, status)
+                        values (:tenant, :role, :user, :person, :organization, :facility,
+                          :role_code, :valid_from, :valid_until, 'ACTIVE')
+                        """).param("tenant", identity.tenantId()).param("role", request.roleAssignmentId())
+                        .param("user", request.userId()).param("person", request.personId())
+                        .param("organization", request.organizationId()).param("facility", request.facilityId())
+                        .param("role_code", request.roleCode().trim().toUpperCase())
+                        .param("valid_from", utc(request.validFrom())).param("valid_until", utc(request.validUntil()))
+                        .update();
+                jdbc.sql("""
+                        update workforce_assignment set department_id = :department, ward_id = :ward,
+                          position_code = :position, row_version = row_version + 1, updated_at = now()
+                        where tenant_id = :tenant and source_role_assignment_id = :role
+                        """).param("department", request.departmentId()).param("ward", request.wardId())
+                        .param("position", request.positionCode().trim().toUpperCase())
+                        .param("tenant", identity.tenantId()).param("role", request.roleAssignmentId()).update();
+            } catch (DataIntegrityViolationException conflict) {
+                throw new OrganizationAdministrationException(
+                        "WORKFORCE_ROLE_CONFLICT", 409, "The role assignment conflicts with current identity or scope data");
+            }
+            appendEvidence(identity, "WORKFORCE_ROLE_ASSIGNED", request.personId(), 1);
+            complete(identity, "WORKFORCE_ROLE_ASSIGN", idempotencyKey, request.roleAssignmentId());
+            return find(identity, request.personId(), request.userId(), request.roleAssignmentId());
+        });
+    }
+
     private void insertCredential(UUID tenantId, WorkforceOnboardingRequest request) {
         if (request.credentialId() == null) return;
         jdbc.sql("""
@@ -421,6 +479,19 @@ final class WorkforceAdministrationService {
     record AccountDeactivateRequest(long expectedRowVersion, String reason) {}
 
     record RoleEndRequest(long expectedRowVersion, Instant effectiveUntil, String reason) {}
+
+    record RoleAssignmentCreateRequest(
+            UUID roleAssignmentId,
+            UUID userId,
+            UUID personId,
+            String roleCode,
+            String positionCode,
+            UUID organizationId,
+            UUID facilityId,
+            UUID departmentId,
+            UUID wardId,
+            Instant validFrom,
+            Instant validUntil) {}
 
     record WorkforceIdentityWire(
             UUID personId,

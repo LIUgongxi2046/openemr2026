@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import org.openemr2026.organization.WorkforceAdministrationService.AccountDeactivateRequest;
 import org.openemr2026.organization.WorkforceAdministrationService.RoleEndRequest;
+import org.openemr2026.organization.WorkforceAdministrationService.RoleAssignmentCreateRequest;
 import org.openemr2026.organization.WorkforceAdministrationService.WorkforceIdentityWire;
 import org.openemr2026.organization.WorkforceAdministrationService.WorkforceOnboardingRequest;
 import org.openemr2026.security.ClinicalCommandSecurity;
@@ -60,5 +61,14 @@ final class WorkforceAdministrationController {
             @PathVariable UUID roleAssignmentId,
             @RequestBody RoleEndRequest body) {
         return workforce.endRole(security.authenticate(request), idempotencyKey, roleAssignmentId, body);
+    }
+
+    @PostMapping("/role-assignments")
+    ResponseEntity<WorkforceIdentityWire> assignRole(
+            HttpServletRequest request,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody RoleAssignmentCreateRequest body) {
+        return ResponseEntity.status(201)
+                .body(workforce.assignRole(security.authenticate(request), idempotencyKey, body));
     }
 }

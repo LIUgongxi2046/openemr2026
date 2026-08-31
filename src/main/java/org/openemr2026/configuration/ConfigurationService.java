@@ -30,9 +30,9 @@ final class ConfigurationService {
     private static final Map<String, List<String>> REQUIRED_FIELDS = Map.ofEntries(
             Map.entry("WORKFLOW", List.of("schema_version", "nodes", "edges", "protected_nodes", "timeout_policy")),
             Map.entry("FORM_TEMPLATE", List.of("schema_version", "fields", "groups", "terminology_mapping", "print_template")),
-            Map.entry("RULE", List.of("schema_version", "conditions", "actions", "rule_layer", "sample_case")),
-            Map.entry("SCOPE", List.of("schema_version", "roles", "data_scopes", "separation_of_duties", "temporary_grant_hours")),
-            Map.entry("CAPABILITY_PACK_COMPOSITION", List.of("schema_version", "selected_modules", "dependencies", "scope_overrides", "rating_impact")),
+            Map.entry("RULE", List.of("schema_version", "rules", "conditions", "actions", "rule_layer", "sample_case")),
+            Map.entry("SCOPE", List.of("schema_version", "permissions", "roles", "data_scopes", "separation_of_duties", "temporary_grant_hours")),
+            Map.entry("CAPABILITY_PACK_COMPOSITION", List.of("schema_version", "module_catalog", "selected_modules", "dependencies", "scope_overrides", "rating_framework", "rating_impact")),
             Map.entry("AGENT_COMPOSITION", List.of("schema_version", "agents", "skills", "tools", "budget_tokens", "stop_conditions", "compensation")),
             Map.entry("AGENT_CONTEXT", List.of("schema_version", "data_sources", "allowed_fields", "time_window_hours", "redaction_policy", "freshness_minutes")),
             Map.entry("AGENT_EVAL", List.of("schema_version", "dataset_version", "case_count", "pass_threshold", "red_team_profile")),
@@ -41,8 +41,8 @@ final class ConfigurationService {
             Map.entry("CONFIG_UPGRADE", List.of("schema_version", "package_version", "compatibility", "conflicts", "recovery_point")),
             Map.entry("MASTER_DATA", List.of("schema_version", "code_system", "hierarchy", "effective_period", "import_policy")),
             Map.entry("ROLE_CATALOG", List.of("schema_version", "object_type", "parent_role_code", "permission_summary", "scope", "owner")),
-            Map.entry("PARAMETER", List.of("schema_version", "value_type", "scope", "inheritance", "secret_reference", "effective_at")),
-            Map.entry("JOB", List.of("schema_version", "schedule", "batch_size", "retry_policy", "reconciliation_rule")),
+            Map.entry("PARAMETER", List.of("schema_version", "value_type", "configured_value", "scope", "inheritance", "secret_reference", "effective_at")),
+            Map.entry("JOB", List.of("schema_version", "job_kind", "schedule", "batch_size", "retry_policy", "reconciliation_rule")),
             Map.entry("BACKUP", List.of("schema_version", "repository", "retention_days", "rpo_minutes", "rto_minutes", "checksum_policy")),
             Map.entry("INSTALL", List.of("schema_version", "prerequisites", "database_profile", "identity_profile", "resume_step")),
             Map.entry("OPERATION", List.of("schema_version", "health_checks", "maintenance_window", "downtime_mode", "recovery_steps")),
@@ -68,11 +68,14 @@ final class ConfigurationService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper objectMapper;
+    private final ClinicalPathwayConfigurationPublisher pathwayPublisher;
 
-    ConfigurationService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper) {
+    ConfigurationService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper,
+            ClinicalPathwayConfigurationPublisher pathwayPublisher) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
+        this.pathwayPublisher = pathwayPublisher;
     }
 
     List<ConfigurationItemWire> list(ClinicalIdentity identity, String configType) {
@@ -96,6 +99,29 @@ final class ConfigurationService {
                 .list();
     }
 
+    ConfigurationItemWire get(ClinicalIdentity identity, UUID configId) {
+        return item(identity.tenantId(), configId);
+    }
+
+    List<ConfigurationRevisionWire> revisions(ClinicalIdentity identity, UUID configId) {
+        item(identity.tenantId(), configId);
+        return jdbc.sql("""
+                select revision_no, display_name, payload::text, schema_version, status,
+                  validation_state, validation_errors::text, approval_state, changed_by,
+                  change_reason, created_at
+                from config_item_revision
+                where tenant_id = :tenant and config_id = :config
+                order by revision_no desc limit 200
+                """).param("tenant", identity.tenantId()).param("config", configId)
+                .query((rs, row) -> new ConfigurationRevisionWire(
+                        rs.getLong("revision_no"), rs.getString("display_name"),
+                        payload(rs.getString("payload")), rs.getInt("schema_version"),
+                        rs.getString("status"), rs.getString("validation_state"),
+                        validationErrors(rs.getString("validation_errors")), rs.getString("approval_state"),
+                        rs.getObject("changed_by", UUID.class), rs.getString("change_reason"),
+                        rs.getObject("created_at", OffsetDateTime.class))).list();
+    }
+
     ConfigurationItemWire define(
             ClinicalIdentity identity, String idempotencyKey, ConfigurationItemDefineRequestWire request) {
         requireConfigurationRole(identity, CONFIGURATION_AUTHOR_ROLES, "CONFIG_AUTHOR_REQUIRED");
@@ -109,7 +135,7 @@ final class ConfigurationService {
                     insert into config_item(
                       tenant_id, config_id, config_type, config_key, display_name, payload, status, created_by)
                     values (:tenant, :config, :type, :key, :name, cast(:payload as jsonb), 'DRAFT', :actor)
-                    on conflict (tenant_id, config_type, config_key) do nothing
+                    on conflict do nothing
                     """).param("tenant", identity.tenantId()).param("config", configId)
                     .param("type", request.configType()).param("key", request.configKey())
                     .param("name", request.displayName()).param("payload", json(request.payload()))
@@ -158,6 +184,12 @@ final class ConfigurationService {
     ConfigurationItemWire transition(
             ClinicalIdentity identity, UUID configId, String idempotencyKey,
             ConfigurationLifecycleRequestWire request) {
+        List<String> allowedRoles = switch (request.action()) {
+            case APPROVE, PUBLISH, ROLLBACK, ARCHIVE -> CONFIGURATION_APPROVER_ROLES;
+            case VALIDATE, SUBMIT -> CONFIGURATION_AUTHOR_ROLES;
+        };
+        requireConfigurationRole(identity, allowedRoles,
+                allowedRoles == CONFIGURATION_APPROVER_ROLES ? "CONFIG_APPROVER_REQUIRED" : "CONFIG_AUTHOR_REQUIRED");
         String reason = request.reason() == null ? "" : request.reason().trim();
         if (reason.length() < 8 || reason.length() > 500) {
             throw new ConfigurationException("CONFIG_REASON_REQUIRED", 422, "生命周期操作原因需为 8 至 500 个字符");
@@ -240,11 +272,22 @@ final class ConfigurationService {
                     .param("workbench", workbenchId).update();
         }
         jdbc.sql("""
+                update config_item set status = 'ARCHIVED', published_at = null,
+                  row_version = row_version + 1, updated_at = now()
+                where tenant_id = :tenant and config_type = :type and config_key = :key
+                  and status = 'ACTIVE' and config_id <> :config
+                """).param("tenant", identity.tenantId()).param("type", current.configType())
+                .param("key", current.configKey()).param("config", current.configId()).update();
+        jdbc.sql("""
                 update config_item set status = 'ACTIVE', published_at = now(),
                   row_version = row_version + 1, updated_at = now()
                 where tenant_id = :tenant and config_id = :config and row_version = :version
                 """).param("tenant", identity.tenantId()).param("config", current.configId())
                 .param("version", current.rowVersion()).update();
+        if ("CLINICAL_PATHWAY".equals(current.configType())) {
+            pathwayPublisher.publish(identity, current.configId(), current.rowVersion() + 1,
+                    current.displayName(), current.payload());
+        }
     }
 
     private void rollbackTransition(ClinicalIdentity identity, ConfigState current) {
@@ -301,6 +344,13 @@ final class ConfigurationService {
         Object schemaVersion = payload.get("schema_version");
         if (!(schemaVersion instanceof Number number) || number.intValue() < 1) {
             errors.add("schema_version 必须为正整数");
+        }
+        if (List.of("WORKFLOW", "FORM_TEMPLATE", "RULE", "SCOPE").contains(configType)) {
+            if (!(schemaVersion instanceof Number number) || number.intValue() < 3) {
+                errors.add("中国医疗生产运行配置必须升级到 schema_version 3");
+            } else {
+                validateChinaCompliance(payload, errors);
+            }
         }
         Object secret = payload.get("secret_reference");
         if (secret instanceof String value && !value.isBlank()
@@ -434,7 +484,10 @@ final class ConfigurationService {
     private void validateWorkflow(Map<String, Object> payload, List<String> errors) {
         List<Map<String, Object>> nodes = objectRows(payload.get("nodes"));
         List<Map<String, Object>> edges = objectRows(payload.get("edges"));
-        if (nodes.isEmpty()) return; // legacy string-list payloads retain their original compatibility contract
+        if (nodes.isEmpty()) {
+            errors.add("Schema v3 流程节点必须使用结构化对象，禁止字符串列表兼容回退");
+            return;
+        }
         List<String> ids = nodes.stream().map(node -> text(node.get("id"))).filter(value -> !value.isBlank()).toList();
         if (ids.size() != nodes.size()) errors.add("每个流程节点都必须配置唯一 id");
         if (ids.stream().distinct().count() != ids.size()) errors.add("流程节点 id 不能重复");
@@ -452,7 +505,11 @@ final class ConfigurationService {
             if (!ids.contains(from) || !ids.contains(to)) errors.add("流程连线引用不存在节点：" + from + " -> " + to);
             if (from.equals(to)) errors.add("流程节点不得自循环：" + from);
             if (text(edge.get("condition")).isBlank()) errors.add("流程连线必须配置条件：" + from + " -> " + to);
+            if (text(edge.get("event_code")).isBlank()) errors.add("流程连线必须配置可执行事件编码：" + from + " -> " + to);
+            if (!(edge.get("guard") instanceof Map<?, ?>)) errors.add("流程连线必须配置结构化 guard：" + from + " -> " + to);
         }
+        List<String> eventCodes = edges.stream().map(edge -> text(edge.get("event_code"))).filter(code -> !code.isBlank()).toList();
+        if (eventCodes.stream().distinct().count() != eventCodes.size()) errors.add("流程事件编码不能重复");
         if (nodes.stream().noneMatch(node -> "SIGN".equals(text(node.get("type"))) && Boolean.TRUE.equals(node.get("protected")))) {
             errors.add("流程必须保留受保护的签署节点");
         }
@@ -463,7 +520,10 @@ final class ConfigurationService {
 
     private void validateFormTemplate(Map<String, Object> payload, List<String> errors) {
         List<Map<String, Object>> fields = objectRows(payload.get("fields"));
-        if (fields.isEmpty()) return;
+        if (fields.isEmpty()) {
+            errors.add("Schema v3 表单字段必须使用结构化对象，禁止字符串列表兼容回退");
+            return;
+        }
         List<String> ids = fields.stream().map(field -> text(field.get("id"))).filter(value -> !value.isBlank()).toList();
         if (ids.size() != fields.size()) errors.add("每个表单字段都必须配置唯一 id");
         if (ids.stream().distinct().count() != ids.size()) errors.add("表单字段 id 不能重复");
@@ -476,30 +536,95 @@ final class ConfigurationService {
             if (Boolean.TRUE.equals(field.get("required")) && "NEVER".equals(text(field.get("visibility")))) {
                 errors.add("必填字段不可设置为永不显示：" + label);
             }
+            if ("CODE".equals(text(field.get("type"))) && text(field.get("terminology")).isBlank()) {
+                errors.add("编码字段必须绑定受控术语和值集：" + label);
+            }
+            if (!text(field.get("terminology")).isBlank()
+                    && !(text(field.get("terminology")).startsWith("WS/T-363-2023")
+                    || text(field.get("terminology")).startsWith("ICD-10-NATIONAL-CLINICAL")
+                    || text(field.get("terminology")).startsWith("ICD-9-CM-3-NATIONAL-CLINICAL")
+                    || text(field.get("terminology")).startsWith("NMPA-DRUG-CODE")
+                    || text(field.get("terminology")).startsWith("LOCAL-GOVERNED:"))) {
+                errors.add("术语系统未绑定中国医疗受控版本：" + label);
+            }
+        }
+        if (fields.stream().noneMatch(field -> "SIGNATURE".equals(text(field.get("type")))
+                && Boolean.TRUE.equals(field.get("required")) && Boolean.TRUE.equals(field.get("protected")))) {
+            errors.add("生产病历模板必须包含受保护的可靠电子签名字段");
         }
     }
 
     private void validateRules(Map<String, Object> payload, List<String> errors) {
-        for (Map<String, Object> rule : objectRows(payload.get("rules"))) {
+        List<Map<String, Object>> rules = objectRows(payload.get("rules"));
+        if (rules.isEmpty()) errors.add("Schema v3 规则集至少包含一条结构化规则");
+        for (Map<String, Object> rule : rules) {
             String layer = text(rule.get("layer")); String name = text(rule.get("name"));
             if (layer.contains("HARD") && text(rule.get("evidence")).isBlank()) errors.add("硬规则缺少证据来源：" + name);
             if ("AI_ADVICE".equals(layer) && text(rule.get("action")).contains("阻断")) errors.add("AI 建议不得直接阻断临床动作：" + name);
             if (text(rule.get("condition")).isBlank() || text(rule.get("action")).isBlank()) errors.add("规则必须配置条件和处置：" + name);
+            if (text(rule.get("fact_path")).isBlank() || text(rule.get("operator")).isBlank()) errors.add("规则缺少可执行事实路径或运算符：" + name);
+            if (text(rule.get("action_code")).isBlank()) errors.add("规则缺少可执行动作编码：" + name);
+            if (layer.contains("HARD") && !(rule.get("evidence_meta") instanceof Map<?, ?> evidence
+                    && !text(evidence.get("authority")).isBlank() && !text(evidence.get("version")).isBlank()
+                    && !text(evidence.get("review_due")).isBlank())) {
+                errors.add("硬规则证据必须包含权威来源、版本和复核期限：" + name);
+            }
         }
     }
 
     private void validateScope(Map<String, Object> payload, List<String> errors) {
-        for (Map<String, Object> permission : objectRows(payload.get("permissions"))) {
+        List<Map<String, Object>> permissions = objectRows(payload.get("permissions"));
+        if (permissions.isEmpty()) errors.add("Schema v3 职责范围至少包含一条结构化权限");
+        for (Map<String, Object> permission : permissions) {
             String role = text(permission.get("role"));
             if ("ALLOW".equals(text(permission.get("effect"))) && "全部患者".equals(text(permission.get("scope")))
                     && number(permission.get("temporary_hours")) <= 0) errors.add("无范围高权限必须设置临时到期：" + role);
             if (number(permission.get("temporary_hours")) > 24) errors.add("临时授权不能超过 24 小时：" + role);
             if (text(permission.get("resource")).isBlank() || text(permission.get("action")).isBlank()) errors.add("授权必须配置资源和动作：" + role);
+            if (text(permission.get("role_code")).isBlank() || text(permission.get("resource_code")).isBlank()
+                    || text(permission.get("action_code")).isBlank() || text(permission.get("scope_code")).isBlank()) {
+                errors.add("授权必须绑定角色、资源、动作和范围主数据编码：" + role);
+            }
+        }
+        if (!Boolean.TRUE.equals(payload.get("deny_overrides_allow"))) errors.add("职责范围必须启用 DENY 优先策略");
+    }
+
+    @SuppressWarnings("unchecked")
+    private void validateChinaCompliance(Map<String, Object> payload, List<String> errors) {
+        Object value = payload.get("china_compliance");
+        if (!(value instanceof Map<?, ?> raw)) {
+            errors.add("缺少中国医疗生产合规配置 china_compliance");
+            return;
+        }
+        Map<String, Object> compliance = (Map<String, Object>) raw;
+        if (!"CN_MEDICAL_PRODUCTION_2026".equals(text(compliance.get("profile")))) errors.add("中国医疗生产配置 profile 无效");
+        if (!text(compliance.get("data_element_standard")).contains("WS/T 363")) errors.add("必须绑定 WS/T 363 数据元标准");
+        if (!text(compliance.get("electronic_record_dataset")).contains("WS 445")) errors.add("必须绑定 WS 445 电子病历基本数据集");
+        if (!text(compliance.get("diagnosis_code_system")).contains("国家临床版")) errors.add("诊断编码必须绑定国家临床版");
+        if (!text(compliance.get("procedure_code_system")).contains("国家临床版")) errors.add("手术操作编码必须绑定国家临床版");
+        String signature = text(compliance.get("signature_policy"));
+        if (!(signature.contains("CA") && signature.contains("时间戳") && signature.contains("验真"))) errors.add("签名策略必须包含 CA、可信时间戳和验真");
+        String retention = text(compliance.get("retention_policy"));
+        if (!(retention.contains("15年") && retention.contains("30年") && retention.contains("留痕"))) errors.add("保存策略必须覆盖门急诊15年、住院30年和归档更正留痕");
+        if (!Boolean.TRUE.equals(compliance.get("minimum_necessary"))) errors.add("必须启用最小必要数据原则");
+        try {
+            OffsetDateTime effective = OffsetDateTime.parse(text(compliance.get("effective_from")));
+            OffsetDateTime review = OffsetDateTime.parse(text(compliance.get("review_due")));
+            if (!review.isAfter(effective)) errors.add("合规配置复核日期必须晚于生效日期");
+        } catch (RuntimeException invalid) {
+            errors.add("合规配置生效和复核时间必须为带时区 ISO-8601 时间");
         }
     }
 
     private void validateCapabilityComposition(Map<String, Object> payload, List<String> errors) {
+        if (number(payload.get("schema_version")) < 3) errors.add("能力组合必须升级到 schema_version 3");
+        List<Map<String, Object>> catalog = objectRows(payload.get("module_catalog"));
+        List<String> catalogCodes = catalog.stream().map(item -> text(item.get("code"))).filter(code -> !code.isBlank()).toList();
+        if (catalogCodes.size() != catalog.size() || catalogCodes.stream().distinct().count() != catalogCodes.size()) {
+            errors.add("能力模块目录编码必须完整且唯一");
+        }
         List<String> modules = stringRows(payload.get("selected_modules"));
+        for (String module : modules) if (!catalogCodes.contains(module)) errors.add("能力模块未在数据库目录登记：" + module);
         for (Map<String, Object> dependency : objectRows(payload.get("dependencies"))) {
             String module = text(dependency.get("module")); String requires = text(dependency.get("requires"));
             if (modules.contains(module) && !modules.contains(requires)) errors.add("能力模块依赖缺失：" + module + " 需要 " + requires);
@@ -510,6 +635,12 @@ final class ConfigurationService {
         }
         List<String> protectedModules = stringRows(payload.get("protected_modules"));
         for (String module : protectedModules) if (!modules.contains(module)) errors.add("受保护能力模块不能停用：" + module);
+        Object rawFramework = payload.get("rating_framework");
+        if (!(rawFramework instanceof Map<?, ?> framework)
+                || !"INTERNAL_OPERATIONAL_READINESS_V1".equals(text(framework.get("code")))
+                || !Boolean.FALSE.equals(framework.get("official_hospital_grade"))) {
+            errors.add("能力评级必须声明为内部运行就绪度，禁止冒充医院等级评审结论");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -528,13 +659,13 @@ final class ConfigurationService {
 
     private ConfigState state(UUID tenantId, UUID configId, boolean lock) {
         String sql = """
-                select config_id, config_type, display_name, payload::text, status, row_version, created_by
+                select config_id, config_type, config_key, display_name, payload::text, status, row_version, created_by
                 from config_item where tenant_id = :tenant and config_id = :config
                 """ + (lock ? " for update" : "");
         return jdbc.sql(sql).param("tenant", tenantId).param("config", configId)
                 .query((rs, row) -> new ConfigState(
                         rs.getObject("config_id", UUID.class), rs.getString("config_type"),
-                        rs.getString("display_name"), payload(rs.getString("payload")),
+                        rs.getString("config_key"), rs.getString("display_name"), payload(rs.getString("payload")),
                         rs.getString("status"), rs.getLong("row_version"),
                         rs.getObject("created_by", UUID.class)))
                 .optional().orElseThrow(() -> new ConfigurationException("CONFIG_NOT_FOUND", 404, "配置项不存在"));
@@ -744,8 +875,12 @@ final class ConfigurationService {
     }
 
     private record ConfigState(
-            UUID configId, String configType, String displayName, Map<String, Object> payload,
+            UUID configId, String configType, String configKey, String displayName, Map<String, Object> payload,
             String status, long rowVersion, UUID createdBy) {}
 
     private record Revision(String displayName, Map<String, Object> payload, int schemaVersion) {}
+    record ConfigurationRevisionWire(
+            long revisionNo, String displayName, Map<String, Object> payload, int schemaVersion,
+            String status, String validationState, List<String> validationErrors, String approvalState,
+            UUID changedBy, String changeReason, OffsetDateTime createdAt) {}
 }

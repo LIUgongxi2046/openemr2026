@@ -3,6 +3,7 @@ package org.openemr2026.audit;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.contracts.AuditEventWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
@@ -36,7 +37,8 @@ final class AuditEventController {
             @RequestParam(value = "to", required = false) Instant to,
             @RequestHeader("X-Organization-Context") UUID organizationId,
             @RequestHeader("X-Facility-Context") UUID facilityId) {
-        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, organizationId, facilityId, null, null, Set.of("ADMIN_AUDIT"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(events.list(identity, actionCode, resourceType, resourceId, from, to));
     }

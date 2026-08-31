@@ -467,6 +467,8 @@
 .task-action.danger:hover:not(:disabled) { border-color: #c66b75; background: #fff0f1; }
 .aiops-flow-note { min-height: 112px; }
 .admin-actions { display: grid; gap: 7px; justify-items: start; }.danger-text { color: #a32632; }.workforce-table { min-width: 980px; }
+.admin-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+.admin-breadcrumb a { color: var(--blue); text-decoration: none; }
 .auth-metrics { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .auth-layout { display: grid; grid-template-columns: minmax(680px,1fr) 340px; gap: 14px; align-items: start; }
 .auth-side { display: grid; gap: 14px; }

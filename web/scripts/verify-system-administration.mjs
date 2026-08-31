@@ -15,15 +15,15 @@ const credentials = {
 const routes = [
   ['admin', '系统管理工作台'],
   ['admin-org', '组织机构与工作单元'],
-  ['admin-users', '用户与账号管理'],
+  ['admin-users', '用户、人员与账户管理'],
   ['admin-roles', '角色、工作组与职责分离'],
   ['admin-permissions', '权限策略与访问模拟'],
   ['admin-auth', '认证与账户安全策略'],
   ['admin-dictionaries', '字典、术语与值集中心'],
-  ['admin-master-data', '医院主数据管理'],
+  ['admin-master-data', '医院主数据与标准编码'],
   ['admin-templates', '模板、编号与输出管理'],
   ['admin-parameters', '系统参数与功能开关'],
-  ['admin-jobs', '通知调度与批量任务'],
+  ['admin-jobs', '通知任务与治理执行中心'],
   ['admin-audit', '管理审计与权限复核'],
 ];
 
@@ -109,21 +109,26 @@ try {
 
   await check('database-backed-administration-fixtures', async () => {
     const expectations = [
-      ['admin-org', '.admin-table tbody tr', 8],
-      ['admin-users', '.admin-table tbody tr', 5],
-      ['admin-roles', '.admin-table tbody tr', 5],
-      ['admin-permissions', '.auth-table tbody tr', 5],
-      ['admin-dictionaries', '.admin-table tbody tr', 3],
-      ['admin-master-data', '.config-list-panel tbody tr', 4],
-      ['admin-templates', '.template-table tbody tr', 3],
-      ['admin-parameters', '.config-list-panel tbody tr', 5],
-      ['admin-jobs', '.config-list-panel tbody tr', 4],
-      ['admin-audit', '.admin-table tbody tr', 1],
+      ['admin-org', 'main table tbody tr', 8],
+      ['admin-users', 'main table tbody tr', 5],
+      ['admin-roles', 'main table tbody tr', 5],
+      ['admin-permissions', 'main table tbody tr', 5],
+      ['admin-dictionaries', 'main table tbody tr', 3],
+      ['admin-master-data', 'main table tbody tr', 5],
+      ['admin-templates', 'main table tbody tr', 3],
+      ['admin-parameters', 'main table tbody tr', 5],
+      ['admin-jobs', 'main table tbody tr', 1],
+      ['admin-audit', 'main table tbody tr', 1],
     ];
     const counts = [];
     for (const [routeId, selector, minimum] of expectations) {
       await go(routeId);
-      counts.push(`${routeId}=${await waitForRows(selector, minimum)}`);
+      try {
+        counts.push(`${routeId}=${await waitForRows(selector, minimum)}`);
+      } catch (error) {
+        const actual = await page.locator(selector).count();
+        throw new Error(`${routeId} 需要至少 ${minimum} 行，实际 ${actual} 行：${error instanceof Error ? error.message : String(error)}`);
+      }
     }
     await go('admin-auth');
     await page.waitForFunction(() => document.querySelectorAll('.setting-grid article').length >= 6
@@ -141,14 +146,15 @@ try {
     await go('admin-org');
     await page.getByRole('button', { name: '新建组织节点' }).click();
     const suffix = Date.now().toString().slice(-8);
-    await page.getByPlaceholder('例：CARD-WARD-02').fill(`ACC-DEPT-${suffix}`);
-    await page.getByPlaceholder('例：心内二病区').fill(`验收测试科室 / Acceptance Department ${suffix}`);
+    await page.getByPlaceholder('例：CARD-WARD-02').fill(`QCD-DEPT-${suffix}`);
+    await page.getByPlaceholder('例：心内二病区').fill(`病案质量管理科 / Medical Record Quality Office ${suffix}`);
     await page.getByRole('button', { name: '创建并生效' }).click();
-    await page.getByText(/已生效，审计事件和事件出箱已同步记录/).waitFor({ timeout: 20_000 });
-    await page.getByPlaceholder('编码、名称或上级').fill(`ACC-DEPT-${suffix}`);
-    const row = page.locator('.admin-table tbody tr').filter({ hasText: `ACC-DEPT-${suffix}` });
+    await page.getByText(/已生效，审计事件和事务事件记录已同步保存/).waitFor({ timeout: 20_000 });
+    await page.getByPlaceholder('编码、名称或上级').fill(`QCD-DEPT-${suffix}`);
+    const row = page.locator('.table tbody tr').filter({ hasText: `QCD-DEPT-${suffix}` });
     await row.waitFor({ timeout: 20_000 });
     await row.getByRole('button', { name: '停用' }).click();
+    await page.getByRole('button', { name: '确认停用', exact: true }).click();
     await page.getByText(/已停用。/).waitFor({ timeout: 20_000 });
     return '新建组织单元、查询回显、停用均已写入数据库';
     });
@@ -156,24 +162,27 @@ try {
     await check('dictionary-create-and-deactivate', async () => {
     await go('admin-dictionaries');
     const suffix = Date.now().toString().slice(-7);
-    await page.getByPlaceholder('例：M').fill(`ACC_${suffix}`);
-    await page.getByPlaceholder('例：男性').fill(`验收值 / Acceptance Value ${suffix}`);
+    await page.getByRole('button', { name: '新建字典', exact: true }).click();
+    await page.getByPlaceholder('例：M').fill(`U${suffix}`);
+    await page.getByPlaceholder('例：男性').fill(`未说明 / Not stated ${suffix}`);
     await page.getByRole('button', { name: '创建并生效' }).click();
-    await page.getByText('字典项已生效，审计链与事件出箱已同步记录。', { exact: true }).waitFor({ timeout: 20_000 });
-    const row = page.locator('.admin-table tbody tr').filter({ hasText: `ACC_${suffix}` });
+    await page.getByText('字典项已生效，审计链与事务事件记录已同步保存。', { exact: true }).waitFor({ timeout: 20_000 });
+    const row = page.locator('.queue-item').filter({ hasText: `U${suffix}` });
     await row.waitFor({ timeout: 20_000 });
     await row.getByRole('button', { name: '停用' }).click();
+    await page.getByRole('button', { name: '确认停用', exact: true }).click();
     await page.getByText(/已停用。/).waitFor({ timeout: 20_000 });
     return '新建字典项、查询回显、停用均已写入数据库';
     });
 
     await check('configuration-lifecycle-write', async () => {
     await go('admin-master-data');
-    await waitForRows('.config-list-panel tbody tr', 4);
+    await page.getByRole('button', { name: '目录版本管理', exact: true }).click();
+    await waitForRows('main table tbody tr', 4);
     const suffix = Date.now().toString().slice(-8);
-    await page.getByRole('button', { name: '新建草稿' }).click();
-    const nameInput = page.locator('.config-core-fields label').filter({ hasText: '名称' }).locator('input');
-    const keyInput = page.locator('.config-core-fields label').filter({ hasText: '唯一键' }).locator('input');
+    await page.getByRole('button', { name: '新建主数据变更', exact: true }).click();
+    const nameInput = page.getByRole('textbox', { name: '显示名称', exact: true });
+    const keyInput = page.getByRole('textbox', { name: '配置编码（系统唯一）', exact: true });
     await page.waitForFunction(() => {
       const input = document.querySelector('.config-core-fields label:nth-child(2) input');
       return input instanceof HTMLInputElement && !input.disabled;
@@ -182,6 +191,7 @@ try {
     await keyInput.fill(`acceptance-master-${suffix}`);
     await page.getByRole('button', { name: '创建版本化草稿' }).click();
     await page.getByText('已创建版本化草稿。', { exact: true }).waitFor({ timeout: 20_000 });
+    await page.getByRole('button', { name: '打开版本管理', exact: true }).click();
     await page.getByRole('button', { name: '执行静态校验' }).click();
     await page.getByText(/静态校验已完成/).waitFor({ timeout: 20_000 });
     await page.getByRole('button', { name: '提交审批' }).click();
@@ -192,8 +202,9 @@ try {
 
   await check('authentication-simulation-and-role-scan', async () => {
     await go('admin-auth');
-    await page.getByRole('button', { name: '认证场景演练', exact: true }).click();
-    await page.getByRole('heading', { name: /认证/ }).last().waitFor({ timeout: 20_000 });
+    await page.getByRole('button', { name: '打开账户安全复核', exact: true }).click();
+    await page.getByRole('heading', { name: '认证与 MFA 场景演练', exact: true }).waitFor({ timeout: 20_000 });
+    await page.getByRole('button', { name: '运行场景', exact: true }).click();
     await page.getByText(/场景执行完成/).waitFor({ timeout: 20_000 });
     await page.getByRole('button', { name: '← 返回安全策略' }).click();
     await page.getByRole('heading', { name: '认证与账户安全策略' }).waitFor();
@@ -201,6 +212,24 @@ try {
     await page.getByRole('button', { name: '职责冲突扫描' }).click();
     await page.getByText(/职责冲突扫描完成/).waitFor();
     return '认证模拟适配器可执行，职责冲突扫描有明确结果';
+  });
+
+  await check('workforce-seven-level-drilldown', async () => {
+    await go('admin-users');
+    const detailLink = page.getByRole('link', { name: '人员档案下钻', exact: true });
+    await detailLink.waitFor({ timeout: 20_000 });
+    await detailLink.click();
+    await page.waitForURL(/#\/admin\/users\/[0-9a-f-]+$/, { timeout: 20_000 });
+    await page.getByRole('link', { name: '查看全部角色', exact: true }).click();
+    await page.waitForURL(/\/roles$/, { timeout: 20_000 });
+    const roleDetail = page.getByRole('link', { name: '查看任期', exact: true }).first();
+    if (await roleDetail.count()) {
+      await roleDetail.click();
+      await page.waitForURL(/\/roles\/[0-9a-f-]+$/, { timeout: 20_000 });
+    }
+    await page.getByRole('link', { name: '查看相关审计证据', exact: true }).click();
+    await page.waitForURL(/\/audit$/, { timeout: 20_000 });
+    return '人员清单→人员档案→角色任期→审计证据路由可从真实数据下钻';
   });
 
   await check('mobile-admin-domain-layout', async () => {
