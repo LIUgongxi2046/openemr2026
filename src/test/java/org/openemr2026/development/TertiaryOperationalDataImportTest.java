@@ -143,6 +143,40 @@ final class TertiaryOperationalDataImportTest {
     }
 
     @Test
+    void generatedOperationalIdentifiersConformToTheRfc4122WireContract() {
+        var identifiers = jdbc.sql("""
+                select price_version_id as identifier from price_catalog_version
+                  where tenant_id = :tenant and catalog_code = 'JC-DXFS-2026' and release_version = '2026.1'
+                union all
+                select row.charge_item_id from charge_item row join encounter e
+                  on e.tenant_id = row.tenant_id and e.encounter_id = row.encounter_id
+                  where row.tenant_id = :tenant and
+                    (e.source_system = 'SYNTHETIC-50' or e.encounter_id in (:outpatient, :inpatient))
+                union all
+                select row.imaging_order_id from imaging_order row join encounter e
+                  on e.tenant_id = row.tenant_id and e.encounter_id = row.encounter_id
+                  where row.tenant_id = :tenant and
+                    (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :outpatient)
+                union all
+                select row.surgical_procedure_id from surgical_procedure row join encounter e
+                  on e.tenant_id = row.tenant_id and e.encounter_id = row.encounter_id
+                  where row.tenant_id = :tenant and
+                    (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :inpatient)
+                union all
+                select row.transfusion_id from blood_transfusion row join encounter e
+                  on e.tenant_id = row.tenant_id and e.encounter_id = row.encounter_id
+                  where row.tenant_id = :tenant and
+                    (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :inpatient)
+                """).param("tenant", TENANT_ID).param("outpatient", OUTPATIENT_ENCOUNTER)
+                .param("inpatient", INPATIENT_ENCOUNTER).query(UUID.class).list();
+
+        assertThat(identifiers).isNotEmpty().allSatisfy(identifier -> {
+            assertThat(identifier.version()).isBetween(1, 8);
+            assertThat(identifier.variant()).isEqualTo(2);
+        });
+    }
+
+    @Test
     void repeatedImportIsIdempotent() {
         Map<String, Integer> before = operationalCounts();
         importer.importData();

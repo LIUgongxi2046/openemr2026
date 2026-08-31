@@ -43,7 +43,7 @@ final class TertiaryOperationalDataImporter {
     @EventListener(ApplicationReadyEvent.class)
     void importData() {
         transactions.executeWithoutResult(status -> {
-            removeInvalidOutpatientOperationalFixtures();
+            removeInvalidOperationalFixtures();
             seedPriceCatalog();
             seedCharges();
             seedPharmacyDispensing();
@@ -59,7 +59,7 @@ final class TertiaryOperationalDataImporter {
         });
     }
 
-    private void removeInvalidOutpatientOperationalFixtures() {
+    private void removeInvalidOperationalFixtures() {
         jdbc.sql("""
                 delete from lab_specimen specimen
                 using clinical_order_item item, clinical_order orders
@@ -102,6 +102,47 @@ final class TertiaryOperationalDataImporter {
                     or substring(followup_id::text, 20, 1) !~ '[89abAB]')
                   and content = '复核症状变化、家庭血压或体重记录、药物依从性与不良反应，根据检验结果调整慢病管理计划。'
                 """).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                delete from price_catalog_version
+                where tenant_id = :tenant and catalog_code = 'JC-DXFS-2026'
+                  and release_version = '2026.1'
+                  and (substring(price_version_id::text, 15, 1) !~ '[1-8]'
+                    or substring(price_version_id::text, 20, 1) !~ '[89abAB]')
+                """).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                delete from charge_item row using encounter e
+                where row.tenant_id = :tenant and e.tenant_id = row.tenant_id
+                  and e.encounter_id = row.encounter_id
+                  and (e.source_system = 'SYNTHETIC-50'
+                    or e.encounter_id in (:outpatient, :inpatient))
+                  and (substring(row.charge_item_id::text, 15, 1) !~ '[1-8]'
+                    or substring(row.charge_item_id::text, 20, 1) !~ '[89abAB]')
+                """).param("tenant", TENANT_ID).param("outpatient", CANONICAL_OUTPATIENT_ENCOUNTER)
+                .param("inpatient", CANONICAL_INPATIENT_ENCOUNTER).update();
+        jdbc.sql("""
+                delete from imaging_order row using encounter e
+                where row.tenant_id = :tenant and e.tenant_id = row.tenant_id
+                  and e.encounter_id = row.encounter_id
+                  and (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :outpatient)
+                  and (substring(row.imaging_order_id::text, 15, 1) !~ '[1-8]'
+                    or substring(row.imaging_order_id::text, 20, 1) !~ '[89abAB]')
+                """).param("tenant", TENANT_ID).param("outpatient", CANONICAL_OUTPATIENT_ENCOUNTER).update();
+        jdbc.sql("""
+                delete from surgical_procedure row using encounter e
+                where row.tenant_id = :tenant and e.tenant_id = row.tenant_id
+                  and e.encounter_id = row.encounter_id
+                  and (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :inpatient)
+                  and (substring(row.surgical_procedure_id::text, 15, 1) !~ '[1-8]'
+                    or substring(row.surgical_procedure_id::text, 20, 1) !~ '[89abAB]')
+                """).param("tenant", TENANT_ID).param("inpatient", CANONICAL_INPATIENT_ENCOUNTER).update();
+        jdbc.sql("""
+                delete from blood_transfusion row using encounter e
+                where row.tenant_id = :tenant and e.tenant_id = row.tenant_id
+                  and e.encounter_id = row.encounter_id
+                  and (e.source_system = 'SYNTHETIC-50' or e.encounter_id = :inpatient)
+                  and (substring(row.transfusion_id::text, 15, 1) !~ '[1-8]'
+                    or substring(row.transfusion_id::text, 20, 1) !~ '[89abAB]')
+                """).param("tenant", TENANT_ID).param("inpatient", CANONICAL_INPATIENT_ENCOUNTER).update();
     }
 
     private void seedPriceCatalog() {
@@ -109,7 +150,8 @@ final class TertiaryOperationalDataImporter {
                 insert into price_catalog_version(
                   tenant_id, price_version_id, catalog_code, item_code, item_name,
                   unit_price, unit, effective_from, release_version, status)
-                select :tenant, md5('tertiary-operational-v1:price:' || seed.item_code)::uuid,
+                select :tenant, overlay(overlay(md5('tertiary-operational-v1:price:' || seed.item_code)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   'JC-DXFS-2026', seed.item_code, seed.item_name, seed.unit_price,
                   seed.unit, date '2026-01-01', '2026.1', 'ACTIVE'
                 from (values
@@ -171,7 +213,8 @@ final class TertiaryOperationalDataImporter {
                   item_code, item_name, quantity, unit_price, amount, unit, status,
                   charged_at, charged_by, reversed_at, reversed_by, reverse_reason)
                 select :tenant,
-                  md5('tertiary-operational-v1:charge:' || encounter_id || ':' || item_code)::uuid,
+                  overlay(overlay(md5('tertiary-operational-v1:charge:' || encounter_id || ':' || item_code)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   patient_id, encounter_id, facility_id, item_code, item_name, quantity,
                   unit_price, round(quantity * unit_price, 2), unit, 'CHARGED',
                   now() - ((ordinal * 13 + abs(hashtext(encounter_id::text)) % 360) * interval '1 minute'),
@@ -353,7 +396,8 @@ final class TertiaryOperationalDataImporter {
                   tenant_id, imaging_order_id, patient_id, encounter_id, facility_id, modality,
                   body_part, laterality, contrast_required, status, ordered_at, performed_at, reported_at)
                 select :tenant,
-                  md5('tertiary-operational-v1:imaging:' || encounter_id || ':' || ordinal)::uuid,
+                  overlay(overlay(md5('tertiary-operational-v1:imaging:' || encounter_id || ':' || ordinal)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   patient_id, encounter_id, facility_id, modality, body_part, laterality, contrast_required,
                   case when ordinal % 4 = 1 then 'ORDERED' when ordinal % 4 = 2 then 'PERFORMED' else 'REPORTED' end,
                   now() - ((ordinal * 6 + 12) * interval '1 hour'),
@@ -391,7 +435,8 @@ final class TertiaryOperationalDataImporter {
                   procedure_name, body_site, laterality, surgeon_id, anesthesiologist_id,
                   status, scheduled_at, time_out_at, completed_at)
                 select :tenant,
-                  md5('tertiary-operational-v1:surgery:' || encounter_id || ':' || ordinal)::uuid,
+                  overlay(overlay(md5('tertiary-operational-v1:surgery:' || encounter_id || ':' || ordinal)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   patient_id, encounter_id, facility_id, procedure_name, body_site, laterality,
                   :surgeon, :anesthesiologist,
                   case when ordinal % 3 = 1 then 'SCHEDULED' when ordinal % 3 = 2 then 'TIME_OUT_COMPLETED' else 'COMPLETED' end,
@@ -433,7 +478,8 @@ final class TertiaryOperationalDataImporter {
                   blood_type, unit_number, volume_ml, started_at, administered_by, verified_by,
                   verification_note, reaction_type, reaction_noted_at, reaction_noted_by)
                 select :tenant,
-                  md5('tertiary-operational-v1:transfusion:' || encounter_id || ':' || ordinal)::uuid,
+                  overlay(overlay(md5('tertiary-operational-v1:transfusion:' || encounter_id || ':' || ordinal)
+                    placing '5' from 13 for 1) placing '8' from 17 for 1)::uuid,
                   patient_id, encounter_id, facility_id, blood_product, blood_type,
                   'JC-BB-26-' || upper(substr(md5(encounter_id::text || ':' || ordinal), 1, 10)),
                   volume_ml, now() - ((ordinal * 9 + admission_no) * interval '1 hour'),
