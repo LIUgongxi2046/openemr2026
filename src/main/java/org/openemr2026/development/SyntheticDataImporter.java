@@ -1303,32 +1303,59 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     .param("inherits", seed.inheritsFrom()).update();
             String compositionPayload = writeJson(
                     TertiaryBusinessConfigurationCatalog.compositionPayload(seed));
-            jdbc.sql("""
-                    insert into config_item(
-                      tenant_id, config_id, config_type, config_key, display_name, payload,
-                      status, row_version, schema_version, validation_state, validation_errors,
-                      approval_state, approved_by, published_at, created_by)
-                    values (:tenant, :config, 'CAPABILITY_PACK_COMPOSITION', :key, :name,
-                      cast(:payload as jsonb), 'ACTIVE', 1, 2, 'VALID', '[]'::jsonb,
-                      'APPROVED', :approver, now() - interval '7 days', :author)
-                    on conflict (tenant_id, config_id) do update set
-                      config_type = excluded.config_type, config_key = excluded.config_key,
-                      display_name = excluded.display_name, payload = excluded.payload,
-                      status = 'ACTIVE', schema_version = 2,
-                      validation_state = 'VALID', validation_errors = '[]'::jsonb,
-                      approval_state = 'APPROVED', approved_by = excluded.approved_by,
-                      published_at = coalesce(config_item.published_at, excluded.published_at),
-                      updated_at = now(), row_version = config_item.row_version + 1
-                    where config_item.config_type is distinct from excluded.config_type
-                       or config_item.config_key is distinct from excluded.config_key
-                       or config_item.display_name is distinct from excluded.display_name
-                       or config_item.payload is distinct from excluded.payload
-                       or config_item.status <> 'ACTIVE'
-                    """).param("tenant", TENANT_ID).param("config", seed.compositionId())
-                    .param("key", "composition-" + seed.packCode().toLowerCase())
-                    .param("name", seed.packName() + " · 能力组合")
-                    .param("payload", compositionPayload).param("approver", COLLABORATOR_USER_ID)
-                    .param("author", USER_ID).update();
+            String compositionKey = "composition-" + seed.packCode().toLowerCase();
+            Long activeCompositionCount = jdbc.sql("""
+                    select count(*) from config_item
+                    where tenant_id = :tenant
+                      and config_type = 'CAPABILITY_PACK_COMPOSITION'
+                      and config_key = :key and status = 'ACTIVE'
+                    """).param("tenant", TENANT_ID).param("key", compositionKey)
+                    .query(Long.class).single();
+            if (activeCompositionCount > 0) {
+                jdbc.sql("""
+                        update config_item set display_name = :name, payload = cast(:payload as jsonb),
+                          schema_version = 2, validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                          approval_state = 'APPROVED', approved_by = :approver,
+                          published_at = coalesce(published_at, now() - interval '7 days'),
+                          updated_at = now(), row_version = row_version + 1
+                        where tenant_id = :tenant
+                          and config_type = 'CAPABILITY_PACK_COMPOSITION'
+                          and config_key = :key and status = 'ACTIVE'
+                          and (display_name is distinct from :name
+                            or payload is distinct from cast(:payload as jsonb)
+                            or schema_version <> 2 or validation_state <> 'VALID'
+                            or approval_state <> 'APPROVED')
+                        """).param("tenant", TENANT_ID).param("key", compositionKey)
+                        .param("name", seed.packName() + " · 能力组合")
+                        .param("payload", compositionPayload).param("approver", COLLABORATOR_USER_ID)
+                        .update();
+            } else {
+                jdbc.sql("""
+                        insert into config_item(
+                          tenant_id, config_id, config_type, config_key, display_name, payload,
+                          status, row_version, schema_version, validation_state, validation_errors,
+                          approval_state, approved_by, published_at, created_by)
+                        values (:tenant, :config, 'CAPABILITY_PACK_COMPOSITION', :key, :name,
+                          cast(:payload as jsonb), 'ACTIVE', 1, 2, 'VALID', '[]'::jsonb,
+                          'APPROVED', :approver, now() - interval '7 days', :author)
+                        on conflict (tenant_id, config_id) do update set
+                          config_type = excluded.config_type, config_key = excluded.config_key,
+                          display_name = excluded.display_name, payload = excluded.payload,
+                          status = 'ACTIVE', schema_version = 2,
+                          validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                          approval_state = 'APPROVED', approved_by = excluded.approved_by,
+                          published_at = coalesce(config_item.published_at, excluded.published_at),
+                          updated_at = now(), row_version = config_item.row_version + 1
+                        where config_item.config_type is distinct from excluded.config_type
+                           or config_item.config_key is distinct from excluded.config_key
+                           or config_item.display_name is distinct from excluded.display_name
+                           or config_item.payload is distinct from excluded.payload
+                           or config_item.status <> 'ACTIVE'
+                        """).param("tenant", TENANT_ID).param("config", seed.compositionId())
+                        .param("key", compositionKey).param("name", seed.packName() + " · 能力组合")
+                        .param("payload", compositionPayload).param("approver", COLLABORATOR_USER_ID)
+                        .param("author", USER_ID).update();
+            }
             jdbc.sql("""
                     insert into capability_pack_release(
                       tenant_id, release_id, capability_pack_id, release_version, lifecycle_status,
