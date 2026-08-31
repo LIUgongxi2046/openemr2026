@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import { z } from 'zod';
 import {
   clinicalContext,
   issueContextLease,
@@ -18,11 +19,28 @@ export interface EvaPatientContext {
   scene: string;
 }
 
-export const evaDefaultPatientContexts: EvaPatientContext[] = [
+const configuredPatientContexts: EvaPatientContext[] = [
   { patientId: clinicalContext.patientId, encounterId: clinicalContext.encounterId, patientName: '王某某', patientSummary: '男 · 52岁 · 心内科复诊', label: '门诊接诊', scene: '门诊' },
   { patientId: clinicalContext.emergencyPatientId, encounterId: clinicalContext.emergencyEncounterId, patientName: '赵某某', patientSummary: '女 · 68岁 · 胸痛待评估', label: '急诊抢救', scene: '急诊' },
   { patientId: clinicalContext.inpatientPatientId, encounterId: clinicalContext.inpatientEncounterId, patientName: '李某某', patientSummary: '男 · 61岁 · 心内科一病区', label: '住院日常', scene: '住院' },
 ];
+
+const uuidSchema = z.string().uuid();
+
+export function hasEvaPatientContext(context: Pick<EvaPatientContext, 'patientId' | 'encounterId'>): boolean {
+  return uuidSchema.safeParse(context.patientId).success && uuidSchema.safeParse(context.encounterId).success;
+}
+
+export const evaDefaultPatientContexts = configuredPatientContexts.filter(hasEvaPatientContext);
+
+const emptyPatientContext: EvaPatientContext = {
+  patientId: '',
+  encounterId: '',
+  patientName: '未选择患者',
+  patientSummary: '请搜索患者并选择一次有效就诊',
+  label: '待绑定',
+  scene: '未绑定',
+};
 
 const encounterLabels: Record<EncounterWire['encounter_type'], { label: string; scene: string }> = {
   OUTPATIENT: { label: '门诊接诊', scene: '门诊' },
@@ -36,7 +54,8 @@ function patientSummary(patient: PatientSummaryWire) {
 }
 
 export function useEvaClinicalContext(initial?: EvaPatientContext) {
-  const current = ref<EvaPatientContext>(initial ?? evaDefaultPatientContexts[0]);
+  const current = ref<EvaPatientContext>(initial && hasEvaPatientContext(initial)
+    ? initial : evaDefaultPatientContexts[0] ?? emptyPatientContext);
   const results = ref<PatientSummaryWire[]>([]);
   const encounters = ref<EncounterWire[]>([]);
   const selectedPatient = ref<PatientSummaryWire | null>(null);

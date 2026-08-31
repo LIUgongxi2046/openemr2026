@@ -66,10 +66,21 @@ final class ModelEvaluationApiTest {
         UUID deploymentId = seedModelDeployment();
         ModelEvaluationWire recorded = record(deploymentId, 0.9, 0.8);
         assertThat(recorded.status()).isEqualTo(ModelEvaluationWire.StatusValue.PASSED);
-        assertThat(evaluationStatus(deploymentId)).isEqualTo("APPROVED");
+        assertThat(evaluationStatus(deploymentId)).isEqualTo("EVALUATING");
 
         List<ModelEvaluationWire> listed = evaluations.listEvaluations(identity(), deploymentId);
         assertThat(listed).extracting(ModelEvaluationWire::modelEvaluationId).contains(recorded.modelEvaluationId());
+    }
+
+    @Test
+    void givenPassingManualScore_whenRecording_thenDoesNotAutoApproveDeployment() {
+        UUID deploymentId = seedModelDeployment();
+
+        record(deploymentId, 0.99, 0.80);
+
+        assertThat(evaluationStatus(deploymentId))
+                .as("A manually entered score is evidence only and must never publish a model by itself")
+                .isEqualTo("EVALUATING");
     }
 
     @Test

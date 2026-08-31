@@ -1,7 +1,7 @@
 {
-  "run_at": "2026-08-25T08:27:07.037Z",
-  "passed": 7,
-  "failed": 0,
+  "run_at": "2026-08-31T01:40:06.205Z",
+  "passed": 4,
+  "failed": 3,
   "checks": [
     {
       "name": "standalone-system-login-page",
@@ -11,22 +11,7 @@
     {
       "name": "database-login",
       "status": "PASS",
-      "detail": "林伟 / William Lin 今日 08:00–17:00 · 2026-08-25"
-    },
-    {
-      "name": "patient-first-appointment-flow",
-      "status": "PASS",
-      "detail": "患者/医院/科室/医生/班次可见；预约、报到、叫号、接诊、退号全部写库成功"
-    },
-    {
-      "name": "schedule-configuration-moved",
-      "status": "PASS",
-      "detail": "业务配置已显示科室、医生与号源列表"
-    },
-    {
-      "name": "realistic-bed-board-and-complete-form",
-      "status": "PASS",
-      "detail": "41 张科室-床号床位，完整入院登记字段可见"
+      "detail": "林伟 / William Lin 今日 08:00–17:00 · 2026-08-31"
     },
     {
       "name": "database-logout",
@@ -39,5 +24,9 @@
       "detail": "390×844 无溢出，无业务壳"
     }
   ],
-  "failures": []
+  "failures": [
+    "patient-first-appointment-flow: locator.selectOption: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('label').filter({ hasText: '可预约班次' }).locator('select')\u001b[22m\n\u001b[2m    - locator resolved to <select required=\"\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    59 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m       - element is not visible\u001b[22m\n\u001b[2m     - retrying select option action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n",
+    "schedule-configuration-moved: locator.waitFor: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('heading', { name: '班次号源配置' }) to be visible\u001b[22m\n",
+    "realistic-bed-board-and-complete-form: 缺少 入院途径"
+  ]
 }

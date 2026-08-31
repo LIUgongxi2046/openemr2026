@@ -33,6 +33,9 @@ final class TertiaryTaskCenterDataImportTest {
                     and payload->>'fixture_source'='tertiary-task-center-v2') as pathways,
                   (select count(*) from clinical_task where tenant_id=:tenant
                     and task_type like 'TCV2_%') as tasks,
+                  (select count(distinct encounter.encounter_type) from clinical_task task
+                    join encounter on encounter.tenant_id=task.tenant_id and encounter.encounter_id=task.encounter_id
+                    where task.tenant_id=:tenant and task.task_type like 'TCV2_%') as care_domains,
                   (select count(*) from clinical_task where tenant_id=:tenant
                     and task_type like 'TCV2_%' and state in ('CLAIMED','IN_PROGRESS')
                     and claimed_by=:author) as collaboration_tasks,
@@ -43,21 +46,30 @@ final class TertiaryTaskCenterDataImportTest {
                   (select count(*) from clinical_task_notification notification
                     join clinical_task task on task.tenant_id=notification.tenant_id
                       and task.task_id=notification.task_id
-                    where notification.tenant_id=:tenant and task.task_type like 'TCV2_%') as notifications
+                    where notification.tenant_id=:tenant and task.task_type like 'TCV2_%') as notifications,
+                  (select count(*) from clinical_task_in_app_delivery delivery
+                    join clinical_task_notification notification on notification.tenant_id=delivery.tenant_id
+                      and notification.notification_id=delivery.notification_id
+                    join clinical_task task on task.tenant_id=notification.tenant_id
+                      and task.task_id=notification.task_id
+                    where delivery.tenant_id=:tenant and task.task_type like 'TCV2_%') as in_app_deliveries
                 """).param("tenant", SyntheticDataImporter.TENANT_ID)
                 .param("author", SyntheticDataImporter.USER_ID)
                 .query((rs, row) -> Map.of(
                         "rules", rs.getInt("rules"),
                         "pathways", rs.getInt("pathways"),
                         "tasks", rs.getInt("tasks"),
+                        "domains", rs.getInt("care_domains"),
                         "collaboration", rs.getInt("collaboration_tasks"),
                         "queue", rs.getInt("queue_items"),
-                        "notifications", rs.getInt("notifications")))
+                        "notifications", rs.getInt("notifications"),
+                        "deliveries", rs.getInt("in_app_deliveries")))
                 .single();
 
         assertThat(coverage).containsEntry("rules", 8).containsEntry("pathways", 8)
-                .containsEntry("tasks", 16).containsEntry("collaboration", 7)
-                .containsEntry("queue", 10).containsEntry("notifications", 48);
+                .containsEntry("tasks", 24).containsEntry("domains", 3)
+                .containsEntry("collaboration", 10).containsEntry("queue", 10)
+                .containsEntry("notifications", 72).containsEntry("deliveries", 24);
     }
 
     @Test
@@ -116,6 +128,56 @@ final class TertiaryTaskCenterDataImportTest {
         Integer before = fixtureBusinessRowCount();
         importer.importData();
         assertThat(fixtureBusinessRowCount()).isEqualTo(before);
+    }
+
+    @Test
+    void legacyMd5UuidFixtureIsAuditedAndRetiredInsteadOfBreakingThePublicContract() {
+        int inserted = jdbc.sql("""
+                insert into clinical_task(
+                  tenant_id, task_id, patient_id, encounter_id, facility_id, ward_id,
+                  source_type, source_id, task_type, title, risk_level, state, business_state,
+                  assigned_user_id, claimed_by, due_at, source_route, row_version, created_at, updated_at)
+                select tenant_id, md5('tertiary-task-center-v2:task:1')::uuid,
+                  patient_id, encounter_id, facility_id, ward_id, source_type,
+                  md5('tertiary-task-center-v2:source:1')::uuid,
+                  task_type, title, risk_level, 'PENDING', '旧版仿真待处理',
+                  assigned_user_id, null, due_at, source_route, 1, created_at, updated_at
+                from clinical_task
+                where tenant_id=:tenant and task_id =
+                  overlay(overlay(md5('tertiary-task-center-v2:task:1')
+                    placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid
+                """).param("tenant", SyntheticDataImporter.TENANT_ID).update();
+        assertThat(inserted).isEqualTo(1);
+        int queued = jdbc.sql("""
+                insert into clinical_task_team_queue(
+                  tenant_id, queue_id, facility_id, department_id, clinical_task_id,
+                  queue_status, enqueued_by, enqueued_at, claimed_by, claimed_at, row_version, created_at)
+                select tenant_id, md5('tertiary-task-center-v2:legacy-queue:1')::uuid,
+                  facility_id, department_id, md5('tertiary-task-center-v2:task:1')::uuid,
+                  'ENQUEUED', enqueued_by, enqueued_at, null, null, 1, created_at
+                from clinical_task_team_queue where tenant_id=:tenant
+                order by created_at, queue_id limit 1
+                """).param("tenant", SyntheticDataImporter.TENANT_ID).update();
+        assertThat(queued).isEqualTo(1);
+
+        importer.importData();
+
+        assertThat(jdbc.sql("""
+                select state from clinical_task where tenant_id=:tenant
+                  and task_id=md5('tertiary-task-center-v2:task:1')::uuid
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query(String.class).single()).isEqualTo("WITHDRAWN");
+        assertThat(jdbc.sql("""
+                select count(*) from clinical_task_event where tenant_id=:tenant
+                  and task_id=md5('tertiary-task-center-v2:task:1')::uuid
+                  and event_type='SOURCE_WITHDRAWN' and resulting_state='WITHDRAWN'
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query(Long.class).single()).isEqualTo(1);
+        assertThat(jdbc.sql("""
+                select count(*) from clinical_task_team_queue where tenant_id=:tenant
+                  and clinical_task_id=md5('tertiary-task-center-v2:task:1')::uuid
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query(Long.class).single()).isZero();
     }
 
     private Integer fixtureBusinessRowCount() {

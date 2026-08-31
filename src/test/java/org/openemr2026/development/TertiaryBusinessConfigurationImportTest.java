@@ -73,8 +73,19 @@ final class TertiaryBusinessConfigurationImportTest {
                         "workbenches", rs.getInt("workbenches"),
                         "complete", rs.getInt("complete_profiles")))
                 .single();
-        assertThat(mockProfiles).containsEntry("profiles", 13)
-                .containsEntry("workbenches", 13).containsEntry("complete", 13);
+        assertThat(mockProfiles).containsEntry("profiles", 10)
+                .containsEntry("workbenches", 10).containsEntry("complete", 10);
+        Integer retiredAiSimulationProfiles = jdbc.sql("""
+                select count(*) from config_item
+                where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
+                  and status = 'ARCHIVED'
+                  and coalesce(payload->>'workbench_id', '') in (
+                    'ai-capture', 'model-connection', 'model-routing')
+                """).param("tenant", SyntheticDataImporter.TENANT_ID)
+                .query(Integer.class).single();
+        assertThat(retiredAiSimulationProfiles)
+                .as("AI center pages backed by real model/run APIs must not retain active simulation profiles")
+                .isEqualTo(3);
 
         Map<String, Integer> specialtyCoverage = jdbc.sql("""
                 select count(*) as assessments, count(distinct department_id) as departments,
@@ -107,9 +118,13 @@ final class TertiaryBusinessConfigurationImportTest {
         Map<String, Integer> evaluationFixtures = jdbc.sql("""
                 select count(*) as evaluations,
                   count(distinct config_id) as ids,
+                  count(distinct payload->>'target_agent') as covered_agents,
                   count(*) filter (where payload->>'hospital_level' = '三级甲等'
                     and payload->>'environment' = 'tertiary-hospital-simulation'
-                    and status = 'ACTIVE' and validation_state = 'VALID') as complete
+                    and status = 'ACTIVE' and validation_state = 'VALID'
+                    and payload->>'release_gate' = 'PASSED'
+                    and (payload->>'measured_score')::numeric >=
+                        (payload->>'pass_threshold')::numeric) as complete
                 from config_item
                 where tenant_id = :tenant and config_type = 'AGENT_EVAL'
                   and config_key like 'eval-%-v1'
@@ -117,10 +132,13 @@ final class TertiaryBusinessConfigurationImportTest {
                 .query((rs, row) -> Map.of(
                         "evaluations", rs.getInt("evaluations"),
                         "ids", rs.getInt("ids"),
+                        "covered_agents", rs.getInt("covered_agents"),
                         "complete", rs.getInt("complete")))
                 .single();
-        assertThat(evaluationFixtures).containsEntry("evaluations", 5)
-                .containsEntry("ids", 5).containsEntry("complete", 5);
+        assertThat(evaluationFixtures).containsEntry("evaluations", 10)
+                .containsEntry("ids", 10)
+                .containsEntry("covered_agents", 5)
+                .containsEntry("complete", 10);
     }
 
     @Test
@@ -128,11 +146,14 @@ final class TertiaryBusinessConfigurationImportTest {
         Map<String, Integer> catalog = jdbc.sql("""
                 select
                   (select count(*) from model_deployment where tenant_id = :tenant
-                    and status = 'ACTIVE' and connection_status = 'READY'
-                    and evaluation_status = 'APPROVED'
-                    and endpoint_url not like '%.example/%') as ready_live_models,
+                    and model_code in ('DEEPSEEK-V3-CLINICAL-LOCAL', 'DEEPSEEK-R1-REASONING-LOCAL',
+                      'QWEN2.5-VL-MEDICAL', 'GLM4-PATIENT-COMMUNICATION',
+                      'QWEN3-EMBEDDING-LOCAL', 'BGE-M3-CLINICAL-RERANK')
+                    and status = 'ACTIVE') as active_simulation_models,
                   (select count(*) from model_deployment where tenant_id = :tenant
-                    and endpoint_url like '%.example/%'
+                    and model_code in ('DEEPSEEK-V3-CLINICAL-LOCAL', 'DEEPSEEK-R1-REASONING-LOCAL',
+                      'QWEN2.5-VL-MEDICAL', 'GLM4-PATIENT-COMMUNICATION',
+                      'QWEN3-EMBEDDING-LOCAL', 'BGE-M3-CLINICAL-RERANK')
                     and status = 'INACTIVE' and connection_status = 'NOT_CONFIGURED'
                     and evaluation_status = 'REJECTED') as retired_simulation_models,
                   (select count(*) from skill_registry where tenant_id = :tenant
@@ -141,12 +162,12 @@ final class TertiaryBusinessConfigurationImportTest {
                     and status = 'ACTIVE') as active_tools
                 """).param("tenant", SyntheticDataImporter.TENANT_ID)
                 .query((rs, row) -> Map.of(
-                        "live_models", rs.getInt("ready_live_models"),
+                        "active_simulation_models", rs.getInt("active_simulation_models"),
                         "retired_models", rs.getInt("retired_simulation_models"),
                         "skills", rs.getInt("active_skills"),
                         "tools", rs.getInt("active_tools")))
                 .single();
-        assertThat(catalog).containsEntry("live_models", 0)
+        assertThat(catalog).containsEntry("active_simulation_models", 0)
                 .containsEntry("retired_models", 6)
                 .containsEntry("skills", 24).containsEntry("tools", 29);
     }

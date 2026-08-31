@@ -2,8 +2,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, defineAsyncComponent, provide, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { issueEmergencyFacilityLease, listWaitingQueue } from '../../api/emergency';
-import { issueWardLease, loadInpatientWorklist } from '../../clinical-api';
+import { issueExecutionWorklistLease, listExecutionWorklist } from '../../api/execution-center';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 import {
@@ -11,8 +10,7 @@ import {
   executionPatientSelectionKey,
   executionRouteConfigs,
   filterExecutionPatientRows,
-  mapInpatientWorklist,
-  mapOutpatientQueue,
+  mapExecutionWorklist,
   type ExecutionPatientRow,
 } from '../execution-patient-flow';
 
@@ -52,14 +50,10 @@ watch(routeId, () => {
 });
 
 const queueQuery = useQuery({
-  queryKey: computed(() => ['execution-patient-flow', routeId.value, config.value.mode]),
+  queryKey: computed(() => ['execution-patient-flow', routeId.value, config.value.domain]),
   queryFn: async () => {
-    if (config.value.mode === 'INPATIENT') {
-      const lease = await issueWardLease();
-      return mapInpatientWorklist(await loadInpatientWorklist(lease), config.value.taskLabel);
-    }
-    const lease = await issueEmergencyFacilityLease(`EXECUTION_QUEUE_${routeId.value.toUpperCase().replaceAll('-', '_')}`);
-    return mapOutpatientQueue(await listWaitingQueue(lease), config.value.taskLabel);
+    const lease = await issueExecutionWorklistLease(config.value.domain);
+    return mapExecutionWorklist(await listExecutionWorklist(lease, config.value.domain));
   },
   retry: false,
   staleTime: 30_000,
@@ -77,7 +71,7 @@ const issue = computed(() => queueQuery.error.value ? toClinicalIssue(queueQuery
 function statusLabel(value: string) {
   return ({
     WAITING: '候诊', CALLED: '已叫号', IN_CONSULTATION: '诊中', COMPLETED: '已完成', SKIPPED: '已过号',
-    OVERDUE: '有超时', PENDING: '有待办', READY: '待接收',
+    OVERDUE: '有超时', PENDING: '有待办', READY: '待接收', CRITICAL: '危急优先',
   } as Record<string, string>)[value] ?? value;
 }
 
@@ -169,7 +163,7 @@ function selectPatient(row: ExecutionPatientRow) {
                 <td><span class="status-chip" :class="row.status.toLowerCase()">{{ statusLabel(row.status) }}</span></td>
                 <td><button class="queue-button primary" type="button" data-select-execution-patient @click="selectPatient(row)">选择患者并下转</button></td>
               </tr>
-              <tr v-if="filteredRows.length === 0"><td class="empty-cell" colspan="8">没有符合当前筛选条件的患者</td></tr>
+              <tr v-if="filteredRows.length === 0"><td class="empty-cell" colspan="8">当前专业队列没有符合条件的真实任务；请先签署相应医嘱或创建业务申请</td></tr>
             </tbody>
           </table>
         </div>
@@ -190,7 +184,7 @@ function selectPatient(row: ExecutionPatientRow) {
 </template>
 
 <style scoped>
-.execution-queue-page { display: grid; min-width: 0; gap: 18px; }
+.execution-queue-page { display: grid; min-width: 0; align-content: start; grid-auto-rows: max-content; gap: 18px; }
 .execution-page-head { align-items: flex-start; gap: 20px; }
 .eyebrow { margin-bottom: 7px; color: #0b6bcb; font-size: 12px; font-weight: 750; letter-spacing: .08em; }
 .queue-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
@@ -245,6 +239,18 @@ function selectPatient(row: ExecutionPatientRow) {
   .queue-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .queue-toolbar { grid-template-columns: 1fr; align-items: stretch; }
   .queue-filters { grid-template-columns: minmax(230px, 1fr) 160px; }
+}
+@media (max-width: 1350px) {
+  .queue-table { min-width: 880px; }
+  .queue-table .col-sequence { width: 52px; }
+  .queue-table .col-patient { width: 150px; }
+  .queue-table .col-visit { width: 72px; }
+  .queue-table .col-location { width: 92px; }
+  .queue-table .col-task { width: 190px; }
+  .queue-table .col-count { width: 56px; }
+  .queue-table .col-status { width: 76px; }
+  .queue-table .col-action { width: 142px; }
+  .queue-table th, .queue-table td { padding-inline: 10px; }
 }
 @media (max-width: 700px) {
   .queue-metrics { grid-template-columns: 1fr; }

@@ -1327,6 +1327,54 @@
         }
       }
     },
+    "/clinical-tasks/collaborators": {
+      "get": {
+        "operationId": "listEligibleClinicalTaskCollaborators",
+        "responses": {
+          "200": {
+            "description": "effective same-department task collaborators with active credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ClinicalTaskCollaborator"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clinical-tasks/{task_id}": {
+      "get": {
+        "operationId": "getClinicalTaskDetail",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "patient-scoped task detail with immutable responsibility and rule evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicalTaskDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/clinical-tasks/expirations": {
       "post": {
         "operationId": "expireOverdueClinicalTasks",
@@ -5818,6 +5866,211 @@
         }
       }
     },
+    "/data-quality-rules/{data_quality_rule_id}/scans": {
+      "post": {
+        "operationId": "startDataQualityScan",
+        "parameters": [
+          {
+            "name": "data_quality_rule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataQualityScanStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "allowlisted hospital fact scan completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataQualityScanRun"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data-quality-scans": {
+      "get": {
+        "operationId": "listDataQualityScans",
+        "parameters": [
+          {
+            "name": "data_quality_rule_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "scan runs for the selected rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DataQualityScanRun"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data-quality-findings": {
+      "get": {
+        "operationId": "listDataQualityFindings",
+        "parameters": [
+          {
+            "name": "data_quality_scan_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "non-PHI findings for the current facility, optionally filtered by scan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DataQualityFinding"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data-quality-findings/{data_quality_finding_id}/transitions": {
+      "post": {
+        "operationId": "transitionDataQualityFinding",
+        "parameters": [
+          {
+            "name": "data_quality_finding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataQualityFindingTransitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "finding lifecycle transitioned with audit evidence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataQualityFinding"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/data-quality-scans/{data_quality_scan_id}/triage-advice": {
+      "get": {
+        "operationId": "listDataQualityTriageAdvice",
+        "parameters": [
+          {
+            "name": "data_quality_scan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "persisted evidence-bound triage advice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DataQualityTriageAdvice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createDataQualityTriageAdvice",
+        "parameters": [
+          {
+            "name": "data_quality_scan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataQualityTriageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "deterministic suggestion-only triage advice created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataQualityTriageAdvice"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/data-quality-evaluations": {
       "get": {
         "operationId": "listDataQualityEvaluations",
@@ -9864,6 +10117,72 @@
         }
       }
     },
+    "/execution-center/worklists/{domain}": {
+      "get": {
+        "operationId": "listExecutionCenterWorklist",
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["CARE_OPERATIONS", "BILLING", "OUTPATIENT_PHARMACY", "INPATIENT_PHARMACY", "LAB", "PATHOLOGY", "IMAGING", "THERAPY", "SURGERY", "ANESTHESIA", "TRANSFUSION", "DEVICE_MONITORING"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "authorized professional execution worklist aggregated from persisted clinical facts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ExecutionWorklistItem" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/execution-center/cases": {
+      "get": {
+        "operationId": "listSpecialtyExecutionCases",
+        "parameters": [
+          { "name": "domain", "in": "query", "required": true, "schema": { "type": "string", "enum": ["PATHOLOGY", "THERAPY", "ANESTHESIA", "DEVICE_MONITORING"] } },
+          { "name": "patient_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "encounter_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": { "200": { "description": "patient specialty execution cases", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/SpecialtyExecutionCase" } } } } } }
+      },
+      "post": {
+        "operationId": "createSpecialtyExecutionCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCaseCreateRequest" } } } },
+        "responses": { "201": { "description": "specialty execution case created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCase" } } } } }
+      }
+    },
+    "/execution-center/cases/{specialty_execution_case_id}": {
+      "get": {
+        "operationId": "getSpecialtyExecutionCase",
+        "parameters": [{ "name": "specialty_execution_case_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "specialty execution case with immutable event timeline", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCase" } } } } }
+      },
+      "put": {
+        "operationId": "updateSpecialtyExecutionCase",
+        "parameters": [{ "name": "specialty_execution_case_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCaseUpdateRequest" } } } },
+        "responses": { "200": { "description": "draft specialty execution case updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCase" } } } } }
+      }
+    },
+    "/execution-center/cases/{specialty_execution_case_id}/transitions": {
+      "post": {
+        "operationId": "transitionSpecialtyExecutionCase",
+        "parameters": [{ "name": "specialty_execution_case_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCaseTransitionRequest" } } } },
+        "responses": { "200": { "description": "specialty execution case transitioned and audited", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SpecialtyExecutionCase" } } } } }
+      }
+    },
     "/executions/{execution_task_id}/events": {
       "post": {
         "operationId": "recordOrderExecutionEvent",
@@ -10882,6 +11201,141 @@
         }
       }
     },
+    "/admin/master-data-records": {
+      "get": {
+        "operationId": "listMasterDataRecords",
+        "parameters": [
+          { "name": "config_id", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "keyword", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 128 } },
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ACTIVE", "INACTIVE"] } }
+        ],
+        "responses": { "200": { "description": "record-level master data with national and local code mappings", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } } }
+      },
+      "post": {
+        "operationId": "createMasterDataRecord",
+        "parameters": [{ "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "master data record created with audit and outbox evidence", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/master-data-records/{record_id}": {
+      "put": {
+        "operationId": "updateMasterDataRecord",
+        "parameters": [
+          { "name": "record_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "master data record updated with optimistic locking", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/master-data-records/{record_id}/deactivate": {
+      "post": {
+        "operationId": "deactivateMasterDataRecord",
+        "parameters": [
+          { "name": "record_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "master data record inactivated without deleting historical references", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/runtime/job-runs": {
+      "get": {
+        "operationId": "listAdministrationJobRuns",
+        "parameters": [{ "name": "config_id", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "database-backed administration job runs", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } } }
+      }
+    },
+    "/admin/runtime/jobs/{config_id}/runs": {
+      "post": {
+        "operationId": "startAdministrationJobRun",
+        "parameters": [
+          { "name": "config_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "responses": { "202": { "description": "administration job queued for deterministic execution", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/runtime/job-runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "cancelAdministrationJobRun",
+        "parameters": [{ "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "queued administration job cancelled", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/runtime/job-runs/{run_id}/retry": {
+      "post": {
+        "operationId": "retryAdministrationJobRun",
+        "parameters": [
+          { "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "responses": { "202": { "description": "failed or cancelled administration job requeued as a new run", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/runtime/job-runs/{run_id}/findings": {
+      "get": {
+        "operationId": "listAdministrationGovernanceFindings",
+        "parameters": [{ "name": "run_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "governance findings produced by a real rule execution", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } } }
+      }
+    },
+    "/admin/runtime/findings/{finding_id}/resolve": {
+      "post": {
+        "operationId": "resolveAdministrationGovernanceFinding",
+        "parameters": [{ "name": "finding_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "governance finding resolved with actor and resolution evidence", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/workgroups": {
+      "get": {
+        "operationId": "listAdministrationWorkgroups",
+        "responses": { "200": { "description": "workgroups with effective member assignments", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } } }
+      },
+      "post": {
+        "operationId": "createAdministrationWorkgroup",
+        "parameters": [{ "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "workgroup created in an active hospital scope", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/workgroups/{workgroup_id}/members": {
+      "post": {
+        "operationId": "addAdministrationWorkgroupMember",
+        "parameters": [
+          { "name": "workgroup_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "201": { "description": "effective workgroup membership created", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/workgroups/{workgroup_id}/members/{member_id}/end": {
+      "post": {
+        "operationId": "endAdministrationWorkgroupMember",
+        "parameters": [
+          { "name": "workgroup_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "member_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "membership ended without deleting assignment history", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/admin/workgroups/{workgroup_id}/deactivate": {
+      "post": {
+        "operationId": "deactivateAdministrationWorkgroup",
+        "parameters": [
+          { "name": "workgroup_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": { "200": { "description": "empty workgroup deactivated with historical evidence retained", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
     "/admin/workforce": {
       "get": {
         "operationId": "listWorkforceIdentities",
@@ -10923,6 +11377,21 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/admin/workforce/role-assignments": {
+      "post": {
+        "operationId": "assignWorkforceRole",
+        "parameters": [
+          { "name": "Idempotency-Key", "in": "header", "required": true, "schema": { "type": "string", "minLength": 1, "maxLength": 128 } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object" } } } },
+        "responses": {
+          "201": {
+            "description": "effective role and workforce scope assigned to an existing active account",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkforceIdentity" } } }
           }
         }
       }
@@ -18694,6 +19163,108 @@
             "type": "integer",
             "format": "int64"
           }
+        }
+      },
+      "SpecialtyExecutionCaseEvent": {
+        "type": "object", "additionalProperties": false,
+        "required": ["specialty_execution_event_id", "event_type", "to_status", "snapshot", "actor_user_id", "occurred_at"],
+        "properties": {
+          "specialty_execution_event_id": { "type": "string", "format": "uuid" },
+          "event_type": { "type": "string", "enum": ["CREATED", "UPDATED", "READY", "STARTED", "REVIEW_REQUESTED", "COMPLETED", "CANCELLED"] },
+          "from_status": { "type": ["string", "null"] },
+          "to_status": { "type": "string" },
+          "note": { "type": ["string", "null"] },
+          "snapshot": { "type": "object", "additionalProperties": true },
+          "actor_user_id": { "type": "string", "format": "uuid" },
+          "occurred_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SpecialtyExecutionCase": {
+        "type": "object", "additionalProperties": false,
+        "required": ["specialty_execution_case_id", "business_number", "domain", "patient_id", "encounter_id", "facility_id", "title", "priority", "status", "payload", "created_by", "last_actor_user_id", "row_version", "created_at", "updated_at", "events"],
+        "properties": {
+          "specialty_execution_case_id": { "type": "string", "format": "uuid" },
+          "business_number": { "type": "string" },
+          "domain": { "type": "string", "enum": ["PATHOLOGY", "THERAPY", "ANESTHESIA", "DEVICE_MONITORING"] },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "priority": { "type": "string", "enum": ["ROUTINE", "URGENT", "EMERGENCY"] },
+          "status": { "type": "string", "enum": ["DRAFT", "READY", "IN_PROGRESS", "PENDING_REVIEW", "COMPLETED", "CANCELLED"] },
+          "planned_at": { "type": ["string", "null"], "format": "date-time" },
+          "payload": { "type": "object", "additionalProperties": true },
+          "created_by": { "type": "string", "format": "uuid" },
+          "last_actor_user_id": { "type": "string", "format": "uuid" },
+          "row_version": { "type": "integer", "format": "int64" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "events": { "type": "array", "items": { "$ref": "#/components/schemas/SpecialtyExecutionCaseEvent" } }
+        }
+      },
+      "SpecialtyExecutionCaseCreateRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "domain", "title", "priority", "payload"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "domain": { "type": "string", "enum": ["PATHOLOGY", "THERAPY", "ANESTHESIA", "DEVICE_MONITORING"] },
+          "title": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "priority": { "type": "string", "enum": ["ROUTINE", "URGENT", "EMERGENCY"] },
+          "planned_at": { "type": ["string", "null"], "format": "date-time" },
+          "payload": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "SpecialtyExecutionCaseUpdateRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "title", "priority", "payload", "expected_row_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "priority": { "type": "string", "enum": ["ROUTINE", "URGENT", "EMERGENCY"] },
+          "planned_at": { "type": ["string", "null"], "format": "date-time" },
+          "payload": { "type": "object", "additionalProperties": true },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "SpecialtyExecutionCaseTransitionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "action", "expected_row_version", "note"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "action": { "type": "string", "enum": ["MARK_READY", "START", "REQUEST_REVIEW", "COMPLETE", "CANCEL"] },
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "note": { "type": "string", "minLength": 2, "maxLength": 1000 }
+        }
+      },
+      "ExecutionWorklistItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["domain", "patient_id", "encounter_id", "patient_display_name", "sex_code", "birth_date", "visit_type", "location", "task_label", "status", "pending_count", "overdue_count", "critical_count", "latest_activity_at"],
+        "properties": {
+          "domain": { "type": "string" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "admission_id": { "type": ["string", "null"], "format": "uuid" },
+          "patient_display_name": { "type": "string" },
+          "sex_code": { "type": "string" },
+          "birth_date": { "type": "string", "format": "date" },
+          "visit_type": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "INPATIENT"] },
+          "location": { "type": "string" },
+          "task_label": { "type": "string" },
+          "status": { "type": "string", "enum": ["PENDING", "COMPLETED", "CRITICAL"] },
+          "pending_count": { "type": "integer", "minimum": 0 },
+          "overdue_count": { "type": "integer", "minimum": 0 },
+          "critical_count": { "type": "integer", "minimum": 0 },
+          "latest_activity_at": { "type": "string", "format": "date-time" }
         }
       },
       "OrderExecutionTask": {
@@ -28424,6 +28995,140 @@
           }
         }
       },
+      "DataQualityScanStartRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DataQualityScanRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data_quality_scan_id",
+          "data_quality_rule_id",
+          "target_entity",
+          "status",
+          "total_count",
+          "passed_count",
+          "failed_count",
+          "score",
+          "started_by",
+          "started_at",
+          "completed_at",
+          "row_version"
+        ],
+        "properties": {
+          "data_quality_scan_id": {"type": "string", "format": "uuid"},
+          "data_quality_rule_id": {"type": "string", "format": "uuid"},
+          "target_entity": {"type": "string"},
+          "status": {"type": "string", "enum": ["RUNNING", "COMPLETED", "NO_DATA", "FAILED"]},
+          "total_count": {"type": "integer", "format": "int64", "minimum": 0},
+          "passed_count": {"type": "integer", "format": "int64", "minimum": 0},
+          "failed_count": {"type": "integer", "format": "int64", "minimum": 0},
+          "score": {"type": "number", "minimum": 0, "maximum": 1},
+          "started_by": {"type": "string", "format": "uuid"},
+          "started_at": {"type": "string", "format": "date-time"},
+          "completed_at": {"type": ["string", "null"], "format": "date-time"},
+          "row_version": {"type": "integer", "format": "int64", "minimum": 1}
+        }
+      },
+      "DataQualityFinding": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data_quality_finding_id",
+          "data_quality_scan_id",
+          "data_quality_rule_id",
+          "target_entity_id",
+          "reason_code",
+          "reason_detail",
+          "severity",
+          "status",
+          "assigned_to",
+          "corrective_action",
+          "detected_at",
+          "updated_at",
+          "row_version"
+        ],
+        "properties": {
+          "data_quality_finding_id": {"type": "string", "format": "uuid"},
+          "data_quality_scan_id": {"type": "string", "format": "uuid"},
+          "data_quality_rule_id": {"type": "string", "format": "uuid"},
+          "target_entity_id": {"type": "string", "format": "uuid"},
+          "reason_code": {"type": "string"},
+          "reason_detail": {"type": "string"},
+          "severity": {"type": "string", "enum": ["INFO", "WARNING", "BLOCKING"]},
+          "status": {"type": "string", "enum": ["OPEN", "ASSIGNED", "REMEDIATED", "VERIFIED", "CLOSED"]},
+          "assigned_to": {"type": ["string", "null"], "format": "uuid"},
+          "corrective_action": {"type": ["string", "null"]},
+          "detected_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"},
+          "row_version": {"type": "integer", "format": "int64", "minimum": 1}
+        }
+      },
+      "DataQualityFindingTransitionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "action", "note", "row_version"],
+        "properties": {
+          "organization_id": {"type": "string", "format": "uuid"},
+          "facility_id": {"type": "string", "format": "uuid"},
+          "action": {"type": "string", "enum": ["ASSIGN", "REMEDIATE", "VERIFY", "CLOSE", "REOPEN"]},
+          "assignee_id": {"type": ["string", "null"], "format": "uuid"},
+          "note": {"type": "string", "minLength": 2, "maxLength": 2000},
+          "row_version": {"type": "integer", "format": "int64", "minimum": 1}
+        }
+      },
+      "DataQualityTriageRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id"],
+        "properties": {
+          "organization_id": {"type": "string", "format": "uuid"},
+          "facility_id": {"type": "string", "format": "uuid"}
+        }
+      },
+      "DataQualityTriageAdvice": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "data_quality_triage_advice_id",
+          "data_quality_scan_id",
+          "engine_kind",
+          "risk_level",
+          "finding_count",
+          "summary",
+          "prioritized_actions",
+          "evidence_hash",
+          "generated_by",
+          "generated_at"
+        ],
+        "properties": {
+          "data_quality_triage_advice_id": {"type": "string", "format": "uuid"},
+          "data_quality_scan_id": {"type": "string", "format": "uuid"},
+          "engine_kind": {"type": "string", "enum": ["DETERMINISTIC_RULE_BASED"]},
+          "risk_level": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH"]},
+          "finding_count": {"type": "integer", "format": "int64", "minimum": 0},
+          "summary": {"type": "string"},
+          "prioritized_actions": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+          "evidence_hash": {"type": "string", "minLength": 64, "maxLength": 64},
+          "generated_by": {"type": "string", "format": "uuid"},
+          "generated_at": {"type": "string", "format": "date-time"}
+        }
+      },
       "DataQualityEvaluation": {
         "type": "object",
         "additionalProperties": false,
@@ -32547,6 +33252,56 @@
           }
         }
       },
+      "ClinicalTaskCollaborator": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "user_id",
+          "display_name",
+          "role_code",
+          "position_code",
+          "department_id",
+          "active_credential_count"
+        ],
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" },
+          "display_name": { "type": "string" },
+          "role_code": { "type": "string" },
+          "position_code": { "type": "string" },
+          "department_id": { "type": "string", "format": "uuid" },
+          "ward_id": { "type": ["string", "null"], "format": "uuid" },
+          "active_credential_count": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "ClinicalTaskEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_event_id", "event_type", "actor_user_id", "occurred_at"],
+        "properties": {
+          "task_event_id": { "type": "string", "format": "uuid" },
+          "event_type": { "type": "string" },
+          "previous_state": { "type": ["string", "null"] },
+          "resulting_state": { "type": ["string", "null"] },
+          "actor_user_id": { "type": "string", "format": "uuid" },
+          "target_user_id": { "type": ["string", "null"], "format": "uuid" },
+          "reason": { "type": ["string", "null"] },
+          "valid_until": { "type": ["string", "null"], "format": "date-time" },
+          "occurred_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ClinicalTaskDelegation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["delegation_id", "delegated_by", "delegated_to", "reason", "valid_until", "created_at"],
+        "properties": {
+          "delegation_id": { "type": "string", "format": "uuid" },
+          "delegated_by": { "type": "string", "format": "uuid" },
+          "delegated_to": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string" },
+          "valid_until": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "ClinicalTask": {
         "type": "object",
         "additionalProperties": false,
@@ -32657,6 +33412,22 @@
           "data_watermark": {
             "type": "string"
           }
+        }
+      },
+      "ClinicalTaskDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task", "rule_snapshot", "events", "delegations", "notification_count", "queue_count"],
+        "properties": {
+          "task": { "$ref": "#/components/schemas/ClinicalTask" },
+          "task_rule_config_id": { "type": ["string", "null"], "format": "uuid" },
+          "task_rule_version": { "type": ["integer", "null"], "format": "int64" },
+          "rule_snapshot": { "type": "object", "additionalProperties": true },
+          "escalation_at": { "type": ["string", "null"], "format": "date-time" },
+          "events": { "type": "array", "items": { "$ref": "#/components/schemas/ClinicalTaskEvent" } },
+          "delegations": { "type": "array", "items": { "$ref": "#/components/schemas/ClinicalTaskDelegation" } },
+          "notification_count": { "type": "integer", "minimum": 0 },
+          "queue_count": { "type": "integer", "minimum": 0 }
         }
       },
       "PatientSummary": {

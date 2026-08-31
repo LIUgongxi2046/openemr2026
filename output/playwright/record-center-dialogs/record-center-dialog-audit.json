@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-08-30T11:03:33.055Z",
+  "run_at": "2026-08-31T01:38:48.063Z",
   "checks": [
     {
       "name": "create-dialog",
@@ -10,38 +10,21 @@
         "width": 760,
         "height": 516.1875
       }
-    },
+    }
+  ],
+  "findings": [
     {
       "name": "edit-dialog",
-      "status": "PASS",
-      "box": {
-        "x": 340,
-        "y": 279.90625,
-        "width": 760,
-        "height": 440.1875
-      }
+      "detail": "没有可用的草稿操作按钮"
     },
     {
       "name": "void-dialog",
-      "status": "PASS",
-      "box": {
-        "x": 440,
-        "y": 310.3125,
-        "width": 560,
-        "height": 379.375
-      }
+      "detail": "没有可用的草稿操作按钮"
     },
     {
       "name": "mobile-create-dialog",
-      "status": "PASS",
-      "box": {
-        "x": 17,
-        "y": 43.90625,
-        "width": 356,
-        "height": 756.1875
-      }
+      "detail": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新建病历', exact: true }).first()\u001b[22m\n"
     }
   ],
-  "findings": [],
-  "passed": true
+  "passed": false
 }

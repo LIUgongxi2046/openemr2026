@@ -3,8 +3,11 @@ package org.openemr2026.model;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.openemr2026.model.ModelDataProcessingApprovalService.ApprovalCommand;
+import org.openemr2026.model.ModelDataProcessingApprovalService.ApprovalView;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
@@ -32,6 +35,9 @@ final class ModelDeploymentApiTest {
 
     @Autowired
     private ModelDeploymentService models;
+
+    @Autowired
+    private ModelDataProcessingApprovalService processingApprovals;
 
     @Autowired
     private JdbcClient jdbc;
@@ -169,5 +175,34 @@ final class ModelDeploymentApiTest {
                         "不安全地址", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
                         "http://api.example.test/v1", "env://TEST_DEEPSEEK_API_KEY", null)))
                 .isInstanceOf(ModelDeploymentException.class);
+    }
+
+    @Test
+    void givenCloudModel_whenApprovingAndRevokingExternalProcessing_thenLifecycleIsAudited() {
+        ModelDeploymentWire registered = models.register(identity(), "model-cloud-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
+                        "DEEPSEEK", "DeepSeek 云端诊疗模型",
+                        ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.CLOUD_ALLOWED,
+                        "https://api.deepseek.com", null, "test-managed-secret-EFGH"));
+
+        ApprovalView approved = processingApprovals.approve(identity(), "processing-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), new ApprovalCommand(
+                        "医疗服务合同履行与院内诊疗辅助", "PIA-AI-TEST-001", "DPA-AI-TEST-001",
+                        "中国境内合成测试端点", 0, List.of("RECORDS", "RESULTS"),
+                        OffsetDateTime.now().plusDays(30)));
+
+        assertThat(approved.status()).isEqualTo("ACTIVE");
+        assertThat(approved.allowedContextScopes()).containsExactly("RECORDS", "RESULTS");
+        assertThat(processingApprovals.list(identity(), registered.modelDeploymentId())).hasSize(1);
+
+        ApprovalView revoked = processingApprovals.revoke(identity(), "processing-revoke-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), approved.approvalId(), approved.rowVersion(), "合成测试结束");
+        assertThat(revoked.status()).isEqualTo("REVOKED");
+        assertThat(revoked.revocationReason()).isEqualTo("合成测试结束");
+        assertThat(jdbc.sql("""
+                select count(*) from audit_event where tenant_id = :tenant
+                  and resource_type = 'MODEL_PROCESSING_APPROVAL' and resource_id = :approval
+                """).param("tenant", tenant).param("approval", approved.approvalId())
+                .query(Long.class).single()).isEqualTo(2);
     }
 }

@@ -40,8 +40,10 @@ try {
 
     currentRoute = 'login';
     await page.goto(`${baseUrl}/#/login`, { waitUntil: 'domcontentloaded', timeout: 15_000 });
+    await page.waitForFunction(() => Boolean(document.documentElement.dataset.routeId), undefined, { timeout: 8_000 });
     const loginButton = page.getByRole('button', { name: '登录系统', exact: true });
-    if (await loginButton.count()) {
+    if (await page.evaluate(() => document.documentElement.dataset.routeId === 'login-context')) {
+      await loginButton.waitFor({ state: 'visible', timeout: 8_000 });
       await page.getByLabel('用户名', { exact: true }).fill(loginUsername);
       await page.locator('#system-login-password').fill(loginPassword);
       await loginButton.click();

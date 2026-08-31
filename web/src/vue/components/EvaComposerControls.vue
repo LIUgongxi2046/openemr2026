@@ -65,7 +65,7 @@ function toggleScope(code: ContextScope) {
 <style scoped>
 .eva-control-bar { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .eva-add-context { position: relative; flex: 0 0 auto; }
-.eva-plus { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; color: #334e68; border: 1px solid #c9d6e2; border-radius: 8px; background: #fff; font-size: 21px; line-height: 1; cursor: pointer; }
+.eva-plus { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; color: #334e68; border: 1px solid #c9d6e2; border-radius: 8px; background: #fff; font-size: 21px; line-height: 1.2; cursor: pointer; }
 .eva-plus:hover { border-color: #7da7cf; background: #f4f8fc; }
 .eva-plus:focus-visible { outline: 3px solid rgb(23 105 224 / 18%); outline-offset: 2px; }
 .eva-context-menu { position: absolute; z-index: 20; left: 0; bottom: calc(100% + 8px); display: grid; width: 288px; overflow: hidden; border: 1px solid #cbd8e5; border-radius: 12px; background: #fff; box-shadow: 0 16px 40px rgb(26 51 78 / 18%); }

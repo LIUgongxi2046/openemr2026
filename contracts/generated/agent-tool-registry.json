@@ -104,6 +104,32 @@
       "escalation": "clinical human review",
       "owner": "independent-eval",
       "status": "CREATED"
+    },
+    {
+      "agent_id": "data-quality-triage@1",
+      "goal": "基于不含 PHI 的扫描证据对质量问题分级并提供整改候选",
+      "non_goals": [
+        "修改临床事实",
+        "自动关闭工单",
+        "生成患者身份信息"
+      ],
+      "input_schema": "DataQualityScanRun",
+      "output_schema": "DataQualityTriageAdvice",
+      "allowed_tools": [
+        "read_data_quality_scan@1",
+        "list_data_quality_findings@1"
+      ],
+      "data_scope": "tenant + facility + selected immutable scan only",
+      "budget": {
+        "max_wall_time_seconds": 3,
+        "max_model_calls": 0,
+        "max_tool_calls": 2,
+        "max_retries": 0
+      },
+      "termination": "scan missing, unsupported evidence, or scope mismatch",
+      "escalation": "data governance officer",
+      "owner": "data-governance + ai-governance",
+      "status": "CREATED"
     }
   ],
   "tools": [
@@ -187,6 +213,38 @@
       ],
       "audit": "object/diff/consequence",
       "approval": "ASK_EACH_TIME"
+    },
+    {
+      "tool_id": "read_data_quality_scan@1",
+      "purpose": "读取选定扫描的不可变汇总证据",
+      "input_schema": "DataQualityScanRun",
+      "output_schema": "DataQualityScanRun",
+      "permission": "data-quality.read",
+      "side_effect": "NONE",
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 1000,
+      "error_codes": [
+        "SCOPE_DENIED",
+        "RESOURCE_NOT_FOUND_OR_DENIED"
+      ],
+      "audit": "tenant/facility/scan/evidence-hash",
+      "approval": "ALLOW"
+    },
+    {
+      "tool_id": "list_data_quality_findings@1",
+      "purpose": "读取扫描中不含 PHI 的问题代码与状态",
+      "input_schema": "DataQualityScanRun",
+      "output_schema": "DataQualityFinding",
+      "permission": "data-quality.read",
+      "side_effect": "NONE",
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 1000,
+      "error_codes": [
+        "SCOPE_DENIED",
+        "RESOURCE_NOT_FOUND_OR_DENIED"
+      ],
+      "audit": "tenant/facility/scan/finding-count",
+      "approval": "ALLOW"
     }
   ]
 }

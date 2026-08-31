@@ -68,7 +68,7 @@ final class ModelEvaluationService {
                     set evaluation_status = :evaluation_status,
                       row_version = row_version + 1, updated_at = now()
                     where tenant_id = :tenant and model_deployment_id = :deployment
-                    """).param("evaluation_status", passed ? "APPROVED" : "REJECTED")
+                    """).param("evaluation_status", passed ? "EVALUATING" : "REJECTED")
                     .param("tenant", identity.tenantId()).param("deployment", request.modelDeploymentId()).update();
             appendEvidence(identity, evaluationId, "MODEL_EVALUATION_RECORDED", "ModelEvaluationRecorded");
             completeCommand(identity, "MODEL_EVALUATION_RECORD", idempotencyKey, evaluationId);

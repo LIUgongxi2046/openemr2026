@@ -82,9 +82,12 @@ async function login() {
         <b>开发验收环境</b>
         <dl>
           <div><dt>体验账号</dt><dd><code>linwei</code></dd></div>
+          <div><dt>护士验收</dt><dd><code>jiahui.xu</code></dd></div>
+          <div><dt>药师验收</dt><dd><code>qinghua.deng</code></dd></div>
+          <div><dt>医技验收</dt><dd><code>ruifeng.cao</code> / <code>chenxi.peng</code> / <code>meiqi.zeng</code></dd></div>
           <div><dt>体验密码</dt><dd><code>OpenEMR2026-dev!</code></dd></div>
         </dl>
-        <small>完整验收地址 <code>http://127.0.0.1:4177/</code>；需同时运行 <code>8080</code> 后端。仅用于本地开发与验收；部署环境应通过 <code>OPENEMR2026_DEV_LOGIN_PASSWORD</code> 覆盖默认密码。</small>
+        <small>以上账号只在 <code>dev-synthetic</code> 验收环境生成，岗位权限来自服务端角色分配。完整验收地址 <code>http://127.0.0.1:4177/</code>；需同时运行 <code>8080</code> 后端。部署环境必须接入统一身份认证，不生成这些账号。</small>
       </div>
       <footer><span>数据传输加密</span><span>会话服务端撤销</span><span>审计记录留痕</span></footer>
     </section>

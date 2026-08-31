@@ -27,11 +27,8 @@ final class ResearchCohortSnapshotService {
 
     ResearchCohortSnapshotWire record(
             ClinicalIdentity identity, String idempotencyKey, ResearchCohortSnapshotRequestWire request) {
-        if (request.researchCohortId() == null || request.memberCount() == null || request.computedAt() == null) {
+        if (request.researchCohortId() == null || request.computedAt() == null) {
             throw invalid("research_cohort_id, member_count and computed_at are required");
-        }
-        if (request.memberCount() < 0) {
-            throw invalid("member_count must not be negative");
         }
         CohortHead cohort = loadCohort(identity.tenantId(), request.researchCohortId());
         if (!"ACTIVE".equals(cohort.status())) {
@@ -41,9 +38,19 @@ final class ResearchCohortSnapshotService {
         String criteriaHash = sha256(identity.tenantId() + "|" + request.researchCohortId()
                 + "|" + cohort.inclusionCriteria() + "|" + (cohort.exclusionCriteria() == null
                         ? "" : cohort.exclusionCriteria()));
+        int actualMemberCount = jdbc.sql("""
+                select count(*) from research_cohort_member
+                where tenant_id = :tenant and research_cohort_id = :cohort
+                """).param("tenant", identity.tenantId()).param("cohort", request.researchCohortId())
+                .query(Integer.class).single();
+        if (request.memberCount() != null && request.memberCount() != actualMemberCount) {
+            throw new ResearchCohortSnapshotException(
+                    "RESEARCH_COHORT_SNAPSHOT_COUNT_MISMATCH", 409,
+                    "The submitted member count does not match the server-side cohort membership");
+        }
         return transactions.execute(status -> {
             beginCommand(identity, "RESEARCH_COHORT_SNAPSHOT_RECORD", idempotencyKey,
-                    sha256(request.researchCohortId() + "|" + request.memberCount() + "|" + criteriaHash));
+                    sha256(request.researchCohortId() + "|" + actualMemberCount + "|" + criteriaHash));
             UUID snapshotId = UUID.randomUUID();
             jdbc.sql("""
                     insert into research_cohort_snapshot(
@@ -51,7 +58,7 @@ final class ResearchCohortSnapshotService {
                       criteria_hash, computed_at, computed_by)
                     values (:tenant, :snapshot, :cohort, :count, :hash, :computed_at, :computed_by)
                     """).param("tenant", identity.tenantId()).param("snapshot", snapshotId)
-                    .param("cohort", request.researchCohortId()).param("count", request.memberCount())
+                    .param("cohort", request.researchCohortId()).param("count", actualMemberCount)
                     .param("hash", criteriaHash)
                     .param("computed_at", request.computedAt().atOffset(ZoneOffset.UTC))
                     .param("computed_by", identity.userId()).update();

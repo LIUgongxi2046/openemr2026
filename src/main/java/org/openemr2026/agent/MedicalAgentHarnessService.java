@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.security.ClinicalIdentity;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -30,6 +32,7 @@ final class MedicalAgentHarnessService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper objectMapper;
+    private final Environment environment;
     private final MedicalAgentToolGateway toolGateway;
     private final MedicalAgentModelGateway modelGateway;
 
@@ -37,11 +40,13 @@ final class MedicalAgentHarnessService {
             JdbcClient jdbc,
             TransactionTemplate transactions,
             ObjectMapper objectMapper,
+            Environment environment,
             MedicalAgentToolGateway toolGateway,
             MedicalAgentModelGateway modelGateway) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
+        this.environment = environment;
         this.toolGateway = toolGateway;
         this.modelGateway = modelGateway;
     }
@@ -87,8 +92,12 @@ final class MedicalAgentHarnessService {
             validateTarget(identity.tenantId(), command);
             MainReleaseRow main = main(command.mainAgentCode());
             ensureGovernanceReady(identity.tenantId(), main.agentCode());
+            RuntimePolicy policy = runtimePolicy(identity.tenantId());
+            ensurePolicyRateLimit(identity, policy);
             ModelSelection model = resolveModel(identity.tenantId(), command.modelDeploymentId());
             ensureModelResidency(lease.residencyPolicy(), model.residencyPolicy());
+            ExternalProcessingApproval processingApproval = externalProcessingApproval(
+                    identity.tenantId(), model, command.contextScopes(), null);
             List<NodeRow> nodes = nodes(main.compositionCode(), main.compositionVersion(), command.stageCode());
             if (nodes.isEmpty()) {
                 throw new AgentRunException("AGENT_STAGE_UNSUPPORTED", 409,
@@ -104,10 +113,14 @@ final class MedicalAgentHarnessService {
                     insert into medical_agent_run(
                       tenant_id, run_id, context_lease_id, root_agent_code, root_agent_version,
                       composition_code, composition_version, requested_stage, patient_id, encounter_id,
-                      target_type, target_id, objective, model_deployment_id, authorization_level,
+                      target_type, target_id, objective, model_deployment_id,
+                      external_processing_approval_id, assistant_policy_config_id,
+                      assistant_policy_row_version, assistant_policy_hash, assistant_policy_environment,
+                      authorization_level,
                       context_scopes, state, created_by)
                     values (:tenant, :run, :lease, :root, :root_version, :composition, :composition_version,
-                      :stage, :patient, :encounter, :target_type, :target_id, :objective, :model,
+                      :stage, :patient, :encounter, :target_type, :target_id, :objective, :model, :approval,
+                      :policy_id, :policy_version, :policy_hash, :policy_environment,
                       :authorization, cast(:scopes as jsonb), 'QUEUED', :actor)
                     """).param("tenant", identity.tenantId()).param("run", id)
                     .param("lease", command.contextLeaseId()).param("root", main.agentCode())
@@ -116,13 +129,27 @@ final class MedicalAgentHarnessService {
                     .param("patient", command.patientId()).param("encounter", command.encounterId())
                     .param("target_type", command.targetType()).param("target_id", command.targetId())
                     .param("objective", command.objective().trim()).param("model", model.deploymentId())
+                    .param("approval", processingApproval.approvalId())
+                    .param("policy_id", policy.configId()).param("policy_version", policy.rowVersion())
+                    .param("policy_hash", policy.payloadHash()).param("policy_environment", policy.policyEnvironment())
                     .param("authorization", command.authorizationLevel()).param("scopes", json(command.contextScopes()))
                     .param("actor", identity.userId()).update();
-            appendEvent(identity.tenantId(), id, null, "RunCreated", Map.of(
-                    "root_agent_code", main.agentCode(), "stage_code", command.stageCode(),
-                    "candidate_only", true, "model_deployment_id", model.deploymentId(),
-                    "model_display_name", model.displayName(), "authorization_level", command.authorizationLevel(),
-                    "context_scopes", command.contextScopes()));
+            Map<String, Object> creationEvidence = new LinkedHashMap<>();
+            creationEvidence.put("root_agent_code", main.agentCode());
+            creationEvidence.put("stage_code", command.stageCode());
+            creationEvidence.put("candidate_only", true);
+            creationEvidence.put("model_deployment_id", model.deploymentId());
+            creationEvidence.put("model_display_name", model.displayName());
+            creationEvidence.put("authorization_level", command.authorizationLevel());
+            creationEvidence.put("context_scopes", command.contextScopes());
+            creationEvidence.put("assistant_policy_config_id", policy.configId());
+            creationEvidence.put("assistant_policy_row_version", policy.rowVersion());
+            creationEvidence.put("assistant_policy_hash", policy.payloadHash());
+            creationEvidence.put("assistant_policy_environment", policy.policyEnvironment());
+            if (processingApproval.approvalId() != null) {
+                creationEvidence.put("external_processing_approval_id", processingApproval.approvalId());
+            }
+            appendEvent(identity.tenantId(), id, null, "RunCreated", creationEvidence);
             completeCommand(identity, idempotencyKey, id);
             return id;
         });
@@ -138,6 +165,9 @@ final class MedicalAgentHarnessService {
         ModelSelection model = modelById(tenantId, snapshot.modelDeploymentId());
         ensureModelResidency(snapshot.modelResidencyPolicy(), model.residencyPolicy());
         CreateRunCommand command = snapshot.command();
+        ensureRuntimePolicyStillActive(tenantId, snapshot);
+        externalProcessingApproval(tenantId, model, command.contextScopes(),
+                snapshot.externalProcessingApprovalId());
         List<NodeRow> nodes = nodes(snapshot.compositionCode(), snapshot.compositionVersion(), snapshot.stageCode());
         appendEvent(tenantId, runId, null, "MainAgentStarted", Map.of(
                 "root_agent_code", snapshot.rootAgentCode(), "composition_code", snapshot.compositionCode(),
@@ -173,7 +203,8 @@ final class MedicalAgentHarnessService {
                         command.authorizationLevel()));
                 List<MedicalAgentToolGateway.ToolResult> toolResults = toolGateway.execute(
                         tenantId, runId, childRunId, command.contextLeaseId(), command.patientId(),
-                        command.encounterId(), snapshot.watermark(), Set.copyOf(command.contextScopes()));
+                        command.encounterId(), snapshot.watermark(), snapshot.rootAgentCode(),
+                        Set.copyOf(command.contextScopes()));
                 toolCallCount += toolResults.size();
                 for (MedicalAgentToolGateway.ToolResult tool : toolResults) {
                     appendEvent(tenantId, runId, childRunId, "ToolCompleted", Map.of(
@@ -387,6 +418,79 @@ final class MedicalAgentHarnessService {
         return ids.stream().map(id -> run(tenantId, id)).toList();
     }
 
+    List<OperationsRunView> operationsRuns(UUID tenantId, UUID facilityId, int requestedLimit) {
+        int limit = Math.max(1, Math.min(requestedLimit, 200));
+        return jdbc.sql("""
+                select run.run_id, run.root_agent_code, release.display_name as root_agent_name,
+                  run.requested_stage, run.state, model.display_name as model_display_name,
+                  model.provider_code, run.authorization_level, run.model_total_tokens,
+                  run.actual_duration_ms, run.model_request_count, run.tool_call_count,
+                  count(invocation.invocation_id) filter (where invocation.outcome = 'FAILED') as tool_failure_count,
+                  run.attempt, run.max_attempts, run.failure_code, run.created_at, run.completed_at,
+                  run.external_processing_approval_id is not null as external_processing_approved,
+                  run.assistant_policy_environment
+                from medical_agent_run run
+                join context_lease lease
+                  on lease.tenant_id = run.tenant_id and lease.lease_id = run.context_lease_id
+                join medical_agent_release release
+                  on release.agent_code = run.root_agent_code and release.release_version = run.root_agent_version
+                left join model_deployment model
+                  on model.tenant_id = run.tenant_id
+                 and model.model_deployment_id = run.model_deployment_id
+                left join medical_agent_tool_invocation invocation
+                  on invocation.tenant_id = run.tenant_id and invocation.root_run_id = run.run_id
+                where run.tenant_id = :tenant and lease.facility_id = :facility
+                group by run.run_id, run.root_agent_code, release.display_name, run.requested_stage,
+                  run.state, model.display_name, model.provider_code, run.authorization_level,
+                  run.model_total_tokens, run.actual_duration_ms, run.model_request_count,
+                  run.tool_call_count, run.attempt, run.max_attempts, run.failure_code,
+                  run.created_at, run.completed_at, run.external_processing_approval_id,
+                  run.assistant_policy_environment
+                order by run.created_at desc, run.run_id desc
+                limit :limit
+                """).param("tenant", tenantId).param("facility", facilityId).param("limit", limit)
+                .query((rs, row) -> new OperationsRunView(
+                        rs.getObject("run_id", UUID.class), rs.getString("root_agent_code"),
+                        rs.getString("root_agent_name"), rs.getString("requested_stage"),
+                        rs.getString("state"), rs.getString("model_display_name"),
+                        rs.getString("provider_code"), rs.getString("authorization_level"),
+                        rs.getLong("model_total_tokens"), rs.getLong("actual_duration_ms"),
+                        rs.getInt("model_request_count"), rs.getInt("tool_call_count"),
+                        rs.getInt("tool_failure_count"), rs.getInt("attempt"), rs.getInt("max_attempts"),
+                        rs.getString("failure_code"), rs.getObject("created_at", OffsetDateTime.class),
+                        rs.getObject("completed_at", OffsetDateTime.class),
+                        rs.getBoolean("external_processing_approved"),
+                        rs.getString("assistant_policy_environment")))
+                .list();
+    }
+
+    List<OperationsToolInvocationView> operationsToolInvocations(
+            UUID tenantId, UUID facilityId, UUID runId) {
+        if (jdbc.sql("""
+                select count(*) from medical_agent_run run
+                join context_lease lease
+                  on lease.tenant_id = run.tenant_id and lease.lease_id = run.context_lease_id
+                where run.tenant_id = :tenant and lease.facility_id = :facility and run.run_id = :run
+                """).param("tenant", tenantId).param("facility", facilityId).param("run", runId)
+                .query(Integer.class).single() != 1) {
+            throw contextDenied();
+        }
+        return jdbc.sql("""
+                select invocation_id, child_run_id, tool_code, tool_version, item_count, outcome,
+                  duration_ms, error_code, invoked_at, completed_at
+                from medical_agent_tool_invocation
+                where tenant_id = :tenant and root_run_id = :run
+                order by invoked_at, invocation_id
+                """).param("tenant", tenantId).param("run", runId)
+                .query((rs, row) -> new OperationsToolInvocationView(
+                        rs.getObject("invocation_id", UUID.class), rs.getObject("child_run_id", UUID.class),
+                        rs.getString("tool_code"), rs.getString("tool_version"), rs.getInt("item_count"),
+                        rs.getString("outcome"), rs.getLong("duration_ms"), rs.getString("error_code"),
+                        rs.getObject("invoked_at", OffsetDateTime.class),
+                        rs.getObject("completed_at", OffsetDateTime.class)))
+                .list();
+    }
+
     Optional<WorkerClaim> claimNext(UUID workerId, int leaseSeconds) {
         return transactions.execute(status -> {
             Optional<WorkerClaim> claim = jdbc.sql("""
@@ -554,7 +658,9 @@ final class MedicalAgentHarnessService {
                   run.root_agent_version, run.composition_code, run.composition_version,
                   run.requested_stage, run.patient_id, run.encounter_id, run.target_type,
                   run.target_id, run.objective, run.model_deployment_id, run.authorization_level,
-                  run.context_scopes::text, run.attempt
+                  run.context_scopes::text, run.external_processing_approval_id,
+                  run.assistant_policy_config_id, run.assistant_policy_row_version,
+                  run.assistant_policy_hash, run.assistant_policy_environment, run.attempt
                 from medical_agent_run run
                 join context_lease lease on lease.tenant_id = run.tenant_id
                   and lease.lease_id = run.context_lease_id
@@ -579,7 +685,12 @@ final class MedicalAgentHarnessService {
                             rs.getString("composition_version"), rs.getString("requested_stage"),
                             rs.getObject("created_by", UUID.class), rs.getString("authorization_watermark"),
                             rs.getString("model_residency_policy"),
-                            rs.getObject("model_deployment_id", UUID.class), rs.getInt("attempt"), command);
+                            rs.getObject("model_deployment_id", UUID.class),
+                            rs.getObject("external_processing_approval_id", UUID.class),
+                            rs.getObject("assistant_policy_config_id", UUID.class),
+                            rs.getObject("assistant_policy_row_version", Long.class),
+                            rs.getString("assistant_policy_hash"), rs.getString("assistant_policy_environment"),
+                            rs.getInt("attempt"), command);
                 }).optional().orElseThrow(() -> new AgentRunException(
                         "MEDICAL_AGENT_WORKER_FENCE_LOST", 409,
                         "The worker no longer owns this medical assistant run"));
@@ -697,7 +808,7 @@ final class MedicalAgentHarnessService {
                 "request_count", modelRequestCount, "duration_ms", modelDurationMs));
         output.put("tool_call_count", toolCallCount);
         output.put("attempt", snapshot.attempt());
-        output.put("warnings", List.of("本结果为 AI 协作候选，不自动写入病历、诊断、医嘱、结果或任务终态。"));
+        output.put("warnings", List.of("本结果为 AI 医助候选，不自动写入病历、诊断、医嘱、结果或任务终态。"));
         return output;
     }
 
@@ -776,6 +887,123 @@ final class MedicalAgentHarnessService {
                         requestedDeploymentId == null
                                 ? "No approved and connected model service is available"
                                 : "The selected model service is not approved, connected or active"));
+    }
+
+    private ExternalProcessingApproval externalProcessingApproval(
+            UUID tenantId, ModelSelection model, List<String> requestedScopes, UUID pinnedApprovalId) {
+        if (!"CLOUD_ALLOWED".equals(model.residencyPolicy())) {
+            if (pinnedApprovalId != null) {
+                throw new AgentRunException("MODEL_PROCESSING_APPROVAL_MISMATCH", 409,
+                        "The pinned external-processing approval does not match the model residency policy");
+            }
+            return new ExternalProcessingApproval(null);
+        }
+        String pinned = pinnedApprovalId == null ? "" : " and approval_id = :approval";
+        JdbcClient.StatementSpec query = jdbc.sql("""
+                select approval_id from medical_ai_external_processing_approval
+                where tenant_id = :tenant and model_deployment_id = :deployment
+                  and status = 'ACTIVE' and expires_at > now()
+                  and allowed_context_scopes @> cast(:scopes as text[])
+                """ + pinned + " order by approved_at desc limit 1")
+                .param("tenant", tenantId).param("deployment", model.deploymentId())
+                .param("scopes", "{" + String.join(",", requestedScopes) + "}");
+        if (pinnedApprovalId != null) query = query.param("approval", pinnedApprovalId);
+        UUID approvalId = query.query(UUID.class).optional().orElseThrow(() -> new AgentRunException(
+                "MODEL_EXTERNAL_PROCESSING_NOT_APPROVED", 409,
+                "The cloud model has no active data-processing approval covering the requested context scopes"));
+        return new ExternalProcessingApproval(approvalId);
+    }
+
+    @SuppressWarnings("unchecked")
+    private RuntimePolicy runtimePolicy(UUID tenantId) {
+        List<RuntimePolicyRow> active = jdbc.sql("""
+                select config_id, row_version, payload::text from config_item
+                where tenant_id = :tenant and config_type = 'AI_ASSISTANT_POLICY' and status = 'ACTIVE'
+                order by updated_at desc, config_id
+                """).param("tenant", tenantId).query((rs, row) -> new RuntimePolicyRow(
+                        rs.getObject("config_id", UUID.class), rs.getLong("row_version"),
+                        rs.getString("payload"))).list();
+        if (active.size() != 1) {
+            throw new AgentRunException("MEDICAL_AGENT_POLICY_NOT_PUBLISHED", 409,
+                    "Exactly one active Eva work policy is required before a medical assistant task can start");
+        }
+        RuntimePolicyRow row = active.getFirst();
+        Map<String, Object> payload;
+        try {
+            payload = objectMapper.readValue(row.payloadJson(), Map.class);
+        } catch (Exception invalid) {
+            throw new AgentRunException("MEDICAL_AGENT_POLICY_INVALID", 409,
+                    "The active Eva work policy payload is invalid");
+        }
+        String policyEnvironment = String.valueOf(payload.getOrDefault("environment", "")).trim();
+        String modelPolicy = String.valueOf(payload.getOrDefault("model_policy", "")).trim();
+        Object allowedSources = payload.get("allowed_sources");
+        int mainCount = number(payload.get("main_agent_count"));
+        int childCount = number(payload.get("child_agent_count"));
+        int rateLimit = number(payload.get("rate_limit"));
+        int publishedMainCount = activeAgentCount("MAIN");
+        int publishedChildCount = activeAgentCount("CHILD");
+        boolean valid = Boolean.TRUE.equals(payload.get("approval_required"))
+                && !policyEnvironment.isBlank()
+                && Set.of("TENANT_ACTIVE_MODEL_WITH_LOCAL_FALLBACK", "TENANT_APPROVED_MODEL_ONLY")
+                        .contains(modelPolicy)
+                && allowedSources instanceof List<?> sources && !sources.isEmpty()
+                && mainCount == publishedMainCount && childCount == publishedChildCount
+                && rateLimit >= 1 && rateLimit <= 1000;
+        if (!valid || (environment.acceptsProfiles(Profiles.of("prod"))
+                && !"production".equalsIgnoreCase(policyEnvironment))) {
+            throw new AgentRunException("MEDICAL_AGENT_POLICY_INVALID", 409,
+                    "The active Eva work policy does not match the published medical assistants or environment");
+        }
+        return new RuntimePolicy(row.configId(), row.rowVersion(), sha256(row.payloadJson()), policyEnvironment,
+                rateLimit);
+    }
+
+    private void ensurePolicyRateLimit(ClinicalIdentity identity, RuntimePolicy policy) {
+        long recent = jdbc.sql("""
+                select count(*) from medical_agent_run
+                where tenant_id = :tenant and created_by = :actor
+                  and created_at >= now() - interval '1 hour' and state <> 'CANCELLED'
+                """).param("tenant", identity.tenantId()).param("actor", identity.userId())
+                .query(Long.class).single();
+        if (recent >= policy.maxRunsPerHour()) {
+            throw new AgentRunException("MEDICAL_AGENT_RATE_LIMIT_EXCEEDED", 429,
+                    "The Eva work policy hourly task limit has been reached");
+        }
+    }
+
+    private void ensureRuntimePolicyStillActive(UUID tenantId, ExecutionSnapshot snapshot) {
+        if (snapshot.assistantPolicyConfigId() == null || snapshot.assistantPolicyRowVersion() == null
+                || snapshot.assistantPolicyHash() == null) {
+            throw new AgentRunException("MEDICAL_AGENT_POLICY_SNAPSHOT_MISSING", 409,
+                    "The medical assistant task has no immutable Eva work-policy snapshot");
+        }
+        RuntimePolicyRow current = jdbc.sql("""
+                select config_id, row_version, payload::text from config_item
+                where tenant_id = :tenant and config_id = :config
+                  and config_type = 'AI_ASSISTANT_POLICY' and status = 'ACTIVE'
+                """).param("tenant", tenantId).param("config", snapshot.assistantPolicyConfigId())
+                .query((rs, row) -> new RuntimePolicyRow(rs.getObject("config_id", UUID.class),
+                        rs.getLong("row_version"), rs.getString("payload")))
+                .optional().orElseThrow(() -> new AgentRunException(
+                        "MEDICAL_AGENT_POLICY_RETIRED", 409,
+                        "The Eva work policy pinned by this task is no longer active"));
+        if (current.rowVersion() != snapshot.assistantPolicyRowVersion()
+                || !sha256(current.payloadJson()).equals(snapshot.assistantPolicyHash())) {
+            throw new AgentRunException("MEDICAL_AGENT_POLICY_CHANGED", 409,
+                    "The Eva work policy changed after this task was queued; create a new task");
+        }
+    }
+
+    private int activeAgentCount(String level) {
+        return jdbc.sql("""
+                select count(*) from medical_agent_release
+                where status = 'ACTIVE' and agent_level = :level
+                """).param("level", level).query(Long.class).single().intValue();
+    }
+
+    private static int number(Object value) {
+        return value instanceof Number number ? number.intValue() : -1;
     }
 
     private ActiveBudget ensureGovernanceReady(UUID tenantId, String mainAgentCode) {
@@ -1185,6 +1413,15 @@ final class MedicalAgentHarnessService {
             OffsetDateTime occurredAt) {}
 
     record RunContext(UUID organizationId, UUID facilityId, UUID patientId, UUID encounterId) {}
+    record OperationsRunView(UUID runId, String rootAgentCode, String rootAgentName, String requestedStage,
+            String state, String modelDisplayName, String providerCode, String authorizationLevel,
+            long modelTotalTokens, long actualDurationMs, int modelRequestCount, int toolCallCount,
+            int toolFailureCount, int attempt, int maxAttempts, String failureCode,
+            OffsetDateTime createdAt, OffsetDateTime completedAt, boolean externalProcessingApproved,
+            String assistantPolicyEnvironment) {}
+    record OperationsToolInvocationView(UUID invocationId, UUID childRunId, String toolCode, String toolVersion,
+            int itemCount, String outcome, long durationMs, String errorCode,
+            OffsetDateTime invokedAt, OffsetDateTime completedAt) {}
     private record DependencyRow(String type, String code) {}
     private record ActiveBudget(UUID budgetId, String budgetCode, long maxTokens, int maxDurationSeconds) {}
 
@@ -1204,9 +1441,15 @@ final class MedicalAgentHarnessService {
     }
     private record ModelSelection(UUID deploymentId, String displayName, String providerCode,
             String modelCode, String endpointUrl, String apiKeyReference, String residencyPolicy) {}
+    private record ExternalProcessingApproval(UUID approvalId) {}
+    private record RuntimePolicy(UUID configId, long rowVersion, String payloadHash, String policyEnvironment,
+            int maxRunsPerHour) {}
+    private record RuntimePolicyRow(UUID configId, long rowVersion, String payloadJson) {}
     private record ExecutionSnapshot(String rootAgentCode, String rootAgentVersion,
             String compositionCode, String compositionVersion, String stageCode, UUID createdBy,
             String watermark, String modelResidencyPolicy, UUID modelDeploymentId,
+            UUID externalProcessingApprovalId, UUID assistantPolicyConfigId, Long assistantPolicyRowVersion,
+            String assistantPolicyHash, String assistantPolicyEnvironment,
             int attempt, CreateRunCommand command) {}
     private record ExpiredRun(UUID tenantId, UUID runId, String state, long sequence, int attempt) {}
     private record WorkerFailureHead(int attempt, int maxAttempts, boolean cancellation) {}

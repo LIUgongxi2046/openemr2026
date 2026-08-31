@@ -2,6 +2,7 @@ package org.openemr2026.model;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
@@ -37,7 +38,8 @@ final class ModelDeploymentController {
             HttpServletRequest request,
             @RequestHeader("X-Organization-Context") UUID organizationId,
             @RequestHeader("X-Facility-Context") UUID facilityId) {
-        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(request, organizationId, facilityId, null, null,
+                Set.of("AI_PLATFORM_ADMIN", "AI_ASSISTANT_MODEL_SELECTION", "AI_CENTER_OVERVIEW"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(models.list(identity));
     }
 
@@ -46,8 +48,8 @@ final class ModelDeploymentController {
             HttpServletRequest request,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody ModelDeploymentRegisterRequestWire command) {
-        ClinicalIdentity identity = security.authorize(
-                request, command.organizationId(), command.facilityId(), null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
         return ResponseEntity.status(201).cacheControl(CacheControl.noStore())
                 .body(models.register(identity, idempotencyKey, command));
     }
@@ -58,8 +60,8 @@ final class ModelDeploymentController {
             @PathVariable("model_deployment_id") UUID deploymentId,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody ModelDeploymentDeactivateRequestWire command) {
-        ClinicalIdentity identity = security.authorize(
-                request, command.organizationId(), command.facilityId(), null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.deactivate(identity, idempotencyKey, deploymentId, command));
     }
@@ -70,8 +72,8 @@ final class ModelDeploymentController {
             @PathVariable("model_deployment_id") UUID deploymentId,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody ModelDeploymentUpdateRequestWire command) {
-        ClinicalIdentity identity = security.authorize(
-                request, command.organizationId(), command.facilityId(), null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.update(identity, idempotencyKey, deploymentId, command));
     }
@@ -82,8 +84,8 @@ final class ModelDeploymentController {
             @PathVariable("model_deployment_id") UUID deploymentId,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody ModelDeploymentConnectionTestRequestWire command) {
-        ClinicalIdentity identity = security.authorize(
-                request, command.organizationId(), command.facilityId(), null, null);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.testConnection(identity, idempotencyKey, deploymentId, command));
     }

@@ -81,6 +81,33 @@ describe('AI医助 Eva 品牌契约', () => {
     expect(template).not.toContain('主子 Agent');
   });
 
+  it('gives both Eva composers a stable accessible name', () => {
+    const dialog = components['./components/GlobalAiAssistantDialog.vue'];
+    const workspace = views['./views/AiAssistantPage.vue'];
+
+    expect(dialog).toContain('aria-label="向 Eva 描述诊疗任务"');
+    expect(workspace).toContain('aria-label="向 Eva 描述诊疗任务"');
+  });
+
+  it('uses real model and run APIs for AI center operational drill-downs', () => {
+    const connection = views['./views/ModelConnectionPage.vue'];
+    const routing = views['./views/ModelRoutingPage.vue'];
+    const operations = views['./views/AiOpsPage.vue'];
+    const capture = views['./views/AiCapturePage.vue'];
+
+    expect(connection).toContain('testModelDeploymentConnection');
+    expect(connection).not.toContain('SimulationWorkbenchPage');
+    expect(routing).toContain('listModelDataProcessingApprovals');
+    expect(routing).not.toContain('SimulationWorkbenchPage');
+    expect(operations).toContain('listMedicalAgentOperationsRuns');
+    expect(operations).toContain('listMedicalAgentOperationsToolInvocations');
+    expect(operations).toContain('患者身份不在管理页展示');
+    expect(capture).toContain('listMedicalAgentOperationsRuns');
+    expect(capture).toContain('listMedicalAgentOperationsToolInvocations');
+    expect(capture).toContain('listAuditEvents');
+    expect(capture).not.toContain('SimulationWorkbenchPage');
+  });
+
   it('uses Chinese hospital terminology across every AI assistant module', () => {
     const surfaces = [
       components['./components/GlobalAiAssistantDialog.vue'].slice(components['./components/GlobalAiAssistantDialog.vue'].indexOf('<template>')),
@@ -132,5 +159,14 @@ describe('AI医助 Eva 品牌契约', () => {
     expect(models).toContain('<span>API Key</span>');
     expect(models).toContain("type=\"showApiKey ? 'text' : 'password'\"");
     expect(models).toContain('保存后只显示末四位');
+  });
+
+  it('derives AI center availability from live model and assistant catalog queries', () => {
+    const center = views['./views/AiCenterPage.vue'];
+
+    expect(center).toContain("listModelDeployments");
+    expect(center).toContain("listMedicalAgentCatalog");
+    expect(center).toContain('AI 服务暂不可用');
+    expect(center).not.toContain('服务运行正常');
   });
 });

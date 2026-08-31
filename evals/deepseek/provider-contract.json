@@ -1,5 +1,5 @@
 {
-  "contract_version": "deepseek-openai-compatible-v1",
+  "contract_version": "deepseek-openai-compatible-v2",
   "provider_code": ["DEEPSEEK", "DEEPSEEK_OPENAI_COMPATIBLE"],
   "transport": {
     "method": "POST",
@@ -18,9 +18,14 @@
     "content_path": "choices[0].message.content",
     "content_schema": {
       "type": "object",
-      "required": ["sections"],
+      "required": ["summary", "facts", "gaps", "warnings"],
       "additionalProperties": false,
-      "properties": {"sections": {"type": "object"}}
+      "properties": {
+        "summary": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "facts": {"type": "array", "maxItems": 24, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+        "gaps": {"type": "array", "maxItems": 24, "items": {"type": "string", "minLength": 1, "maxLength": 1000}},
+        "warnings": {"type": "array", "maxItems": 24, "items": {"type": "string", "minLength": 1, "maxLength": 1000}}
+      }
     }
   },
   "safety": {

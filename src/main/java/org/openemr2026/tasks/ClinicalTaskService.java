@@ -8,24 +8,33 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import org.openemr2026.contracts.ClinicalTaskCollaboratorWire;
 import org.openemr2026.contracts.ClinicalTaskCommandRequestWire;
 import org.openemr2026.contracts.ClinicalTaskCollaborationRequestWire;
+import org.openemr2026.contracts.ClinicalTaskDelegationWire;
+import org.openemr2026.contracts.ClinicalTaskDetailWire;
+import org.openemr2026.contracts.ClinicalTaskEventWire;
 import org.openemr2026.contracts.ClinicalTaskExpirationResultWire;
 import org.openemr2026.contracts.ClinicalTaskWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 final class ClinicalTaskService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ObjectMapper objectMapper;
 
-    ClinicalTaskService(JdbcClient jdbc, TransactionTemplate transactions) {
+    ClinicalTaskService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.objectMapper = objectMapper;
     }
 
     List<ClinicalTaskWire> list(
@@ -35,6 +44,7 @@ final class ClinicalTaskService {
                 select task_id from clinical_task
                 where tenant_id = :tenant and patient_id = :patient
                   and encounter_id = :encounter and facility_id = :facility
+                  and state not in ('WITHDRAWN', 'EXPIRED')
                 order by case risk_level when 'CRITICAL' then 1 when 'HIGH' then 2 else 3 end,
                   due_at nulls last, created_at, task_id
                 """).param("tenant", identity.tenantId()).param("patient", patientId)
@@ -42,6 +52,109 @@ final class ClinicalTaskService {
                 .query(UUID.class).list().stream()
                 .map(taskId -> snapshot(identity.tenantId(), taskId, patientId, encounterId, facilityId))
                 .toList();
+    }
+
+    List<ClinicalTaskCollaboratorWire> eligibleCollaborators(
+            ClinicalIdentity identity, UUID facilityId) {
+        return jdbc.sql("""
+                select distinct on (target.user_id)
+                  target.user_id, target.display_name, target_role.role_code,
+                  target_assignment.position_code, target_assignment.department_id,
+                  target_assignment.ward_id,
+                  (select count(*) from practitioner_credential credential
+                    where credential.tenant_id = target.tenant_id
+                      and credential.person_id = target.person_id
+                      and credential.status = 'ACTIVE' and credential.valid_from <= now()
+                      and (credential.valid_until is null or credential.valid_until > now())) as credential_count
+                from app_user target
+                join role_assignment target_role
+                  on target_role.tenant_id = target.tenant_id and target_role.user_id = target.user_id
+                join workforce_assignment target_assignment
+                  on target_assignment.tenant_id = target_role.tenant_id
+                 and target_assignment.source_role_assignment_id = target_role.role_assignment_id
+                join workforce_assignment actor_assignment
+                  on actor_assignment.tenant_id = target_assignment.tenant_id
+                 and actor_assignment.facility_id = target_assignment.facility_id
+                 and actor_assignment.department_id = target_assignment.department_id
+                join role_assignment actor_role
+                  on actor_role.tenant_id = actor_assignment.tenant_id
+                 and actor_role.role_assignment_id = actor_assignment.source_role_assignment_id
+                where target.tenant_id = :tenant and target.user_id <> :actor
+                  and target.status = 'ACTIVE' and actor_role.user_id = :actor
+                  and target_assignment.facility_id = :facility
+                  and target_assignment.department_id is not null
+                  and target_role.status = 'ACTIVE' and target_role.valid_from <= now()
+                  and (target_role.valid_until is null or target_role.valid_until > now())
+                  and actor_role.status = 'ACTIVE' and actor_role.valid_from <= now()
+                  and (actor_role.valid_until is null or actor_role.valid_until > now())
+                  and target_assignment.status = 'ACTIVE' and target_assignment.valid_from <= now()
+                  and (target_assignment.valid_until is null or target_assignment.valid_until > now())
+                  and actor_assignment.status = 'ACTIVE' and actor_assignment.valid_from <= now()
+                  and (actor_assignment.valid_until is null or actor_assignment.valid_until > now())
+                  and exists (select 1 from practitioner_credential credential
+                    where credential.tenant_id = target.tenant_id
+                      and credential.person_id = target.person_id
+                      and credential.status = 'ACTIVE' and credential.valid_from <= now()
+                      and (credential.valid_until is null or credential.valid_until > now()))
+                order by target.user_id, target.display_name, target_role.role_code
+                """).param("tenant", identity.tenantId()).param("actor", identity.userId())
+                .param("facility", facilityId)
+                .query((rs, row) -> new ClinicalTaskCollaboratorWire(
+                        rs.getObject("user_id", UUID.class), rs.getString("display_name"),
+                        rs.getString("role_code"), rs.getString("position_code"),
+                        rs.getObject("department_id", UUID.class), rs.getObject("ward_id", UUID.class),
+                        rs.getInt("credential_count")))
+                .list();
+    }
+
+    ClinicalTaskDetailWire detail(
+            ClinicalIdentity identity, UUID taskId, UUID patientId, UUID encounterId, UUID facilityId) {
+        ClinicalTaskWire task = snapshot(identity.tenantId(), taskId, patientId, encounterId, facilityId);
+        TaskRuleTrace rule = jdbc.sql("""
+                select task_rule_config_id, task_rule_version, rule_snapshot::text, escalation_at
+                from clinical_task where tenant_id = :tenant and task_id = :task
+                  and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
+                """).param("tenant", identity.tenantId()).param("task", taskId)
+                .param("patient", patientId).param("encounter", encounterId).param("facility", facilityId)
+                .query((rs, row) -> new TaskRuleTrace(
+                        rs.getObject("task_rule_config_id", UUID.class),
+                        (Long) rs.getObject("task_rule_version"),
+                        jsonMap(rs.getString("rule_snapshot")),
+                        instant(rs.getObject("escalation_at", OffsetDateTime.class))))
+                .single();
+        List<ClinicalTaskEventWire> events = jdbc.sql("""
+                select task_event_id, event_type, previous_state, resulting_state, actor_user_id,
+                  target_user_id, reason, valid_until, occurred_at
+                from clinical_task_event where tenant_id = :tenant and task_id = :task
+                order by occurred_at, task_event_id
+                """).param("tenant", identity.tenantId()).param("task", taskId)
+                .query((rs, row) -> new ClinicalTaskEventWire(
+                        rs.getObject("task_event_id", UUID.class), rs.getString("event_type"),
+                        rs.getString("previous_state"), rs.getString("resulting_state"),
+                        rs.getObject("actor_user_id", UUID.class), rs.getObject("target_user_id", UUID.class),
+                        rs.getString("reason"), instant(rs.getObject("valid_until", OffsetDateTime.class)),
+                        instant(rs.getObject("occurred_at", OffsetDateTime.class))))
+                .list();
+        List<ClinicalTaskDelegationWire> delegations = jdbc.sql("""
+                select delegation_id, delegated_by, delegated_to, reason, valid_until, created_at
+                from clinical_task_delegation where tenant_id = :tenant and task_id = :task
+                order by created_at, delegation_id
+                """).param("tenant", identity.tenantId()).param("task", taskId)
+                .query((rs, row) -> new ClinicalTaskDelegationWire(
+                        rs.getObject("delegation_id", UUID.class), rs.getObject("delegated_by", UUID.class),
+                        rs.getObject("delegated_to", UUID.class), rs.getString("reason"),
+                        instant(rs.getObject("valid_until", OffsetDateTime.class)),
+                        instant(rs.getObject("created_at", OffsetDateTime.class))))
+                .list();
+        Long notificationCount = jdbc.sql("""
+                select count(*) from clinical_task_notification where tenant_id = :tenant and task_id = :task
+                """).param("tenant", identity.tenantId()).param("task", taskId).query(Long.class).single();
+        Long queueCount = jdbc.sql("""
+                select count(*) from clinical_task_team_queue where tenant_id = :tenant and clinical_task_id = :task
+                """).param("tenant", identity.tenantId()).param("task", taskId).query(Long.class).single();
+        return new ClinicalTaskDetailWire(task, rule.configId(), rule.version(), rule.snapshot(),
+                rule.escalationAt(), events, delegations,
+                Math.toIntExact(notificationCount), Math.toIntExact(queueCount));
     }
 
     ClinicalTaskWire view(
@@ -200,7 +313,7 @@ final class ClinicalTaskService {
                         "CLINICAL_TASK_STATE_INVALID", 409,
                         "The task state does not allow this responsibility action");
             }
-            requireEligibleTarget(identity.tenantId(), command.facilityId(), command.targetUserId());
+            requireEligibleTarget(identity, command.facilityId(), command.targetUserId());
             String scope = "CLINICAL_TASK_" + action.name();
             String requestHash = sha256(taskId + "|" + command.expectedRowVersion() + "|" + action + "|"
                     + command.targetUserId() + "|" + command.reason() + "|" + command.validUntil());
@@ -275,21 +388,47 @@ final class ClinicalTaskService {
         }
     }
 
-    private void requireEligibleTarget(UUID tenantId, UUID facilityId, UUID targetUserId) {
+    private void requireEligibleTarget(ClinicalIdentity identity, UUID facilityId, UUID targetUserId) {
         long count = jdbc.sql("""
                 select count(*) from app_user u
                 where u.tenant_id = :tenant and u.user_id = :target and u.status = 'ACTIVE'
                   and exists (
-                    select 1 from role_assignment r
-                    where r.tenant_id = u.tenant_id and r.user_id = u.user_id
-                      and r.facility_id = :facility and r.status = 'ACTIVE'
-                      and r.valid_from <= now() and (r.valid_until is null or r.valid_until > now()))
-                """).param("tenant", tenantId).param("target", targetUserId)
-                .param("facility", facilityId).query(Long.class).single();
+                    select 1
+                    from role_assignment target_role
+                    join workforce_assignment target_assignment
+                      on target_assignment.tenant_id = target_role.tenant_id
+                     and target_assignment.source_role_assignment_id = target_role.role_assignment_id
+                    join workforce_assignment actor_assignment
+                      on actor_assignment.tenant_id = target_assignment.tenant_id
+                     and actor_assignment.facility_id = target_assignment.facility_id
+                     and actor_assignment.department_id = target_assignment.department_id
+                    join role_assignment actor_role
+                      on actor_role.tenant_id = actor_assignment.tenant_id
+                     and actor_role.role_assignment_id = actor_assignment.source_role_assignment_id
+                    where target_role.tenant_id = u.tenant_id and target_role.user_id = u.user_id
+                      and actor_role.user_id = :actor
+                      and target_role.status = 'ACTIVE' and target_role.valid_from <= now()
+                      and (target_role.valid_until is null or target_role.valid_until > now())
+                      and actor_role.status = 'ACTIVE' and actor_role.valid_from <= now()
+                      and (actor_role.valid_until is null or actor_role.valid_until > now())
+                      and target_assignment.facility_id = :facility
+                      and target_assignment.department_id is not null
+                      and target_assignment.status = 'ACTIVE' and target_assignment.valid_from <= now()
+                      and (target_assignment.valid_until is null or target_assignment.valid_until > now())
+                      and actor_assignment.status = 'ACTIVE' and actor_assignment.valid_from <= now()
+                      and (actor_assignment.valid_until is null or actor_assignment.valid_until > now()))
+                  and exists (
+                    select 1 from practitioner_credential credential
+                    where credential.tenant_id = u.tenant_id and credential.person_id = u.person_id
+                      and credential.status = 'ACTIVE' and credential.valid_from <= now()
+                      and (credential.valid_until is null or credential.valid_until > now()))
+                """).param("tenant", identity.tenantId()).param("target", targetUserId)
+                .param("actor", identity.userId()).param("facility", facilityId)
+                .query(Long.class).single();
         if (count != 1) {
             throw new ClinicalTaskException(
                     "CLINICAL_TASK_TARGET_NOT_ELIGIBLE", 403,
-                    "The target user has no active assignment in this facility");
+                    "The target user must share an active department assignment and hold an effective credential");
         }
     }
 
@@ -418,6 +557,18 @@ final class ClinicalTaskService {
         return value.substring(0, 1) + value.substring(1).toLowerCase(java.util.Locale.ROOT);
     }
 
+    private Map<String, Object> jsonMap(String value) {
+        try {
+            return objectMapper.readValue(value == null ? "{}" : value, new TypeReference<>() {});
+        } catch (Exception invalid) {
+            throw new IllegalStateException("Stored clinical task rule snapshot is invalid", invalid);
+        }
+    }
+
+    private static Instant instant(OffsetDateTime value) {
+        return value == null ? null : value.toInstant();
+    }
+
     private static String sha256(String value) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
@@ -430,6 +581,7 @@ final class ClinicalTaskService {
     private record LockedTask(
             String state, UUID sourceId, UUID assignedUserId, UUID claimedBy, long rowVersion) {}
     private record OverdueTask(UUID taskId, UUID patientId, UUID sourceId, String state, long rowVersion) {}
+    private record TaskRuleTrace(UUID configId, Long version, Map<String, Object> snapshot, Instant escalationAt) {}
     private enum Action { VIEW, CLAIM }
     private enum Collaboration {
         DELEGATE("DELEGATED"), TRANSFER("TRANSFERRED"), ESCALATE("ESCALATED");

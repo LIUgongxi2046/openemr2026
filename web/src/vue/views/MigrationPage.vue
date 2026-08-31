@@ -75,7 +75,7 @@ const checkpoints = computed(() => checkpointsQuery.data.value ?? []);
 const sourceForm = reactive({ sourceCode: '', displayName: '', systemType: 'EMR' });
 const mappingForm = reactive({ sourceField: '', targetEntity: '', targetField: '' });
 const candidateForm = reactive({ sourcePatientIdentifier: '', displayName: '', sexCode: 'M', birthDate: '' });
-const batchForm = reactive({ sourceSystem: '', recordCount: 0 });
+const batchForm = reactive({ sourceSystem: '' });
 const checkpointForm = reactive({ processedRecords: 0, lastSourceKey: '' });
 const busy = ref('');
 const notice = ref('');
@@ -152,16 +152,26 @@ async function createCandidate() {
 
 async function createBatch() {
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !batchForm.sourceSystem.trim() || batchForm.recordCount <= 0) return;
+  const source = sources.value.find((item) => item.source_code === batchForm.sourceSystem);
+  if (!lease || busy.value || !source || selectedSourceId.value !== source.source_system_id || candidates.value.length === 0) return;
   busy.value = 'batch'; notice.value = '';
   try {
     await startHistoricalMigrationBatch(lease, {
-      source_system: batchForm.sourceSystem.trim(), record_count: batchForm.recordCount, started_at: new Date().toISOString(),
+      source_system: source.source_code, record_count: candidates.value.length, started_at: new Date().toISOString(),
     });
-    batchForm.sourceSystem = ''; batchForm.recordCount = 0;
-    notice.value = '历史迁移批次已开始。'; dialog.value = ''; await batchesQuery.refetch();
+    batchForm.sourceSystem = '';
+    notice.value = `历史迁移批次已从服务端 ${candidates.value.length} 条暂存记录开始试迁。`; dialog.value = ''; await batchesQuery.refetch();
   } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = ''; }
+}
+
+function selectBatchSource(sourceCode: string) {
+  batchForm.sourceSystem = sourceCode;
+  selectedSourceId.value = sources.value.find((item) => item.source_code === sourceCode)?.source_system_id ?? '';
+}
+
+function handleBatchSourceChange(event: Event) {
+  selectBatchSource((event.target as HTMLSelectElement).value);
 }
 
 async function transitionBatch(batch: HistoricalMigrationBatchWire, action: 'reconcile' | 'switch' | 'rollback') {
@@ -318,7 +328,7 @@ const riskDescription = computed(() => riskKind.value === 'retire-source'
             <td>{{ candidate.display_name }}</td>
             <td>{{ candidate.match_score }}</td>
             <td><span class="admin-status" :class="candidate.review_status.toLowerCase()">{{ statusLabel(candidate.review_status) }}</span></td>
-            <td><button v-if="candidate.review_status === 'PENDING'" class="task-action" :disabled="Boolean(busy)" @click="async () => { busy = candidate.candidate_id; try { await resolveSourcePatientMatchCandidate(leaseQuery.data.value!, candidate, null); await candidatesQuery.refetch(); } catch (error) { notice = `${toClinicalIssue(error).code}：${toClinicalIssue(error).message}`; } finally { busy = ''; } }">决议</button><span v-else>—</span></td>
+            <td><button v-if="candidate.review_status === 'PENDING' && candidate.matched_patient_id" class="task-action" :disabled="Boolean(busy)" @click="async () => { busy = candidate.candidate_id; try { await resolveSourcePatientMatchCandidate(leaseQuery.data.value!, candidate, candidate.matched_patient_id ?? null); await candidatesQuery.refetch(); } catch (error) { notice = `${toClinicalIssue(error).code}：${toClinicalIssue(error).message}`; } finally { busy = ''; } }">确认匹配</button><small v-else-if="candidate.review_status === 'PENDING'">需主索引人工选择</small><span v-else>—</span></td>
           </tr>
         </tbody></table></div>
       </section>
@@ -356,7 +366,7 @@ const riskDescription = computed(() => riskKind.value === 'retire-source'
     <AdminActionDialog :open="dialog === 'source'" title="注册迁移源系统" description="源系统身份编码创建后不可覆盖修改；后续配置、激活和退休会直接控制迁移流程。" @update:open="dialog = $event ? 'source' : ''"><form class="admin-form" @submit.prevent="createSource"><label><span>源编码</span><input v-model="sourceForm.sourceCode" maxlength="96" required /></label><label><span>显示名</span><input v-model="sourceForm.displayName" maxlength="256" required /></label><label><span>系统类型</span><select v-model="sourceForm.systemType"><option>EMR</option><option>LIS</option><option>PACS</option><option>PHARMACY</option><option>BILLING</option><option>OTHER</option></select></label></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" @click="createSource">注册</button></template></AdminActionDialog>
     <AdminActionDialog :open="dialog === 'mapping'" title="新建源字段映射" description="映射会参与后续迁移转换；已登记的身份字段不可覆盖修改。" @update:open="dialog = $event ? 'mapping' : ''"><form class="admin-form" @submit.prevent="createMapping"><label><span>源字段</span><input v-model="mappingForm.sourceField" required /></label><label><span>目标实体</span><input v-model="mappingForm.targetEntity" required /></label><label><span>目标字段</span><input v-model="mappingForm.targetField" required /></label></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" @click="createMapping">登记</button></template></AdminActionDialog>
     <AdminActionDialog :open="dialog === 'candidate'" title="登记迁移源患者候选" description="候选会进入确定性匹配与人工复核队列，不会直接合并患者主索引。" @update:open="dialog = $event ? 'candidate' : ''"><form class="admin-form" @submit.prevent="createCandidate"><label><span>源患者标识</span><input v-model="candidateForm.sourcePatientIdentifier" required /></label><label><span>姓名</span><input v-model="candidateForm.displayName" required /></label><label><span>性别</span><select v-model="candidateForm.sexCode"><option value="M">男</option><option value="F">女</option></select></label><label><span>出生日期</span><input v-model="candidateForm.birthDate" type="date" required /></label></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" @click="createCandidate">登记</button></template></AdminActionDialog>
-    <AdminActionDialog :open="dialog === 'batch'" title="开始历史迁移批次" description="新批次必须绑定已登记源系统，先进入试迁状态，完成差异对账并达到零差异才能切换。" @update:open="dialog = $event ? 'batch' : ''"><form class="admin-form" @submit.prevent="createBatch"><label><span>源系统</span><select v-model="batchForm.sourceSystem" required><option value="" disabled>请选择已登记源系统</option><option v-for="source in sources.filter((item) => item.connection_status === 'ACTIVE')" :key="source.source_system_id" :value="source.source_code">{{ source.display_name }} · {{ source.source_code }}</option></select></label><label><span>记录数</span><input v-model.number="batchForm.recordCount" type="number" min="1" required /></label></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" @click="createBatch">开始试迁</button></template></AdminActionDialog>
+    <AdminActionDialog :open="dialog === 'batch'" title="开始历史迁移批次" description="记录数由服务端按已登记源患者候选计算；对账会按有效映射和人工复核结果逐条生成不可变证据。" @update:open="dialog = $event ? 'batch' : ''"><form class="admin-form" @submit.prevent="createBatch"><label><span>源系统</span><select :value="batchForm.sourceSystem" required @change="handleBatchSourceChange"><option value="" disabled>请选择已激活源系统</option><option v-for="source in sources.filter((item) => item.connection_status === 'ACTIVE')" :key="source.source_system_id" :value="source.source_code">{{ source.display_name }} · {{ source.source_code }}</option></select></label><div class="migration-server-count"><span>服务端暂存记录</span><strong>{{ candidates.length }}</strong><small v-if="batchForm.sourceSystem && candidates.length === 0">请先为该源登记患者候选</small></div></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" :disabled="candidates.length === 0 || Boolean(busy)" @click="createBatch">开始试迁</button></template></AdminActionDialog>
     <AdminActionDialog :open="dialog === 'checkpoint'" title="记录迁移检查点" description="检查点进度必须单调递增，用于失败恢复与断点续迁。" @update:open="dialog = $event ? 'checkpoint' : ''"><form class="admin-form" @submit.prevent="createCheckpoint"><label><span>已处理记录数</span><input v-model.number="checkpointForm.processedRecords" type="number" min="0" required /></label><label><span>最后源键（可选）</span><input v-model="checkpointForm.lastSourceKey" /></label></form><template #footer="{ close }"><button class="button secondary" @click="close">取消</button><button class="button primary" @click="createCheckpoint">记录检查点</button></template></AdminActionDialog>
     <AdminConfirmDialog v-model:open="riskOpen" :title="riskTitle" :description="riskDescription" confirm-label="确认执行" :busy="Boolean(busy)" @confirm="confirmRiskAction" />
   </section>
@@ -385,6 +395,9 @@ const riskDescription = computed(() => riskKind.value === 'retire-source'
 .difference-row strong { color: var(--red); }
 .migration-clean { color: var(--green); }
 .export-button { width: 100%; margin-top: 12px; }
+.migration-server-count { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 14px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-soft); }
+.migration-server-count strong { font-size: 20px; color: var(--blue); }
+.migration-server-count small { grid-column: 1 / -1; color: var(--red); }
 @media (max-width: 900px) { .migration-operations { grid-template-columns: minmax(0, 1fr); } .migration-stepper { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 16px; } .migration-stepper li:nth-child(4)::after { display: none; } }
 @media (max-width: 600px) { .migration-stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); } .migration-stepper li:nth-child(even)::after { display: none; } .migration-head-actions { align-items: stretch; } .migration-head-actions .button { width: 100%; } }
 </style>

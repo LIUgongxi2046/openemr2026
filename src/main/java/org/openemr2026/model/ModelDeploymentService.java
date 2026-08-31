@@ -200,7 +200,11 @@ final class ModelDeploymentService {
     List<ModelDeploymentWire> list(ClinicalIdentity identity) {
         return jdbc.sql("""
                 select model_deployment_id from model_deployment
-                where tenant_id = :tenant order by model_code, model_deployment_id
+                where tenant_id = :tenant
+                order by case when status = 'ACTIVE' then 0 else 1 end,
+                  case when connection_status = 'READY' then 0 else 1 end,
+                  case when endpoint_url like 'https://%.example/%' then 1 else 0 end,
+                  updated_at desc, model_code, model_deployment_id
                 """).param("tenant", identity.tenantId()).query(UUID.class).list().stream()
                 .map(id -> deployment(identity.tenantId(), id)).toList();
     }

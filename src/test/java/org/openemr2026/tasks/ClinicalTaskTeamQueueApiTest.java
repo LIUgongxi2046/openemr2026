@@ -27,6 +27,8 @@ final class ClinicalTaskTeamQueueApiTest {
     private static final String FACILITY = "018f0000-0000-7000-8000-00000000aa03";
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
+    private static final String PEER_USER = "018f0000-0000-7000-8000-00000000aa16";
+    private static final String PEER_ROLE = "018f0000-0000-7000-8000-00000000aa17";
 
     @Autowired
     private ClinicalTaskTeamQueueService queues;
@@ -40,6 +42,10 @@ final class ClinicalTaskTeamQueueApiTest {
 
     private ClinicalIdentity identity() {
         return new ClinicalIdentity(tenant, UUID.fromString(USER), List.of(UUID.fromString(ROLE)));
+    }
+
+    private ClinicalIdentity peerIdentity() {
+        return new ClinicalIdentity(tenant, UUID.fromString(PEER_USER), List.of(UUID.fromString(PEER_ROLE)));
     }
 
     private Context seedContext(String taskState) {
@@ -75,7 +81,41 @@ final class ClinicalTaskTeamQueueApiTest {
                 values (cast(:tenant as uuid), cast(:facility as uuid), :department, :code, '合成科室', 'ACTIVE')
                 """).param("tenant", TENANT).param("facility", FACILITY).param("department", departmentId)
                 .param("code", "DEP-" + UUID.randomUUID().toString().substring(0, 8)).update();
+        jdbc.sql("""
+                update workforce_assignment
+                set facility_id = cast(:facility as uuid), department_id = :department, ward_id = null,
+                    status = 'ACTIVE', valid_from = least(valid_from, now()), valid_until = null
+                where tenant_id = cast(:tenant as uuid)
+                  and source_role_assignment_id = cast(:role as uuid)
+                """).param("tenant", TENANT).param("facility", FACILITY)
+                .param("department", departmentId).param("role", ROLE).update();
         return new Context(taskId, departmentId);
+    }
+
+    private void seedPeer(UUID departmentId) {
+        jdbc.sql("""
+                insert into app_user(tenant_id, user_id, external_subject, display_name, status)
+                values (cast(:tenant as uuid), cast(:user as uuid), :subject, '合成队列同科室人员', 'ACTIVE')
+                on conflict (tenant_id, user_id) do update set status = 'ACTIVE'
+                """).param("tenant", TENANT).param("user", PEER_USER)
+                .param("subject", "synthetic-team-peer-" + PEER_USER).update();
+        jdbc.sql("""
+                insert into role_assignment(tenant_id, role_assignment_id, user_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                values (cast(:tenant as uuid), cast(:role as uuid), cast(:user as uuid),
+                  cast(:organization as uuid), cast(:facility as uuid), 'CLINICIAN', now(), 'ACTIVE')
+                on conflict (tenant_id, role_assignment_id) do update
+                  set status = 'ACTIVE', valid_from = least(role_assignment.valid_from, now()), valid_until = null
+                """).param("tenant", TENANT).param("role", PEER_ROLE).param("user", PEER_USER)
+                .param("organization", ORGANIZATION).param("facility", FACILITY).update();
+        jdbc.sql("""
+                update workforce_assignment
+                set department_id = :department, status = 'ACTIVE', valid_from = least(valid_from, now()),
+                    valid_until = null
+                where tenant_id = cast(:tenant as uuid)
+                  and source_role_assignment_id = cast(:role as uuid)
+                """).param("tenant", TENANT).param("role", PEER_ROLE)
+                .param("department", departmentId).update();
     }
 
     private ClinicalTaskTeamQueueWire enqueue(Context context) {
@@ -106,7 +146,8 @@ final class ClinicalTaskTeamQueueApiTest {
         assertThat(enqueued.queueStatus()).isEqualTo(ClinicalTaskTeamQueueWire.QueueStatusValue.ENQUEUED);
         assertThat(enqueued.enqueuedBy()).isEqualTo(UUID.fromString(USER));
 
-        List<ClinicalTaskTeamQueueWire> listed = queues.list(identity(), context.departmentId());
+        List<ClinicalTaskTeamQueueWire> listed = queues.list(
+                identity(), organization, facility, context.departmentId());
         assertThat(listed).extracting(ClinicalTaskTeamQueueWire::queueId).contains(enqueued.queueId());
     }
 
@@ -120,6 +161,22 @@ final class ClinicalTaskTeamQueueApiTest {
     }
 
     @Test
+    void givenDifferentDepartmentAssignment_whenClaiming_thenRejected() {
+        Context context = seedContext("PENDING");
+        ClinicalTaskTeamQueueWire enqueued = enqueue(context);
+        jdbc.sql("""
+                update workforce_assignment set department_id = null
+                where tenant_id = cast(:tenant as uuid)
+                  and source_role_assignment_id = cast(:role as uuid)
+                """).param("tenant", TENANT).param("role", ROLE).update();
+
+        assertThatThrownBy(() -> claim(enqueued.queueId(), enqueued.rowVersion()))
+                .isInstanceOf(ClinicalTaskTeamQueueException.class)
+                .satisfies(e -> assertThat(((ClinicalTaskTeamQueueException) e).code())
+                        .isEqualTo("TEAM_MEMBERSHIP_REQUIRED"));
+    }
+
+    @Test
     void givenClaimed_whenCompleting_thenCompleted() {
         Context context = seedContext("PENDING");
         ClinicalTaskTeamQueueWire enqueued = enqueue(context);
@@ -129,12 +186,40 @@ final class ClinicalTaskTeamQueueApiTest {
     }
 
     @Test
+    void givenClaimedByAnotherClinician_whenCompleting_thenRejected() {
+        Context context = seedContext("PENDING");
+        seedPeer(context.departmentId());
+        ClinicalTaskTeamQueueWire claimed = claim(enqueue(context).queueId(), 1L);
+
+        assertThatThrownBy(() -> queues.complete(peerIdentity(), "peer-complete-" + UUID.randomUUID(),
+                claimed.queueId(), new ClinicalTaskTeamQueueTransitionRequestWire(
+                        organization, facility, claimed.rowVersion())))
+                .isInstanceOf(ClinicalTaskTeamQueueException.class)
+                .satisfies(e -> assertThat(((ClinicalTaskTeamQueueException) e).code())
+                        .isEqualTo("TEAM_QUEUE_CLAIMANT_REQUIRED"));
+    }
+
+    @Test
     void givenEnqueued_whenWithdrawing_thenWithdrawn() {
         Context context = seedContext("PENDING");
         ClinicalTaskTeamQueueWire enqueued = enqueue(context);
         ClinicalTaskTeamQueueWire withdrawn = withdraw(enqueued.queueId(), enqueued.rowVersion());
         assertThat(withdrawn.queueStatus()).isEqualTo(ClinicalTaskTeamQueueWire.QueueStatusValue.WITHDRAWN);
         assertThat(withdrawn.claimedBy()).isNull();
+    }
+
+    @Test
+    void givenEnqueuedByAnotherClinician_whenWithdrawing_thenRejected() {
+        Context context = seedContext("PENDING");
+        seedPeer(context.departmentId());
+        ClinicalTaskTeamQueueWire enqueued = enqueue(context);
+
+        assertThatThrownBy(() -> queues.withdraw(peerIdentity(), "peer-withdraw-" + UUID.randomUUID(),
+                enqueued.queueId(), new ClinicalTaskTeamQueueTransitionRequestWire(
+                        organization, facility, enqueued.rowVersion())))
+                .isInstanceOf(ClinicalTaskTeamQueueException.class)
+                .satisfies(e -> assertThat(((ClinicalTaskTeamQueueException) e).code())
+                        .isEqualTo("TEAM_QUEUE_ENQUEUER_REQUIRED"));
     }
 
     @Test

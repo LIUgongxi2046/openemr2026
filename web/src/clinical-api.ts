@@ -226,6 +226,19 @@ export class ClinicalApiError extends Error {
   }
 }
 
+export function clinicalServiceError(payload: unknown, status: number) {
+  const value = payload && typeof payload === 'object' ? payload as {
+    error?: { code?: string; message?: string; recovery?: { token?: string } };
+    code?: string; message?: string; detail?: string;
+  } : {};
+  return new ClinicalApiError(
+    value.error?.code || value.code || `HTTP_${status}`,
+    value.error?.message || value.message || value.detail || '临床服务请求失败',
+    status,
+    value.error?.recovery?.token,
+  );
+}
+
 function effectiveIdentityHeaders() {
   const actor = activeInpatientSyntheticActor;
   const roleIds = authSession.user?.role_assignment_ids.join(',');
@@ -254,13 +267,7 @@ export async function request(path: string, init: RequestInit = {}) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) as unknown : null;
   if (!response.ok) {
-    const envelope = payload as { error?: { code?: string; message?: string; recovery?: { token?: string } } };
-    throw new ClinicalApiError(
-      envelope.error?.code || `HTTP_${response.status}`,
-      envelope.error?.message || '临床服务请求失败',
-      response.status,
-      envelope.error?.recovery?.token,
-    );
+    throw clinicalServiceError(payload, response.status);
   }
   return payload;
 }
@@ -695,10 +702,20 @@ export async function listClinicalTasks(
   mode: ClinicalTaskMode,
 ): Promise<ClinicalTaskWire[]> {
   const context = orderContext(mode);
-  return clinicalTaskWireSchema.array().parse(await request(
+  const payload = await request(
     `/clinical-tasks?encounter_id=${context.encounterId}`,
     { headers: orderHeaders(lease, mode) },
-  ));
+  );
+  return clinicalTaskWireSchema.array().parse(filterOperationalClinicalTaskPayload(payload));
+}
+
+export function filterOperationalClinicalTaskPayload(payload: unknown): unknown {
+  if (!Array.isArray(payload)) return payload;
+  return payload.filter((item) => {
+    if (!item || typeof item !== 'object') return true;
+    const state = (item as { state?: unknown }).state;
+    return state !== 'WITHDRAWN' && state !== 'EXPIRED';
+  });
 }
 
 export async function commandClinicalTask(
@@ -773,10 +790,19 @@ export async function getClinicalTaskDetail(
 export async function listClinicalTaskTeamQueue(
   lease: ContextLeaseWire,
 ): Promise<ClinicalTaskTeamQueueWire[]> {
-  return clinicalTaskTeamQueueWireSchema.array().parse(await request(
+  const payload = await request(
     `/clinical-task-team-queues?department_id=${clinicalContext.departmentId}`,
     { headers: wardHeaders(lease) },
-  ));
+  );
+  return clinicalTaskTeamQueueWireSchema.array().parse(filterOperationalTeamQueuePayload(payload));
+}
+
+export function filterOperationalTeamQueuePayload(payload: unknown): unknown {
+  if (!Array.isArray(payload)) return payload;
+  return payload.filter((item) => {
+    if (!item || typeof item !== 'object') return true;
+    return (item as { queue_status?: unknown }).queue_status !== 'WITHDRAWN';
+  });
 }
 
 export async function enqueueClinicalTask(

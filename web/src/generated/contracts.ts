@@ -1000,6 +1000,95 @@ export const clinicalOrderItemWireSchema = z.object({
 }).strict();
 export type ClinicalOrderItemWire = z.infer<typeof clinicalOrderItemWireSchema>;
 
+export const specialtyExecutionCaseEventWireSchema = z.object({
+  "specialty_execution_event_id": z.string().uuid(),
+  "event_type": z.enum(["CREATED","UPDATED","READY","STARTED","REVIEW_REQUESTED","COMPLETED","CANCELLED"]),
+  "from_status": z.string().nullable().optional(),
+  "to_status": z.string(),
+  "note": z.string().nullable().optional(),
+  "snapshot": z.record(z.string(), z.unknown()),
+  "actor_user_id": z.string().uuid(),
+  "occurred_at": z.string(),
+}).strict();
+export type SpecialtyExecutionCaseEventWire = z.infer<typeof specialtyExecutionCaseEventWireSchema>;
+
+export const specialtyExecutionCaseWireSchema = z.object({
+  "specialty_execution_case_id": z.string().uuid(),
+  "business_number": z.string(),
+  "domain": z.enum(["PATHOLOGY","THERAPY","ANESTHESIA","DEVICE_MONITORING"]),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "title": z.string(),
+  "priority": z.enum(["ROUTINE","URGENT","EMERGENCY"]),
+  "status": z.enum(["DRAFT","READY","IN_PROGRESS","PENDING_REVIEW","COMPLETED","CANCELLED"]),
+  "planned_at": z.string().nullable().optional(),
+  "payload": z.record(z.string(), z.unknown()),
+  "created_by": z.string().uuid(),
+  "last_actor_user_id": z.string().uuid(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string(),
+  "events": z.array(specialtyExecutionCaseEventWireSchema),
+}).strict();
+export type SpecialtyExecutionCaseWire = z.infer<typeof specialtyExecutionCaseWireSchema>;
+
+export const specialtyExecutionCaseCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "domain": z.enum(["PATHOLOGY","THERAPY","ANESTHESIA","DEVICE_MONITORING"]),
+  "title": z.string(),
+  "priority": z.enum(["ROUTINE","URGENT","EMERGENCY"]),
+  "planned_at": z.string().nullable().optional(),
+  "payload": z.record(z.string(), z.unknown()),
+}).strict();
+export type SpecialtyExecutionCaseCreateRequestWire = z.infer<typeof specialtyExecutionCaseCreateRequestWireSchema>;
+
+export const specialtyExecutionCaseUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "title": z.string(),
+  "priority": z.enum(["ROUTINE","URGENT","EMERGENCY"]),
+  "planned_at": z.string().nullable().optional(),
+  "payload": z.record(z.string(), z.unknown()),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type SpecialtyExecutionCaseUpdateRequestWire = z.infer<typeof specialtyExecutionCaseUpdateRequestWireSchema>;
+
+export const specialtyExecutionCaseTransitionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "action": z.enum(["MARK_READY","START","REQUEST_REVIEW","COMPLETE","CANCEL"]),
+  "expected_row_version": z.number().int(),
+  "note": z.string(),
+}).strict();
+export type SpecialtyExecutionCaseTransitionRequestWire = z.infer<typeof specialtyExecutionCaseTransitionRequestWireSchema>;
+
+export const executionWorklistItemWireSchema = z.object({
+  "domain": z.string(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "admission_id": z.string().uuid().nullable().optional(),
+  "patient_display_name": z.string(),
+  "sex_code": z.string(),
+  "birth_date": z.string(),
+  "visit_type": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
+  "location": z.string(),
+  "task_label": z.string(),
+  "status": z.enum(["PENDING","COMPLETED","CRITICAL"]),
+  "pending_count": z.number().int(),
+  "overdue_count": z.number().int(),
+  "critical_count": z.number().int(),
+  "latest_activity_at": z.string(),
+}).strict();
+export type ExecutionWorklistItemWire = z.infer<typeof executionWorklistItemWireSchema>;
+
 export const orderExecutionTaskWireSchema = z.object({
   "execution_task_id": z.string().uuid(),
   "order_id": z.string().uuid(),
@@ -3115,6 +3204,75 @@ export const dataQualityRuleDeactivateRequestWireSchema = z.object({
 }).strict();
 export type DataQualityRuleDeactivateRequestWire = z.infer<typeof dataQualityRuleDeactivateRequestWireSchema>;
 
+export const dataQualityScanStartRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type DataQualityScanStartRequestWire = z.infer<typeof dataQualityScanStartRequestWireSchema>;
+
+export const dataQualityScanRunWireSchema = z.object({
+  "data_quality_scan_id": z.string().uuid(),
+  "data_quality_rule_id": z.string().uuid(),
+  "target_entity": z.string(),
+  "status": z.enum(["RUNNING","COMPLETED","NO_DATA","FAILED"]),
+  "total_count": z.number().int(),
+  "passed_count": z.number().int(),
+  "failed_count": z.number().int(),
+  "score": z.number(),
+  "started_by": z.string().uuid(),
+  "started_at": z.string(),
+  "completed_at": z.string().nullable(),
+  "row_version": z.number().int(),
+}).strict();
+export type DataQualityScanRunWire = z.infer<typeof dataQualityScanRunWireSchema>;
+
+export const dataQualityFindingWireSchema = z.object({
+  "data_quality_finding_id": z.string().uuid(),
+  "data_quality_scan_id": z.string().uuid(),
+  "data_quality_rule_id": z.string().uuid(),
+  "target_entity_id": z.string().uuid(),
+  "reason_code": z.string(),
+  "reason_detail": z.string(),
+  "severity": z.enum(["INFO","WARNING","BLOCKING"]),
+  "status": z.enum(["OPEN","ASSIGNED","REMEDIATED","VERIFIED","CLOSED"]),
+  "assigned_to": z.string().uuid().nullable(),
+  "corrective_action": z.string().nullable(),
+  "detected_at": z.string(),
+  "updated_at": z.string(),
+  "row_version": z.number().int(),
+}).strict();
+export type DataQualityFindingWire = z.infer<typeof dataQualityFindingWireSchema>;
+
+export const dataQualityFindingTransitionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "action": z.enum(["ASSIGN","REMEDIATE","VERIFY","CLOSE","REOPEN"]),
+  "assignee_id": z.string().uuid().nullable().optional(),
+  "note": z.string(),
+  "row_version": z.number().int(),
+}).strict();
+export type DataQualityFindingTransitionRequestWire = z.infer<typeof dataQualityFindingTransitionRequestWireSchema>;
+
+export const dataQualityTriageRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type DataQualityTriageRequestWire = z.infer<typeof dataQualityTriageRequestWireSchema>;
+
+export const dataQualityTriageAdviceWireSchema = z.object({
+  "data_quality_triage_advice_id": z.string().uuid(),
+  "data_quality_scan_id": z.string().uuid(),
+  "engine_kind": z.literal("DETERMINISTIC_RULE_BASED"),
+  "risk_level": z.enum(["LOW","MEDIUM","HIGH"]),
+  "finding_count": z.number().int(),
+  "summary": z.string(),
+  "prioritized_actions": z.array(z.string()).max(10),
+  "evidence_hash": z.string(),
+  "generated_by": z.string().uuid(),
+  "generated_at": z.string(),
+}).strict();
+export type DataQualityTriageAdviceWire = z.infer<typeof dataQualityTriageAdviceWireSchema>;
+
 export const dataQualityEvaluationWireSchema = z.object({
   "data_quality_evaluation_id": z.string().uuid(),
   "data_quality_rule_id": z.string().uuid(),
@@ -4245,6 +4403,40 @@ export const clinicalTaskCollaborationRequestWireSchema = z.object({
 }).strict();
 export type ClinicalTaskCollaborationRequestWire = z.infer<typeof clinicalTaskCollaborationRequestWireSchema>;
 
+export const clinicalTaskCollaboratorWireSchema = z.object({
+  "user_id": z.string().uuid(),
+  "display_name": z.string(),
+  "role_code": z.string(),
+  "position_code": z.string(),
+  "department_id": z.string().uuid(),
+  "ward_id": z.string().uuid().nullable().optional(),
+  "active_credential_count": z.number().int(),
+}).strict();
+export type ClinicalTaskCollaboratorWire = z.infer<typeof clinicalTaskCollaboratorWireSchema>;
+
+export const clinicalTaskEventWireSchema = z.object({
+  "task_event_id": z.string().uuid(),
+  "event_type": z.string(),
+  "previous_state": z.string().nullable().optional(),
+  "resulting_state": z.string().nullable().optional(),
+  "actor_user_id": z.string().uuid(),
+  "target_user_id": z.string().uuid().nullable().optional(),
+  "reason": z.string().nullable().optional(),
+  "valid_until": z.string().nullable().optional(),
+  "occurred_at": z.string(),
+}).strict();
+export type ClinicalTaskEventWire = z.infer<typeof clinicalTaskEventWireSchema>;
+
+export const clinicalTaskDelegationWireSchema = z.object({
+  "delegation_id": z.string().uuid(),
+  "delegated_by": z.string().uuid(),
+  "delegated_to": z.string().uuid(),
+  "reason": z.string(),
+  "valid_until": z.string(),
+  "created_at": z.string(),
+}).strict();
+export type ClinicalTaskDelegationWire = z.infer<typeof clinicalTaskDelegationWireSchema>;
+
 export const clinicalTaskWireSchema = z.object({
   "task_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -4264,6 +4456,19 @@ export const clinicalTaskWireSchema = z.object({
   "data_watermark": z.string(),
 }).strict();
 export type ClinicalTaskWire = z.infer<typeof clinicalTaskWireSchema>;
+
+export const clinicalTaskDetailWireSchema = z.object({
+  "task": clinicalTaskWireSchema,
+  "task_rule_config_id": z.string().uuid().nullable().optional(),
+  "task_rule_version": z.number().int().nullable().optional(),
+  "rule_snapshot": z.record(z.string(), z.unknown()),
+  "escalation_at": z.string().nullable().optional(),
+  "events": z.array(clinicalTaskEventWireSchema),
+  "delegations": z.array(clinicalTaskDelegationWireSchema),
+  "notification_count": z.number().int(),
+  "queue_count": z.number().int(),
+}).strict();
+export type ClinicalTaskDetailWire = z.infer<typeof clinicalTaskDetailWireSchema>;
 
 export const patientSummaryWireSchema = z.object({
   "patient_id": z.string().uuid(),

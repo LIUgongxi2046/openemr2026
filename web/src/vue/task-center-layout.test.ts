@@ -20,4 +20,30 @@ describe('任务中心布局与临床路径规则契约', () => {
       expect(page).toContain(`${rule}:`);
     }
   });
+
+  it('支持门急住三域、真实协作资格和L4到L7任务证据下钻', () => {
+    expect(page).toContain("['emergency','急诊']");
+    expect(page).toContain('<option value="emergency">急诊</option>');
+    expect(page).toContain('listEligibleClinicalTaskCollaborators');
+    expect(page).toContain('请选择符合资质的人员');
+    expect(page).toContain('委托截止时间');
+    for (const level of ['L4 · 任务详情', 'L5 · 来源证据', 'L6 · 责任与通知链', 'L7 · 规则快照与 Agent']) {
+      expect(page).toContain(level);
+    }
+    expect(page).toContain('target_type: \'TASK\'');
+  });
+
+  it('协作动作与后端状态机一致且切换菜单会清除旧横幅', () => {
+    expect(page).toContain("if (task.state === 'CLAIMED') return ['delegations', 'transfers', 'escalations']");
+    expect(page).toContain("if (task.state === 'IN_PROGRESS') return ['escalations']");
+    expect(page).toContain('v-for="action in collaborationActions"');
+    expect(page).toContain('watch(activeView, () => {');
+    expect(page).toContain('notice.value = \'\';');
+  });
+
+  it('院内消息总线必须等待适配器回执，页面只允许站内消息确认送达', () => {
+    expect(page).toContain("item.status === 'PENDING' && item.channel === 'IN_APP'");
+    expect(page).toContain('等待适配器回执');
+    expect(page).toContain('不会被伪标为已送达');
+  });
 });

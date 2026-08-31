@@ -48,7 +48,7 @@ final class ResearchCohortMemberApiTest {
         jdbc.sql("""
                 insert into research_cohort(
                   tenant_id, research_cohort_id, cohort_code, cohort_name, inclusion_criteria, exclusion_criteria, status)
-                values (cast(:tenant as uuid), :cohort, :code, '队列', '年龄 >= 18', '妊娠', :status)
+                values (cast(:tenant as uuid), :cohort, :code, '队列', 'age_gte=18', 'age_lte=17', :status)
                 """).param("tenant", TENANT).param("cohort", cohortId)
                 .param("code", "COH-" + UUID.randomUUID().toString().substring(0, 8)).param("status", status).update();
         return cohortId;
@@ -109,6 +109,21 @@ final class ResearchCohortMemberApiTest {
                 .isInstanceOf(ResearchCohortMemberException.class)
                 .satisfies(e -> assertThat(((ResearchCohortMemberException) e).code())
                         .isEqualTo("PATIENT_INACTIVE"));
+    }
+
+    @Test
+    void givenPatientOutsideVersionedCriteria_whenComputing_thenRejected() {
+        UUID cohortId = seedCohort("ACTIVE");
+        UUID patientId = UUID.randomUUID();
+        jdbc.sql("""
+                insert into patient(tenant_id, patient_id, display_name, sex_code, birth_date, status)
+                values (cast(:tenant as uuid), :patient, '合成未成年患者', 'F', :birth, 'ACTIVE')
+                """).param("tenant", TENANT).param("patient", patientId)
+                .param("birth", LocalDate.now().minusYears(12)).update();
+        assertThatThrownBy(() -> compute(cohortId, patientId))
+                .isInstanceOf(ResearchCohortMemberException.class)
+                .satisfies(e -> assertThat(((ResearchCohortMemberException) e).code())
+                        .isEqualTo("RESEARCH_COHORT_PATIENT_NOT_ELIGIBLE"));
     }
 
     @Test

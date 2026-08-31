@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
 import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, retryMedicalAgentRun } from '../../api/medical-agents';
@@ -10,17 +11,19 @@ import EvaComposerControls from '../components/EvaComposerControls.vue';
 import EvaPatientPicker from '../components/EvaPatientPicker.vue';
 import XiaonanAgentTeamRail from '../components/XiaonanAgentTeamRail.vue';
 import { toClinicalIssue } from '../clinical-error';
+import { isEvaWorkspaceLoading } from '../eva-workspace-state';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 import { medicalAgentRunStateLabel, presentMedicalAgentEvents, presentMedicalAgentResult } from '../medical-agent-run-presenter';
-import { evaDefaultPatientContexts, useEvaClinicalContext } from '../use-eva-clinical-context';
+import { evaDefaultPatientContexts, hasEvaPatientContext, useEvaClinicalContext, type EvaPatientContext } from '../use-eva-clinical-context';
 
 type AuthorizationLevel = 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
 type ContextScope = 'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS';
 interface TaskEvent { id: string; label: string; detail: string; status: 'running' | 'done' | 'waiting' | 'failed' }
 interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number; modelName?: string }
 
+const route = useRoute();
 const messages = ref<ChatMessage[]>([]);
-const draft = ref('');
+const draft = ref(typeof route.query.objective === 'string' ? route.query.objective : '');
 const busy = ref(false);
 const notice = ref('');
 const clearConversationOpen = ref(false);
@@ -31,13 +34,24 @@ const selectedModelId = ref('');
 const authorizationLevel = ref<AuthorizationLevel>('STANDARD');
 const contextScopes = ref<ContextScope[]>(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS']);
 const composer = ref<HTMLTextAreaElement | null>(null);
-const patient = useEvaClinicalContext();
+const reconnecting = ref(false);
+const requestedPatientId = typeof route.query.patient_id === 'string' ? route.query.patient_id : '';
+const requestedEncounterId = typeof route.query.encounter_id === 'string' ? route.query.encounter_id : '';
+const requestedPatientContext: EvaPatientContext = {
+  patientId: requestedPatientId, encounterId: requestedEncounterId, patientName: '当前患者',
+  patientSummary: '从诊疗页面带入', label: '当前就诊', scene: '诊疗',
+};
+const initialPatientContext = evaDefaultPatientContexts.find((item) =>
+  item.patientId === requestedPatientId && item.encounterId === requestedEncounterId)
+  ?? (hasEvaPatientContext(requestedPatientContext) ? requestedPatientContext : undefined);
+const patient = useEvaClinicalContext(initialPatientContext);
+const hasPatientContext = computed(() => hasEvaPatientContext(patient.current.value));
 
 const catalogLeaseQuery = useQuery({ queryKey: ['eva', 'catalog-lease'], queryFn: issueMedicalAgentCatalogLease, retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const catalogQuery = useQuery({ queryKey: ['eva', 'catalog'], queryFn: () => listMedicalAgentCatalog(catalogLeaseQuery.data.value!), enabled: computed(() => Boolean(catalogLeaseQuery.data.value)), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelLeaseQuery = useQuery({ queryKey: ['eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelsQuery = useQuery({ queryKey: ['eva', 'models'], queryFn: () => listModelDeployments(modelLeaseQuery.data.value!), enabled: computed(() => Boolean(modelLeaseQuery.data.value)), retry: false, staleTime: 60_000 });
-const runLeaseQuery = useQuery({ queryKey: computed(() => ['eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const runLeaseQuery = useQuery({ queryKey: computed(() => ['eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: hasPatientContext, retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 
 const families = computed(() => catalogQuery.data.value ?? []);
 const availableModels = computed(() => (modelsQuery.data.value ?? []).filter((model) => model.status === 'ACTIVE' && model.evaluation_status === 'APPROVED' && model.connection_status === 'READY'));
@@ -45,7 +59,16 @@ const selectedFamily = computed(() => families.value.find((family) => family.mai
 const availableStages = computed(() => selectedFamily.value?.child_agents ?? []);
 const selectedChild = computed(() => availableStages.value.find((child) => child.stage_code === selectedStageCode.value));
 const selectedModel = computed(() => availableModels.value.find((model) => model.model_deployment_id === selectedModelId.value));
-const loading = computed(() => catalogQuery.isPending.value || runLeaseQuery.isPending.value || modelsQuery.isPending.value);
+const loading = computed(() => isEvaWorkspaceLoading({
+  catalogLeasePending: catalogLeaseQuery.isPending.value,
+  catalogLeaseReady: Boolean(catalogLeaseQuery.data.value),
+  catalogPending: catalogQuery.isPending.value,
+  modelLeasePending: modelLeaseQuery.isPending.value,
+  modelLeaseReady: Boolean(modelLeaseQuery.data.value),
+  modelsPending: modelsQuery.isPending.value,
+  runLeaseEnabled: hasPatientContext.value,
+  runLeasePending: runLeaseQuery.isPending.value,
+}));
 const issue = computed(() => {
   const error = catalogLeaseQuery.error.value ?? catalogQuery.error.value ?? modelLeaseQuery.error.value ?? modelsQuery.error.value ?? runLeaseQuery.error.value;
   return error ? toClinicalIssue(error) : null;
@@ -58,6 +81,24 @@ watch(availableModels, (next) => { if (next.length && !next.some((model) => mode
 function clinicianAgentName(name: string) { return doctorFacingTeamName(name); }
 function scopeLabel(scope: ContextScope) { return ({ RECORDS: '病历文书', ORDERS: '医嘱执行', RESULTS: '检查检验', TASKS: '任务随访', ATTACHMENTS: '病历附件' } as Record<ContextScope, string>)[scope]; }
 function authorizationLabel(level: AuthorizationLevel) { return ({ READ_ONLY: '只读', STANDARD: '标准', EXTENDED: '扩展' } as Record<AuthorizationLevel, string>)[level]; }
+
+async function reconnectWorkspace() {
+  if (reconnecting.value) return;
+  reconnecting.value = true;
+  try {
+    await Promise.all([
+      catalogLeaseQuery.refetch(),
+      modelLeaseQuery.refetch(),
+      runLeaseQuery.refetch(),
+    ]);
+    await Promise.all([
+      catalogLeaseQuery.data.value ? catalogQuery.refetch() : Promise.resolve(),
+      modelLeaseQuery.data.value ? modelsQuery.refetch() : Promise.resolve(),
+    ]);
+  } finally {
+    reconnecting.value = false;
+  }
+}
 
 function initialEvents(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire): TaskEvent[] {
   return [
@@ -115,7 +156,14 @@ async function send() {
   try {
     const patientId = patient.current.value.patientId;
     const encounterId = patient.current.value.encounterId;
-    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const taskTargetId = typeof route.query.target_id === 'string' ? route.query.target_id : '';
+    const run = await createMedicalAgentRun(lease, {
+      patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code,
+      targetType: route.query.target_type === 'TASK' && taskTargetId ? 'TASK' : 'ENCOUNTER',
+      targetId: route.query.target_type === 'TASK' && taskTargetId ? taskTargetId : encounterId,
+      objective: text, modelDeploymentId: selectedModelId.value,
+      authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value,
+    });
     const message = messages.value.find((item) => item.id === responseId)!;
     applyRun(message, run, child.display_name);
     await pollRun(message, lease, patientId, encounterId, child.display_name);
@@ -172,12 +220,12 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
       <div class="eva-workbench-brand"><img src="/brand/ai-medical-assistant-eva.png" alt="Eva 女性医疗智能助理" width="48" height="48" /><div><span>临床任务工作台</span><h1>AI医助 Eva</h1><p>把诊疗任务交给医助团队，执行步骤、数据范围与结果都在对话中呈现</p></div></div>
       <div class="head-actions"><button class="btn" type="button" :disabled="messages.length === 0" @click="clearConversationOpen = true">清空任务</button><button class="btn primary" type="button" :disabled="loading" @click="newTask">新建医助任务</button></div>
     </div>
-    <div v-if="loading" class="card"><div class="card-body">正在连接 Eva 工作区…</div></div>
-    <div v-else-if="issue" class="card"><div class="card-body">Eva 工作区暂时无法连接：{{ issue.message }}</div></div>
+    <div v-if="issue" class="card eva-workspace-error" role="alert"><div class="card-body"><strong>Eva 工作区暂时无法连接</strong><p>{{ issue.code }}：{{ issue.message }}</p><button class="btn" type="button" :disabled="reconnecting" @click="reconnectWorkspace">{{ reconnecting ? '正在重新连接…' : '重新连接' }}</button></div></div>
+    <div v-else-if="loading" class="card"><div class="card-body">正在连接 Eva 工作区…</div></div>
 
     <section v-else class="xiaonan-harness-shell eva-harness-shell">
       <XiaonanAgentTeamRail :agents="families" :selected-agent-code="selectedMainAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" @example="useAgentExample" @run-child="runChildAgent" />
-      <main class="eva-harness-main">
+      <section class="eva-harness-main" aria-label="Eva 医助任务对话">
         <header class="eva-session-head"><div><span class="eva-live-dot" aria-hidden="true"></span><div><strong>{{ selectedFamily ? clinicianAgentName(selectedFamily.main_agent.display_name) : 'Eva 综合医助' }}</strong><small>{{ selectedChild ? doctorFacingAiText(selectedChild.display_name) : '根据任务自动选择诊疗环节医助' }}</small></div></div><span>{{ messages.length ? `${Math.ceil(messages.length / 2)} 轮任务` : '空白任务' }}</span></header>
         <section class="eva-agent-thread" aria-live="polite">
           <div v-if="messages.length === 0" class="eva-agent-empty"><img src="/brand/ai-medical-assistant-eva-workbench.png" alt="Eva 调度诊疗数据、医助团队与系统工具" /><div><strong>交给 Eva 一项完整的诊疗任务</strong><p>可从左侧选择医助或示例，也可以直接描述目标。Eva 会在回复中展示规划、数据读取、工具调用、子医助协作和结果核对。</p></div></div>
@@ -190,10 +238,10 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
         </section>
         <form class="eva-agent-composer" @submit.prevent="send">
           <p v-if="notice" class="inline-notice" :class="notice.includes('失败') || notice.includes('HTTP') ? 'error' : 'info'" role="status">{{ notice }}</p>
-          <textarea ref="composer" v-model="draft" :disabled="busy" rows="4" placeholder="描述需要完成的诊疗任务，Enter 发送，Shift+Enter 换行……" @keydown.enter.exact.prevent="send" />
-          <footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" /><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId">{{ busy ? 'Eva 正在执行…' : '发送任务' }}</button></footer>
+          <textarea ref="composer" v-model="draft" :disabled="busy" rows="4" aria-label="向 Eva 描述诊疗任务" placeholder="描述需要完成的诊疗任务，Enter 发送，Shift+Enter 换行……" @keydown.enter.exact.prevent="send" />
+          <footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" /><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId || !runLeaseQuery.data.value">{{ busy ? 'Eva 正在执行…' : '发送任务' }}</button></footer>
         </form>
-      </main>
+      </section>
       <EvaPatientPicker :current="patient.current.value" :defaults="evaDefaultPatientContexts" :results="patient.results.value" :encounters="patient.encounters.value" :selected-patient-id="patient.selectedPatient.value?.patient_id ?? ''" :searching="patient.searching.value" :loading-encounters="patient.loadingEncounters.value" :notice="patient.notice.value" @search="patient.search" @select-default="selectDefault" @select-patient="selectSearchPatient" @select-encounter="selectEncounter" />
     </section>
     <AdminConfirmDialog :open="clearConversationOpen" title="清空当前任务" description="将清空当前页面中的对话与处理步骤，不影响已经写入数据库的医助运行记录。" confirm-label="确认清空" @update:open="clearConversationOpen = $event" @confirm="clearConversation" />
@@ -202,6 +250,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
 
 <style scoped>
 .xiaonan-harness-page { padding-top: 0; }
+.eva-workspace-error .card-body { display: grid; justify-items: start; gap: 8px; }.eva-workspace-error p { margin: 0; color: #7a3138; }
 .eva-workbench-titlebar { display: flex; align-items: center; gap: 14px; min-height: 74px; padding: 10px 4px 12px; }
 .eva-workbench-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }.eva-workbench-brand img { flex: 0 0 48px; width: 48px; height: 48px; object-fit: cover; border: 1px solid #d6e2ee; border-radius: 50%; background: #fff; }.eva-workbench-brand > div { min-width: 0; }.eva-workbench-brand span { color: #66809a; font-size: 9px; font-weight: 800; letter-spacing: .5px; }.eva-workbench-brand h1 { margin: 2px 0; color: #203b55; font-size: 20px; }.eva-workbench-brand p { margin: 0; overflow: hidden; color: #6f8295; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }.eva-workbench-titlebar .head-actions { display: flex; gap: 8px; margin-left: auto; }
 .eva-harness-shell { display: grid; grid-template-columns: auto minmax(0,1fr) 248px; height: calc(100dvh - 226px); min-height: 620px; max-height: 840px; overflow: hidden; border: 1px solid #cad8e6; border-radius: 14px; background: #fff; box-shadow: 0 10px 32px rgb(23 52 80 / 9%); }

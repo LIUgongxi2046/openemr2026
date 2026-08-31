@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import SimulationWorkbenchPage from '../components/SimulationWorkbenchPage.vue';
-import { simulationWorkbench } from '../simulation-workbenches';
-const definition = simulationWorkbench('anesthesia-workbench');
+import ProductionExecutionWorkbenchPage from '../components/ProductionExecutionWorkbenchPage.vue';
+import { specialtyExecutionWorkbenches } from '../specialty-execution-workbenches';
+const definition = specialtyExecutionWorkbenches.ANESTHESIA;
 </script>
 
-<template><SimulationWorkbenchPage :definition="definition" /></template>
+<template><ProductionExecutionWorkbenchPage :definition="definition" /></template>

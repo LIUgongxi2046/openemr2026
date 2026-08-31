@@ -5,6 +5,7 @@ const definition = {
   configType: 'DEVICE_CATALOG', eyebrow: '数据中心 / 设备接入', title: '设备目录、网关与可信绑定',
   subtitle: '统一维护设备身份、责任科室、网关、校准、时钟质量和患者绑定策略；仅已发布且可信的设备数据可进入临床视图。',
   createLabel: '新建设备', itemLabel: '设备',
+  links: [{ label: '进入设备监测与告警', to: '/device-monitoring' }],
   fields: [
     { key: 'device_type', label: '设备类型', kind: 'select', defaultValue: 'MONITOR', options: [{ label: '床旁监护仪', value: 'MONITOR' }, { label: '呼吸机', value: 'VENTILATOR' }, { label: '输注泵', value: 'INFUSION_PUMP' }, { label: '影像设备', value: 'IMAGING' }, { label: '检验分析仪', value: 'LAB_ANALYZER' }] },
     { key: 'manufacturer_model', label: '厂商 / 型号', placeholder: '例：迈瑞 BeneVision N15' },

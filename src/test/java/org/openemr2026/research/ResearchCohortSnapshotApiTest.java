@@ -64,8 +64,8 @@ final class ResearchCohortSnapshotApiTest {
     @Test
     void givenActiveCohort_whenRecording_thenSnapshotWithCriteriaHash() {
         UUID cohortId = seedCohort("ACTIVE");
-        ResearchCohortSnapshotWire snapshot = record(cohortId, 37);
-        assertThat(snapshot.memberCount()).isEqualTo(37);
+        ResearchCohortSnapshotWire snapshot = record(cohortId, 0);
+        assertThat(snapshot.memberCount()).isZero();
         assertThat(snapshot.criteriaHash()).hasSize(64);
         assertThat(snapshot.computedBy()).isEqualTo(UUID.fromString(USER));
 
@@ -84,12 +84,12 @@ final class ResearchCohortSnapshotApiTest {
     }
 
     @Test
-    void givenNegativeMemberCount_whenRecording_thenRejected() {
+    void givenClientCountDifferentFromServerMembership_whenRecording_thenRejected() {
         UUID cohortId = seedCohort("ACTIVE");
-        assertThatThrownBy(() -> record(cohortId, -1))
+        assertThatThrownBy(() -> record(cohortId, 99))
                 .isInstanceOf(ResearchCohortSnapshotException.class)
                 .satisfies(e -> assertThat(((ResearchCohortSnapshotException) e).code())
-                        .isEqualTo("RESEARCH_COHORT_SNAPSHOT_REQUEST_INVALID"));
+                        .isEqualTo("RESEARCH_COHORT_SNAPSHOT_COUNT_MISMATCH"));
     }
 
     @Test
@@ -110,7 +110,7 @@ final class ResearchCohortSnapshotApiTest {
     @Test
     void givenSnapshot_whenTampered_thenDatabaseRejectsMutation() {
         UUID cohortId = seedCohort("ACTIVE");
-        ResearchCohortSnapshotWire snapshot = record(cohortId, 12);
+        ResearchCohortSnapshotWire snapshot = record(cohortId, 0);
         assertThatThrownBy(() -> jdbc.sql("""
                 update research_cohort_snapshot set member_count = 999
                 where tenant_id = cast(:tenant as uuid) and research_cohort_snapshot_id = :snapshot

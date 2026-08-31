@@ -19,10 +19,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 final class ResearchCohortMemberService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ResearchCohortCriteriaEvaluator criteriaEvaluator;
 
-    ResearchCohortMemberService(JdbcClient jdbc, TransactionTemplate transactions) {
+    ResearchCohortMemberService(
+            JdbcClient jdbc, TransactionTemplate transactions, ResearchCohortCriteriaEvaluator criteriaEvaluator) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.criteriaEvaluator = criteriaEvaluator;
     }
 
     ResearchCohortMemberWire compute(
@@ -33,8 +36,22 @@ final class ResearchCohortMemberService {
         return transactions.execute(status -> {
             beginCommand(identity, "RESEARCH_COHORT_MEMBER_COMPUTE", idempotencyKey,
                     sha256(request.researchCohortId() + "|" + request.patientId()));
-            requireActiveCohort(identity.tenantId(), request.researchCohortId());
+            CohortCriteria criteria = requireActiveCohort(identity.tenantId(), request.researchCohortId());
             requireActivePatient(identity.tenantId(), request.patientId());
+            boolean included;
+            try {
+                included = criteriaEvaluator.matches(
+                        identity.tenantId(), request.patientId(), criteria.inclusionCriteria());
+                if (criteria.exclusionCriteria() != null && criteriaEvaluator.matches(
+                        identity.tenantId(), request.patientId(), criteria.exclusionCriteria())) included = false;
+            } catch (ResearchCohortCriteriaEvaluator.ResearchCriteriaException invalidCriteria) {
+                throw new ResearchCohortMemberException("RESEARCH_COHORT_CRITERIA_UNSUPPORTED", 422,
+                        invalidCriteria.getMessage());
+            }
+            if (!included) {
+                throw new ResearchCohortMemberException("RESEARCH_COHORT_PATIENT_NOT_ELIGIBLE", 422,
+                        "The patient does not satisfy the versioned inclusion and exclusion criteria");
+            }
             UUID memberId = UUID.randomUUID();
             jdbc.sql("""
                     insert into research_cohort_member(
@@ -76,16 +93,20 @@ final class ResearchCohortMemberService {
                 .optional().orElseThrow(ResearchCohortMemberService::contextDenied);
     }
 
-    private void requireActiveCohort(UUID tenantId, UUID researchCohortId) {
-        String status = jdbc.sql("""
-                select status from research_cohort
+    private CohortCriteria requireActiveCohort(UUID tenantId, UUID researchCohortId) {
+        CohortCriteria criteria = jdbc.sql("""
+                select status, inclusion_criteria, exclusion_criteria from research_cohort
                 where tenant_id = :tenant and research_cohort_id = :cohort for update
                 """).param("tenant", tenantId).param("cohort", researchCohortId)
-                .query(String.class).optional().orElseThrow(ResearchCohortMemberService::contextDenied);
-        if (!"ACTIVE".equals(status)) {
+                .query((rs, row) -> new CohortCriteria(
+                        rs.getString("status"), rs.getString("inclusion_criteria"),
+                        rs.getString("exclusion_criteria")))
+                .optional().orElseThrow(ResearchCohortMemberService::contextDenied);
+        if (!"ACTIVE".equals(criteria.status())) {
             throw new ResearchCohortMemberException(
                     "RESEARCH_COHORT_INACTIVE", 409, "Only an active cohort can receive computed members");
         }
+        return criteria;
     }
 
     private void requireActivePatient(UUID tenantId, UUID patientId) {
@@ -165,6 +186,8 @@ final class ResearchCohortMemberService {
         return new ResearchCohortMemberException(
                 "CONTEXT_NOT_PERMITTED", 403, "The requested research cohort member context is not permitted");
     }
+
+    private record CohortCriteria(String status, String inclusionCriteria, String exclusionCriteria) {}
 
     private static String sha256(String value) {
         try {

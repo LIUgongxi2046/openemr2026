@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "npm run check:no-react && vue-tsc -b && vite build",
+    "build:acceptance": "npm run check:no-react && vue-tsc -b && vite build --mode acceptance",
     "test": "vitest run",
     "generate:semantic-contract": "node scripts/generate-semantic-contract.mjs",
     "test:semantic-contract": "node scripts/verify-semantic-contract.mjs",

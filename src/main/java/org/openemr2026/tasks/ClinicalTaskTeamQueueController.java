@@ -38,7 +38,7 @@ final class ClinicalTaskTeamQueueController {
             @RequestHeader("X-Facility-Context") UUID facilityId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, null, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(queues.list(identity, departmentId));
+                .body(queues.list(identity, organizationId, facilityId, departmentId));
     }
 
     @PostMapping("/clinical-task-team-queues")

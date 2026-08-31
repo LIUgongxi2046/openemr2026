@@ -27,6 +27,9 @@ openemr2026:
     lease-seconds: 30
     max-attempts: 5
     poll-delay-ms: 1000
+  task-center:
+    notification-scheduler-enabled: ${OPENEMR2026_TASK_NOTIFICATION_SCHEDULER_ENABLED:true}
+    notification-poll-delay-ms: ${OPENEMR2026_TASK_NOTIFICATION_POLL_DELAY_MS:5000}
   medical-agent:
     external-models-enabled: ${OPENEMR2026_MEDICAL_AGENT_EXTERNAL_MODELS_ENABLED:true}
     worker:

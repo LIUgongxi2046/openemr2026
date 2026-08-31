@@ -133,6 +133,11 @@ final class ClinicalTaskApiTest {
         HttpResponse<String> again = send("POST", "/api/v1/clinical-tasks/expirations", null,
                 lease, context, null);
         assertThat(objectMapper.readTree(again.body()).path("expired_count").intValue()).isZero();
+        HttpResponse<String> activeList = send(
+                "GET", "/api/v1/clinical-tasks?encounter_id=" + context.encounterId(), null,
+                lease, context, null);
+        assertThat(activeList.statusCode()).isEqualTo(200);
+        assertThat(objectMapper.readTree(activeList.body())).isEmpty();
     }
 
     @Test
@@ -141,6 +146,15 @@ final class ClinicalTaskApiTest {
         seedCollaborator();
         Context context = seedContext();
         Lease ownerLease = issueLease(context);
+        JsonNode collaborators = objectMapper.readTree(send(
+                "GET", "/api/v1/clinical-tasks/collaborators", null,
+                ownerLease, context, null).body());
+        JsonNode eligibleCollaborator = null;
+        for (JsonNode item : collaborators) {
+            if (COLLABORATOR.equals(item.path("user_id").stringValue())) eligibleCollaborator = item;
+        }
+        assertThat(eligibleCollaborator).isNotNull();
+        assertThat(eligibleCollaborator.path("active_credential_count").intValue()).isGreaterThanOrEqualTo(1);
         JsonNode order = createAndSignLabOrder(context, ownerLease);
         String executionTaskId = order.path("execution_tasks").get(0).path("execution_task_id").stringValue();
         JsonNode pending = objectMapper.readTree(send(
@@ -222,6 +236,16 @@ final class ClinicalTaskApiTest {
                 where tenant_id = cast(:tenant as uuid) and task_id = cast(:task_id as uuid)
                 """).param("tenant", TENANT).param("task_id", taskId).update())
                 .isInstanceOf(DataAccessException.class);
+
+        HttpResponse<String> detailResponse = sendAs(
+                "GET", "/api/v1/clinical-tasks/" + taskId, null,
+                collaboratorLease, context, null, COLLABORATOR, COLLABORATOR_ROLE);
+        assertThat(detailResponse.statusCode()).withFailMessage(detailResponse.body()).isEqualTo(200);
+        JsonNode detail = objectMapper.readTree(detailResponse.body());
+        assertThat(detail.path("task").path("state").stringValue()).isEqualTo("COMPLETED");
+        assertThat(detail.path("events").size()).isEqualTo(8);
+        assertThat(detail.path("delegations").size()).isEqualTo(1);
+        assertThat(detail.path("rule_snapshot").isObject()).isTrue();
     }
 
     private JsonNode createAndSignLabOrder(Context context, Lease lease) throws Exception {
@@ -286,6 +310,24 @@ final class ClinicalTaskApiTest {
                 """).param("tenant", TENANT).param("role", COLLABORATOR_ROLE)
                 .param("user", COLLABORATOR).param("organization", ORGANIZATION)
                 .param("facility", FACILITY).update();
+        jdbc.sql("""
+                update workforce_assignment
+                set department_id = cast('018f0000-0000-7000-8000-00000000aa08' as uuid),
+                    status = 'ACTIVE', valid_until = null
+                where tenant_id = cast(:tenant as uuid)
+                  and source_role_assignment_id = cast(:role as uuid)
+                """).param("tenant", TENANT).param("role", COLLABORATOR_ROLE).update();
+        jdbc.sql("""
+                insert into practitioner_credential(
+                  tenant_id, credential_id, person_id, credential_type, registration_number,
+                  issuing_authority, practice_scope, status, valid_from, valid_until)
+                values (cast(:tenant as uuid), cast('018f0000-0000-7000-8000-00000000be02' as uuid),
+                  cast(:user as uuid), 'PHYSICIAN_LICENSE', '110420000002',
+                  '江城市卫生健康委员会', '{"primary_department":"CARDIOLOGY"}'::jsonb,
+                  'ACTIVE', now() - interval '1 year', now() + interval '5 years')
+                on conflict (tenant_id, credential_id) do update
+                set status = 'ACTIVE', valid_from = excluded.valid_from, valid_until = excluded.valid_until
+                """).param("tenant", TENANT).param("user", COLLABORATOR).update();
     }
 
     private Context seedContext() {

@@ -9,7 +9,10 @@ import {
   issueAiLease,
   listAgentRunBudgetConsumptions,
   listAgentRunBudgets,
+  listMedicalAgentOperationsRuns,
+  listMedicalAgentOperationsToolInvocations,
   updateAgentRunBudget,
+  type MedicalAgentOperationsRun,
 } from '../../api/ai-platform';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
@@ -27,6 +30,13 @@ const budgetsQuery = useQuery({
   queryFn: () => listAgentRunBudgets(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
+});
+const runsQuery = useQuery({
+  queryKey: ['ai-platform', 'aiops', 'medical-agent-runs'],
+  queryFn: () => listMedicalAgentOperationsRuns(leaseQuery.data.value!, 100),
+  enabled: () => Boolean(leaseQuery.data.value),
+  retry: false,
+  refetchInterval: 15_000,
 });
 
 const selectedBudgetId = ref('');
@@ -49,12 +59,23 @@ const consumptionsQuery = useQuery({
   enabled: () => Boolean(leaseQuery.data.value && selectedBudgetId.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? budgetsQuery.error.value ?? summaryQuery.error.value ?? consumptionsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? budgetsQuery.error.value ?? summaryQuery.error.value ?? consumptionsQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? budgetsQuery.error.value ?? runsQuery.error.value ?? summaryQuery.error.value ?? consumptionsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? budgetsQuery.error.value ?? runsQuery.error.value ?? summaryQuery.error.value ?? consumptionsQuery.error.value) : null);
 const budgets = computed(() => budgetsQuery.data.value ?? []);
 const summary = computed(() => summaryQuery.data.value ?? null);
 const consumptions = computed(() => consumptionsQuery.data.value ?? []);
 const activeCount = computed(() => budgets.value.filter((budget) => budget.status === 'ACTIVE').length);
+const runs = computed(() => runsQuery.data.value ?? []);
+const runningCount = computed(() => runs.value.filter((run) => ['QUEUED', 'RUNNING'].includes(run.state)).length);
+const attentionCount = computed(() => runs.value.filter((run) => ['PARTIAL', 'BLOCKED', 'FAILED'].includes(run.state)).length);
+const successfulCount = computed(() => runs.value.filter((run) => ['COMPLETED', 'WAITING_FOR_REVIEW'].includes(run.state)).length);
+const selectedRun = ref<MedicalAgentOperationsRun | null>(null);
+const toolInvocationsQuery = useQuery({
+  queryKey: ['ai-platform', 'aiops', 'tool-invocations', computed(() => selectedRun.value?.run_id ?? '')],
+  queryFn: () => listMedicalAgentOperationsToolInvocations(leaseQuery.data.value!, selectedRun.value!.run_id),
+  enabled: () => Boolean(leaseQuery.data.value && selectedRun.value),
+  retry: false,
+});
 
 const defineForm = reactive({ budgetCode: '', budgetName: '', maxTokens: 1_000_000, maxDurationSeconds: 600 });
 const editingBudget = ref<AgentRunBudgetWire | null>(null);
@@ -72,7 +93,22 @@ function formatInt(value: number | null | undefined) {
 
 async function reload() {
   notice.value = '';
-  await Promise.all([budgetsQuery.refetch(), summaryQuery.refetch(), consumptionsQuery.refetch()]);
+  await Promise.all([budgetsQuery.refetch(), runsQuery.refetch(), summaryQuery.refetch(), consumptionsQuery.refetch()]);
+}
+
+function stateLabel(state: MedicalAgentOperationsRun['state']) {
+  return ({ QUEUED: '排队中', RUNNING: '处理中', WAITING_FOR_REVIEW: '待医生确认', COMPLETED: '已完成',
+    PARTIAL: '部分完成', BLOCKED: '已阻断', FAILED: '失败', CANCELLED: '已取消' } as const)[state];
+}
+
+function stateClass(state: MedicalAgentOperationsRun['state']) {
+  if (['COMPLETED', 'WAITING_FOR_REVIEW'].includes(state)) return 'active';
+  if (['QUEUED', 'RUNNING'].includes(state)) return 'evaluating';
+  return 'inactive';
+}
+
+function authorizationLabel(level: MedicalAgentOperationsRun['authorization_level']) {
+  return ({ READ_ONLY: '仅查看', STANDARD: '标准诊疗辅助', EXTENDED: '扩展诊疗辅助' } as const)[level];
 }
 
 async function defineBudget() {
@@ -141,8 +177,8 @@ async function deactivate(budget: AgentRunBudgetWire) {
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">AI 中心 / 医助运行监测</p>
-        <h1>医助处理额度与用量</h1>
-        <p>设置医助任务的生成额度和最长处理时间，查看实际用量；所有变更保留版本和操作记录。</p>
+        <h1>医助运行监测</h1>
+        <p>查看真实医助任务、模型调用、工具调用、处理耗时与异常，再维护任务额度；页面每 15 秒自动刷新。</p>
       </div>
       <div class="admin-inline-tools">
         <label class="admin-code-input"><span>处理额度</span>
@@ -154,15 +190,57 @@ async function deactivate(budget: AgentRunBudgetWire) {
       </div>
     </div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || budgetsQuery.isPending.value" kind="loading" message="正在读取医助处理额度" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || budgetsQuery.isPending.value || runsQuery.isPending.value" kind="loading" message="正在读取医助运行台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
-      <section class="admin-metrics" aria-label="医助处理额度统计">
-        <article><span>额度方案</span><strong>{{ budgets.length }}</strong><small>全部定义</small></article>
-        <article><span>启用方案</span><strong>{{ activeCount }}</strong><small>当前可用</small></article>
+      <section class="admin-metrics" aria-label="医助运行统计">
+        <article><span>近期任务</span><strong>{{ runs.length }}</strong><small>当前院区最近 100 条</small></article>
+        <article><span>正在处理</span><strong>{{ runningCount }}</strong><small>排队或运行中</small></article>
+        <article><span>待确认 / 完成</span><strong>{{ successfulCount }}</strong><small>需医生确认后进入临床记录</small></article>
+        <article><span>需关注</span><strong>{{ attentionCount }}</strong><small>部分完成、阻断或失败</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <section class="admin-panel">
+        <header>
+          <div><h2>真实医助任务台账</h2><p>来源于医疗医助运行库，不包含仿真工作台结果；患者身份不在管理页展示。</p></div>
+          <button class="button secondary" @click="runsQuery.refetch()">刷新任务</button>
+        </header>
+        <div v-if="runs.length === 0" class="admin-empty" role="status">当前院区暂无真实医助任务。医生在 Eva 发起任务后，这里会记录模型、工具、耗时与结果状态。</div>
+        <div v-else class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>任务 / 医助</th><th>模型</th><th>运行状态</th><th>模型与工具调用</th><th>用量 / 耗时</th><th>发起时间</th><th>明细</th></tr></thead>
+            <tbody>
+              <tr v-for="run in runs" :key="run.run_id">
+                <td><strong>{{ doctorFacingAiText(run.root_agent_name) }}</strong><small><code>…{{ run.run_id.slice(-8) }}</code> · {{ run.requested_stage }} · {{ authorizationLabel(run.authorization_level) }}</small></td>
+                <td><strong>{{ run.model_display_name ?? '未解析模型' }}</strong><small>{{ run.provider_code ?? '—' }}<template v-if="run.provider_code && !run.external_processing_approved"> · 缺少外部处理授权</template></small></td>
+                <td><span class="admin-status" :class="stateClass(run.state)">{{ stateLabel(run.state) }}</span><small v-if="run.failure_code"><code>{{ run.failure_code }}</code></small></td>
+                <td>{{ run.model_request_count }} 次模型 · {{ run.tool_call_count }} 次工具<small v-if="run.tool_failure_count">{{ run.tool_failure_count }} 次工具失败</small></td>
+                <td>{{ formatInt(run.model_total_tokens) }} tokens<small>{{ formatInt(run.actual_duration_ms) }} ms</small></td>
+                <td>{{ formatDate(run.created_at) }}<small>第 {{ run.attempt }}/{{ run.max_attempts }} 次尝试</small></td>
+                <td><button class="task-action" @click="selectedRun = run">工具明细</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <AdminActionDialog :open="Boolean(selectedRun)" title="任务工具调用明细" description="仅展示工具代码、调用结果和耗时；临床数据内容不会在平台管理页展开。" size="large" @update:open="!$event && (selectedRun = null)">
+        <div v-if="toolInvocationsQuery.isPending.value" class="admin-empty" role="status">正在读取工具调用台账…</div>
+        <div v-else-if="toolInvocationsQuery.error.value" class="admin-empty" role="alert">{{ toClinicalIssue(toolInvocationsQuery.error.value).message }}</div>
+        <div v-else-if="(toolInvocationsQuery.data.value ?? []).length === 0" class="admin-empty" role="status">该任务尚无工具调用记录。</div>
+        <div v-else class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>工具</th><th>结果</th><th>返回项</th><th>耗时</th><th>调用时间</th></tr></thead>
+            <tbody><tr v-for="item in toolInvocationsQuery.data.value" :key="item.invocation_id">
+              <td><strong>{{ item.tool_code }}</strong><small>版本 {{ item.tool_version }} · …{{ item.child_run_id.slice(-8) }}</small></td>
+              <td><span class="admin-status" :class="item.outcome === 'SUCCEEDED' ? 'active' : 'inactive'">{{ item.outcome === 'SUCCEEDED' ? '成功' : item.outcome === 'DENIED' ? '已拒绝' : '失败' }}</span><small v-if="item.error_code"><code>{{ item.error_code }}</code></small></td>
+              <td>{{ item.item_count }}</td><td>{{ formatInt(item.duration_ms) }} ms</td><td>{{ formatDate(item.invoked_at) }}</td>
+            </tr></tbody>
+          </table>
+        </div>
+      </AdminActionDialog>
 
       <div>
         <section class="admin-panel">

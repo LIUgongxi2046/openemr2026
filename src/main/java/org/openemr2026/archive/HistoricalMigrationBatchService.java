@@ -30,25 +30,35 @@ final class HistoricalMigrationBatchService {
 
     HistoricalMigrationBatchWire start(
             ClinicalIdentity identity, String idempotencyKey, HistoricalMigrationBatchStartRequestWire request) {
-        if (request.sourceSystem() == null || request.recordCount() == null || request.startedAt() == null) {
+        if (request.sourceSystem() == null || request.startedAt() == null) {
             throw invalid("source_system, record_count and started_at are required");
-        }
-        if (request.recordCount() < 0) {
-            throw invalid("record_count must not be negative");
         }
         String sourceSystem = requireText(request.sourceSystem(), 2, "source_system");
         return transactions.execute(status -> {
+            SourceSnapshot source = activeSource(identity.tenantId(), sourceSystem);
+            int actualRecordCount = sourceRecordCount(identity.tenantId(), source.sourceSystemId());
+            if (actualRecordCount == 0) {
+                throw new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_SOURCE_EMPTY", 422,
+                        "The active source has no staged patient match records");
+            }
+            if (request.recordCount() != null && request.recordCount() != actualRecordCount) {
+                throw new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_RECORD_COUNT_MISMATCH", 409,
+                        "The submitted record count does not match the server-side staged record count");
+            }
             beginCommand(identity, "HISTORICAL_MIGRATION_START", idempotencyKey,
-                    sha256(sourceSystem + "|" + request.recordCount()));
+                    sha256(sourceSystem + "|" + actualRecordCount));
             UUID batchId = UUID.randomUUID();
             jdbc.sql("""
                     insert into historical_migration_batch(
-                      tenant_id, batch_id, source_system, batch_status, record_count,
+                      tenant_id, batch_id, source_system, source_system_id, batch_status, record_count,
                       mismatch_count, started_at, created_by)
-                    values (:tenant, :batch, :source, 'TRIAL', :record_count,
+                    values (:tenant, :batch, :source, :source_id, 'TRIAL', :record_count,
                       0, :started_at, :created_by)
                     """).param("tenant", identity.tenantId()).param("batch", batchId)
-                    .param("source", sourceSystem).param("record_count", request.recordCount())
+                    .param("source", sourceSystem).param("source_id", source.sourceSystemId())
+                    .param("record_count", actualRecordCount)
                     .param("started_at", request.startedAt().atOffset(ZoneOffset.UTC))
                     .param("created_by", identity.userId()).update();
             appendEvidence(identity, batchId, "HISTORICAL_MIGRATION_STARTED", "HistoricalMigrationStarted");
@@ -60,12 +70,6 @@ final class HistoricalMigrationBatchService {
     HistoricalMigrationBatchWire reconcile(
             ClinicalIdentity identity, String idempotencyKey, UUID batchId,
             HistoricalMigrationBatchReconcileRequestWire request) {
-        if (request.mismatchCount() == null) {
-            throw invalid("mismatch_count is required");
-        }
-        if (request.mismatchCount() < 0) {
-            throw invalid("mismatch_count must not be negative");
-        }
         return transactions.execute(status -> {
             beginCommand(identity, "HISTORICAL_MIGRATION_RECONCILE", idempotencyKey,
                     sha256(batchId + "|" + request.expectedRowVersion()));
@@ -78,13 +82,53 @@ final class HistoricalMigrationBatchService {
                         "HISTORICAL_MIGRATION_STATE_INVALID", 409,
                         "Only a trial batch can be reconciled");
             }
+            if (head.sourceSystemId() == null) {
+                throw new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_SOURCE_UNRESOLVED", 422,
+                        "The legacy batch is not linked to a governed source system");
+            }
+            boolean patientIdentifierMapped = hasPatientIdentifierMapping(
+                    identity.tenantId(), head.sourceSystemId());
+            List<CandidateSnapshot> candidates = candidateSnapshots(
+                    identity.tenantId(), head.sourceSystemId());
+            for (CandidateSnapshot candidate : candidates) {
+                boolean matched = patientIdentifierMapped
+                        && "RESOLVED".equals(candidate.reviewStatus())
+                        && candidate.matchedPatientId() != null;
+                String validationCode = !patientIdentifierMapped
+                        ? "PATIENT_IDENTIFIER_MAPPING_MISSING"
+                        : !"RESOLVED".equals(candidate.reviewStatus())
+                                ? "PATIENT_MATCH_NOT_REVIEWED"
+                                : candidate.matchedPatientId() == null
+                                        ? "TARGET_PATIENT_NOT_SELECTED" : "MATCHED";
+                jdbc.sql("""
+                        insert into historical_migration_reconciliation_item(
+                          tenant_id, reconciliation_item_id, batch_id, candidate_id,
+                          source_record_hash, target_patient_id, validation_status,
+                          validation_code, reconciled_by)
+                        values (:tenant, :item, :batch, :candidate, :source_hash,
+                          :target_patient, :validation_status, :validation_code, :actor)
+                        """).param("tenant", identity.tenantId()).param("item", UUID.randomUUID())
+                        .param("batch", batchId).param("candidate", candidate.candidateId())
+                        .param("source_hash", sha256(candidate.sourcePatientIdentifier()))
+                        .param("target_patient", candidate.matchedPatientId())
+                        .param("validation_status", matched ? "MATCHED" : "MISMATCH")
+                        .param("validation_code", validationCode).param("actor", identity.userId()).update();
+            }
+            int evidenceCount = reconciliationEvidenceCount(identity.tenantId(), batchId);
+            if (evidenceCount != head.recordCount()) {
+                throw new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_SOURCE_DRIFT", 409,
+                        "The staged source changed after trial start; start a new migration batch");
+            }
+            int derivedMismatchCount = reconciliationMismatchCount(identity.tenantId(), batchId);
             jdbc.sql("""
                     update historical_migration_batch
                     set batch_status = 'RECONCILED', mismatch_count = :mismatch, completed_at = now(),
                       row_version = row_version + 1
                     where tenant_id = :tenant and batch_id = :batch and row_version = :expected
                     """).param("tenant", identity.tenantId()).param("batch", batchId)
-                    .param("mismatch", request.mismatchCount()).param("expected", head.rowVersion()).update();
+                    .param("mismatch", derivedMismatchCount).param("expected", head.rowVersion()).update();
             appendEvidence(identity, batchId, "HISTORICAL_MIGRATION_RECONCILED", "HistoricalMigrationReconciled");
             completeCommand(identity, "HISTORICAL_MIGRATION_RECONCILE", idempotencyKey, batchId);
             return batch(identity.tenantId(), batchId);
@@ -110,6 +154,11 @@ final class HistoricalMigrationBatchService {
                 throw new HistoricalMigrationBatchException(
                         "HISTORICAL_MIGRATION_MISMATCH", 409,
                         "A batch with reconciliation mismatches cannot be switched");
+            }
+            if (reconciliationEvidenceCount(identity.tenantId(), batchId) != head.recordCount()) {
+                throw new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_EVIDENCE_INCOMPLETE", 409,
+                        "The reconciliation evidence is incomplete; production switch is blocked");
             }
             jdbc.sql("""
                     update historical_migration_batch
@@ -187,12 +236,72 @@ final class HistoricalMigrationBatchService {
 
     private BatchHead lockBatch(UUID tenantId, UUID batchId) {
         return jdbc.sql("""
-                select batch_status, mismatch_count, row_version from historical_migration_batch
+                select batch_status, mismatch_count, row_version, record_count, source_system_id
+                from historical_migration_batch
                 where tenant_id = :tenant and batch_id = :batch for update
                 """).param("tenant", tenantId).param("batch", batchId)
                 .query((rs, row) -> new BatchHead(
-                        rs.getString("batch_status"), rs.getInt("mismatch_count"), rs.getLong("row_version")))
+                        rs.getString("batch_status"), rs.getInt("mismatch_count"), rs.getLong("row_version"),
+                        rs.getInt("record_count"), rs.getObject("source_system_id", UUID.class)))
                 .optional().orElseThrow(HistoricalMigrationBatchService::contextDenied);
+    }
+
+    private SourceSnapshot activeSource(UUID tenantId, String sourceCode) {
+        return jdbc.sql("""
+                select source_system_id from source_system_inventory
+                where tenant_id = :tenant and source_code = :source and connection_status = 'ACTIVE'
+                for update
+                """).param("tenant", tenantId).param("source", sourceCode)
+                .query((rs, row) -> new SourceSnapshot(rs.getObject("source_system_id", UUID.class)))
+                .optional().orElseThrow(() -> new HistoricalMigrationBatchException(
+                        "HISTORICAL_MIGRATION_SOURCE_NOT_ACTIVE", 409,
+                        "Only an active governed source system can start a migration batch"));
+    }
+
+    private int sourceRecordCount(UUID tenantId, UUID sourceSystemId) {
+        return jdbc.sql("""
+                select count(*) from source_patient_match_candidate
+                where tenant_id = :tenant and source_system_id = :source
+                """).param("tenant", tenantId).param("source", sourceSystemId).query(Integer.class).single();
+    }
+
+    private boolean hasPatientIdentifierMapping(UUID tenantId, UUID sourceSystemId) {
+        return jdbc.sql("""
+                select exists(
+                  select 1 from source_field_mapping
+                  where tenant_id = :tenant and source_system_id = :source and status = 'ACTIVE'
+                    and lower(target_entity) = 'patient' and lower(target_field) = 'identifier'
+                )
+                """).param("tenant", tenantId).param("source", sourceSystemId).query(Boolean.class).single();
+    }
+
+    private List<CandidateSnapshot> candidateSnapshots(UUID tenantId, UUID sourceSystemId) {
+        return jdbc.sql("""
+                select candidate_id, source_patient_identifier, review_status, matched_patient_id
+                from source_patient_match_candidate
+                where tenant_id = :tenant and source_system_id = :source
+                order by candidate_id
+                """).param("tenant", tenantId).param("source", sourceSystemId)
+                .query((rs, row) -> new CandidateSnapshot(
+                        rs.getObject("candidate_id", UUID.class),
+                        rs.getString("source_patient_identifier"),
+                        rs.getString("review_status"),
+                        rs.getObject("matched_patient_id", UUID.class)))
+                .list();
+    }
+
+    private int reconciliationEvidenceCount(UUID tenantId, UUID batchId) {
+        return jdbc.sql("""
+                select count(*) from historical_migration_reconciliation_item
+                where tenant_id = :tenant and batch_id = :batch
+                """).param("tenant", tenantId).param("batch", batchId).query(Integer.class).single();
+    }
+
+    private int reconciliationMismatchCount(UUID tenantId, UUID batchId) {
+        return jdbc.sql("""
+                select count(*) from historical_migration_reconciliation_item
+                where tenant_id = :tenant and batch_id = :batch and validation_status = 'MISMATCH'
+                """).param("tenant", tenantId).param("batch", batchId).query(Integer.class).single();
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {
@@ -274,7 +383,13 @@ final class HistoricalMigrationBatchService {
                 "CONTEXT_NOT_PERMITTED", 403, "The requested historical migration context is not permitted");
     }
 
-    private record BatchHead(String status, int mismatchCount, long rowVersion) {}
+    private record BatchHead(
+            String status, int mismatchCount, long rowVersion, int recordCount, UUID sourceSystemId) {}
+
+    private record SourceSnapshot(UUID sourceSystemId) {}
+
+    private record CandidateSnapshot(
+            UUID candidateId, String sourcePatientIdentifier, String reviewStatus, UUID matchedPatientId) {}
 
     private static String sha256(String value) {
         try {

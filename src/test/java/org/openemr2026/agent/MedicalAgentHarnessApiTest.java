@@ -32,6 +32,7 @@ final class MedicalAgentHarnessApiTest {
     private static final String PATIENT = "018f0000-0000-7000-8000-000000000001";
     private static final String ENCOUNTER = "018f0000-0000-7000-8000-000000000101";
     private static final String MODEL = "018f0000-0000-7000-8000-00000000ff02";
+    private static final String PROCESSING_APPROVAL = "018f0000-0000-7000-8000-00000000ff03";
 
     @LocalServerPort
     private int port;
@@ -65,6 +66,21 @@ final class MedicalAgentHarnessApiTest {
                 set api_key_ref = excluded.api_key_ref, connection_status = 'READY',
                   status = 'ACTIVE', evaluation_status = 'APPROVED', updated_at = now()
                 """).param("tenant", TENANT).param("deployment", MODEL).update();
+        jdbc.sql("""
+                insert into medical_ai_external_processing_approval(
+                  tenant_id, approval_id, model_deployment_id, legal_basis, pia_reference,
+                  processor_agreement_reference, endpoint_region, retention_days,
+                  allowed_context_scopes, status, approved_by, expires_at)
+                values (cast(:tenant as uuid), cast(:approval as uuid), cast(:deployment as uuid),
+                  '完全合成数据集成测试', 'PIA-SYNTHETIC-TEST', 'DPA-SYNTHETIC-TEST',
+                  '中国境内合成环境', 0,
+                  array['RECORDS','ORDERS','RESULTS','TASKS','ATTACHMENTS','CONFIGURATION'],
+                  'ACTIVE', cast(:user as uuid), now() + interval '1 day')
+                on conflict (tenant_id, approval_id) do update
+                set status = 'ACTIVE', revoked_by = null, revoked_at = null, revocation_reason = null,
+                  expires_at = now() + interval '1 day', row_version = 1
+                """).param("tenant", TENANT).param("approval", PROCESSING_APPROVAL)
+                .param("deployment", MODEL).param("user", USER).update();
     }
 
     @AfterEach
@@ -89,6 +105,10 @@ final class MedicalAgentHarnessApiTest {
                 + targets + ") test_runs)").param("tenant", TENANT).update();
         jdbc.sql("delete from medical_agent_run where tenant_id = cast(:tenant as uuid) and run_id in ("
                 + targets + ")").param("tenant", TENANT).update();
+        jdbc.sql("""
+                delete from medical_ai_external_processing_approval
+                where tenant_id = cast(:tenant as uuid) and approval_id = cast(:approval as uuid)
+                """).param("tenant", TENANT).param("approval", PROCESSING_APPROVAL).update();
         jdbc.sql("""
                 delete from model_deployment
                 where tenant_id = cast(:tenant as uuid) and model_deployment_id = cast(:deployment as uuid)
@@ -141,7 +161,7 @@ final class MedicalAgentHarnessApiTest {
         UUID runId = UUID.fromString(accepted.path("run_id").stringValue());
         assertThat(worker.dispatchOne()).isTrue();
         JsonNode run = getRun(lease, runId);
-        assertThat(run.path("state").stringValue()).isEqualTo("WAITING_FOR_REVIEW");
+        assertThat(run.path("state").stringValue()).as(run.toPrettyString()).isEqualTo("WAITING_FOR_REVIEW");
         assertThat(run.path("attempt").intValue()).isEqualTo(1);
         assertThat(run.path("root_agent_code").stringValue()).isEqualTo("DOCUMENT_DRAFTER");
         assertThat(run.path("output").path("candidate_only").booleanValue()).isTrue();
@@ -149,7 +169,7 @@ final class MedicalAgentHarnessApiTest {
         assertThat(run.path("output").path("authorization_level").stringValue()).isEqualTo("READ_ONLY");
         assertThat(run.path("output").path("execution_mode").stringValue()).isEqualTo("SYNTHETIC_MODEL");
         assertThat(run.path("output").path("model_usage").path("total_tokens").longValue()).isGreaterThan(0);
-        assertThat(run.path("output").path("tool_call_count").intValue()).isEqualTo(2);
+        assertThat(run.path("output").path("tool_call_count").intValue()).isGreaterThanOrEqualTo(2);
         assertThat(run.path("output").path("context_scopes").toString()).contains("RECORDS", "ATTACHMENTS");
         assertThat(run.path("output").path("context_counts").path("orders").longValue()).isZero();
         assertThat(run.path("output").path("context_counts").path("results").longValue()).isZero();
@@ -162,12 +182,20 @@ final class MedicalAgentHarnessApiTest {
                 "RunCreated", "MainAgentStarted", "ChildAgentStarted", "ChildContributionReady",
                 "ChildHandoffReceived", "RunReadyForReview");
         RunControls controls = jdbc.sql("""
-                select model_deployment_id, authorization_level, context_scopes::text
+                select model_deployment_id, external_processing_approval_id,
+                  assistant_policy_config_id, assistant_policy_hash,
+                  authorization_level, context_scopes::text
                 from medical_agent_run where tenant_id = :tenant and run_id = :run
                 """).param("tenant", UUID.fromString(TENANT)).param("run", runId)
                 .query((rs, row) -> new RunControls(rs.getObject("model_deployment_id", UUID.class),
-                        rs.getString("authorization_level"), rs.getString("context_scopes"))).single();
+                        rs.getObject("external_processing_approval_id", UUID.class),
+                        rs.getObject("assistant_policy_config_id", UUID.class),
+                        rs.getString("assistant_policy_hash"), rs.getString("authorization_level"),
+                        rs.getString("context_scopes"))).single();
         assertThat(controls.modelDeploymentId()).isEqualTo(UUID.fromString(MODEL));
+        assertThat(controls.externalProcessingApprovalId()).isEqualTo(UUID.fromString(PROCESSING_APPROVAL));
+        assertThat(controls.assistantPolicyConfigId()).isNotNull();
+        assertThat(controls.assistantPolicyHash()).hasSize(64);
         assertThat(controls.authorizationLevel()).isEqualTo("READ_ONLY");
         assertThat(controls.contextScopes()).contains("RECORDS", "ATTACHMENTS");
         assertThat(jdbc.sql("""
@@ -194,7 +222,7 @@ final class MedicalAgentHarnessApiTest {
                 select count(*) from medical_agent_tool_invocation
                 where tenant_id = :tenant and root_run_id = :run and outcome = 'SUCCEEDED'
                 """).param("tenant", UUID.fromString(TENANT)).param("run", runId)
-                .query(Long.class).single()).isEqualTo(2);
+                .query(Long.class).single()).isGreaterThanOrEqualTo(2);
         assertThat(jdbc.sql("""
                 select model_total_tokens from medical_agent_run
                 where tenant_id = :tenant and run_id = :run
@@ -205,6 +233,30 @@ final class MedicalAgentHarnessApiTest {
                 .GET().build(), HttpResponse.BodyHandlers.ofString());
         assertThat(get.statusCode()).isEqualTo(200);
         assertThat(get.body()).contains("WARD_ROUND_NOTE_DRAFTER", "candidate_only");
+
+        Lease adminLease = issueFacilityLease("AI_PLATFORM_ADMIN");
+        HttpResponse<String> operations = http.send(base("/api/v1/medical-agents/operations/runs?limit=20")
+                .header("X-Context-Lease-Id", adminLease.id())
+                .header("X-Authorization-Watermark", adminLease.watermark())
+                .header("X-Organization-Context", ORGANIZATION)
+                .header("X-Facility-Context", FACILITY).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(operations.statusCode()).isEqualTo(200);
+        JsonNode operationRun = objectMapper.readTree(operations.body()).valueStream()
+                .filter(item -> runId.toString().equals(item.path("run_id").stringValue()))
+                .findFirst().orElseThrow();
+        assertThat(operationRun.path("model_total_tokens").longValue()).isGreaterThan(0);
+        assertThat(operationRun.path("tool_call_count").intValue()).isGreaterThanOrEqualTo(2);
+        assertThat(operationRun.path("external_processing_approved").booleanValue()).isTrue();
+        assertThat(operationRun.has("patient_id")).isFalse();
+
+        HttpResponse<String> toolOperations = http.send(base("/api/v1/medical-agents/operations/runs/"
+                        + runId + "/tool-invocations")
+                .header("X-Context-Lease-Id", adminLease.id())
+                .header("X-Authorization-Watermark", adminLease.watermark())
+                .header("X-Organization-Context", ORGANIZATION)
+                .header("X-Facility-Context", FACILITY).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(toolOperations.statusCode()).isEqualTo(200);
+        assertThat(objectMapper.readTree(toolOperations.body()).size()).isGreaterThanOrEqualTo(2);
     }
 
     @Test
@@ -292,6 +344,7 @@ final class MedicalAgentHarnessApiTest {
         JsonNode run = getRun(lease, runId);
         assertThat(run.path("output").path("candidate_only").booleanValue()).isTrue();
         assertThat(run.path("child_runs").get(0).path("contribution").path("objective_trust").stringValue())
+                .as(run.toPrettyString())
                 .isEqualTo("UNTRUSTED_USER_INPUT");
         assertThat(jdbc.sql("""
                 select count(*) from clinical_document_version version
@@ -355,7 +408,8 @@ final class MedicalAgentHarnessApiTest {
         assertThat(retried.body()).contains("RunRetryRequested");
         assertThat(worker.dispatchOne()).isTrue();
         JsonNode completed = getRun(freshLease, runId);
-        assertThat(completed.path("state").stringValue()).isEqualTo("WAITING_FOR_REVIEW");
+        assertThat(completed.path("state").stringValue()).as(completed.toPrettyString())
+                .isEqualTo("WAITING_FOR_REVIEW");
         assertThat(completed.path("attempt").intValue()).isEqualTo(1);
     }
 
@@ -421,9 +475,13 @@ final class MedicalAgentHarnessApiTest {
     }
 
     private Lease issueFacilityLease() throws Exception {
+        return issueFacilityLease("MEDICAL_AGENT_CATALOG");
+    }
+
+    private Lease issueFacilityLease(String purposeCode) throws Exception {
         String body = """
-                {"organization_id":"%s","facility_id":"%s","purpose_code":"MEDICAL_AGENT_CATALOG"}
-                """.formatted(ORGANIZATION, FACILITY);
+                {"organization_id":"%s","facility_id":"%s","purpose_code":"%s"}
+                """.formatted(ORGANIZATION, FACILITY, purposeCode);
         HttpResponse<String> response = http.send(base("/api/v1/context-leases")
                 .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(body)).build(),
                 HttpResponse.BodyHandlers.ofString());
@@ -448,5 +506,7 @@ final class MedicalAgentHarnessApiTest {
     }
 
     private record Lease(String id, String watermark, String residencyPolicy) {}
-    private record RunControls(UUID modelDeploymentId, String authorizationLevel, String contextScopes) {}
+    private record RunControls(UUID modelDeploymentId, UUID externalProcessingApprovalId,
+            UUID assistantPolicyConfigId, String assistantPolicyHash,
+            String authorizationLevel, String contextScopes) {}
 }

@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-08-30T15:03:32.809Z",
+  "run_at": "2026-08-31T01:39:02.981Z",
   "checks": [
     {
       "name": "desktop-position-and-name",
@@ -18,8 +18,8 @@
       },
       "headingBox": {
         "x": 242,
-        "y": 126.5,
-        "width": 462,
+        "y": 122,
+        "width": 574,
         "height": 29
       }
     },
@@ -36,12 +36,12 @@
     {
       "name": "route-record-sources",
       "status": "PASS",
-      "active": "来源与附件"
+      "active": "来源证据"
     },
     {
       "name": "route-record-qc",
       "status": "PASS",
-      "active": "质控与审签"
+      "active": "质控审签"
     },
     {
       "name": "route-record-versions",
@@ -62,7 +62,7 @@
       "name": "mobile-scrollable-navigation",
       "status": "PASS",
       "clientWidth": 390,
-      "scrollWidth": 651,
+      "scrollWidth": 627,
       "overflowX": "auto"
     }
   ],

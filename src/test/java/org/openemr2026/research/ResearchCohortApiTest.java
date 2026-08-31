@@ -45,7 +45,7 @@ final class ResearchCohortApiTest {
     private ResearchCohortWire define(String cohortCode) {
         return cohorts.define(identity(), "cohort-" + UUID.randomUUID(),
                 new ResearchCohortDefineRequestWire(organization, facility, cohortCode,
-                        "高血压研究队列", "年龄 18-75 岁且诊断为原发性高血压", "合并恶性肿瘤或妊娠"));
+                        "高血压研究队列", "age_gte=18;age_lte=75;diagnosis_code=I10.0", "age_lte=17"));
     }
 
     @Test

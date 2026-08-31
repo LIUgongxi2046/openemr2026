@@ -1,79 +1,39 @@
 {
-  "run_at": "2026-08-30T15:17:24.466Z",
-  "routes": 7,
+  "run_at": "2026-08-31T14:17:00.060Z",
+  "routes": 1,
   "viewports": [
     {
-      "width": 1280,
-      "height": 800,
-      "label": "1280x800"
+      "width": 1440,
+      "height": 1000,
+      "label": "1440x1000"
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "label": "390x844"
     }
   ],
-  "route_viewports": 7,
-  "verified_route_viewports": 7,
+  "route_viewports": 2,
+  "verified_route_viewports": 2,
   "findings": [],
   "observations": [
     {
-      "route": "emergency",
-      "viewport": "1280x800",
+      "route": "ai-assistant",
+      "viewport": "1440x1000",
       "issues": [],
-      "h1": "急诊工作台",
-      "routeId": "emergency",
+      "h1": "AI医助 Eva",
+      "routeId": "ai-assistant",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 422
+      "bodyTextLength": 1312
     },
     {
-      "route": "inpatient",
-      "viewport": "1280x800",
+      "route": "ai-assistant",
+      "viewport": "390x844",
       "issues": [],
-      "h1": "住院医生工作站",
-      "routeId": "inpatient",
+      "h1": "AI医助 Eva",
+      "routeId": "ai-assistant",
       "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1796
-    },
-    {
-      "route": "inpatient-overview",
-      "viewport": "1280x800",
-      "issues": [],
-      "h1": "住院患者总览",
-      "routeId": "inpatient-overview",
-      "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 1091
-    },
-    {
-      "route": "lis-report",
-      "viewport": "1280x800",
-      "issues": [],
-      "h1": "LIS 检验报告调阅",
-      "routeId": "lis-report",
-      "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 483
-    },
-    {
-      "route": "opd-results",
-      "viewport": "1280x800",
-      "issues": [],
-      "h1": "门诊检查检验与结果",
-      "routeId": "opd-results",
-      "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 450
-    },
-    {
-      "route": "outpatient",
-      "viewport": "1280x800",
-      "issues": [],
-      "h1": "门诊医生工作台",
-      "routeId": "outpatient",
-      "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 428
-    },
-    {
-      "route": "pacs-viewer",
-      "viewport": "1280x800",
-      "issues": [],
-      "h1": "PACS 影像调阅",
-      "routeId": "pacs-viewer",
-      "aiLauncherTag": "BUTTON",
-      "bodyTextLength": 2405
+      "bodyTextLength": 1058
     }
   ]
 }

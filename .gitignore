@@ -10,3 +10,6 @@ release/
 .env
 .env.*
 !.env.example
+!web/.env.acceptance
+artifacts/test-runs/*/
+output/playwright/**/*-failure.png

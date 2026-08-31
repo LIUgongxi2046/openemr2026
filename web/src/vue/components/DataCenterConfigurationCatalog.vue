@@ -130,13 +130,21 @@ async function save() {
   busy.value = 'save';
   notice.value = '';
   try {
-    if (selected.value) {
+    if (selected.value?.status === 'DRAFT') {
       await updateConfiguration(lease, selected.value.config_id, {
         display_name: form.name.trim(),
         payload: payload(),
         expected_version: selected.value.row_version,
       });
       notice.value = `${props.definition.itemLabel}草稿已更新，需重新校验后才能发布。`;
+    } else if (selected.value) {
+      await defineConfiguration(lease, {
+        config_type: props.definition.configType,
+        config_key: form.key.trim(),
+        display_name: form.name.trim(),
+        payload: payload(),
+      });
+      notice.value = `${props.definition.itemLabel}新版本草稿已创建；当前生产版本继续生效，直到新版本完成审批发布。`;
     } else {
       await defineConfiguration(lease, {
         config_type: props.definition.configType,
@@ -233,7 +241,7 @@ function formatDate(value?: string) {
             <div v-for="field in definition.fields.slice(0, 5)" :key="field.key" class="folder-row"><span>{{ field.label }}</span><strong>{{ displayValue(item, field) }}</strong></div>
             <div class="folder-row"><span>更新时间</span><strong>{{ formatDate(item.updated_at) }}</strong></div>
             <div class="catalog-actions">
-              <button class="btn sm" type="button" :disabled="item.status !== 'DRAFT' || Boolean(busy)" @click="openEdit(item)">编辑</button>
+              <button class="btn sm" type="button" :disabled="!['DRAFT', 'ACTIVE'].includes(item.status) || Boolean(busy)" @click="openEdit(item)">{{ item.status === 'ACTIVE' ? '创建新版本' : '编辑草稿' }}</button>
               <button v-if="nextAction(item)" class="btn sm primary" type="button" :disabled="Boolean(busy)" @click="lifecycle(item, nextAction(item)!)">{{ actionLabel[nextAction(item)!] }}</button>
               <button class="btn sm danger" type="button" :disabled="item.status !== 'ACTIVE' || Boolean(busy)" @click="requestArchive(item)">停用</button>
             </div>

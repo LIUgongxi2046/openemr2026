@@ -79,11 +79,11 @@ export const configurationStudios: Readonly<Record<string, ConfigurationStudioDe
   },
   'admin-parameters': {
     routeId: 'admin-parameters', configType: 'PARAMETER', title: '系统参数与功能开关', subtitle: '带数据类型、适用范围、继承关系、依赖、风险和版本的受控配置，不允许随意覆盖', keyPlaceholder: 'clinical-ai-enabled-v1', previewTitle: '参数继承', safetyNote: '密码、密钥等敏感值只能引用受保护的环境变量或配置文件，高风险参数需双人审批。',
-    fields: [field('value_type', '数据类型', 'text', 'BOOLEAN'), field('scope', '适用范围', 'text', 'FACILITY'), field('inheritance', '范围继承顺序', 'textarea', 'FACILITY -> ORGANIZATION -> GLOBAL'), field('secret_reference', '受保护配置来源', 'text', 'env://OPENEMR2026_MODEL_API_KEY'), field('effective_at', '计划生效时间', 'text', '2026-08-25T00:00:00+08:00')],
+    fields: [field('value_type', '数据类型', 'text', 'INTEGER'), field('configured_value', '实际生效值', 'text', '15'), field('scope', '适用范围', 'text', 'ORGANIZATION'), field('inheritance', '范围继承顺序', 'textarea', 'FACILITY -> ORGANIZATION -> GLOBAL'), field('secret_reference', '敏感值引用（非敏感参数填写受控占位引用）', 'text', 'env://OPENEMR2026_PARAMETER_NOT_SECRET'), field('effective_at', '计划生效时间', 'text', '2026-08-25T00:00:00+08:00')],
   },
   'admin-jobs': {
     routeId: 'admin-jobs', configType: 'JOB', title: '通知调度与批量任务', subtitle: '后台任务逐项结果、重复提交保护、取消和业务对账；部分成功不伪装成全部完成', keyPlaceholder: 'notification-reconcile-v1', previewTitle: '批次执行图', safetyNote: '成功项不重复，只重试失败项，每项保留事务事件记录。',
-    fields: [field('schedule', '执行时间', 'text', '0 */5 * * * *'), field('batch_size', '每批处理数量', 'number', '1650', '1-10000', { minimum: 1, maximum: 10000 }), field('retry_policy', '失败重试规则', 'textarea', '只重试隔离失败项；1m/5m/15m；最多 3 次'), field('reconciliation_rule', '业务对账规则', 'textarea', '成功 1642，隔离 8，总数必须为 1650'), field('notification_channels', '结果通知渠道', 'list', '站内信,短信,邮件'), field('channel_owner', '通知责任人', 'text', '信息中心运维组')],
+    fields: [field('job_kind', '任务类型', 'text', 'ADMIN_GOVERNANCE_AGENT'), field('schedule', '执行时间', 'text', '0 */5 * * * *'), field('batch_size', '每批处理数量', 'number', '100', '1-10000', { minimum: 1, maximum: 10000 }), field('retry_policy', '失败重试规则', 'textarea', '只重试失败检查项；1m/5m/15m；最多 3 次'), field('reconciliation_rule', '业务对账规则', 'textarea', '已处理项必须等于成功项与失败项之和'), field('notification_channels', '结果通知渠道', 'list', '站内信,短信,邮件'), field('channel_owner', '通知责任人', 'text', '信息中心运维组')],
   },
   backup: {
     routeId: 'backup', configType: 'BACKUP', title: '备份恢复与完整性报告', subtitle: '备份台账、checksum、恢复演练、RPO/RTO 与保留', keyPlaceholder: 'synthetic-backup-v1', previewTitle: '恢复演练', safetyNote: '仅针对合成库执行，报告必须包含版本和 checksum。',

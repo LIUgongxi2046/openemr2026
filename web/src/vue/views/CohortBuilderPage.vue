@@ -55,7 +55,6 @@ const detailIssue = computed(() => (snapshotsQuery.error.value ?? membersQuery.e
   ? toClinicalIssue(snapshotsQuery.error.value ?? membersQuery.error.value) : null);
 
 const form = reactive({ cohortCode: '', cohortName: '', inclusionCriteria: '', exclusionCriteria: '' });
-const snapshotForm = reactive({ memberCount: 0 });
 const memberForm = reactive({ patientId: clinicalContext.patientId });
 const busy = ref('');
 const notice = ref('');
@@ -123,10 +122,10 @@ async function recordSnapshot() {
   try {
     await recordResearchCohortSnapshot(lease, {
       research_cohort_id: selectedCohortId.value,
-      member_count: snapshotForm.memberCount,
+      member_count: members.value.length,
       computed_at: new Date().toISOString(),
     });
-    notice.value = '队列快照已记录，判据哈希已生成。';
+    notice.value = `队列快照已由服务端按 ${members.value.length} 名实际成员生成，判据哈希已固化。`;
     snapshotOpen.value = false;
     await snapshotsQuery.refetch();
   } catch (error) {
@@ -248,11 +247,11 @@ async function computeMember() {
       </section>
     </template>
 
-    <AdminActionDialog v-model:open="createOpen" title="新建研究队列" description="入排判据一经定义即作为可复算身份保存；如需改变判据，应停用旧队列并创建新版本。" size="large" :busy="busy === 'create'">
-      <form class="admin-form cohort-dialog-form" @submit.prevent="createCohort"><label><span>队列编码</span><input v-model="form.cohortCode" maxlength="96" required placeholder="例：COHORT-DM2-2026" /></label><label><span>队列名称</span><input v-model="form.cohortName" maxlength="256" required placeholder="例：2 型糖尿病队列" /></label><label><span>入组判据</span><textarea v-model="form.inclusionCriteria" required placeholder="例：诊断为 2 型糖尿病且年龄 ≥ 18" /></label><label><span>排除判据（可选）</span><textarea v-model="form.exclusionCriteria" placeholder="例：妊娠期糖尿病" /></label></form>
+    <AdminActionDialog v-model:open="createOpen" title="新建研究队列" description="使用可复算 key=value 判据，分号连接；支持 age_gte、age_lte、sex、diagnosis_code、encounter_since。不支持的自然语言判据会被服务端拒绝。" size="large" :busy="busy === 'create'">
+      <form class="admin-form cohort-dialog-form" @submit.prevent="createCohort"><label><span>队列编码</span><input v-model="form.cohortCode" maxlength="96" required placeholder="例：COHORT-DM2-2026" /></label><label><span>队列名称</span><input v-model="form.cohortName" maxlength="256" required placeholder="例：2 型糖尿病队列" /></label><label><span>入组判据</span><textarea v-model="form.inclusionCriteria" required placeholder="age_gte=18;diagnosis_code=E11.9" /></label><label><span>排除判据（可选）</span><textarea v-model="form.exclusionCriteria" placeholder="age_lte=17" /></label></form>
       <template #footer="{ close }"><button class="button secondary" :disabled="busy === 'create'" @click="close">取消</button><button class="button primary" :disabled="busy === 'create'" @click="createCohort">{{ busy === 'create' ? '正在定义…' : '定义并生效' }}</button></template>
     </AdminActionDialog>
-    <AdminActionDialog v-model:open="snapshotOpen" :title="`记录队列快照 · ${selectedCohort?.cohort_code ?? ''}`" description="快照固化成员数、计算时间和判据哈希，创建后不可覆盖或删除。" :busy="busy === 'snapshot'"><form class="admin-form" @submit.prevent="recordSnapshot"><label><span>成员数</span><input v-model.number="snapshotForm.memberCount" type="number" min="0" step="1" required /></label></form><template #footer="{ close }"><button class="button secondary" :disabled="busy === 'snapshot'" @click="close">取消</button><button class="button primary" :disabled="busy === 'snapshot'" @click="recordSnapshot">记录快照</button></template></AdminActionDialog>
+    <AdminActionDialog v-model:open="snapshotOpen" :title="`记录队列快照 · ${selectedCohort?.cohort_code ?? ''}`" description="成员数由服务端查询不可变队列成员得出，前端不能手填；快照同时固化判据哈希。" :busy="busy === 'snapshot'"><div class="notice info"><div class="notice-title">当前实际成员 {{ members.length }} 名</div>确认后服务端会再次校验数量，发现并发变化将阻断快照。</div><template #footer="{ close }"><button class="button secondary" :disabled="busy === 'snapshot'" @click="close">取消</button><button class="button primary" :disabled="busy === 'snapshot'" @click="recordSnapshot">生成快照</button></template></AdminActionDialog>
     <AdminActionDialog v-model:open="memberOpen" :title="`计算队列成员 · ${selectedCohort?.cohort_code ?? ''}`" description="服务端会重新执行入排判据；只有活动患者且满足条件时才会加入队列。" :busy="busy === 'member'"><form class="admin-form" @submit.prevent="computeMember"><label><span>患者 ID</span><input v-model="memberForm.patientId" maxlength="36" required placeholder="UUID" /></label></form><template #footer="{ close }"><button class="button secondary" :disabled="busy === 'member'" @click="close">取消</button><button class="button primary" :disabled="busy === 'member'" @click="computeMember">计算并加入</button></template></AdminActionDialog>
     <AdminConfirmDialog v-model:open="deactivateOpen" :title="`停用队列 ${pendingDeactivate?.cohort_code ?? ''}`" description="停用后不能生成新快照、计算新成员或发起新的数据交付；既有成员、快照和研究证据保持只读。" confirm-label="确认停用" :busy="Boolean(busy)" @confirm="deactivatePending" />
   </section>

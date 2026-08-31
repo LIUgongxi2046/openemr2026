@@ -7,7 +7,7 @@ import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWi
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 import { medicalAgentRunStateLabel, presentMedicalAgentEvents, presentMedicalAgentResult } from '../medical-agent-run-presenter';
-import { evaDefaultPatientContexts, useEvaClinicalContext } from '../use-eva-clinical-context';
+import { evaDefaultPatientContexts, hasEvaPatientContext, useEvaClinicalContext, type EvaPatientContext } from '../use-eva-clinical-context';
 import EvaComposerControls from './EvaComposerControls.vue';
 import EvaPatientPicker from './EvaPatientPicker.vue';
 import XiaonanAgentTeamRail from './XiaonanAgentTeamRail.vue';
@@ -19,8 +19,14 @@ interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; ev
 
 const props = defineProps<{ open: boolean; mode: 'center' | 'side'; routeId: string; contextLabel: string; patientId: string | null; encounterId: string | null; taskId: string | null }>();
 const emit = defineEmits<{ close: []; 'mode-change': [mode: 'center' | 'side'] }>();
-const initialContext = evaDefaultPatientContexts.find((item) => item.patientId === props.patientId && item.encounterId === props.encounterId) ?? evaDefaultPatientContexts[0];
+const routePatientContext: EvaPatientContext = {
+  patientId: props.patientId ?? '', encounterId: props.encounterId ?? '', patientName: '当前患者',
+  patientSummary: props.contextLabel, label: '当前就诊', scene: '诊疗',
+};
+const initialContext = evaDefaultPatientContexts.find((item) => item.patientId === props.patientId && item.encounterId === props.encounterId)
+  ?? (hasEvaPatientContext(routePatientContext) ? routePatientContext : evaDefaultPatientContexts[0]);
 const patient = useEvaClinicalContext(initialContext);
+const hasPatientContext = computed(() => hasEvaPatientContext(patient.current.value));
 const rootElement = ref<HTMLDialogElement | HTMLElement | null>(null);
 const messages = ref<ChatMessage[]>([]);
 const draft = ref('');
@@ -36,7 +42,7 @@ const teamCollapsed = ref(false);
 const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelLeaseQuery = useQuery({ queryKey: ['global-eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelsQuery = useQuery({ queryKey: ['global-eva', 'models'], queryFn: () => listModelDeployments(modelLeaseQuery.data.value!), enabled: computed(() => props.open && Boolean(modelLeaseQuery.data.value)), retry: false, staleTime: 60_000 });
-const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: computed(() => props.open && hasPatientContext.value), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 
 const agents = computed(() => agentQuery.data.value ?? []);
 const availableModels = computed(() => (modelsQuery.data.value ?? []).filter((model) => model.status === 'ACTIVE' && model.evaluation_status === 'APPROVED' && model.connection_status === 'READY'));
@@ -133,7 +139,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
               <div v-else-if="messages.length === 0" class="eva-popup-empty illustrated"><img src="/brand/ai-medical-assistant-eva-workbench.png" alt="Eva 医疗任务工作台" /><strong>交给 Eva 一项完整任务</strong><p>任务规划、诊疗信息、模型、工具和医助处理过程都会在对话里呈现。</p></div>
               <article v-for="message in messages" :key="message.id" class="eva-popup-message" :class="message.role"><header><b>{{ message.role === 'user' ? '医生' : 'Eva' }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `…${message.runId.slice(-8)}` : '执行中' }}</span></header><ol v-if="message.events?.length"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span></li></ol><p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'">Eva 正在继续处理…</p><footer v-if="message.role === 'assistant' && message.runId" class="eva-popup-message-actions"><span>{{ message.runState ? medicalAgentRunStateLabel(message.runState) : '' }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重试</button></footer></article>
             </section>
-            <form class="eva-popup-composer" @submit.prevent="send"><p v-if="notice" role="status" class="inline-notice">{{ notice }}</p><textarea v-model="draft" :disabled="busy" rows="4" placeholder="描述需要完成的诊疗任务……" @keydown.enter.exact.prevent="send" /><footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" compact /><div><button class="btn" type="button" @click="newTask">新任务</button><RouterLink class="btn" to="/ai-assistant" @click="requestClose">完整工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId">{{ busy ? '执行中…' : '发送' }}</button></div></footer></form>
+            <form class="eva-popup-composer" @submit.prevent="send"><p v-if="notice" role="status" class="inline-notice">{{ notice }}</p><textarea v-model="draft" :disabled="busy" rows="4" aria-label="向 Eva 描述诊疗任务" placeholder="描述需要完成的诊疗任务……" @keydown.enter.exact.prevent="send" /><footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" compact /><div><button class="btn" type="button" @click="newTask">新任务</button><RouterLink class="btn" to="/ai-assistant" @click="requestClose">完整工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId || !runLeaseQuery.data.value">{{ busy ? '执行中…' : '发送' }}</button></div></footer></form>
           </main>
           <EvaPatientPicker :current="patient.current.value" :defaults="evaDefaultPatientContexts" :results="patient.results.value" :encounters="patient.encounters.value" :selected-patient-id="patient.selectedPatient.value?.patient_id ?? ''" :searching="patient.searching.value" :loading-encounters="patient.loadingEncounters.value" :notice="patient.notice.value" compact @search="patient.search" @select-default="selectDefault" @select-patient="selectSearchPatient" @select-encounter="selectEncounter" />
         </section>

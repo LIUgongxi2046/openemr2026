@@ -81,11 +81,16 @@ final class ClinicalTaskNotificationApiTest {
     }
 
     private ClinicalTaskNotificationWire createScheduled(Context context, Instant scheduledAt) {
+        return createScheduled(context, scheduledAt, ClinicalTaskNotificationCreateRequestWire.ChannelValue.IN_APP);
+    }
+
+    private ClinicalTaskNotificationWire createScheduled(
+            Context context, Instant scheduledAt, ClinicalTaskNotificationCreateRequestWire.ChannelValue channel) {
         return notifications.create(identity(), "notify-" + UUID.randomUUID(),
                 new ClinicalTaskNotificationCreateRequestWire(organization, facility, context.patientId(),
                         context.encounterId(), context.taskId(), UUID.fromString(USER),
                         ClinicalTaskNotificationCreateRequestWire.KindValue.CREATED,
-                        ClinicalTaskNotificationCreateRequestWire.ChannelValue.IN_APP, scheduledAt));
+                        channel, scheduledAt));
     }
 
     private ClinicalTaskNotificationDispatchResultWire dispatchDue(Instant scheduledBefore, Integer batchSize) {
@@ -131,6 +136,12 @@ final class ClinicalTaskNotificationApiTest {
         ClinicalTaskNotificationWire delivered = deliver(context, created.notificationId(), 1L);
         assertThat(delivered.status()).isEqualTo(ClinicalTaskNotificationWire.StatusValue.DELIVERED);
         assertThat(delivered.deliveredAt()).isNotNull();
+        assertThat(jdbc.sql("""
+                select count(*) from clinical_task_in_app_delivery
+                where tenant_id = cast(:tenant as uuid) and notification_id = :notification
+                  and recipient_user_id = cast(:recipient as uuid)
+                """).param("tenant", TENANT).param("notification", created.notificationId())
+                .param("recipient", USER).query(Long.class).single()).isEqualTo(1);
     }
 
     @Test
@@ -195,6 +206,29 @@ final class ClinicalTaskNotificationApiTest {
                         identity(), context.patientId(), context.encounterId(), facility, context.taskId())
                 .stream().filter(n -> n.notificationId().equals(created.notificationId())).findFirst().orElseThrow();
         assertThat(dispatched.status()).isEqualTo(ClinicalTaskNotificationWire.StatusValue.DELIVERED);
+        assertThat(jdbc.sql("""
+                select count(*) from clinical_task_in_app_delivery
+                where tenant_id = cast(:tenant as uuid) and notification_id = :notification
+                """).param("tenant", TENANT).param("notification", created.notificationId())
+                .query(Long.class).single()).isEqualTo(1);
+    }
+
+    @Test
+    void givenExternalOutboxNotification_whenDispatching_thenRemainsPendingForHospitalAdapter() {
+        Context context = seedContext();
+        ClinicalTaskNotificationWire created = createScheduled(
+                context, null, ClinicalTaskNotificationCreateRequestWire.ChannelValue.OUTBOX);
+
+        ClinicalTaskNotificationDispatchResultWire result = dispatchDue(Instant.now().plusSeconds(60), 1000);
+        assertThat(result.notificationIds()).doesNotContain(created.notificationId());
+        assertThat(notifications.list(identity(), context.patientId(), context.encounterId(), facility, context.taskId())
+                .stream().filter(item -> item.notificationId().equals(created.notificationId()))
+                .findFirst().orElseThrow().status())
+                .isEqualTo(ClinicalTaskNotificationWire.StatusValue.PENDING);
+        assertThatThrownBy(() -> deliver(context, created.notificationId(), created.rowVersion()))
+                .isInstanceOf(ClinicalTaskNotificationException.class)
+                .satisfies(e -> assertThat(((ClinicalTaskNotificationException) e).code())
+                        .isEqualTo("TASK_NOTIFICATION_EXTERNAL_ADAPTER_REQUIRED"));
     }
 
     @Test

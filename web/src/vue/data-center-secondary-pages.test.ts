@@ -33,16 +33,24 @@ describe('数据中心六个二级页面契约', () => {
     ]) expect(source).toContain(action);
     expect(source).toContain("['源盘点', '字段映射', '患者匹配', '试迁', '对账', '切换', '观察', '归档']");
     expect(source).toContain('exportReconciliationReport');
+    expect(source).toContain('服务端暂存记录');
+    expect(source).toContain('record_count: candidates.value.length');
+    expect(source).not.toContain('batchForm.recordCount');
     expect(source.match(/<AdminActionDialog/g)?.length).toBeGreaterThanOrEqual(4);
     expect(source).toContain('<AdminConfirmDialog');
   });
 
-  it('数据质量覆盖问题队列、整改流、规则评估和停用确认', () => {
+  it('数据质量覆盖事实扫描、问题工单、人工复核和 Agent 候选建议', () => {
     const source = views['./views/DataQualityPage.vue'];
     expect(source).toContain('质量问题工作队列');
     expect(source).toContain('发现</li><li>分派</li><li>整改</li><li>复核</li><li>关闭');
     expect(source).toContain('registerDataQualityRule');
-    expect(source).toContain('recordDataQualityEvaluation');
+    expect(source).toContain('startDataQualityScan');
+    expect(source).toContain('listDataQualityFindings');
+    expect(source).toContain('transitionDataQualityFinding');
+    expect(source).toContain('createDataQualityTriageAdvice');
+    expect(source).toContain('仅建议，无自动写入权');
+    expect(source).not.toContain('recordDataQualityEvaluation');
     expect(source).toContain('deactivateDataQualityRule');
     expect(source).toContain('<AdminActionDialog');
     expect(source).toContain('<AdminConfirmDialog');
@@ -57,7 +65,13 @@ describe('数据中心六个二级页面契约', () => {
     expect(catalog).toContain('<AdminActionDialog');
     expect(catalog).toContain('<AdminConfirmDialog');
     expect(views['./views/DevicesPage.vue']).toContain("configType: 'DEVICE_CATALOG'");
+    expect(views['./views/DeviceMonitoringPage.vue']).toContain('ProductionExecutionWorkbenchPage');
+    expect(components['./components/ProductionExecutionWorkbenchPage.vue']).toContain('人工确认门禁');
     expect(views['./views/ResearchPage.vue']).toContain("configType: 'RESEARCH_PROJECT'");
+    const cohort = views['./views/CohortBuilderPage.vue'];
+    expect(cohort).toContain('age_gte=18;diagnosis_code=E11.9');
+    expect(cohort).toContain('member_count: members.value.length');
+    expect(cohort).not.toContain('snapshotForm.memberCount');
     const stats = views['./views/ResearchStatsPage.vue'];
     expect(stats).toContain("item.dimension?.group === 'AGE_DISTRIBUTION'");
     expect(stats).toContain("item.dimension?.group === 'TREND'");

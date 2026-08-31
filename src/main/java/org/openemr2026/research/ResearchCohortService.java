@@ -18,10 +18,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 final class ResearchCohortService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ResearchCohortCriteriaEvaluator criteriaEvaluator;
 
-    ResearchCohortService(JdbcClient jdbc, TransactionTemplate transactions) {
+    ResearchCohortService(
+            JdbcClient jdbc, TransactionTemplate transactions, ResearchCohortCriteriaEvaluator criteriaEvaluator) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.criteriaEvaluator = criteriaEvaluator;
     }
 
     ResearchCohortWire define(
@@ -30,6 +33,13 @@ final class ResearchCohortService {
         String cohortName = requireText(request.cohortName(), 2, "cohort_name");
         String inclusion = requireText(request.inclusionCriteria(), 2, "inclusion_criteria");
         String exclusion = blankToNull(request.exclusionCriteria());
+        try {
+            criteriaEvaluator.validate(inclusion);
+            if (exclusion != null) criteriaEvaluator.validate(exclusion);
+        } catch (ResearchCohortCriteriaEvaluator.ResearchCriteriaException invalidCriteria) {
+            throw new ResearchCohortException("RESEARCH_COHORT_CRITERIA_UNSUPPORTED", 422,
+                    invalidCriteria.getMessage());
+        }
         return transactions.execute(status -> {
             beginCommand(identity, "RESEARCH_COHORT_DEFINE", idempotencyKey,
                     sha256(cohortCode + "|" + inclusion));

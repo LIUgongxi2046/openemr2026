@@ -1,6 +1,7 @@
 {
-  "run_at": "2026-08-25T15:53:10.646Z",
-  "passed": 8,
+  "run_at": "2026-08-31T07:59:11.564Z",
+  "mode": "CRUD",
+  "passed": 9,
   "failed": 0,
   "checks": [
     {
@@ -16,7 +17,7 @@
     {
       "name": "database-backed-administration-fixtures",
       "status": "PASS",
-      "detail": "admin-org=15, admin-users=5, admin-roles=5, admin-permissions=5, admin-dictionaries=3, admin-master-data=5, admin-templates=10, admin-parameters=14, admin-jobs=5, admin-audit=17, admin-auth=9策略/1事件"
+      "detail": "admin-org=15, admin-users=15, admin-roles=29, admin-permissions=19, admin-dictionaries=15, admin-master-data=15, admin-templates=10, admin-parameters=5, admin-jobs=4, admin-audit=20, admin-auth=9策略/20事件"
     },
     {
       "name": "organization-create-and-deactivate",
@@ -37,6 +38,11 @@
       "name": "authentication-simulation-and-role-scan",
       "status": "PASS",
       "detail": "认证模拟适配器可执行，职责冲突扫描有明确结果"
+    },
+    {
+      "name": "workforce-seven-level-drilldown",
+      "status": "PASS",
+      "detail": "人员清单→人员档案→角色任期→审计证据路由可从真实数据下钻"
     },
     {
       "name": "mobile-admin-domain-layout",

@@ -3,8 +3,10 @@ package org.openemr2026.tasks;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
+import org.openemr2026.contracts.ClinicalTaskCollaboratorWire;
 import org.openemr2026.contracts.ClinicalTaskCollaborationRequestWire;
 import org.openemr2026.contracts.ClinicalTaskCommandRequestWire;
+import org.openemr2026.contracts.ClinicalTaskDetailWire;
 import org.openemr2026.contracts.ClinicalTaskExpirationResultWire;
 import org.openemr2026.contracts.ClinicalTaskWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
@@ -44,6 +46,33 @@ final class ClinicalTaskController {
                 request, organizationId, facilityId, patientId, encounterId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(tasks.list(identity, patientId, encounterId, facilityId));
+    }
+
+    @GetMapping("/clinical-tasks/collaborators")
+    ResponseEntity<List<ClinicalTaskCollaboratorWire>> collaborators(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId,
+            @RequestHeader("X-Encounter-Context") UUID encounterId) {
+        ClinicalIdentity identity = security.authorize(
+                request, organizationId, facilityId, patientId, encounterId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(tasks.eligibleCollaborators(identity, facilityId));
+    }
+
+    @GetMapping("/clinical-tasks/{taskId}")
+    ResponseEntity<ClinicalTaskDetailWire> detail(
+            HttpServletRequest request,
+            @PathVariable UUID taskId,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId,
+            @RequestHeader("X-Encounter-Context") UUID encounterId) {
+        ClinicalIdentity identity = security.authorize(
+                request, organizationId, facilityId, patientId, encounterId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(tasks.detail(identity, taskId, patientId, encounterId, facilityId));
     }
 
     @PostMapping("/clinical-tasks/{taskId}/views")

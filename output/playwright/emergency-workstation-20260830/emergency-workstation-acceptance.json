@@ -1,10 +1,10 @@
 {
-  "run_at": "2026-08-30T09:07:23.081Z",
-  "base_url": "http://127.0.0.1:4180",
+  "run_at": "2026-08-31T01:40:45.050Z",
+  "base_url": "http://127.0.0.1:4177",
   "prototype_url": "http://127.0.0.1:4180",
   "mutation_test": true,
-  "passed": 6,
-  "failed": 0,
+  "passed": 5,
+  "failed": 1,
   "checks": [
     {
       "name": "desktop-six-routes-live-data-and-layout",
@@ -47,11 +47,6 @@
       "name": "mobile-six-routes-and-dialog-layout",
       "status": "PASS",
       "detail": "6/6 路由在 390px 无页面溢出，业务弹窗不越界"
-    },
-    {
-      "name": "prototype-reference-captured",
-      "status": "PASS",
-      "detail": "已保存 4180 原型急诊工作台对照证据"
     }
   ],
   "api_response_count": 48,
@@ -59,5 +54,7 @@
     200,
     201
   ],
-  "failures": []
+  "failures": [
+    "prototype-reference-captured: page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:4180/#emergency\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:4180/#emergency\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  ]
 }

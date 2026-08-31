@@ -114,6 +114,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
         upsertInpatientFixture();
         upsertTertiaryInpatientWorkspaceFixtures();
         upsertDiseaseCases(diseaseCases.cases());
+        upsertTertiaryExecutionCenterFixtures();
         refreshPlaceholderPatientProfiles();
         upsertTertiaryDataCenterFixtures();
         upsertTertiaryDataCenterDataset(dataCenter);
@@ -562,7 +563,12 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f902', 'eval-admission-risk-v1', '入院风险摘要评测', 'ENCOUNTER_SUMMARIZER', '核验过敏、跌倒、VTE、压疮和营养风险事实覆盖。', 'tertiary-admission-risk-v1', 180, 0.9600::numeric, 0.9760::numeric),
                   ('018f0000-0000-7000-8000-00000000f903', 'eval-surgical-document-v1', '围手术期文书起草评测', 'DOCUMENT_DRAFTER', '覆盖术前讨论、手术记录、麻醉记录与术后计划。', 'tertiary-surgery-document-v1', 200, 0.9700::numeric, 0.9790::numeric),
                   ('018f0000-0000-7000-8000-00000000f904', 'eval-discharge-plan-v1', '出院计划与患者指导评测', 'DOCUMENT_DRAFTER', '核验出院用药、复诊、红旗症状和患者可理解性。', 'tertiary-discharge-plan-v1', 190, 0.9600::numeric, 0.9740::numeric),
-                  ('018f0000-0000-7000-8000-00000000f905', 'eval-drg-completeness-v1', 'DRG 病案完整性评测', 'RECORD_QC', '核验主要诊断、主要手术、并发症与时间逻辑缺项。', 'tertiary-drg-qc-v1', 260, 0.9600::numeric, 0.9730::numeric)
+                  ('018f0000-0000-7000-8000-00000000f905', 'eval-drg-completeness-v1', 'DRG 病案完整性评测', 'RECORD_QC', '核验主要诊断、主要手术、并发症与时间逻辑缺项。', 'tertiary-drg-qc-v1', 260, 0.9600::numeric, 0.9730::numeric),
+                  ('018f0000-0000-7000-8000-00000000f906', 'eval-antibiotic-review-v1', '抗菌药物管理审阅评测', 'RECORD_QC', '核验适应证、微生物证据、肾功能与特殊级使用条件。', 'tertiary-ams-review-v1', 210, 0.9700::numeric, 0.9810::numeric),
+                  ('018f0000-0000-7000-8000-00000000f907', 'eval-critical-result-v1', '危急值与重要结果闭环评测', 'RESULT_FOLLOWUP_COORDINATOR', '覆盖检验、影像、病理与心电重要结果通知。', 'tertiary-critical-result-v1', 240, 0.9850::numeric, 0.9900::numeric),
+                  ('018f0000-0000-7000-8000-00000000f908', 'eval-pathology-followup-v1', '病理结果随访闭环评测', 'RESULT_FOLLOWUP_COORDINATOR', '核验未回结果跟踪、责任人、截止时间与患者触达。', 'tertiary-pathology-followup-v1', 170, 0.9700::numeric, 0.9780::numeric),
+                  ('018f0000-0000-7000-8000-00000000f909', 'eval-mdt-preparation-v1', 'MDT 病例准备与任务协同评测', 'CARE_COORDINATOR', '覆盖肿瘤、疑难、器官移植与多学科病例资料准备。', 'tertiary-mdt-golden-v1', 160, 0.9600::numeric, 0.9720::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90a', 'eval-medication-reconciliation-v1', '跨场景用药重整评测', 'CARE_COORDINATOR', '核验门诊、急诊、住院和出院用药的差异及待确认项。', 'tertiary-medication-reconciliation-v1', 230, 0.9700::numeric, 0.9830::numeric)
                 ) as seed(config_id, config_key, display_name, target_agent, description,
                   dataset_version, case_count, pass_threshold, measured_score)
                 on conflict (tenant_id, config_id) do update
@@ -1306,12 +1312,16 @@ final class SyntheticDataImporter implements ApplicationRunner {
                       cast(:payload as jsonb), 'ACTIVE', 1, 2, 'VALID', '[]'::jsonb,
                       'APPROVED', :approver, now() - interval '7 days', :author)
                     on conflict (tenant_id, config_id) do update set
+                      config_type = excluded.config_type, config_key = excluded.config_key,
                       display_name = excluded.display_name, payload = excluded.payload,
-                      status = 'ACTIVE', validation_state = 'VALID', validation_errors = '[]'::jsonb,
+                      status = 'ACTIVE', schema_version = 2,
+                      validation_state = 'VALID', validation_errors = '[]'::jsonb,
                       approval_state = 'APPROVED', approved_by = excluded.approved_by,
                       published_at = coalesce(config_item.published_at, excluded.published_at),
                       updated_at = now(), row_version = config_item.row_version + 1
-                    where config_item.display_name is distinct from excluded.display_name
+                    where config_item.config_type is distinct from excluded.config_type
+                       or config_item.config_key is distinct from excluded.config_key
+                       or config_item.display_name is distinct from excluded.display_name
                        or config_item.payload is distinct from excluded.payload
                        or config_item.status <> 'ACTIVE'
                     """).param("tenant", TENANT_ID).param("config", seed.compositionId())
@@ -1486,9 +1496,6 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   '[]'::jsonb, 'APPROVED', :approver, now() - interval '10 days', :author
                 from (values
                   ('018f0000-0000-7000-8000-00000000f801','admin-auth-tertiary','全院 OIDC 与 MFA 认证基线','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"admin-auth","interface_code":"IDP_AUTHENTICATE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"临床、护理、医技和管理人员统一认证与高风险操作再认证","default_entity":"018f0000-0000-7000-8000-00000000aa04","default_scenario":"SUCCESS","owner_department":"信息中心身份安全组","operating_window":"7×24 小时；变更窗口周三 22:00–23:30","timeout_ms":3000,"retry_limit":1,"manual_fallback":"保留本地应急账号，高风险操作继续阻断并记录审计","documentation_version":"v1.0 / 2026-08-28"}'),
-                  ('018f0000-0000-7000-8000-00000000f802','ai-capture-tertiary','门诊语音转写与医生逐句确认','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"ai-capture","interface_code":"DICTATION_ASR","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"门诊音频引用、说话人分段、置信度与医生确认闭环","default_entity":"synthetic://dictation/opd-001","default_scenario":"SUCCESS","owner_department":"医务处门诊管理组","operating_window":"门诊时段 07:30–18:00","timeout_ms":8000,"retry_limit":2,"manual_fallback":"转人工录入，未确认句永不进入病历","documentation_version":"v1.0 / 2026-08-28"}'),
-                  ('018f0000-0000-7000-8000-00000000f803','model-connection-tertiary','临床模型 Provider 数据边界','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"model-connection","interface_code":"MODEL_PROVIDER","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"医疗模型兼容接口、引用证据、数据驻留与超时边界","default_entity":"MedBase-L-2.1","default_scenario":"SUCCESS","owner_department":"AI 治理委员会","operating_window":"7×24 小时；发布窗口周二 21:00–22:00","timeout_ms":12000,"retry_limit":1,"manual_fallback":"转人工复核，无引用结果默认不可采纳","documentation_version":"v1.0 / 2026-08-28"}'),
-                  ('018f0000-0000-7000-8000-00000000f804','model-routing-tertiary','临床摘要主备模型路由','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"model-routing","interface_code":"MODEL_PROVIDER","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"按数据等级选择主备模型，降级或不可用时转人工","default_entity":"clinical-summary-primary","default_scenario":"SUCCESS","owner_department":"AI 平台运行组","operating_window":"7×24 小时","timeout_ms":10000,"retry_limit":1,"manual_fallback":"主备均不可用时停止生成并转人工摘要","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f805','devices-tertiary','全院医疗设备可信绑定基线','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"devices","interface_code":"DEVICE_GATEWAY","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"设备身份、患者双标识绑定、校准与时钟偏移基线","default_entity":"BEDSIDE-MONITOR-01","default_scenario":"SUCCESS","owner_department":"医学工程处","operating_window":"7×24 小时","timeout_ms":3000,"retry_limit":3,"manual_fallback":"绑定失败停止入患者视图并联系设备值班","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f806','device-monitoring-tertiary','ICU 与病区设备遥测告警','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"device-monitoring","interface_code":"DEVICE_GATEWAY","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"床旁遥测趋势、质量标记、阈值告警与责任人确认","default_entity":"BEDSIDE-MONITOR-01","default_scenario":"SUCCESS","owner_department":"信息中心 IoMT 运维组","operating_window":"7×24 小时","timeout_ms":2000,"retry_limit":3,"manual_fallback":"缺测显示不可用，高级别告警转人工广播","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f807','integration-connectors-tertiary','LIS/PACS/HIS/CA 集成连接器','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"integration-connectors","interface_code":"LIS_RESULTS","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"全院 LIS、PACS、HIS 与 CA 标准契约、连通性和熔断基线","default_entity":"018f0000-0000-7000-8000-000000000101","default_scenario":"SUCCESS","owner_department":"信息中心集成平台组","operating_window":"7×24 小时","timeout_ms":5000,"retry_limit":3,"manual_fallback":"失败不伪装空数据，临床页显示来源降级并转工单","documentation_version":"v1.0 / 2026-08-28"}'),
@@ -1516,7 +1523,7 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
                   and status <> 'ARCHIVED'
                   and (coalesce(payload->>'workbench_id', '') not in (
-                    'admin-auth','ai-capture','model-connection','model-routing','devices','device-monitoring',
+                    'admin-auth','devices','device-monitoring',
                     'integration-connectors','integration-messages','archive-scan','archive-preservation',
                     'pathology-workbench','anesthesia-workbench','therapy-workbench')
                     or coalesce(payload->>'interface_code', '') = ''
@@ -3583,6 +3590,98 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 admittedAt.plusHours(48));
         upsertInpatientTask("018f0000-0000-7000-8000-00000000bb08", "EMR.FOUR_LEVEL_REVIEW",
                 admittedAt.plusHours(72));
+    }
+
+    /**
+     * Seeds real persisted execution-center cases for the four workbenches that previously only
+     * had browser simulation state. Every fixture is de-identified, uses two patient identifiers,
+     * carries China tertiary-hospital execution evidence, and has an immutable event timeline.
+     */
+    private void upsertTertiaryExecutionCenterFixtures() {
+        UUID therapyPatientId = UUID.fromString("58aa778c-4af6-353c-b181-20211ce18efb");
+        UUID therapyEncounterId = UUID.fromString("e9824311-08f1-33ee-bcf5-9015ad2e2d73");
+        UUID anesthesiaPatientId = UUID.fromString("fa1fc427-250b-3b6f-a651-b963916e8f52");
+        UUID anesthesiaEncounterId = UUID.fromString("44eab79d-9059-3eb4-b05c-3831587ece7b");
+        UUID devicePatientId = UUID.fromString("70597718-f934-3fbc-a3cf-e07691a8c54d");
+        UUID deviceEncounterId = UUID.fromString("a5953854-b7e0-338a-ae24-c40fd3a76260");
+        UUID outpatientPatientId = UUID.fromString("018f0000-0000-7000-8000-000000000001");
+        UUID outpatientEncounterId = UUID.fromString("018f0000-0000-7000-8000-000000000101");
+        jdbc.sql("""
+                insert into specialty_execution_case(
+                  tenant_id, specialty_execution_case_id, business_number, domain,
+                  patient_id, encounter_id, facility_id, title, priority, status,
+                  planned_at, payload, created_by, last_actor_user_id, row_version)
+                select :tenant, seed.case_id::uuid, seed.business_number, seed.domain,
+                  seed.patient_id::uuid, seed.encounter_id::uuid, :facility,
+                  seed.title, seed.priority, seed.status, seed.planned_at,
+                  seed.payload::jsonb, :actor, :actor, seed.row_version
+                from (values
+                  ('018f0000-0000-7000-8000-00000000f901', 'BL-SYN-20260831-001', 'PATHOLOGY',
+                   :outpatient_patient::text, :outpatient_encounter::text,
+                   '左肺上叶切除标本常规病理', 'URGENT', 'READY',
+                   now() + interval '40 minute',
+                   '{"patient_identifier_one":"MZ202608310001","patient_identifier_two":"1978-04-16","patient_verification_method":"门诊号+出生日期","accession_number":"BL202608310001","specimen_type":"手术切除标本","specimen_site":"左肺上叶","fixative":"10%中性福尔马林，固定12小时","grossing_record":"已核对标本袋、申请单与病理号","block_slide_evidence":"A1-A4 / HE-01~04"}', 2::bigint),
+                  ('018f0000-0000-7000-8000-00000000f902', 'ZL-SYN-20260831-001', 'THERAPY',
+                   :therapy_patient::text, :therapy_encounter::text,
+                   '心力衰竭住院康复与呼吸训练', 'ROUTINE', 'READY',
+                   now() + interval '2 hour',
+                   '{"patient_identifier_one":"ZY202608250040","patient_identifier_two":"WB-CV-40","patient_verification_method":"住院号+腕带扫码","therapy_code":"REHAB-CARDIO-PHASE-I","course_number":"1","session_number":"3","verification_method":"治疗师与护士双人核对","treatment_parameters":"床旁主动运动15分钟，呼吸训练10分钟，连续监测SpO2与心率","adverse_event_plan":"胸痛、SpO2<90%或心率增幅>20%立即中止并上报"}', 2::bigint),
+                  ('018f0000-0000-7000-8000-00000000f903', 'MZ-SYN-20260831-001', 'ANESTHESIA',
+                   :anesthesia_patient::text, :anesthesia_encounter::text,
+                   '全麻术前评估与PACU准入', 'URGENT', 'READY',
+                   now() + interval '3 hour',
+                   '{"patient_identifier_one":"ZY202608250038","patient_identifier_two":"WB-CV-38","patient_verification_method":"住院号+腕带扫码","surgical_procedure_id":"SS-SYN-20260831-008","asa_class":"ASA III","anesthesia_method":"全身麻醉","fasting_confirmed":true,"consent_confirmed":true,"airway_plan":"Mallampati II级，备可视嗉镜","pacu_disposition":"Aldrete评分达9分后返心内科监护病房"}', 2::bigint),
+                  ('018f0000-0000-7000-8000-00000000f904', 'SB-SYN-20260831-001', 'DEVICE_MONITORING',
+                   :device_patient::text, :device_encounter::text,
+                   '心内科43床旁监护仪患者绑定', 'URGENT', 'IN_PROGRESS',
+                   now() - interval '20 minute',
+                   '{"patient_identifier_one":"ZY202608250043","patient_identifier_two":"WB-CV-43","patient_verification_method":"住院号+腕带扫码","device_id":"CCU-MON-43","device_type":"床旁监护仪","binding_verified":true,"clock_offset_seconds":2,"alarm_policy":"CCU-ADULT-v3.2","monitoring_parameters":"HR/SpO2/NIBP，1秒采样，5分钟归档","alarm_escalation":"高优先级告警30秒未确认自动升级到值班医生"}', 3::bigint)
+                ) as seed(case_id, business_number, domain, patient_id, encounter_id,
+                  title, priority, status, planned_at, payload, row_version)
+                on conflict (tenant_id, specialty_execution_case_id) do update
+                set business_number = excluded.business_number,
+                    domain = excluded.domain,
+                    patient_id = excluded.patient_id,
+                    encounter_id = excluded.encounter_id,
+                    facility_id = excluded.facility_id,
+                    title = excluded.title,
+                    priority = excluded.priority,
+                    status = excluded.status,
+                    planned_at = excluded.planned_at,
+                    payload = excluded.payload,
+                    last_actor_user_id = excluded.last_actor_user_id,
+                    row_version = excluded.row_version,
+                    updated_at = now()
+                """).param("tenant", TENANT_ID).param("facility", FACILITY_ID).param("actor", USER_ID)
+                .param("outpatient_patient", outpatientPatientId).param("outpatient_encounter", outpatientEncounterId)
+                .param("therapy_patient", therapyPatientId).param("therapy_encounter", therapyEncounterId)
+                .param("anesthesia_patient", anesthesiaPatientId).param("anesthesia_encounter", anesthesiaEncounterId)
+                .param("device_patient", devicePatientId).param("device_encounter", deviceEncounterId)
+                .update();
+
+        jdbc.sql("""
+                insert into specialty_execution_case_event(
+                  tenant_id, specialty_execution_event_id, specialty_execution_case_id,
+                  event_type, from_status, to_status, note, snapshot, actor_user_id, occurred_at)
+                select :tenant, seed.event_id::uuid, seed.case_id::uuid, seed.event_type,
+                  seed.from_status, seed.to_status, seed.note,
+                  jsonb_build_object('fixture_source', 'tertiary-execution-center-v1',
+                    'business_number', seed.business_number, 'status', seed.to_status),
+                  :actor, now() - seed.age_minutes * interval '1 minute'
+                from (values
+                  ('018f0000-0000-7000-8000-00000000f911','018f0000-0000-7000-8000-00000000f901','CREATED',null,'DRAFT','病理申请与组织标本已建档','BL-SYN-20260831-001',55),
+                  ('018f0000-0000-7000-8000-00000000f912','018f0000-0000-7000-8000-00000000f901','READY','DRAFT','READY','双标识、病理号、取材部位和固定信息核对通过','BL-SYN-20260831-001',50),
+                  ('018f0000-0000-7000-8000-00000000f913','018f0000-0000-7000-8000-00000000f902','CREATED',null,'DRAFT','康复治疗申请已建档','ZL-SYN-20260831-001',45),
+                  ('018f0000-0000-7000-8000-00000000f914','018f0000-0000-7000-8000-00000000f902','READY','DRAFT','READY','治疗参数、不良事件预案及双人核对完成','ZL-SYN-20260831-001',40),
+                  ('018f0000-0000-7000-8000-00000000f915','018f0000-0000-7000-8000-00000000f903','CREATED',null,'DRAFT','麻醉术前评估已建档','MZ-SYN-20260831-001',35),
+                  ('018f0000-0000-7000-8000-00000000f916','018f0000-0000-7000-8000-00000000f903','READY','DRAFT','READY','ASA分级、禁食禁饮、知情同意和气道方案核对通过','MZ-SYN-20260831-001',30),
+                  ('018f0000-0000-7000-8000-00000000f917','018f0000-0000-7000-8000-00000000f904','CREATED',null,'DRAFT','监护设备绑定申请已建档','SB-SYN-20260831-001',28),
+                  ('018f0000-0000-7000-8000-00000000f918','018f0000-0000-7000-8000-00000000f904','READY','DRAFT','READY','设备身份、患者腕带、时钟偏移和告警策略核对通过','SB-SYN-20260831-001',25),
+                  ('018f0000-0000-7000-8000-00000000f919','018f0000-0000-7000-8000-00000000f904','STARTED','READY','IN_PROGRESS','已开始采集并按告警策略升级','SB-SYN-20260831-001',20)
+                ) as seed(event_id, case_id, event_type, from_status, to_status,
+                  note, business_number, age_minutes)
+                on conflict (tenant_id, specialty_execution_event_id) do nothing
+                """).param("tenant", TENANT_ID).param("actor", USER_ID).update();
     }
 
     /**

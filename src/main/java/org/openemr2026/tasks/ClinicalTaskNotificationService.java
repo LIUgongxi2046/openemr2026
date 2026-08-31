@@ -38,7 +38,7 @@ final class ClinicalTaskNotificationService {
         }
         requireTask(identity.tenantId(), request.taskId(), request.patientId(),
                 request.encounterId(), request.facilityId());
-        requireRecipient(identity.tenantId(), request.recipientUserId());
+        requireRecipient(identity.tenantId(), request.facilityId(), request.recipientUserId());
         return transactions.execute(status -> {
             beginCommand(identity, "TASK_NOTIFICATION_CREATE", idempotencyKey,
                     sha256(request.taskId() + "|" + request.recipientUserId() + "|"
@@ -77,6 +77,8 @@ final class ClinicalTaskNotificationService {
                         "TASK_NOTIFICATION_STATE_INVALID", 409,
                         "Only a pending notification can be delivered");
             }
+            requireInAppChannel(head.channel());
+            createInAppDelivery(identity.tenantId(), notificationId);
             jdbc.sql("""
                     update clinical_task_notification
                     set status = 'DELIVERED', delivered_at = now(),
@@ -127,18 +129,20 @@ final class ClinicalTaskNotificationService {
                 request.encounterId(), request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "TASK_NOTIFICATION_RECOVER", idempotencyKey, sha256(request.taskId().toString()));
-            int recovered = jdbc.sql("""
+            List<UUID> recoveredIds = jdbc.sql("""
                     update clinical_task_notification
                     set status = 'PENDING', attempt_count = attempt_count + 1, last_error = null,
                       row_version = row_version + 1, updated_at = now()
                     where tenant_id = :tenant and task_id = :task and status = 'FAILED'
-                    """).param("tenant", identity.tenantId()).param("task", request.taskId()).update();
-            if (recovered > 0) {
-                appendEvidence(identity, request.taskId(), "TASK_NOTIFICATIONS_RECOVERED",
-                        "TaskNotificationsRecovered");
+                    returning notification_id
+                    """).param("tenant", identity.tenantId()).param("task", request.taskId())
+                    .query(UUID.class).list();
+            for (UUID notificationId : recoveredIds) {
+                appendEvidence(identity, notificationId, "TASK_NOTIFICATION_RECOVERED",
+                        "TaskNotificationRecovered");
             }
             completeCommand(identity, "TASK_NOTIFICATION_RECOVER", idempotencyKey, request.taskId());
-            return new ClinicalTaskNotificationRecoveryResultWire(recovered, request.taskId());
+            return new ClinicalTaskNotificationRecoveryResultWire(recoveredIds.size(), request.taskId());
         });
     }
 
@@ -168,7 +172,8 @@ final class ClinicalTaskNotificationService {
                     sha256(request.scheduledBefore() + "|" + batchSize));
             List<UUID> ids = jdbc.sql("""
                     select notification_id from clinical_task_notification
-                    where tenant_id = :tenant and status = 'PENDING' and scheduled_at <= :before
+                    where tenant_id = :tenant and status = 'PENDING' and channel = 'IN_APP'
+                      and scheduled_at <= :before
                     order by scheduled_at, notification_id limit :batch
                     for update skip locked
                     """).param("tenant", identity.tenantId())
@@ -176,6 +181,16 @@ final class ClinicalTaskNotificationService {
                     .param("batch", batchSize).query(UUID.class).list();
             int dispatched = 0;
             if (!ids.isEmpty()) {
+                jdbc.sql("""
+                        insert into clinical_task_in_app_delivery(
+                          tenant_id, delivery_id, notification_id, recipient_user_id, delivered_at)
+                        select tenant_id, gen_random_uuid(), notification_id, recipient_user_id, now()
+                        from clinical_task_notification
+                        where tenant_id = :tenant
+                          and notification_id = any(cast(:ids as uuid[])) and status = 'PENDING'
+                        on conflict (tenant_id, notification_id) do nothing
+                        """).param("tenant", identity.tenantId())
+                        .param("ids", postgresUuidArray(ids)).update();
                 dispatched = jdbc.sql("""
                         update clinical_task_notification
                         set status = 'DELIVERED', delivered_at = now(), attempt_count = attempt_count + 1,
@@ -221,12 +236,32 @@ final class ClinicalTaskNotificationService {
 
     private NotificationHead lockNotification(UUID tenantId, UUID notificationId) {
         return jdbc.sql("""
-                select task_id, status, row_version from clinical_task_notification
+                select task_id, status, channel, row_version from clinical_task_notification
                 where tenant_id = :tenant and notification_id = :notification for update
                 """).param("tenant", tenantId).param("notification", notificationId)
                 .query((rs, row) -> new NotificationHead(
-                        rs.getObject("task_id", UUID.class), rs.getString("status"), rs.getLong("row_version")))
+                        rs.getObject("task_id", UUID.class), rs.getString("status"),
+                        rs.getString("channel"), rs.getLong("row_version")))
                 .optional().orElseThrow(ClinicalTaskNotificationService::contextDenied);
+    }
+
+    private void requireInAppChannel(String channel) {
+        if (!"IN_APP".equals(channel)) {
+            throw new ClinicalTaskNotificationException(
+                    "TASK_NOTIFICATION_EXTERNAL_ADAPTER_REQUIRED", 409,
+                    "External notification channels require an acknowledged hospital adapter");
+        }
+    }
+
+    private void createInAppDelivery(UUID tenantId, UUID notificationId) {
+        jdbc.sql("""
+                insert into clinical_task_in_app_delivery(
+                  tenant_id, delivery_id, notification_id, recipient_user_id, delivered_at)
+                select tenant_id, gen_random_uuid(), notification_id, recipient_user_id, now()
+                from clinical_task_notification
+                where tenant_id = :tenant and notification_id = :notification and status = 'PENDING'
+                on conflict (tenant_id, notification_id) do nothing
+                """).param("tenant", tenantId).param("notification", notificationId).update();
     }
 
     private void requireTask(UUID tenantId, UUID taskId, UUID patientId, UUID encounterId, UUID facilityId) {
@@ -239,11 +274,29 @@ final class ClinicalTaskNotificationService {
         if (count != 1) throw contextDenied();
     }
 
-    private void requireRecipient(UUID tenantId, UUID recipientUserId) {
+    private void requireRecipient(UUID tenantId, UUID facilityId, UUID recipientUserId) {
         long count = jdbc.sql("""
-                select count(*) from app_user where tenant_id = :tenant and user_id = :recipient
-                """).param("tenant", tenantId).param("recipient", recipientUserId).query(Long.class).single();
-        if (count != 1) throw contextDenied();
+                select count(*) from app_user account
+                where account.tenant_id = :tenant and account.user_id = :recipient
+                  and account.status = 'ACTIVE'
+                  and exists (
+                    select 1 from role_assignment role
+                    join workforce_assignment assignment
+                      on assignment.tenant_id = role.tenant_id
+                     and assignment.source_role_assignment_id = role.role_assignment_id
+                    where role.tenant_id = account.tenant_id and role.user_id = account.user_id
+                      and role.status = 'ACTIVE' and role.valid_from <= now()
+                      and (role.valid_until is null or role.valid_until > now())
+                      and assignment.facility_id = :facility and assignment.status = 'ACTIVE'
+                      and assignment.valid_from <= now()
+                      and (assignment.valid_until is null or assignment.valid_until > now()))
+                """).param("tenant", tenantId).param("facility", facilityId)
+                .param("recipient", recipientUserId).query(Long.class).single();
+        if (count != 1) {
+            throw new ClinicalTaskNotificationException(
+                    "TASK_NOTIFICATION_RECIPIENT_NOT_ELIGIBLE", 403,
+                    "The notification recipient has no active workforce assignment in this facility");
+        }
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {
@@ -293,7 +346,7 @@ final class ClinicalTaskNotificationService {
                   :patient_hash, :trace, :previous, :event_hash)
                 """).param("tenant", identity.tenantId()).param("audit", auditId)
                 .param("actor", identity.userId()).param("action", action).param("resource", resourceId)
-                .param("patient_hash", sha256(identity.tenantId() + "|null"))
+                .param("patient_hash", patientHashForNotification(identity.tenantId(), resourceId))
                 .param("trace", trace).param("previous", previousHash).param("event_hash", eventHash).update();
         jdbc.sql("""
                 insert into outbox_event(
@@ -303,6 +356,18 @@ final class ClinicalTaskNotificationService {
                   jsonb_build_object('resource_id', :aggregate))
                 """).param("tenant", identity.tenantId()).param("event", UUID.randomUUID())
                 .param("aggregate", resourceId).param("event_type", eventType).update();
+    }
+
+    private String patientHashForNotification(UUID tenantId, UUID resourceId) {
+        UUID patientId = jdbc.sql("""
+                select task.patient_id
+                from clinical_task_notification notification
+                join clinical_task task on task.tenant_id = notification.tenant_id
+                  and task.task_id = notification.task_id
+                where notification.tenant_id = :tenant and notification.notification_id = :notification
+                """).param("tenant", tenantId).param("notification", resourceId)
+                .query(UUID.class).single();
+        return sha256(tenantId + "|" + patientId);
     }
 
     private static String requireText(String value, int minLength, String field) {
@@ -327,7 +392,7 @@ final class ClinicalTaskNotificationService {
                 "CONTEXT_NOT_PERMITTED", 403, "The requested task notification context is not permitted");
     }
 
-    private record NotificationHead(UUID taskId, String status, long rowVersion) {}
+    private record NotificationHead(UUID taskId, String status, String channel, long rowVersion) {}
 
     private static String postgresUuidArray(List<UUID> values) {
         return "{" + values.stream().map(UUID::toString).reduce((left, right) -> left + "," + right).orElse("") + "}";

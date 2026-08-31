@@ -3,9 +3,12 @@ package org.openemr2026.agent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.agent.MedicalAgentHarnessService.AgentFamilyView;
 import org.openemr2026.agent.MedicalAgentHarnessService.CreateRunCommand;
+import org.openemr2026.agent.MedicalAgentHarnessService.OperationsRunView;
+import org.openemr2026.agent.MedicalAgentHarnessService.OperationsToolInvocationView;
 import org.openemr2026.agent.MedicalAgentHarnessService.RunContext;
 import org.openemr2026.agent.MedicalAgentHarnessService.RunView;
 import org.openemr2026.agent.MedicalAgentHarnessService.RetryRunCommand;
@@ -47,7 +50,8 @@ final class MedicalAgentHarnessController {
             HttpServletRequest request,
             @RequestHeader("X-Organization-Context") UUID organizationId,
             @RequestHeader("X-Facility-Context") UUID facilityId) {
-        security.authorize(request, organizationId, facilityId, null, null);
+        security.authorizeForPurposes(request, organizationId, facilityId, null, null,
+                Set.of("MEDICAL_AGENT_CATALOG"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(harness.catalog().stream().map(MedicalAgentHarnessController::wire).toList());
     }
@@ -70,8 +74,8 @@ final class MedicalAgentHarnessController {
                 requestWire.contextScopes() == null || requestWire.contextScopes().isEmpty()
                         ? List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "CONFIGURATION")
                         : requestWire.contextScopes().stream().map(Enum::name).toList());
-        ClinicalIdentity identity = security.authorize(request, command.organizationId(), command.facilityId(),
-                command.patientId(), command.encounterId());
+        ClinicalIdentity identity = security.authorizeForPurposes(request, command.organizationId(), command.facilityId(),
+                command.patientId(), command.encounterId(), Set.of("MEDICAL_AGENT_COLLABORATION"));
         RunView run = harness.createAndRun(identity, idempotencyKey, command);
         return ResponseEntity.accepted().location(URI.create("/api/v1/medical-agents/runs/" + run.runId()))
                 .cacheControl(CacheControl.noStore()).body(wire(run));
@@ -84,18 +88,45 @@ final class MedicalAgentHarnessController {
             @RequestHeader("X-Facility-Context") UUID facilityId,
             @RequestParam("patient_id") UUID patientId,
             @RequestParam("encounter_id") UUID encounterId) {
-        ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, encounterId);
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, organizationId, facilityId, patientId, encounterId,
+                Set.of("MEDICAL_AGENT_COLLABORATION"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(harness.listRuns(identity.tenantId(), encounterId).stream()
                         .map(MedicalAgentHarnessController::wire).toList());
+    }
+
+    @GetMapping("/operations/runs")
+    ResponseEntity<List<OperationsRunView>> operationsRuns(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestParam(name = "limit", defaultValue = "100") int limit) {
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, organizationId, facilityId, null, null, Set.of("AI_PLATFORM_ADMIN"));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(harness.operationsRuns(identity.tenantId(), facilityId, limit));
+    }
+
+    @GetMapping("/operations/runs/{runId}/tool-invocations")
+    ResponseEntity<List<OperationsToolInvocationView>> operationsToolInvocations(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @PathVariable UUID runId) {
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, organizationId, facilityId, null, null, Set.of("AI_PLATFORM_ADMIN"));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(harness.operationsToolInvocations(identity.tenantId(), facilityId, runId));
     }
 
     @GetMapping("/runs/{runId}")
     ResponseEntity<MedicalAgentRunWire> get(HttpServletRequest request, @PathVariable UUID runId) {
         ClinicalIdentity preliminary = security.authenticate(request);
         RunContext context = harness.context(preliminary.tenantId(), runId);
-        ClinicalIdentity identity = security.authorize(request, context.organizationId(), context.facilityId(),
-                context.patientId(), context.encounterId());
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, context.organizationId(), context.facilityId(), context.patientId(), context.encounterId(),
+                Set.of("MEDICAL_AGENT_COLLABORATION"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(wire(harness.run(identity.tenantId(), runId)));
     }
 
@@ -106,8 +137,9 @@ final class MedicalAgentHarnessController {
             @RequestBody MedicalAgentRunCancelRequestWire requestWire) {
         ClinicalIdentity preliminary = security.authenticate(request);
         RunContext context = harness.context(preliminary.tenantId(), runId);
-        ClinicalIdentity identity = security.authorize(request, context.organizationId(), context.facilityId(),
-                context.patientId(), context.encounterId());
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, context.organizationId(), context.facilityId(), context.patientId(), context.encounterId(),
+                Set.of("MEDICAL_AGENT_COLLABORATION"));
         RunView run = harness.requestCancellation(
                 identity, runId, requestWire.expectedRowVersion(), requestWire.reason());
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(wire(run));
@@ -130,8 +162,9 @@ final class MedicalAgentHarnessController {
             throw new AgentRunException("CONTEXT_NOT_PERMITTED", 403,
                     "The requested medical-agent context is not permitted");
         }
-        ClinicalIdentity identity = security.authorize(request, context.organizationId(), context.facilityId(),
-                context.patientId(), context.encounterId());
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, context.organizationId(), context.facilityId(), context.patientId(), context.encounterId(),
+                Set.of("MEDICAL_AGENT_COLLABORATION"));
         RunView run = harness.retry(identity, runId, new RetryRunCommand(
                 requestWire.organizationId(), requestWire.facilityId(), requestWire.contextLeaseId(),
                 requestWire.expectedRowVersion()));

@@ -24,8 +24,20 @@ const doctorName = computed(() => authSession.user?.display_name ?? '未登录')
 const doctorInitial = computed(() => doctorName.value === '未登录' ? '未' : doctorName.value.slice(0, 1));
 const shiftDisplay = computed(() => authSession.user?.shift_display ?? '请登录后加载班次');
 const hospitalDisplay = computed(() => authSession.user?.organization_name ?? currentHospital.value);
-const roleOptions = ['临床医生 · 全院工作区', '住院医生 · 心内科一病区', '质控管理员 · 全院质量中心', '系统管理员 · 平台治理'];
-const selectedRole = ref<string | null>(null);
+const roleLabels: Record<string, string> = {
+  CHIEF_PHYSICIAN: '主任医师', ATTENDING_PHYSICIAN: '主治医师', SURGEON: '外科医师',
+  EMERGENCY_PHYSICIAN: '急诊医师', PEDIATRICIAN: '儿科医师', ICU_PHYSICIAN: '重症医师',
+  RADIOLOGIST: '影像诊断医师', NURSE_MANAGER: '护士长', REGISTERED_NURSE: '注册护士',
+  PHARMACIST: '药师', LAB_TECHNICIAN: '检验技师', IMAGING_TECHNICIAN: '影像技师',
+  PATHOLOGY_TECHNICIAN: '病理技师', CLINICAL_ADMIN: '医务管理', MEDICAL_RECORDS: '病案人员',
+  SECURITY_AUDITOR: '安全审计员', REGISTRAR: '门诊服务人员', RESEARCHER: '临床研究人员',
+  CLINICIAN: '临床医生', ADMINISTRATOR: '系统管理员', QUALITY_MANAGER: '质量管理员',
+};
+const roleOptions = computed(() => (authSession.user?.role_assignment_ids ?? []).map((id, index) => {
+  const code = authSession.user?.role_codes[index] ?? 'UNKNOWN_ROLE';
+  return { id, code, label: `${roleLabels[code] ?? code} · ${code}` };
+}));
+const selectedRoleId = ref(clinicalContext.roleId || null);
 const searchText = ref('');
 interface TopbarNotification { id: string; title: string; description: string; category: 'critical' | 'task' | 'governance'; route: string; unread: boolean }
 const notifications = ref<TopbarNotification[]>([
@@ -218,7 +230,9 @@ const routeRoleContext = computed(() => {
   if (outpatientRoutes.includes(id)) return '病历中心 · 当前门诊就诊';
   return '管理与治理工作台';
 });
-const roleContext = computed(() => selectedRole.value ?? routeRoleContext.value);
+const roleContext = computed(() => roleOptions.value.find((role) => role.id === selectedRoleId.value)?.label
+  ?? roleOptions.value[0]?.label
+  ?? routeRoleContext.value);
 
 const assistantContext = computed(() => {
   const id = routeId.value;
@@ -264,9 +278,15 @@ function selectHospital(hospital: string) {
   activeMenu.value = null;
 }
 
-function selectRole(role: string) {
-  selectedRole.value = role;
+function selectRole(roleId: string) {
+  if (!roleOptions.value.some((role) => role.id === roleId)) return;
+  selectedRoleId.value = roleId;
+  clinicalContext.roleId = roleId;
   activeMenu.value = null;
+}
+
+function selectRoleFromEvent(event: Event) {
+  selectRole((event.target as HTMLSelectElement).value);
 }
 
 async function submitSearch() {
@@ -372,9 +392,9 @@ async function closeAssistant() {
       <div class="topbar-menu-control context-control role-control">
         <button class="context-pill domain-context" type="button" aria-label="选择角色" aria-haspopup="menu" :aria-expanded="activeMenu === 'role'" @click.stop="toggleMenu('role')">{{ roleContext }}<small aria-hidden="true">⌄</small></button>
         <div v-if="activeMenu === 'role'" class="topbar-popover context-menu" role="menu" aria-label="角色列表">
-          <strong>切换工作角色</strong>
-          <button v-for="role in roleOptions" :key="role" type="button" role="menuitemradio" :aria-checked="roleContext === role" @click="selectRole(role)"><span>{{ role }}</span><b aria-hidden="true">{{ roleContext === role ? '✓' : '' }}</b></button>
-          <small>实际权限仍由服务端诊疗范围授权复核。</small>
+          <strong>当前授权岗位</strong>
+          <button v-for="role in roleOptions" :key="role.id" type="button" role="menuitemradio" :aria-checked="selectedRoleId === role.id" @click="selectRole(role.id)"><span>{{ role.label }}</span><b aria-hidden="true">{{ selectedRoleId === role.id ? '✓' : '' }}</b></button>
+          <small>这里只显示当前账号在服务端有效的岗位；切换后重新签发上下文授权。</small>
         </div>
       </div>
       <form class="top-search" role="search" @submit.prevent="submitSearch">
@@ -400,7 +420,7 @@ async function closeAssistant() {
             <header><span class="avatar large" aria-hidden="true">{{ doctorInitial }}</span><div><strong>{{ doctorName }}</strong><small>{{ authSession.user ? '数据库会话有效' : '尚未登录' }}</small></div></header>
             <div class="account-context-summary">
               <label><span>工作医院</span><select v-model="currentHospital" aria-label="账户菜单选择医院"><option v-for="hospital in hospitals" :key="hospital" :value="hospital">{{ hospital }}</option></select></label>
-              <label><span>工作角色</span><select v-model="selectedRole" aria-label="账户菜单选择角色"><option :value="null">随页面自动匹配</option><option v-for="role in roleOptions" :key="role" :value="role">{{ role }}</option></select></label>
+              <label><span>工作角色</span><select :value="selectedRoleId" aria-label="账户菜单选择角色" @change="selectRoleFromEvent"><option v-for="role in roleOptions" :key="role.id" :value="role.id">{{ role.label }}</option></select></label>
             </div>
             <RouterLink to="/admin-users" @click="activeMenu = null">账号与权限</RouterLink>
             <button type="button" @click="openLoginContext">退出系统</button>

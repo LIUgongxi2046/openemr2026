@@ -5,6 +5,7 @@ import {
   request,
   wardHeaders,
 } from '../clinical-api';
+import { parseClinicalRequest, parseClinicalResponse } from '../clinical-contract';
 import {
   medicalAgentFamilyWireSchema,
   medicalAgentRunCancelRequestWireSchema,
@@ -25,7 +26,7 @@ export function issueMedicalAgentRunLease(patientId: string, encounterId: string
 }
 
 export async function listMedicalAgentCatalog(lease: ContextLeaseWire): Promise<MedicalAgentFamilyWire[]> {
-  return medicalAgentFamilyWireSchema.array().parse(await request(
+  return parseClinicalResponse(medicalAgentFamilyWireSchema.array(), await request(
     '/medical-agents/catalog', { headers: wardHeaders(lease) },
   ));
 }
@@ -45,7 +46,7 @@ export async function createMedicalAgentRun(
     contextScopes?: Array<'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS'>;
   },
 ): Promise<MedicalAgentRunWire> {
-  const command = medicalAgentRunCreateRequestWireSchema.parse({
+  const command = parseClinicalRequest(medicalAgentRunCreateRequestWireSchema, {
     organization_id: clinicalContext.organizationId,
     facility_id: clinicalContext.facilityId,
     patient_id: input.patientId,
@@ -60,7 +61,7 @@ export async function createMedicalAgentRun(
     authorization_level: input.authorizationLevel ?? 'STANDARD',
     context_scopes: input.contextScopes ?? ['RECORDS', 'ORDERS', 'RESULTS', 'TASKS'],
   });
-  return medicalAgentRunWireSchema.parse(await request('/medical-agents/runs', {
+  return parseClinicalResponse(medicalAgentRunWireSchema, await request('/medical-agents/runs', {
     method: 'POST',
     headers: {
       ...explicitContextHeaders(lease, input.patientId, input.encounterId),
@@ -76,7 +77,7 @@ export async function listMedicalAgentRuns(
   patientId: string,
   encounterId: string,
 ): Promise<MedicalAgentRunWire[]> {
-  return medicalAgentRunWireSchema.array().parse(await request(
+  return parseClinicalResponse(medicalAgentRunWireSchema.array(), await request(
     `/medical-agents/runs?patient_id=${encodeURIComponent(patientId)}&encounter_id=${encodeURIComponent(encounterId)}`,
     { headers: explicitContextHeaders(lease, patientId, encounterId) },
   ));
@@ -88,7 +89,7 @@ export async function getMedicalAgentRun(
   encounterId: string,
   runId: string,
 ): Promise<MedicalAgentRunWire> {
-  return medicalAgentRunWireSchema.parse(await request(
+  return parseClinicalResponse(medicalAgentRunWireSchema, await request(
     `/medical-agents/runs/${encodeURIComponent(runId)}`,
     { headers: explicitContextHeaders(lease, patientId, encounterId) },
   ));
@@ -102,11 +103,11 @@ export async function cancelMedicalAgentRun(
   expectedRowVersion: number,
   reason = '医生取消当前医助任务',
 ): Promise<MedicalAgentRunWire> {
-  const command = medicalAgentRunCancelRequestWireSchema.parse({
+  const command = parseClinicalRequest(medicalAgentRunCancelRequestWireSchema, {
     expected_row_version: expectedRowVersion,
     reason,
   });
-  return medicalAgentRunWireSchema.parse(await request(
+  return parseClinicalResponse(medicalAgentRunWireSchema, await request(
     `/medical-agents/runs/${encodeURIComponent(runId)}/cancellations`,
     {
       method: 'POST',
@@ -126,13 +127,13 @@ export async function retryMedicalAgentRun(
   runId: string,
   expectedRowVersion: number,
 ): Promise<MedicalAgentRunWire> {
-  const command = medicalAgentRunRetryRequestWireSchema.parse({
+  const command = parseClinicalRequest(medicalAgentRunRetryRequestWireSchema, {
     organization_id: clinicalContext.organizationId,
     facility_id: clinicalContext.facilityId,
     context_lease_id: lease.lease_id,
     expected_row_version: expectedRowVersion,
   });
-  return medicalAgentRunWireSchema.parse(await request(
+  return parseClinicalResponse(medicalAgentRunWireSchema, await request(
     `/medical-agents/runs/${encodeURIComponent(runId)}/retries`,
     {
       method: 'POST',

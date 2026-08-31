@@ -55,6 +55,8 @@ import {
   type ToolRegistryVersionRequestWire,
   type ToolRegistryWire,
 } from '../generated/contracts';
+import { parseClinicalResponse } from '../clinical-contract';
+import { z } from 'zod';
 
 /** AI 平台域为机构-院区级上下文（无患者），签发一次租约后复用。 */
 export function issueAiLease(purpose: string): Promise<ContextLeaseWire> {
@@ -129,6 +131,130 @@ export async function testModelDeploymentConnection(
       body: JSON.stringify(modelDeploymentConnectionTestRequestWireSchema.parse({
         ...orgFacility(), expected_row_version: model.row_version,
       })),
+    },
+  ));
+}
+
+const modelDataProcessingApprovalSchema = z.object({
+  approval_id: z.string().uuid(),
+  model_deployment_id: z.string().uuid(),
+  legal_basis: z.string(),
+  pia_reference: z.string(),
+  processor_agreement_reference: z.string(),
+  endpoint_region: z.string(),
+  retention_days: z.number().int().min(0),
+  allowed_context_scopes: z.array(z.enum(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS', 'ATTACHMENTS', 'CONFIGURATION'])),
+  status: z.enum(['ACTIVE', 'REVOKED']),
+  approved_by: z.string().uuid(),
+  approved_at: z.string(),
+  expires_at: z.string(),
+  revoked_by: z.string().uuid().nullable().optional(),
+  revoked_at: z.string().nullable().optional(),
+  revocation_reason: z.string().nullable().optional(),
+  row_version: z.number().int().positive(),
+});
+
+export type ModelDataProcessingApproval = z.infer<typeof modelDataProcessingApprovalSchema>;
+export type MedicalAgentContextScope = ModelDataProcessingApproval['allowed_context_scopes'][number];
+
+const medicalAgentOperationsRunSchema = z.object({
+  run_id: z.string().uuid(),
+  root_agent_code: z.string(),
+  root_agent_name: z.string(),
+  requested_stage: z.string(),
+  state: z.enum(['QUEUED', 'RUNNING', 'WAITING_FOR_REVIEW', 'COMPLETED', 'PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']),
+  model_display_name: z.string().nullable(),
+  provider_code: z.string().nullable(),
+  authorization_level: z.enum(['READ_ONLY', 'STANDARD', 'EXTENDED']),
+  model_total_tokens: z.number().int().nonnegative(),
+  actual_duration_ms: z.number().int().nonnegative(),
+  model_request_count: z.number().int().nonnegative(),
+  tool_call_count: z.number().int().nonnegative(),
+  tool_failure_count: z.number().int().nonnegative(),
+  attempt: z.number().int().nonnegative(),
+  max_attempts: z.number().int().positive(),
+  failure_code: z.string().nullable(),
+  created_at: z.string(),
+  completed_at: z.string().nullable(),
+  external_processing_approved: z.boolean(),
+  assistant_policy_environment: z.string().nullable(),
+});
+
+const medicalAgentOperationsToolInvocationSchema = z.object({
+  invocation_id: z.string().uuid(),
+  child_run_id: z.string().uuid(),
+  tool_code: z.string(),
+  tool_version: z.string(),
+  item_count: z.number().int().nonnegative(),
+  outcome: z.enum(['SUCCEEDED', 'DENIED', 'FAILED']),
+  duration_ms: z.number().int().nonnegative(),
+  error_code: z.string().nullable(),
+  invoked_at: z.string(),
+  completed_at: z.string(),
+});
+
+export type MedicalAgentOperationsRun = z.infer<typeof medicalAgentOperationsRunSchema>;
+export type MedicalAgentOperationsToolInvocation = z.infer<typeof medicalAgentOperationsToolInvocationSchema>;
+
+export async function listMedicalAgentOperationsRuns(
+  lease: ContextLeaseWire, limit = 100,
+): Promise<MedicalAgentOperationsRun[]> {
+  return medicalAgentOperationsRunSchema.array().parse(await request(
+    `/medical-agents/operations/runs?limit=${Math.max(1, Math.min(Math.floor(limit), 200))}`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function listMedicalAgentOperationsToolInvocations(
+  lease: ContextLeaseWire, runId: string,
+): Promise<MedicalAgentOperationsToolInvocation[]> {
+  return medicalAgentOperationsToolInvocationSchema.array().parse(await request(
+    `/medical-agents/operations/runs/${encodeURIComponent(runId)}/tool-invocations`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function listModelDataProcessingApprovals(
+  lease: ContextLeaseWire, modelDeploymentId: string,
+): Promise<ModelDataProcessingApproval[]> {
+  return parseClinicalResponse(modelDataProcessingApprovalSchema.array(), await request(
+    `/model-deployments/${encodeURIComponent(modelDeploymentId)}/data-processing-approvals`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function approveModelDataProcessing(
+  lease: ContextLeaseWire,
+  modelDeploymentId: string,
+  input: {
+    legal_basis: string;
+    pia_reference: string;
+    processor_agreement_reference: string;
+    endpoint_region: string;
+    retention_days: number;
+    allowed_context_scopes: MedicalAgentContextScope[];
+    expires_at: string;
+  },
+): Promise<ModelDataProcessingApproval> {
+  return parseClinicalResponse(modelDataProcessingApprovalSchema, await request(
+    `/model-deployments/${encodeURIComponent(modelDeploymentId)}/data-processing-approvals`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({ ...orgFacility(), ...input }),
+    },
+  ));
+}
+
+export async function revokeModelDataProcessingApproval(
+  lease: ContextLeaseWire,
+  approval: ModelDataProcessingApproval,
+  reason: string,
+): Promise<ModelDataProcessingApproval> {
+  return parseClinicalResponse(modelDataProcessingApprovalSchema, await request(
+    `/model-deployments/${encodeURIComponent(approval.model_deployment_id)}/data-processing-approvals/${encodeURIComponent(approval.approval_id)}/revocations`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify({ ...orgFacility(), expected_row_version: approval.row_version, reason }),
     },
   ));
 }

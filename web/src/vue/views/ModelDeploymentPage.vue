@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ModelDeploymentWire } from '../../generated/contracts';
-import { deactivateModelDeployment, issueAiLease, listModelDeployments, registerModelDeployment, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
+import type { MedicalAgentContextScope, ModelDataProcessingApproval } from '../../api/ai-platform';
+import { approveModelDataProcessing, deactivateModelDeployment, issueAiLease, listModelDataProcessingApprovals, listModelDeployments, registerModelDeployment, revokeModelDataProcessingApproval, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -62,6 +63,24 @@ const deactivateTarget = ref<ModelDeploymentWire | null>(null);
 const busy = ref('');
 const notice = ref('');
 const showApiKey = ref(false);
+const approvalTarget = ref<ModelDeploymentWire | null>(null);
+const approvalHistory = ref<ModelDataProcessingApproval[]>([]);
+const approvalOpen = ref(false);
+const revokeApprovalTarget = ref<ModelDataProcessingApproval | null>(null);
+const revokeReason = ref('');
+const contextScopeOptions: { code: MedicalAgentContextScope; label: string }[] = [
+  { code: 'RECORDS', label: '病历文书' }, { code: 'ORDERS', label: '医嘱' },
+  { code: 'RESULTS', label: '检查检验结果' }, { code: 'TASKS', label: '诊疗任务' },
+  { code: 'ATTACHMENTS', label: '附件' }, { code: 'CONFIGURATION', label: '受控配置' },
+];
+const approvalForm = reactive({
+  legalBasis: '医疗服务合同履行与院内诊疗辅助',
+  piaReference: '', processorAgreementReference: '', endpointRegion: '中国境内',
+  retentionDays: 0, expiresAt: '',
+  allowedContextScopes: ['RECORDS', 'ORDERS', 'RESULTS', 'TASKS'] as MedicalAgentContextScope[],
+});
+const activeApproval = computed(() => approvalHistory.value.find((item) => item.status === 'ACTIVE'
+  && new Date(item.expires_at).getTime() > Date.now()) ?? null);
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium' }).format(new Date(value)) : '未配置';
@@ -159,6 +178,48 @@ async function testConnection(model: ModelDeploymentWire) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
+
+async function openProcessingApproval(model: ModelDeploymentWire) {
+  const lease = leaseQuery.data.value;
+  if (!lease || busy.value) return;
+  approvalTarget.value = model; approvalOpen.value = true; notice.value = '';
+  approvalForm.expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  busy.value = `approval:list:${model.model_deployment_id}`;
+  try { approvalHistory.value = await listModelDataProcessingApprovals(lease, model.model_deployment_id); }
+  catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
+
+async function saveProcessingApproval() {
+  const lease = leaseQuery.data.value; const model = approvalTarget.value;
+  if (!lease || !model || activeApproval.value || !approvalForm.expiresAt || busy.value) return;
+  busy.value = 'approval:create'; notice.value = '';
+  try {
+    await approveModelDataProcessing(lease, model.model_deployment_id, {
+      legal_basis: approvalForm.legalBasis.trim(), pia_reference: approvalForm.piaReference.trim(),
+      processor_agreement_reference: approvalForm.processorAgreementReference.trim(),
+      endpoint_region: approvalForm.endpointRegion.trim(), retention_days: Number(approvalForm.retentionDays),
+      allowed_context_scopes: approvalForm.allowedContextScopes,
+      expires_at: new Date(`${approvalForm.expiresAt}T23:59:59+08:00`).toISOString(),
+    });
+    approvalHistory.value = await listModelDataProcessingApprovals(lease, model.model_deployment_id);
+    notice.value = `${model.display_name} 的云端诊疗数据处理授权已生效，Agent 只能读取授权范围。`;
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
+
+async function revokeProcessingApproval() {
+  const lease = leaseQuery.data.value; const approval = revokeApprovalTarget.value;
+  if (!lease || !approval || revokeReason.value.trim().length < 2 || busy.value) return;
+  busy.value = 'approval:revoke'; notice.value = '';
+  try {
+    await revokeModelDataProcessingApproval(lease, approval, revokeReason.value.trim());
+    approvalHistory.value = await listModelDataProcessingApprovals(lease, approval.model_deployment_id);
+    revokeApprovalTarget.value = null; revokeReason.value = '';
+    notice.value = '授权已撤销，后续云端模型 Agent 任务将失败关闭。';
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
 </script>
 
 <template>
@@ -210,7 +271,7 @@ async function testConnection(model: ModelDeploymentWire) {
                   <td>{{ residencyPolicyLabels[model.residency_policy] }}</td>
                   <td><span class="admin-status" :class="model.evaluation_status.toLowerCase()">{{ evaluationStatusLabels[model.evaluation_status] }}</span></td>
                   <td><span class="admin-status" :class="model.status.toLowerCase()">{{ model.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><div class="admin-row-actions"><button class="task-action" :disabled="model.status !== 'ACTIVE' || !model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = model">删除</button></div></td>
+                  <td><div class="admin-row-actions"><button class="task-action" :disabled="model.status !== 'ACTIVE' || !model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button v-if="model.residency_policy === 'CLOUD_ALLOWED'" class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="openProcessingApproval(model)">云端处理授权</button><button class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = model">删除</button></div></td>
                 </tr>
               </tbody>
             </table>
@@ -230,7 +291,29 @@ async function testConnection(model: ModelDeploymentWire) {
             <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy ? '正在保存…' : editingModel ? '保存变更' : '保存 API 配置' }}</button></div>
           </form>
       </AdminActionDialog>
+      <AdminActionDialog v-model:open="approvalOpen" :title="`云端诊疗数据处理授权 · ${approvalTarget?.display_name ?? ''}`" description="授权与 API 连通、模型评测相互独立；三者均有效时 Eva 才能向云端模型发送授权范围内的诊疗上下文。" size="large" :busy="Boolean(busy)">
+        <div v-if="busy.startsWith('approval:list:')" class="admin-empty" role="status">正在读取授权台账…</div>
+        <div v-else class="processing-approval-layout">
+          <section v-if="activeApproval" class="processing-approval-current">
+            <div><span>当前状态</span><b>已授权</b></div><div><span>终端地域</span><b>{{ activeApproval.endpoint_region }}</b></div>
+            <div><span>有效期至</span><b>{{ formatDate(activeApproval.expires_at) }}</b></div><div><span>允许范围</span><b>{{ activeApproval.allowed_context_scopes.map(code => contextScopeOptions.find(item => item.code === code)?.label ?? code).join('、') }}</b></div>
+            <div><span>影响评估</span><b>{{ activeApproval.pia_reference }}</b></div><div><span>处理协议</span><b>{{ activeApproval.processor_agreement_reference }}</b></div>
+            <button class="button danger" type="button" :disabled="Boolean(busy)" @click="revokeApprovalTarget = activeApproval">撤销当前授权</button>
+          </section>
+          <form v-else class="admin-form ai-center-dialog-form" @submit.prevent="saveProcessingApproval">
+            <label><span>处理依据</span><input v-model="approvalForm.legalBasis" minlength="4" maxlength="512" required /></label>
+            <label><span>个人信息保护影响评估编号</span><input v-model="approvalForm.piaReference" minlength="4" maxlength="256" required placeholder="例：PIA-AI-2026-001" /></label>
+            <label><span>委托处理 / 数据处理协议编号</span><input v-model="approvalForm.processorAgreementReference" minlength="4" maxlength="256" required placeholder="例：DPA-DEEPSEEK-2026-001" /></label>
+            <div class="approval-form-grid"><label><span>模型终端地域</span><input v-model="approvalForm.endpointRegion" minlength="2" maxlength="128" required /></label><label><span>供应商保留天数</span><input v-model.number="approvalForm.retentionDays" type="number" min="0" max="3650" required /></label><label><span>授权到期日</span><input v-model="approvalForm.expiresAt" type="date" required /></label></div>
+            <fieldset class="approval-scopes"><legend>允许的诊疗上下文</legend><label v-for="scope in contextScopeOptions" :key="scope.code"><input v-model="approvalForm.allowedContextScopes" type="checkbox" :value="scope.code" />{{ scope.label }}</label></fieldset>
+            <p class="dialog-warning">授权不会赋予模型签署病历、开立医嘱或改写业务终态的权限。</p>
+            <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="approvalOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy) || approvalForm.allowedContextScopes.length === 0">{{ busy === 'approval:create' ? '正在授权…' : '确认授权' }}</button></div>
+          </form>
+          <section v-if="approvalHistory.length" class="approval-history"><h3>授权历史</h3><article v-for="approval in approvalHistory" :key="approval.approval_id"><span class="admin-status" :class="approval.status === 'ACTIVE' ? 'active' : 'rejected'">{{ approval.status === 'ACTIVE' ? '有效' : '已撤销' }}</span><b>{{ approval.pia_reference }}</b><small>{{ formatDate(approval.approved_at) }} · v{{ approval.row_version }}<template v-if="approval.revocation_reason"> · {{ approval.revocation_reason }}</template></small></article></section>
+        </div>
+      </AdminActionDialog>
       <AdminConfirmDialog :open="Boolean(deactivateTarget)" :title="`删除模型配置 ${deactivateTarget?.display_name ?? ''}`" description="删除将以安全停用方式执行；后续医助任务不再选择该模型，历史评测、运行记录和审计证据继续保留。" confirm-label="确认删除并停用" :busy="Boolean(busy)" @update:open="!$event && (deactivateTarget = null)" @confirm="deactivateTarget && deactivate(deactivateTarget)"><div v-if="deactivateTarget" class="admin-impact-grid"><div><span>模型标识</span><b>{{ deactivateTarget.model_code }}</b></div><div><span>提供方</span><b>{{ deactivateTarget.provider_code }}</b></div><div><span>当前版本</span><b>v{{ deactivateTarget.row_version }}</b></div><div><span>流程影响</span><b>退出后续模型路由</b></div></div></AdminConfirmDialog>
+      <AdminConfirmDialog :open="Boolean(revokeApprovalTarget)" title="撤销云端诊疗数据处理授权" description="撤销后，使用该云端模型的新 Agent 任务会被阻断，已开始任务在下一执行检查点失败关闭。" confirm-label="确认撤销" :busy="Boolean(busy)" @update:open="!$event && (revokeApprovalTarget = null)" @confirm="revokeProcessingApproval"><label class="revoke-reason"><span>撤销原因</span><textarea v-model="revokeReason" minlength="2" maxlength="500" rows="3" placeholder="请说明合规、合同或安全原因" /></label></AdminConfirmDialog>
     </template>
   </section>
 </template>
@@ -244,5 +327,13 @@ async function testConnection(model: ModelDeploymentWire) {
 .admin-form label small { color: #7a5b28; line-height: 1.45; }
 .model-connection-error { color: #b4232f !important; overflow-wrap: anywhere; }
 .api-key-input-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }.api-key-input-row .button { min-width: 64px; }
+.processing-approval-layout { display: grid; gap: 16px; }
+.processing-approval-current { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; padding: 14px; border: 1px solid #b9dcd7; border-radius: 12px; background: #f3fbfa; }
+.processing-approval-current div { display: grid; gap: 4px; min-width: 0; }.processing-approval-current span { color: #66778a; font-size: .82rem; }.processing-approval-current b { overflow-wrap: anywhere; }.processing-approval-current .button { justify-self: start; }
+.approval-form-grid { display: grid; grid-template-columns: 1.4fr .8fr 1fr; gap: 12px; }
+.approval-scopes { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0; padding: 14px; border: 1px solid #d7e3e8; border-radius: 10px; }.approval-scopes legend { padding: 0 6px; font-weight: 700; }.approval-scopes label { display: inline-flex; flex-direction: row; align-items: center; gap: 7px; }
+.approval-history { display: grid; gap: 8px; border-top: 1px solid #e1e8ed; padding-top: 14px; }.approval-history h3 { margin: 0; }.approval-history article { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 5px 10px; padding: 10px 12px; border: 1px solid #e1e8ed; border-radius: 9px; }.approval-history small { grid-column: 2; color: #66778a; }
+.revoke-reason { display: grid; gap: 7px; }.revoke-reason span { font-weight: 700; }.revoke-reason textarea { width: 100%; resize: vertical; }
 @media (max-width: 900px) { .model-api-guide-grid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .processing-approval-current, .approval-form-grid { grid-template-columns: 1fr; } }
 </style>

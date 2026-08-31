@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 501,
+  "operation_count": 531,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -68,6 +68,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:activateSourceSystem",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "addAdministrationWorkgroupMember",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/workgroups/{workgroup_id}/members",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:addAdministrationWorkgroupMember",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -157,6 +174,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "assignWorkforceRole",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/workforce/role-assignments",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "WorkforceIdentity",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:assignWorkforceRole",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "authorizeConfigurationScope",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -221,6 +255,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:callWaitingQueueEntry",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "cancelAdministrationJobRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/runtime/job-runs/{run_id}/cancel",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:cancelAdministrationJobRun",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -786,6 +837,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createAdministrationWorkgroup",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/workgroups",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createAdministrationWorkgroup",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createAiRun",
       "caller": "WEB_BFF",
       "method": "POST",
@@ -1012,6 +1080,23 @@
       "rate_limit": "policy:createContextLease",
       "version": "0.1.0",
       "status": "EXPLICIT_S005"
+    },
+    {
+      "operation_id": "createDataQualityTriageAdvice",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/data-quality-scans/{data_quality_scan_id}/triage-advice",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DataQualityTriageRequest",
+      "output_schema": "DataQualityTriageAdvice",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createDataQualityTriageAdvice",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
     },
     {
       "operation_id": "createDentalCareNote",
@@ -1435,6 +1520,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createLabSpecimen",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createMasterDataRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/master-data-records",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createMasterDataRecord",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -1932,6 +2034,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createSpecialtyExecutionCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/execution-center/cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "SpecialtyExecutionCaseCreateRequest",
+      "output_schema": "SpecialtyExecutionCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createSpecialtyExecutionCase",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createTcmCareNote",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -1962,6 +2081,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createTcmRecord",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "deactivateAdministrationWorkgroup",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/workgroups/{workgroup_id}/deactivate",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:deactivateAdministrationWorkgroup",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2064,6 +2200,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:deactivateDocumentTemplate",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "deactivateMasterDataRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/master-data-records/{record_id}/deactivate",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:deactivateMasterDataRecord",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -2512,6 +2665,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "endAdministrationWorkgroupMember",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/workgroups/{workgroup_id}/members/{member_id}/end",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:endAdministrationWorkgroupMember",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "endWorkforceRoleAssignment",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2746,6 +2916,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:getClinicalOrder",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getClinicalTaskDetail",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/clinical-tasks/{task_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ClinicalTaskDetail",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getClinicalTaskDetail",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3005,6 +3192,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "getSpecialtyExecutionCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/execution-center/cases/{specialty_execution_case_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "SpecialtyExecutionCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getSpecialtyExecutionCase",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "getSystemReadiness",
       "caller": "ORCHESTRATOR_OR_OPERATOR",
       "method": "GET",
@@ -3120,6 +3324,57 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listActionExecutions",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listAdministrationGovernanceFindings",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/admin/runtime/job-runs/{run_id}/findings",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "array",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listAdministrationGovernanceFindings",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listAdministrationJobRuns",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/admin/runtime/job-runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "array",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listAdministrationJobRuns",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listAdministrationWorkgroups",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/admin/workgroups",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "array",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listAdministrationWorkgroups",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3617,6 +3872,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listDataQualityFindings",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/data-quality-findings",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DataQualityFinding[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDataQualityFindings",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listDataQualityRules",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -3630,6 +3902,40 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listDataQualityRules",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listDataQualityScans",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/data-quality-scans",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DataQualityScanRun[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDataQualityScans",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listDataQualityTriageAdvice",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/data-quality-scans/{data_quality_scan_id}/triage-advice",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DataQualityTriageAdvice[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDataQualityTriageAdvice",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3940,6 +4246,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listEligibleClinicalTaskCollaborators",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/clinical-tasks/collaborators",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ClinicalTaskCollaborator[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listEligibleClinicalTaskCollaborators",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listEmergencyAccessForReview",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -4195,6 +4518,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listExecutionCenterWorklist",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/execution-center/worklists/{domain}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ExecutionWorklistItem[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listExecutionCenterWorklist",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listHistoricalMigrationBatches",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -4327,6 +4667,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listLabSpecimens",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listMasterDataRecords",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/admin/master-data-records",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "array",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listMasterDataRecords",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -5534,6 +5891,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listSourceSystems",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listSpecialtyExecutionCases",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/execution-center/cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "SpecialtyExecutionCase[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listSpecialtyExecutionCases",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7157,6 +7531,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "resolveAdministrationGovernanceFinding",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/runtime/findings/{finding_id}/resolve",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:resolveAdministrationGovernanceFinding",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "resolveInfectionMonitoringEvent",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7255,6 +7646,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:retireSourceSystem",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "retryAdministrationJobRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/runtime/job-runs/{run_id}/retry",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:retryAdministrationJobRun",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7655,6 +8063,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "startAdministrationJobRun",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/runtime/jobs/{config_id}/runs",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:startAdministrationJobRun",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "startCapabilityPackReleaseCanary",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7685,6 +8110,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:startConfigurationWorkflow",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "startDataQualityScan",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/data-quality-rules/{data_quality_rule_id}/scans",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DataQualityScanStartRequest",
+      "output_schema": "DataQualityScanRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:startDataQualityScan",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7944,6 +8386,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "transitionDataQualityFinding",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/data-quality-findings/{data_quality_finding_id}/transitions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DataQualityFindingTransitionRequest",
+      "output_schema": "DataQualityFinding",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:transitionDataQualityFinding",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "transitionDictationNote",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8025,6 +8484,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:transitionReferral",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "transitionSpecialtyExecutionCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/execution-center/cases/{specialty_execution_case_id}/transitions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "SpecialtyExecutionCaseTransitionRequest",
+      "output_schema": "SpecialtyExecutionCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:transitionSpecialtyExecutionCase",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8127,6 +8603,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:updateEmergencyPreadmission",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateMasterDataRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/admin/master-data-records/{record_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "object",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateMasterDataRecord",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8246,6 +8739,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:updateReferralDraft",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateSpecialtyExecutionCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/execution-center/cases/{specialty_execution_case_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "SpecialtyExecutionCaseUpdateRequest",
+      "output_schema": "SpecialtyExecutionCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateSpecialtyExecutionCase",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

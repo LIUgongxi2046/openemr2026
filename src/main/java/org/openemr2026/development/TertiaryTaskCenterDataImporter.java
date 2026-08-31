@@ -43,6 +43,7 @@ final class TertiaryTaskCenterDataImporter {
         transactions.executeWithoutResult(status -> {
             seedTaskRules(dataset);
             seedPathwayCatalogAndRules(dataset);
+            retireLegacyOperationalTasks(dataset.path("operational_tasks").size());
             seedOperationalTasks(dataset);
             seedTaskEvents();
             seedTeamQueue();
@@ -232,6 +233,73 @@ final class TertiaryTaskCenterDataImporter {
         }
     }
 
+    /**
+     * Retires the pre-RFC fixture identities without deleting their immutable event history.
+     * Older development databases cast a raw MD5 digest to UUID, so the version and variant
+     * bits could violate the public contract even though PostgreSQL accepted the value.
+     */
+    private void retireLegacyOperationalTasks(int taskCount) {
+        jdbc.sql("""
+                with seeds as (
+                  select ordinal,
+                    md5('tertiary-task-center-v2:task:' || ordinal)::uuid as legacy_task_id,
+                    overlay(overlay(md5('tertiary-task-center-v2:task:' || ordinal)
+                      placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid as current_task_id,
+                    md5('tertiary-task-center-v2:source:' || ordinal)::uuid as legacy_source_id,
+                    overlay(overlay(md5('tertiary-task-center-v2:source:' || ordinal)
+                      placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid as current_source_id
+                  from generate_series(1, :task_count) ordinal
+                ), legacy as (
+                  select task.task_id, task.state
+                  from clinical_task task join seeds
+                    on task.task_id = seeds.legacy_task_id and task.source_id = seeds.legacy_source_id
+                  where task.tenant_id = :tenant and task.task_type like 'TCV2_%'
+                    and task.state <> 'WITHDRAWN'
+                    and (seeds.legacy_task_id <> seeds.current_task_id
+                      or seeds.legacy_source_id <> seeds.current_source_id)
+                )
+                insert into clinical_task_event(
+                  tenant_id, task_event_id, task_id, event_type, previous_state,
+                  resulting_state, actor_user_id, reason, occurred_at)
+                select :tenant,
+                  overlay(overlay(md5('tertiary-task-center-v2:legacy-retired:' || task_id)
+                    placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid,
+                  task_id, 'SOURCE_WITHDRAWN', state, 'WITHDRAWN', :author,
+                  '旧版仿真 UUID 不符合公开数据契约，已保留历史证据并退出工作队列', now()
+                from legacy
+                on conflict (tenant_id, task_event_id) do nothing
+                """).param("task_count", taskCount).param("tenant", TENANT_ID)
+                .param("author", USER_ID).update();
+        jdbc.sql("""
+                with seeds as (
+                  select
+                    md5('tertiary-task-center-v2:task:' || ordinal)::uuid as legacy_task_id,
+                    overlay(overlay(md5('tertiary-task-center-v2:task:' || ordinal)
+                      placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid as current_task_id,
+                    md5('tertiary-task-center-v2:source:' || ordinal)::uuid as legacy_source_id,
+                    overlay(overlay(md5('tertiary-task-center-v2:source:' || ordinal)
+                      placing '3' from 13 for 1) placing '8' from 17 for 1)::uuid as current_source_id
+                  from generate_series(1, :task_count) ordinal
+                )
+                update clinical_task task set state = 'WITHDRAWN',
+                  business_state = '旧版仿真标识已退役', row_version = row_version + 1, updated_at = now()
+                from seeds where task.tenant_id = :tenant and task.task_type like 'TCV2_%'
+                  and task.task_id = seeds.legacy_task_id and task.source_id = seeds.legacy_source_id
+                  and task.state <> 'WITHDRAWN'
+                  and (seeds.legacy_task_id <> seeds.current_task_id
+                    or seeds.legacy_source_id <> seeds.current_source_id)
+                """).param("task_count", taskCount).param("tenant", TENANT_ID).update();
+        jdbc.sql("""
+                with seeds as (
+                  select md5('tertiary-task-center-v2:task:' || ordinal)::uuid as legacy_task_id
+                  from generate_series(1, :task_count) ordinal
+                )
+                delete from clinical_task_team_queue queue using seeds
+                where queue.tenant_id = :tenant
+                  and queue.clinical_task_id = seeds.legacy_task_id
+                """).param("task_count", taskCount).param("tenant", TENANT_ID).update();
+    }
+
     private void seedTaskEvents() {
         jdbc.sql("""
                 insert into clinical_task_event(
@@ -243,7 +311,7 @@ final class TertiaryTaskCenterDataImporter {
                   task_id, 'CREATED', null, state, :author,
                   '由三级医院业务规则生成的仿真任务', created_at
                 from clinical_task
-                where tenant_id=:tenant and task_type like 'TCV2_%'
+                where tenant_id=:tenant and task_type like 'TCV2_%' and state <> 'WITHDRAWN'
                 on conflict (tenant_id, task_event_id) do nothing
                 """).param("tenant", TENANT_ID).param("author", USER_ID).update();
     }
@@ -253,6 +321,7 @@ final class TertiaryTaskCenterDataImporter {
                 with ranked as (
                   select task_id, row_number() over(order by created_at, task_id) ordinal
                   from clinical_task where tenant_id=:tenant and task_type like 'TCV2_%'
+                    and state <> 'WITHDRAWN'
                     and encounter_id='018f0000-0000-7000-8000-000000000102'::uuid
                 )
                 insert into clinical_task_team_queue(
@@ -298,6 +367,7 @@ final class TertiaryTaskCenterDataImporter {
                   case when kinds.status='PENDING' then now()+interval '10 minutes' else task.created_at end
                 from clinical_task task cross join kinds
                 where task.tenant_id=:tenant and task.task_type like 'TCV2_%'
+                  and task.state <> 'WITHDRAWN'
                 on conflict (tenant_id, notification_id) do nothing
                 """).param("tenant", TENANT_ID).param("author", USER_ID).param("collaborator", APPROVER_ID).update();
         jdbc.sql("""
@@ -311,6 +381,7 @@ final class TertiaryTaskCenterDataImporter {
                 join clinical_task task on task.tenant_id = notification.tenant_id
                   and task.task_id = notification.task_id
                 where notification.tenant_id = :tenant and task.task_type like 'TCV2_%'
+                  and task.state <> 'WITHDRAWN'
                   and notification.channel = 'IN_APP' and notification.status = 'DELIVERED'
                 on conflict (tenant_id, notification_id) do nothing
                 """).param("tenant", TENANT_ID).update();

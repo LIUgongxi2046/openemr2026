@@ -68,7 +68,7 @@ async function record() {
     });
     form.evalName = '';
     notice.value = form.score >= form.threshold
-      ? '评估通过：模型已进入可发布状态，Eva 可选择该模型。'
+      ? '评估记录已通过阈值：该记录仅作为评测证据，模型保持“评测中”，不会自动进入 Eva 路由。'
       : '评估未通过：模型已退出 Eva 路由，请整改后重新评估。';
     await Promise.all([modelsQuery.refetch(), evaluationsQuery.refetch()]);
   } catch (error) {
@@ -83,7 +83,7 @@ async function record() {
       <div>
         <p class="eyebrow">AI 平台 / 模型评估、影子、灰度与隔离</p>
         <h1>模型评估</h1>
-        <p>按模型部署记录评估结果；分值达到阈值判定为通过，停用不物理删除。</p>
+        <p>按模型部署记录不可变评估证据；手工分值不能直接发布模型，未通过会立即退出 Eva 路由。</p>
       </div>
       <div class="admin-inline-tools">
         <label class="admin-code-input"><span>模型部署</span>
@@ -130,7 +130,7 @@ async function record() {
         </section>
 
         <section class="admin-panel admin-form-panel">
-          <header><div><h2>记录评估结果</h2><p>分值与阈值均为 0–1，评估时间默认当前。</p></div></header>
+          <header><div><h2>记录评估证据</h2><p>分值与阈值均为 0–1；通过只形成证据，不自动批准模型。</p></div></header>
           <form class="admin-form" @submit.prevent="record">
             <label><span>评估名称</span><input v-model="form.evalName" maxlength="256" required placeholder="例：临床问答准确率" /></label>
             <label><span>分值（0–1）</span><input v-model.number="form.score" type="number" min="0" max="1" step="0.01" required /></label>

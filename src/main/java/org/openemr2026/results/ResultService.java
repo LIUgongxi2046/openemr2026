@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import org.openemr2026.contracts.CriticalValueDispositionRequestWire;
 import org.openemr2026.contracts.CriticalValueWire;
 import org.openemr2026.contracts.ResultObservationInputWire;
 import org.openemr2026.security.ClinicalIdentity;
+import org.openemr2026.tasks.ClinicalTaskRuleResolver;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -29,10 +31,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 final class ResultService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ClinicalTaskRuleResolver taskRules;
 
-    ResultService(JdbcClient jdbc, TransactionTemplate transactions) {
+    ResultService(JdbcClient jdbc, TransactionTemplate transactions, ClinicalTaskRuleResolver taskRules) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.taskRules = taskRules;
     }
 
     ClinicalResultWire create(
@@ -315,16 +319,25 @@ final class ResultService {
     private void createCriticalTask(
             ClinicalIdentity identity, UUID criticalValueId, UUID patientId, UUID encounterId,
             UUID facilityId, String taskType, String title, String businessState) {
+        String careDomain = jdbc.sql("""
+                select encounter_type from encounter where tenant_id = :tenant and encounter_id = :encounter
+                """).param("tenant", identity.tenantId()).param("encounter", encounterId)
+                .query(String.class).single();
+        Duration defaultDue = "CRITICAL_VALUE_RECEIPT".equals(taskType)
+                ? Duration.ofMinutes(10) : Duration.ofMinutes(30);
+        ClinicalTaskRuleResolver.ResolvedTaskRule rule = taskRules.resolve(
+                identity.tenantId(), taskType, careDomain, "CRITICAL", defaultDue);
         UUID taskId = jdbc.sql("""
                 insert into clinical_task(
                   tenant_id, task_id, patient_id, encounter_id, facility_id,
                   source_type, source_id, task_type, title, risk_level,
-                  state, business_state, due_at, source_route)
+                  state, business_state, due_at, source_route, task_rule_config_id,
+                  task_rule_version, rule_snapshot, escalation_at)
                 select :tenant, gen_random_uuid(), :patient, :encounter, :facility,
-                  'CRITICAL_VALUE', :critical_id, :task_type, :title, 'CRITICAL',
-                  'PENDING', :business_state, now() + case when :task_type = 'CRITICAL_VALUE_RECEIPT'
-                    then interval '10 minutes' else interval '30 minutes' end,
-                  case encounter_type when 'INPATIENT' then '#/ip-results' else '#/opd-results' end
+                  'CRITICAL_VALUE', :critical_id, :task_type, :title, :risk_level,
+                  'PENDING', :business_state, :due_at,
+                  case encounter_type when 'INPATIENT' then '#/ip-results' else '#/opd-results' end,
+                  :rule_config, :rule_version, cast(:rule_snapshot as jsonb), :escalation_at
                 from encounter where tenant_id = :tenant and encounter_id = :encounter
                 on conflict (tenant_id, source_type, source_id, task_type) do nothing
                 returning task_id
@@ -332,6 +345,9 @@ final class ResultService {
                 .param("encounter", encounterId).param("facility", facilityId)
                 .param("critical_id", criticalValueId).param("task_type", taskType)
                 .param("title", title).param("business_state", businessState)
+                .param("risk_level", rule.riskLevel()).param("due_at", rule.dueAt())
+                .param("rule_config", rule.configId()).param("rule_version", rule.configVersion())
+                .param("rule_snapshot", rule.snapshotJson()).param("escalation_at", rule.escalationAt())
                 .query(UUID.class).optional().orElse(null);
         if (taskId == null) return;
         jdbc.sql("""

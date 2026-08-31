@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HexFormat;
@@ -25,6 +26,7 @@ import org.openemr2026.contracts.MedicationSafetyFindingWire;
 import org.openemr2026.contracts.OrderExecutionEventCreateRequestWire;
 import org.openemr2026.contracts.OrderExecutionTaskWire;
 import org.openemr2026.security.ClinicalIdentity;
+import org.openemr2026.tasks.ClinicalTaskRuleResolver;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -35,10 +37,12 @@ final class OrderService {
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
+    private final ClinicalTaskRuleResolver taskRules;
 
-    OrderService(JdbcClient jdbc, TransactionTemplate transactions) {
+    OrderService(JdbcClient jdbc, TransactionTemplate transactions, ClinicalTaskRuleResolver taskRules) {
         this.jdbc = jdbc;
         this.transactions = transactions;
+        this.taskRules = taskRules;
     }
 
     ClinicalOrderWire create(
@@ -510,7 +514,31 @@ final class OrderService {
                 returning task_id
                 """).param("patient", patientId).param("encounter", encounterId).param("facility", facilityId)
                 .param("tenant", identity.tenantId()).param("order_id", orderId).query(UUID.class).list();
+        String careDomain = jdbc.sql("""
+                select encounter_type from encounter where tenant_id = :tenant and encounter_id = :encounter
+                """).param("tenant", identity.tenantId()).param("encounter", encounterId)
+                .query(String.class).single();
         for (UUID taskId : taskIds) {
+            TaskRuleBasis basis = jdbc.sql("""
+                    select task_type, risk_level from clinical_task
+                    where tenant_id = :tenant and task_id = :task
+                    """).param("tenant", identity.tenantId()).param("task", taskId)
+                    .query((rs, row) -> new TaskRuleBasis(
+                            rs.getString("task_type"), rs.getString("risk_level"))).single();
+            Duration defaultDue = "HIGH".equals(basis.riskLevel())
+                    ? Duration.ofMinutes(30) : Duration.ofHours(2);
+            ClinicalTaskRuleResolver.ResolvedTaskRule rule = taskRules.resolve(
+                    identity.tenantId(), basis.taskType(), careDomain, basis.riskLevel(), defaultDue);
+            jdbc.sql("""
+                    update clinical_task set risk_level = :risk, due_at = :due_at,
+                      task_rule_config_id = :rule_config, task_rule_version = :rule_version,
+                      rule_snapshot = cast(:snapshot as jsonb), escalation_at = :escalation_at,
+                      updated_at = now()
+                    where tenant_id = :tenant and task_id = :task
+                    """).param("risk", rule.riskLevel()).param("due_at", rule.dueAt())
+                    .param("rule_config", rule.configId()).param("rule_version", rule.configVersion())
+                    .param("snapshot", rule.snapshotJson()).param("escalation_at", rule.escalationAt())
+                    .param("tenant", identity.tenantId()).param("task", taskId).update();
             jdbc.sql("""
                     insert into clinical_task_event(
                       tenant_id, task_event_id, task_id, event_type,
@@ -521,6 +549,8 @@ final class OrderService {
             appendTaskOutbox(identity.tenantId(), taskId, 1, "ClinicalTaskCreated", orderId);
         }
     }
+
+    private record TaskRuleBasis(String taskType, String riskLevel) {}
 
     private void syncClinicalTaskFromExecution(
             ClinicalIdentity identity, UUID executionTaskId, String businessState) {

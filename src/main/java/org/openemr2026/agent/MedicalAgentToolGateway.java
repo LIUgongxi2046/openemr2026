@@ -19,13 +19,38 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 final class MedicalAgentToolGateway {
 
-    private static final Map<String, ToolDefinition> TOOLS = Map.of(
+    private static final Map<String, ToolDefinition> SCOPED_TOOLS = Map.of(
             "RECORDS", new ToolDefinition("CLINICAL_DOCUMENT_READ", "当前就诊文书版本读取"),
             "ORDERS", new ToolDefinition("CLINICAL_ORDER_READ", "当前就诊医嘱读取"),
             "RESULTS", new ToolDefinition("CLINICAL_RESULT_READ", "当前就诊结果读取"),
             "TASKS", new ToolDefinition("CLINICAL_TASK_READ", "当前就诊任务读取"),
             "ATTACHMENTS", new ToolDefinition("CLINICAL_ATTACHMENT_READ", "当前就诊附件元数据读取"),
             "CONFIGURATION", new ToolDefinition("BUSINESS_CONFIGURATION_READ", "已发布业务配置与运行时证据读取"));
+    private static final Map<String, ToolDefinition> DEPENDENCY_TOOLS = Map.ofEntries(
+            Map.entry("VITAL_SIGN_READ", new ToolDefinition("VITAL_SIGN_READ", "生命体征趋势读取")),
+            Map.entry("LAB_TREND_READ", new ToolDefinition("LAB_TREND_READ", "检验结果趋势读取")),
+            Map.entry("SURGERY_SCHEDULE_READ", new ToolDefinition("SURGERY_SCHEDULE_READ", "手术安排读取")),
+            Map.entry("ANESTHESIA_RECORD_READ", new ToolDefinition("ANESTHESIA_RECORD_READ", "麻醉记录读取")),
+            Map.entry("INFECTION_EVENT_READ", new ToolDefinition("INFECTION_EVENT_READ", "院感事件读取")),
+            Map.entry("NURSING_RECORD_READ", new ToolDefinition("NURSING_RECORD_READ", "护理记录读取")),
+            Map.entry("PATHOLOGY_REPORT_READ", new ToolDefinition("PATHOLOGY_REPORT_READ", "病理报告读取")),
+            Map.entry("IMAGING_REPORT_READ", new ToolDefinition("IMAGING_REPORT_READ", "影像报告读取")),
+            Map.entry("MDT_RECORD_READ", new ToolDefinition("MDT_RECORD_READ", "多学科会诊记录读取")),
+            Map.entry("MEDICATION_ADMIN_READ", new ToolDefinition("MEDICATION_ADMIN_READ", "用药执行记录读取")),
+            Map.entry("ENCOUNTER_TIMELINE_READ", new ToolDefinition("ENCOUNTER_TIMELINE_READ", "当前就诊时间线读取")),
+            Map.entry("DOCUMENT_TEMPLATE_READ", new ToolDefinition("DOCUMENT_TEMPLATE_READ", "已发布文书模板读取")),
+            Map.entry("CLINICAL_RULE_EVALUATE", new ToolDefinition("CLINICAL_RULE_EVALUATE", "临床规则结果读取")),
+            Map.entry("CRITICAL_VALUE_READ", new ToolDefinition("CRITICAL_VALUE_READ", "危急值闭环读取")),
+            Map.entry("CONSULTATION_READ", new ToolDefinition("CONSULTATION_READ", "会诊协同读取")));
+    private static final Map<String, String> DEPENDENCY_SCOPE = Map.ofEntries(
+            Map.entry("VITAL_SIGN_READ", "RECORDS"), Map.entry("LAB_TREND_READ", "RESULTS"),
+            Map.entry("SURGERY_SCHEDULE_READ", "RECORDS"), Map.entry("ANESTHESIA_RECORD_READ", "RECORDS"),
+            Map.entry("INFECTION_EVENT_READ", "RECORDS"), Map.entry("NURSING_RECORD_READ", "RECORDS"),
+            Map.entry("PATHOLOGY_REPORT_READ", "RESULTS"), Map.entry("IMAGING_REPORT_READ", "RESULTS"),
+            Map.entry("MDT_RECORD_READ", "TASKS"), Map.entry("MEDICATION_ADMIN_READ", "ORDERS"),
+            Map.entry("ENCOUNTER_TIMELINE_READ", "RECORDS"), Map.entry("DOCUMENT_TEMPLATE_READ", "CONFIGURATION"),
+            Map.entry("CLINICAL_RULE_EVALUATE", "CONFIGURATION"), Map.entry("CRITICAL_VALUE_READ", "RESULTS"),
+            Map.entry("CONSULTATION_READ", "RECORDS"));
 
     private final JdbcClient jdbc;
     private final ObjectMapper objectMapper;
@@ -40,15 +65,46 @@ final class MedicalAgentToolGateway {
 
     List<ToolResult> execute(
             UUID tenantId, UUID runId, UUID childRunId, UUID leaseId, UUID patientId, UUID encounterId,
-            String authorizationWatermark, Set<String> scopes) {
+            String authorizationWatermark, String rootAgentCode, Set<String> scopes) {
         List<ToolResult> results = new ArrayList<>();
         for (String scope : List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "ATTACHMENTS", "CONFIGURATION")) {
             if (scopes.contains(scope)) {
                 results.add(executeOne(tenantId, runId, childRunId, leaseId, patientId, encounterId,
-                        authorizationWatermark, TOOLS.get(scope)));
+                        authorizationWatermark, SCOPED_TOOLS.get(scope)));
             }
         }
+        for (ToolDefinition definition : dependencyTools(tenantId, rootAgentCode, scopes)) {
+            results.add(executeOne(tenantId, runId, childRunId, leaseId, patientId, encounterId,
+                    authorizationWatermark, definition));
+        }
         return List.copyOf(results);
+    }
+
+    private List<ToolDefinition> dependencyTools(UUID tenantId, String rootAgentCode, Set<String> scopes) {
+        List<String> codes = jdbc.sql("""
+                select distinct dependency.dependency_code
+                from agent_registry agent
+                join agent_dependency dependency
+                  on dependency.tenant_id = agent.tenant_id
+                 and dependency.agent_registry_id = agent.agent_registry_id
+                 and dependency.dependency_type = 'TOOL'
+                join tool_registry tool
+                  on tool.tenant_id = dependency.tenant_id
+                 and tool.tool_code = dependency.dependency_code and tool.status = 'ACTIVE'
+                where agent.tenant_id = :tenant and agent.agent_code = :agent and agent.status = 'ACTIVE'
+                order by dependency.dependency_code
+                """).param("tenant", tenantId).param("agent", rootAgentCode).query(String.class).list();
+        List<ToolDefinition> definitions = new ArrayList<>();
+        for (String code : codes) {
+            ToolDefinition definition = DEPENDENCY_TOOLS.get(code);
+            if (definition == null) {
+                throw new AgentRunException("MEDICAL_AGENT_TOOL_ADAPTER_MISSING", 409,
+                        "The active medical assistant tool has no executable adapter: " + code);
+            }
+            String requiredScope = DEPENDENCY_SCOPE.get(code);
+            if (scopes.contains(requiredScope)) definitions.add(definition);
+        }
+        return List.copyOf(definitions);
     }
 
     private ToolResult executeOne(
@@ -110,6 +166,24 @@ final class MedicalAgentToolGateway {
             case "CLINICAL_TASK_READ" -> tasks(tenantId, patientId, encounterId);
             case "CLINICAL_ATTACHMENT_READ" -> attachments(tenantId, patientId, encounterId);
             case "BUSINESS_CONFIGURATION_READ" -> configurationRuntime.activeConfigurationsForAgent(tenantId);
+            case "VITAL_SIGN_READ" -> vitalSigns(tenantId, patientId, encounterId);
+            case "LAB_TREND_READ" -> laboratoryTrend(tenantId, patientId, encounterId);
+            case "SURGERY_SCHEDULE_READ" -> surgerySchedule(tenantId, patientId, encounterId);
+            case "ANESTHESIA_RECORD_READ" -> typedDocuments(tenantId, patientId, encounterId,
+                    "ANESTHESIA", "ANESTHESIA_DOCUMENT_VERSION");
+            case "INFECTION_EVENT_READ" -> infectionEvents(tenantId, patientId, encounterId);
+            case "NURSING_RECORD_READ" -> nursingRecords(tenantId, patientId, encounterId);
+            case "PATHOLOGY_REPORT_READ" -> typedDocuments(tenantId, patientId, encounterId,
+                    "PATH", "PATHOLOGY_DOCUMENT_VERSION");
+            case "IMAGING_REPORT_READ" -> resultReports(tenantId, patientId, encounterId, "IMAGING");
+            case "MDT_RECORD_READ" -> typedDocuments(tenantId, patientId, encounterId,
+                    "MDT", "MDT_DOCUMENT_VERSION");
+            case "MEDICATION_ADMIN_READ" -> medicationAdministrations(tenantId, patientId, encounterId);
+            case "ENCOUNTER_TIMELINE_READ" -> encounterTimeline(tenantId, patientId, encounterId);
+            case "DOCUMENT_TEMPLATE_READ" -> documentTemplates(tenantId);
+            case "CLINICAL_RULE_EVALUATE" -> clinicalRuleResults(tenantId, patientId, encounterId);
+            case "CRITICAL_VALUE_READ" -> criticalValues(tenantId, patientId, encounterId);
+            case "CONSULTATION_READ" -> consultations(tenantId, patientId, encounterId);
             default -> throw new AgentRunException("MEDICAL_AGENT_TOOL_NOT_ALLOWED", 403,
                     "The requested tool is not in the medical-agent allowlist");
         };
@@ -203,7 +277,17 @@ final class MedicalAgentToolGateway {
     private List<Map<String, Object>> tasks(UUID tenantId, UUID patientId, UUID encounterId) {
         return jdbc.sql("""
                 select task_id, source_type, task_type, title, risk_level, state, business_state,
-                  due_at, source_route, row_version, updated_at
+                  due_at, escalation_at, source_route, row_version, updated_at,
+                  task_rule_config_id, task_rule_version, rule_snapshot::text,
+                  (select count(*) from clinical_task_event event
+                    where event.tenant_id = clinical_task.tenant_id
+                      and event.task_id = clinical_task.task_id) as event_count,
+                  (select count(*) from clinical_task_delegation delegation
+                    where delegation.tenant_id = clinical_task.tenant_id
+                      and delegation.task_id = clinical_task.task_id) as delegation_count,
+                  (select count(*) from clinical_task_notification notification
+                    where notification.tenant_id = clinical_task.tenant_id
+                      and notification.task_id = clinical_task.task_id) as notification_count
                 from clinical_task where tenant_id = :tenant and patient_id = :patient
                   and encounter_id = :encounter and state not in ('WITHDRAWN', 'EXPIRED')
                 order by case risk_level when 'CRITICAL' then 0 when 'HIGH' then 1 else 2 end,
@@ -219,7 +303,279 @@ final class MedicalAgentToolGateway {
                         "state", rs.getString("state"),
                         "business_state", rs.getString("business_state"),
                         "due_at", rs.getObject("due_at", OffsetDateTime.class),
+                        "escalation_at", rs.getObject("escalation_at", OffsetDateTime.class),
+                        "task_rule_config_id", rs.getObject("task_rule_config_id", UUID.class),
+                        "task_rule_version", rs.getObject("task_rule_version", Long.class),
+                        "rule_snapshot", map(rs.getString("rule_snapshot")),
+                        "event_count", rs.getLong("event_count"),
+                        "delegation_count", rs.getLong("delegation_count"),
+                        "notification_count", rs.getLong("notification_count"),
                         "source_route", rs.getString("source_route"),
+                        "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("updated_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> vitalSigns(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select vital_sign_record_id, recorded_at, source, temperature, pulse, respiration,
+                  systolic_bp, diastolic_bp, spo2, row_version
+                from vital_sign_record where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by recorded_at desc, vital_sign_record_id desc limit 24
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "VITAL_SIGN_RECORD", "source_id",
+                        rs.getObject("vital_sign_record_id", UUID.class), "source", rs.getString("source"),
+                        "temperature_c", rs.getBigDecimal("temperature"), "pulse_bpm", rs.getObject("pulse"),
+                        "respiration_per_min", rs.getObject("respiration"),
+                        "systolic_bp_mmhg", rs.getObject("systolic_bp"),
+                        "diastolic_bp_mmhg", rs.getObject("diastolic_bp"), "spo2_percent", rs.getBigDecimal("spo2"),
+                        "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("recorded_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> laboratoryTrend(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select observation.observation_id, observation.item_code, observation.item_name,
+                  observation.value_type, observation.numeric_value, observation.text_value,
+                  observation.unit, observation.reference_low, observation.reference_high,
+                  observation.abnormal_flag, version.version_no, version.reported_at
+                from clinical_result result
+                join clinical_result_version version on version.tenant_id = result.tenant_id
+                  and version.result_version_id = result.current_version_id
+                join clinical_result_observation observation on observation.tenant_id = version.tenant_id
+                  and observation.result_version_id = version.result_version_id
+                where result.tenant_id = :tenant and result.patient_id = :patient
+                  and result.encounter_id = :encounter and result.report_type = 'LAB'
+                order by version.reported_at desc, observation.item_code, observation.observation_id limit 60
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "LAB_OBSERVATION", "source_id", rs.getObject("observation_id", UUID.class),
+                        "item_code", rs.getString("item_code"), "item_name", rs.getString("item_name"),
+                        "value_type", rs.getString("value_type"), "numeric_value", rs.getBigDecimal("numeric_value"),
+                        "text_value", rs.getString("text_value"), "unit", rs.getString("unit"),
+                        "reference_low", rs.getBigDecimal("reference_low"),
+                        "reference_high", rs.getBigDecimal("reference_high"),
+                        "abnormal_flag", rs.getString("abnormal_flag"), "version", rs.getLong("version_no"),
+                        "recorded_at", rs.getObject("reported_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> surgerySchedule(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select surgical_procedure_id, procedure_name, body_site, laterality, status,
+                  scheduled_at, time_out_at, completed_at, row_version
+                from surgical_procedure where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by scheduled_at desc, surgical_procedure_id desc limit 12
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "SURGICAL_PROCEDURE", "source_id",
+                        rs.getObject("surgical_procedure_id", UUID.class),
+                        "procedure_name", rs.getString("procedure_name"), "body_site", rs.getString("body_site"),
+                        "laterality", rs.getString("laterality"), "status", rs.getString("status"),
+                        "scheduled_at", rs.getObject("scheduled_at", OffsetDateTime.class),
+                        "time_out_at", rs.getObject("time_out_at", OffsetDateTime.class),
+                        "completed_at", rs.getObject("completed_at", OffsetDateTime.class),
+                        "version", rs.getLong("row_version"))).list();
+    }
+
+    private List<Map<String, Object>> infectionEvents(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select infection_event_id, infection_type, organism_code, status, conclusion,
+                  reported_at, resolved_at, row_version
+                from infection_monitoring_event where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by reported_at desc, infection_event_id desc limit 20
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "INFECTION_MONITORING_EVENT", "source_id",
+                        rs.getObject("infection_event_id", UUID.class),
+                        "infection_type", rs.getString("infection_type"), "organism_code", rs.getString("organism_code"),
+                        "status", rs.getString("status"), "conclusion", rs.getString("conclusion"),
+                        "resolved_at", rs.getObject("resolved_at", OffsetDateTime.class),
+                        "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("reported_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> nursingRecords(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select note_id, note_type, recorded_at, synced_at, device_id, content, row_version
+                from nursing_bedside_note where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by recorded_at desc, note_id desc limit 24
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "NURSING_BEDSIDE_NOTE", "source_id", rs.getObject("note_id", UUID.class),
+                        "note_type", rs.getString("note_type"), "content", rs.getString("content"),
+                        "device_id", rs.getString("device_id"), "synced_at", rs.getObject("synced_at", OffsetDateTime.class),
+                        "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("recorded_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> resultReports(
+            UUID tenantId, UUID patientId, UUID encounterId, String reportType) {
+        return jdbc.sql("""
+                select result.result_id, version.result_version_id, result.source_system,
+                  version.version_no, version.report_status, version.conclusion, version.reported_at,
+                  version.change_type, version.correction_reason
+                from clinical_result result
+                join clinical_result_version version on version.tenant_id = result.tenant_id
+                  and version.result_version_id = result.current_version_id
+                where result.tenant_id = :tenant and result.patient_id = :patient
+                  and result.encounter_id = :encounter and result.report_type = :report_type
+                order by version.reported_at desc, result.result_id limit 20
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .param("report_type", reportType).query((rs, row) -> item(
+                        "source_type", reportType + "_REPORT_VERSION", "source_id",
+                        rs.getObject("result_version_id", UUID.class), "result_id", rs.getObject("result_id", UUID.class),
+                        "source_system", rs.getString("source_system"), "status", rs.getString("report_status"),
+                        "conclusion", rs.getString("conclusion"), "change_type", rs.getString("change_type"),
+                        "correction_reason", rs.getString("correction_reason"), "version", rs.getLong("version_no"),
+                        "recorded_at", rs.getObject("reported_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> typedDocuments(
+            UUID tenantId, UUID patientId, UUID encounterId, String typeKeyword, String sourceType) {
+        return jdbc.sql("""
+                select document.document_id, version.document_version_id, document.document_type_code,
+                  version.status, version.version_no, version.sections::text, version.content_hash,
+                  version.created_at
+                from clinical_document document
+                join clinical_document_version version on version.tenant_id = document.tenant_id
+                  and version.document_id = document.document_id
+                  and version.document_version_id = document.current_version_id
+                where document.tenant_id = :tenant and document.patient_id = :patient
+                  and document.encounter_id = :encounter and document.status <> 'VOID'
+                  and upper(document.document_type_code) like '%' || :keyword || '%'
+                order by document.updated_at desc, document.document_id limit 20
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .param("keyword", typeKeyword).query((rs, row) -> item(
+                        "source_type", sourceType, "source_id", rs.getObject("document_version_id", UUID.class),
+                        "document_id", rs.getObject("document_id", UUID.class),
+                        "document_type", rs.getString("document_type_code"), "status", rs.getString("status"),
+                        "version", rs.getInt("version_no"), "sections", map(rs.getString("sections")),
+                        "content_hash", rs.getString("content_hash"),
+                        "recorded_at", rs.getObject("created_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> medicationAdministrations(
+            UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select administration_id, order_id, drug_code, dose_value, dose_unit, route_code,
+                  administered_at, verification_note, row_version
+                from medication_administration where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by administered_at desc, administration_id desc limit 40
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "MEDICATION_ADMINISTRATION", "source_id",
+                        rs.getObject("administration_id", UUID.class), "order_id", rs.getObject("order_id", UUID.class),
+                        "drug_code", rs.getString("drug_code"), "dose_value", rs.getBigDecimal("dose_value"),
+                        "dose_unit", rs.getString("dose_unit"), "route_code", rs.getString("route_code"),
+                        "verification_note", rs.getString("verification_note"), "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("administered_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> encounterTimeline(UUID tenantId, UUID patientId, UUID encounterId) {
+        List<Map<String, Object>> timeline = new ArrayList<>();
+        timeline.addAll(documents(tenantId, patientId, encounterId));
+        timeline.addAll(orders(tenantId, patientId, encounterId));
+        timeline.addAll(results(tenantId, patientId, encounterId));
+        timeline.addAll(tasks(tenantId, patientId, encounterId));
+        return List.copyOf(timeline);
+    }
+
+    private List<Map<String, Object>> documentTemplates(UUID tenantId) {
+        return jdbc.sql("""
+                select template.template_id, version.template_version_id, template.template_code,
+                  template.display_name, template.document_type_code, version.version_no,
+                  version.section_schema::text, version.required_fields, version.display_rules::text,
+                  version.effective_from, version.effective_until, version.row_version
+                from clinical_document_template template
+                join clinical_document_template_version version on version.tenant_id = template.tenant_id
+                  and version.template_id = template.template_id and version.status = 'PUBLISHED'
+                where template.tenant_id = :tenant and template.lifecycle_status = 'ACTIVE'
+                  and version.effective_from <= now()
+                  and (version.effective_until is null or version.effective_until > now())
+                order by template.document_type_code, template.template_code limit 40
+                """).param("tenant", tenantId).query((rs, row) -> item(
+                        "source_type", "DOCUMENT_TEMPLATE_VERSION", "source_id",
+                        rs.getObject("template_version_id", UUID.class),
+                        "template_id", rs.getObject("template_id", UUID.class),
+                        "template_code", rs.getString("template_code"), "display_name", rs.getString("display_name"),
+                        "document_type", rs.getString("document_type_code"),
+                        "section_schema", map(rs.getString("section_schema")),
+                        "required_fields", List.of((String[]) rs.getArray("required_fields").getArray()),
+                        "display_rules", map(rs.getString("display_rules")), "version", rs.getInt("version_no"),
+                        "recorded_at", rs.getObject("effective_from", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> clinicalRuleResults(
+            UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select finding_id, document_id, document_version_id, rule_code, rule_version,
+                  severity, message, field_path, state, row_version, updated_at
+                from quality_finding where tenant_id = :tenant
+                  and document_id in (select document_id from clinical_document
+                    where tenant_id = :tenant and patient_id = :patient and encounter_id = :encounter)
+                  and state in ('OPEN', 'ACKNOWLEDGED')
+                order by case severity when 'BLOCKING' then 0 when 'WARNING' then 1 else 2 end,
+                  updated_at desc, finding_id limit 40
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "QUALITY_RULE_RESULT", "source_id", rs.getObject("finding_id", UUID.class),
+                        "document_id", rs.getObject("document_id", UUID.class),
+                        "document_version_id", rs.getObject("document_version_id", UUID.class),
+                        "rule_code", rs.getString("rule_code"), "rule_version", rs.getString("rule_version"),
+                        "severity", rs.getString("severity"), "message", rs.getString("message"),
+                        "field_path", rs.getString("field_path"), "state", rs.getString("state"),
+                        "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("updated_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> criticalValues(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select critical.critical_value_id, critical.result_id, critical.observation_id,
+                  critical.state, critical.row_version, critical.created_at, critical.updated_at,
+                  observation.item_code, observation.item_name, observation.numeric_value,
+                  observation.text_value, observation.unit, observation.abnormal_flag
+                from critical_value_case critical
+                join clinical_result_observation observation on observation.tenant_id = critical.tenant_id
+                  and observation.observation_id = critical.observation_id
+                where critical.tenant_id = :tenant and critical.patient_id = :patient
+                  and critical.encounter_id = :encounter
+                order by critical.updated_at desc, critical.critical_value_id limit 30
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "CRITICAL_VALUE_CASE", "source_id",
+                        rs.getObject("critical_value_id", UUID.class), "result_id", rs.getObject("result_id", UUID.class),
+                        "observation_id", rs.getObject("observation_id", UUID.class),
+                        "item_code", rs.getString("item_code"), "item_name", rs.getString("item_name"),
+                        "numeric_value", rs.getBigDecimal("numeric_value"), "text_value", rs.getString("text_value"),
+                        "unit", rs.getString("unit"), "abnormal_flag", rs.getString("abnormal_flag"),
+                        "state", rs.getString("state"), "version", rs.getLong("row_version"),
+                        "recorded_at", rs.getObject("updated_at", OffsetDateTime.class))).list();
+    }
+
+    private List<Map<String, Object>> consultations(UUID tenantId, UUID patientId, UUID encounterId) {
+        return jdbc.sql("""
+                select consultation_id, requested_department, urgency, reason, clinical_question,
+                  status, due_at, requested_at, opinion, recommendation, opinion_signed_at,
+                  completed_at, row_version, updated_at
+                from inpatient_consultation where tenant_id = :tenant and patient_id = :patient
+                  and encounter_id = :encounter
+                order by requested_at desc, consultation_id limit 20
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query((rs, row) -> item(
+                        "source_type", "INPATIENT_CONSULTATION", "source_id",
+                        rs.getObject("consultation_id", UUID.class),
+                        "requested_department", rs.getString("requested_department"),
+                        "urgency", rs.getString("urgency"), "reason", rs.getString("reason"),
+                        "clinical_question", rs.getString("clinical_question"), "status", rs.getString("status"),
+                        "due_at", rs.getObject("due_at", OffsetDateTime.class), "opinion", rs.getString("opinion"),
+                        "recommendation", rs.getString("recommendation"),
+                        "opinion_signed_at", rs.getObject("opinion_signed_at", OffsetDateTime.class),
+                        "completed_at", rs.getObject("completed_at", OffsetDateTime.class),
                         "version", rs.getLong("row_version"),
                         "recorded_at", rs.getObject("updated_at", OffsetDateTime.class))).list();
     }

@@ -7,9 +7,15 @@ import {
 import {
   dataQualityEvaluationRecordRequestWireSchema,
   dataQualityEvaluationWireSchema,
+  dataQualityFindingTransitionRequestWireSchema,
+  dataQualityFindingWireSchema,
   dataQualityRuleDeactivateRequestWireSchema,
   dataQualityRuleRegisterRequestWireSchema,
   dataQualityRuleWireSchema,
+  dataQualityScanRunWireSchema,
+  dataQualityScanStartRequestWireSchema,
+  dataQualityTriageAdviceWireSchema,
+  dataQualityTriageRequestWireSchema,
   releaseDownloadEventCreateRequestWireSchema,
   releaseDownloadEventWireSchema,
   releaseDownloadValidCountWireSchema,
@@ -30,8 +36,12 @@ import {
   type ContextLeaseWire,
   type DataQualityEvaluationRecordRequestWire,
   type DataQualityEvaluationWire,
+  type DataQualityFindingTransitionRequestWire,
+  type DataQualityFindingWire,
   type DataQualityRuleRegisterRequestWire,
   type DataQualityRuleWire,
+  type DataQualityScanRunWire,
+  type DataQualityTriageAdviceWire,
   type ReleaseDownloadEventCreateRequestWire,
   type ReleaseDownloadEventWire,
   type ReleaseDownloadValidCountWire,
@@ -108,6 +118,73 @@ export async function recordDataQualityEvaluation(
 }
 
 // ── 队列构建器（研究队列 + 快照 + 成员） ─────────────────────
+export async function startDataQualityScan(
+  lease: ContextLeaseWire,
+  ruleId: string,
+): Promise<DataQualityScanRunWire> {
+  return dataQualityScanRunWireSchema.parse(await request(`/data-quality-rules/${ruleId}/scans`, {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(dataQualityScanStartRequestWireSchema.parse(orgFacility())),
+  }));
+}
+
+export async function listDataQualityScans(
+  lease: ContextLeaseWire,
+  ruleId: string,
+): Promise<DataQualityScanRunWire[]> {
+  return dataQualityScanRunWireSchema.array().parse(await request(
+    `/data-quality-scans?data_quality_rule_id=${encodeURIComponent(ruleId)}`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function listDataQualityFindings(
+  lease: ContextLeaseWire,
+  scanId?: string,
+): Promise<DataQualityFindingWire[]> {
+  return dataQualityFindingWireSchema.array().parse(await request(
+    `/data-quality-findings${scanId ? `?data_quality_scan_id=${encodeURIComponent(scanId)}` : ''}`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function transitionDataQualityFinding(
+  lease: ContextLeaseWire,
+  findingId: string,
+  input: Omit<DataQualityFindingTransitionRequestWire, 'organization_id' | 'facility_id'>,
+): Promise<DataQualityFindingWire> {
+  return dataQualityFindingWireSchema.parse(await request(
+    `/data-quality-findings/${findingId}/transitions`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(dataQualityFindingTransitionRequestWireSchema.parse({ ...orgFacility(), ...input })),
+    },
+  ));
+}
+
+export async function listDataQualityTriageAdvice(
+  lease: ContextLeaseWire,
+  scanId: string,
+): Promise<DataQualityTriageAdviceWire[]> {
+  return dataQualityTriageAdviceWireSchema.array().parse(await request(
+    `/data-quality-scans/${scanId}/triage-advice`, { headers: wardHeaders(lease) },
+  ));
+}
+
+export async function createDataQualityTriageAdvice(
+  lease: ContextLeaseWire,
+  scanId: string,
+): Promise<DataQualityTriageAdviceWire> {
+  return dataQualityTriageAdviceWireSchema.parse(await request(
+    `/data-quality-scans/${scanId}/triage-advice`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(dataQualityTriageRequestWireSchema.parse(orgFacility())),
+    },
+  ));
+}
+
 export async function listResearchCohorts(lease: ContextLeaseWire, status?: string): Promise<ResearchCohortWire[]> {
   const q = status ? `?status=${encodeURIComponent(status)}` : '';
   return researchCohortWireSchema.array().parse(await request(`/research-cohorts${q}`, { headers: wardHeaders(lease) }));
