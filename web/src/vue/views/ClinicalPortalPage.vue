@@ -1,9 +1,21 @@
 <script setup lang="ts">
 // 临床业务门户 —— 三域卡片门户。DOM 结构与类名严格对齐高保真原型
 // prototype/app/app.js `clinical()`（见 DEVELOPMENT_PRINCIPLES.md §六：复用原型类名，勿另写一套）。
+import { useQuery } from '@tanstack/vue-query';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { clinicalContext } from '../../clinical-api';
+import { issueEmergencyFacilityLease, issueEmergencyLease, listEmergencyCoordinationCases, listEmergencyIdentityVerifications, listEmergencyObservations, listEmergencyResuscitations, listEmergencyTriageAssessments, listWaitingQueue } from '../../api/emergency';
 
 const router = useRouter();
+const emergencyFacilityLease = useQuery({ queryKey: ['clinical-portal', 'emergency', 'facility-lease'], queryFn: () => issueEmergencyFacilityLease('CLINICAL_PORTAL_EMERGENCY'), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const emergencyPatientLease = useQuery({ queryKey: ['clinical-portal', 'emergency', 'patient-lease'], queryFn: () => issueEmergencyLease('CLINICAL_PORTAL_EMERGENCY'), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const emergencyQueue = useQuery({ queryKey: ['clinical-portal', 'emergency', 'queue'], queryFn: () => listWaitingQueue(emergencyFacilityLease.data.value!), enabled: () => Boolean(emergencyFacilityLease.data.value), retry: false });
+const emergencyTriages = useQuery({ queryKey: ['clinical-portal', 'emergency', 'triage'], queryFn: () => listEmergencyTriageAssessments(emergencyPatientLease.data.value!), enabled: () => Boolean(emergencyPatientLease.data.value), retry: false });
+const emergencyResuscitations = useQuery({ queryKey: ['clinical-portal', 'emergency', 'resuscitation'], queryFn: () => listEmergencyResuscitations(emergencyPatientLease.data.value!), enabled: () => Boolean(emergencyPatientLease.data.value), retry: false });
+const emergencyObservations = useQuery({ queryKey: ['clinical-portal', 'emergency', 'observation'], queryFn: () => listEmergencyObservations(emergencyPatientLease.data.value!), enabled: () => Boolean(emergencyPatientLease.data.value), retry: false });
+const emergencyCoordination = useQuery({ queryKey: ['clinical-portal', 'emergency', 'coordination'], queryFn: () => listEmergencyCoordinationCases(emergencyPatientLease.data.value!), enabled: () => Boolean(emergencyPatientLease.data.value), retry: false });
+const emergencyIdentity = useQuery({ queryKey: ['clinical-portal', 'emergency', 'identity'], queryFn: () => listEmergencyIdentityVerifications(emergencyPatientLease.data.value!), enabled: () => Boolean(emergencyPatientLease.data.value), retry: false });
 
 interface DomainModule { title: string; desc: string; to: string }
 interface DomainCard {
@@ -20,7 +32,7 @@ interface DomainCard {
   footer: [string, string][];
 }
 
-const domains: DomainCard[] = [
+const baseDomains: DomainCard[] = [
   {
     type: 'outpatient',
     eyebrow: 'OUTPATIENT CARE',
@@ -48,18 +60,18 @@ const domains: DomainCard[] = [
     title: '急诊诊疗',
     desc: '以时间关键事件为主线，从预检分诊、抢救留观、急会诊交接到明确去向。',
     to: 'emergency',
-    metrics: [['急诊在区', '18'], ['一级抢救', '2'], ['待分诊', '4'], ['留观', '9'], ['急会诊', '3'], ['待去向', '4']],
-    alerts: [['绿色通道', '2', 'red'], ['抢救记录待补', '1', 'amber'], ['交接临期', '2', 'amber']],
+    metrics: [],
+    alerts: [],
     flow: ['院前 / 到院', '预检分诊', '抢救 / 诊室', '急诊医嘱', '会诊交接', '去向闭环'],
     modules: [
-      { title: '预检分诊与分区', desc: '级别、依据、改区、绿色通道', to: 'er-triage' },
+      { title: '预检分诊与分区', desc: '级别、依据、立即处置、动态复评', to: 'er-triage' },
       { title: '急诊病历与抢救', desc: '时间轴、抢救记录、医嘱结果', to: 'er-record' },
       { title: '急诊护理与输液', desc: '生命体征、执行、异常', to: 'er-nursing' },
       { title: '急会诊与交接班', desc: '时限、责任、未完任务', to: 'er-handoff' },
       { title: '留观与转住院', desc: '观察记录、去向、接收', to: 'er-observation' },
       { title: '时间关键质控', desc: '双时间、超时、补录原因', to: 'er-record' },
     ],
-    footer: [['当前上下文', '急诊抢救区 · 白班 · 林医生'], ['最高风险', '胸痛中心绿色通道 · 7 分钟前到院']],
+    footer: [],
   },
   {
     type: 'inpatient',
@@ -83,6 +95,30 @@ const domains: DomainCard[] = [
   },
 ];
 
+const currentTriage = computed(() => (emergencyTriages.data.value ?? []).find((item) => item.status === 'ACTIVE' && !item.voided_at));
+const activeResuscitationCount = computed(() => (emergencyResuscitations.data.value ?? []).filter((item) => item.status === 'IN_PROGRESS' && !item.voided_at).length);
+const activeObservationCount = computed(() => (emergencyObservations.data.value ?? []).filter((item) => item.status === 'OBSERVING' && !item.voided_at).length);
+const waitingCount = computed(() => (emergencyQueue.data.value ?? []).filter((item) => item.status === 'WAITING').length);
+const openCoordination = computed(() => (emergencyCoordination.data.value ?? []).filter((item) => !['COMPLETED', 'VOIDED'].includes(item.status)));
+const overdueCoordinationCount = computed(() => openCoordination.value.filter((item) => new Date(item.due_at).getTime() < Date.now()).length);
+const recentIdentityMatched = computed(() => {
+  const latest = emergencyIdentity.data.value?.[0];
+  return Boolean(latest?.outcome === 'MATCHED' && Date.now() - new Date(latest.verified_at).getTime() <= 30 * 60_000);
+});
+const emergencyDataUnavailable = computed(() => [emergencyQueue, emergencyTriages, emergencyResuscitations, emergencyObservations, emergencyCoordination, emergencyIdentity].some((query) => Boolean(query.error.value)));
+const triageLabel = (value?: string) => ({ LEVEL_1: 'Ⅰ(A)', LEVEL_2: 'Ⅱ(B)', LEVEL_3: 'Ⅲ(C)', LEVEL_4: 'Ⅳ(D)' } as Record<string, string>)[value ?? ''] ?? '待分诊';
+const domains = computed<DomainCard[]>(() => baseDomains.map((domain) => domain.type !== 'emergency' ? domain : {
+  ...domain,
+  metrics: emergencyDataUnavailable.value
+    ? [['当前分诊', '不可用'], ['需立即处置', '—'], ['院区候诊', '—'], ['当前留观', '—'], ['开放协同', '—'], ['待去向', '—']]
+    : [['当前分诊', triageLabel(currentTriage.value?.triage_level)], ['需立即处置', currentTriage.value?.immediate_action_required ? '1' : '0'], ['院区候诊', String(waitingCount.value)], ['当前留观', String(activeObservationCount.value)], ['开放协同', String(openCoordination.value.length)], ['待去向', String(activeObservationCount.value)]],
+  alerts: emergencyDataUnavailable.value
+    ? [['急诊数据', '加载失败', 'red']]
+    : [['身份核验', recentIdentityMatched.value ? '有效' : '待核', recentIdentityMatched.value ? 'green' : 'red'], ['抢救未闭环', String(activeResuscitationCount.value), activeResuscitationCount.value ? 'red' : 'green'], ['协同已逾期', String(overdueCoordinationCount.value), overdueCoordinationCount.value ? 'amber' : 'green']],
+  footer: [['当前上下文', `急诊患者 …${clinicalContext.emergencyPatientId.slice(-8)} · 就诊 …${clinicalContext.emergencyEncounterId.slice(-8)}`], ['数据边界', '院区候诊队列 + 当前急诊患者事实']],
+}));
+const dataUpdatedAt = new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date());
+
 const portalBottom = [
   { to: 'clinical-tasks', title: '统一任务与临床路径', desc: '危急值 · 会诊 · 审签 · 时限 · 路径变异 · 出院整改' },
   { to: 'archive-assets', title: '病案资产与 CDA', desc: '电子文书 · 签字扫描件 · 共享文档 · CA · 无纸化归档' },
@@ -99,10 +135,10 @@ function go(to: string): void {
   <div class="page-head">
     <div class="page-title">
       <h1>临床业务门户</h1>
-      <p>一级入口 · 门诊、急诊、住院三个独立临床工作域 · 数据更新 09:45</p>
+      <p>一级入口 · 门诊、急诊、住院三个独立临床工作域 · 本次加载 {{ dataUpdatedAt }}</p>
     </div>
     <div class="head-actions">
-      <button class="btn" type="button" data-route-target="clinical-tasks" @click="go('clinical-tasks')">统一任务 9</button>
+      <button class="btn" type="button" data-route-target="clinical-tasks" @click="go('clinical-tasks')">统一任务</button>
       <button class="btn" type="button" data-route-target="workflow" @click="go('workflow')">业务配置</button>
     </div>
   </div>
@@ -110,7 +146,7 @@ function go(to: string): void {
   <div class="portal-safety">
     <b>工作域安全边界</b>
     <span>三域共享患者主索引和时间线，但患者、就诊、草稿、任务筛选、搜索和 AI 会话分别隔离。</span>
-    <span class="status green">核心服务正常</span>
+    <span class="status blue">访问按岗位与患者上下文授权</span>
   </div>
 
   <section class="portal-ai-intro" aria-labelledby="portal-ai-title">

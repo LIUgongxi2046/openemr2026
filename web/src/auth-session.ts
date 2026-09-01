@@ -5,6 +5,7 @@ import {
   type SessionLoginResponseWire,
   type SessionUserWire,
 } from './generated/contracts';
+import { clearActiveOutpatientContext } from './active-outpatient-context';
 
 const STORAGE_KEY = 'openemr2026.clinical-session';
 
@@ -84,5 +85,6 @@ export async function logoutClinicalSession(): Promise<void> {
 export function clearClinicalSession() {
   authSession.token = '';
   authSession.user = null;
+  clearActiveOutpatientContext();
   persist();
 }

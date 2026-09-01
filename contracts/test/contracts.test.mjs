@@ -103,9 +103,9 @@ test('generated governance artifacts are complete, unique, and mutually referent
     for (const errorCode of tool.error_codes) assert.ok(errorCodes.has(errorCode), `${tool.tool_id} references unknown ${errorCode}`);
   }
 
-  assert.equal(routeContract.route_count, 194);
-  assert.equal(routeContract.routes.length, 194);
-  assert.equal(new Set(routeContract.routes.map((route) => route.route_id)).size, 194);
+  assert.equal(routeContract.route_count, 199);
+  assert.equal(routeContract.routes.length, 199);
+  assert.equal(new Set(routeContract.routes.map((route) => route.route_id)).size, 199);
   assert.equal(new Set(routeContract.routes.flatMap((route) => route.fr_refs)).size, 138);
   for (const route of routeContract.routes) {
     assert.ok(route.title && route.primary_domain && route.roles.length && route.requirement_refs.length && route.states.length && route.guards.length);

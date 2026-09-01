@@ -1,6 +1,6 @@
 {
-  "run_at": "2026-08-31T01:33:40.032Z",
-  "base_url": "http://127.0.0.1:4177",
+  "run_at": "2026-08-31T15:29:24.946Z",
+  "base_url": "http://127.0.0.1:4178",
   "passed": 4,
   "failed": 0,
   "checks": [
@@ -17,7 +17,7 @@
     {
       "name": "pharmacy-create-edit-void-flow",
       "status": "PASS",
-      "detail": "IP-DRUG-40008302 已完成新增、编辑、作废，且作废记录仍显示在台账"
+      "detail": "MED-FUROSEMIDE-IV-20 已完成新增、编辑、作废，且作废记录仍显示在台账"
     },
     {
       "name": "nested-routes-mobile-layout",
@@ -25,7 +25,7 @@
       "detail": "5/5 个入口在 390px 无横向溢出，业务弹窗未越界"
     }
   ],
-  "api_response_count": 48,
+  "api_response_count": 57,
   "api_statuses": [
     200,
     201

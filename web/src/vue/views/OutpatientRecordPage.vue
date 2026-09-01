@@ -130,7 +130,12 @@ async function execute(label: string, action: () => Promise<void>) {
 
 function replaceCurrentDocument(nextDocument: NonNullable<typeof document.value>) {
   if (!current.data.value) return;
-  queryClient.setQueryData(['clinical', 'current-document'], {
+  queryClient.setQueryData([
+    'clinical',
+    'current-document',
+    current.data.value.lease.patient_id,
+    current.data.value.lease.encounter_id,
+  ], {
     lease: current.data.value.lease,
     document: nextDocument,
   });

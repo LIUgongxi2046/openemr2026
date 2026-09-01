@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ImagingOrderWire } from '../../generated/contracts';
+import { authSession } from '../../auth-session';
 import { developmentCopy } from '../../development-copy';
 import { createImagingOrder, issueExecutionLease, issueExecutionPatientLease, listImagingOrders, transitionImagingOrder } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -43,6 +44,10 @@ const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.va
   ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? ordersQuery.error.value) : null);
 const orders = computed(() => ordersQuery.data.value ?? []);
 const reportedCount = computed(() => orders.value.filter((o) => o.status === 'REPORTED').length);
+const activeRoleCodes = computed(() => new Set(authSession.user?.role_codes ?? []));
+const canPrescribe = computed(() => ['CLINICIAN', 'ATTENDING_PHYSICIAN', 'CHIEF_PHYSICIAN']
+  .some((role) => activeRoleCodes.value.has(role)));
+const canExecute = computed(() => activeRoleCodes.value.has('RADIOLOGIST'));
 
 const form = reactive({ modality: 'CT' as Modality, bodyPart: 'CHEST' as BodyPart, laterality: 'NONE' as Laterality, contrastRequired: false });
 const busy = ref('');
@@ -90,11 +95,12 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
   <section data-page-root class="content vue-native-page">
     <div class="page-heading">
       <div><p class="eyebrow">诊疗执行 / 影像</p><h1>检查影像工作台</h1><p>影像申请 → 执行 → 报告三步闭环；造影剂需求显式登记。</p></div>
-      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button class="button primary" @click="createDialogOpen = true">新增检查申请</button></div>
+      <div class="toolbar-actions"><button class="button secondary" :disabled="Boolean(busy)" @click="reload">刷新</button><button v-if="canPrescribe" class="button primary" @click="createDialogOpen = true">新增检查申请</button></div>
     </div>
     <ExecutionPatientContextBar />
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.outpatientPatientName }}</strong><span>当前患者影像检查</span></div><dl><div><dt>部位</dt><dd>显式登记</dd></div><div><dt>造影剂</dt><dd>强制勾选</dd></div></dl><span class="lease-badge">当前患者 / 当前就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
+    <div v-if="!canPrescribe && !canExecute" class="inline-notice" role="status">当前岗位仅可查看影像台账；申请需医师岗位，执行与报告需放射科医师岗位。</div>
 
     <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || ordersQuery.isPending.value" kind="loading" message="正在读取影像检查台账" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
@@ -121,9 +127,9 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
                   <td>{{ formatDate(order.reported_at) }}</td>
                   <td><span class="admin-status" :class="order.status.toLowerCase()">{{ statusLabels[order.status] }}</span></td>
                   <td class="admin-actions">
-                    <button v-if="order.status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'PERFORM')">登记执行</button>
-                    <button v-if="order.status === 'PERFORMED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'REPORT')">录入报告</button>
-                    <button v-if="order.status === 'ORDERED'" class="task-action danger" :disabled="Boolean(busy)" @click="cancelTarget = order">取消</button>
+                    <button v-if="canExecute && order.status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'PERFORM')">登记执行</button>
+                    <button v-if="canExecute && order.status === 'PERFORMED'" class="task-action" :disabled="Boolean(busy)" @click="transition(order, 'REPORT')">登记报告归档</button>
+                    <button v-if="canPrescribe && order.status === 'ORDERED'" class="task-action danger" :disabled="Boolean(busy)" @click="cancelTarget = order">取消</button>
                   </td>
                 </tr>
               </tbody>

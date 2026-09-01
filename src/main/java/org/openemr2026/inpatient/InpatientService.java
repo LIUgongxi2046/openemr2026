@@ -371,29 +371,14 @@ final class InpatientService {
                       and task_state in ('PENDING', 'IN_PROGRESS', 'OVERDUE')
                     """).param("tenant", identity.tenantId()).param("admission", admissionId)
                     .query(Long.class).single();
-            String waiverReason = request.outstandingTaskWaiverReason();
-            if (outstanding > 0 && (waiverReason == null || waiverReason.isBlank())) {
+            if (outstanding > 0) {
                 throw new InpatientException(
-                        "DISCHARGE_TASKS_OPEN", 409, "Required inpatient document tasks must be completed or explicitly waived");
-            }
-            if (outstanding > 0 && !identity.userId().equals(admission.attendingUserId())) {
-                throw new InpatientException(
-                        "DISCHARGE_WAIVER_NOT_PERMITTED", 403, "Only the attending clinician can waive outstanding document tasks");
+                        "DISCHARGE_TASKS_OPEN", 409,
+                        "Required inpatient document tasks must be completed before discharge");
             }
             beginDischargeCommand(identity, idempotencyKey, sha256(admissionId + "|" + admission.rowVersion()
-                    + "|" + request.dischargeDiagnosis().trim() + "|" + request.dispositionCode()
-                    + "|" + (waiverReason == null ? "" : waiverReason.trim())));
+                    + "|" + request.dischargeDiagnosis().trim() + "|" + request.dispositionCode()));
             OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-            if (outstanding > 0) {
-                jdbc.sql("""
-                        update inpatient_document_task
-                        set task_state = 'WAIVED', completed_document_id = null,
-                          row_version = row_version + 1, updated_at = :now
-                        where tenant_id = :tenant and admission_id = :admission
-                          and task_state in ('PENDING', 'IN_PROGRESS', 'OVERDUE')
-                        """).param("now", now).param("tenant", identity.tenantId())
-                        .param("admission", admissionId).update();
-            }
             int occupancyClosed = jdbc.sql("""
                     update bed_occupancy set ended_at = :ended, end_reason = 'DISCHARGE'
                     where tenant_id = :tenant and admission_id = :admission and ended_at is null
@@ -412,7 +397,7 @@ final class InpatientService {
                     """).param("tenant", identity.tenantId()).param("discharge", dischargeId)
                     .param("admission", admissionId).param("diagnosis", request.dischargeDiagnosis().trim())
                     .param("disposition", request.dispositionCode().name())
-                    .param("waiver", waiverReason == null ? null : waiverReason.trim())
+                    .param("waiver", null)
                     .param("actor", identity.userId()).param("discharged", now).update();
             int admissionUpdated = jdbc.sql("""
                     update inpatient_admission

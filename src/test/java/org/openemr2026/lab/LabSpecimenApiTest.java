@@ -13,6 +13,7 @@ import org.openemr2026.contracts.LabSpecimenRejectRequestWire;
 import org.openemr2026.contracts.LabSpecimenWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
@@ -38,9 +39,25 @@ final class LabSpecimenApiTest {
     private final UUID tenant = UUID.fromString(TENANT);
     private final UUID organization = UUID.fromString(ORGANIZATION);
     private final UUID facility = UUID.fromString(FACILITY);
+    private UUID laboratoryRole;
 
     private ClinicalIdentity identity() {
-        return new ClinicalIdentity(tenant, UUID.fromString(USER), List.of(UUID.fromString(ROLE)));
+        return new ClinicalIdentity(tenant, UUID.fromString(USER), laboratoryRole == null
+                ? List.of(UUID.fromString(ROLE)) : List.of(UUID.fromString(ROLE), laboratoryRole));
+    }
+
+    private void grantLaboratoryRole() {
+        laboratoryRole = UUID.randomUUID();
+        jdbc.sql("""
+                insert into role_assignment(
+                  tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                select tenant_id, :laboratory_role, user_id, person_id, organization_id,
+                  facility_id, 'LAB_TECHNICIAN', now() - interval '1 day', 'ACTIVE'
+                from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=cast(:role as uuid)
+                """).param("laboratory_role", laboratoryRole).param("tenant", TENANT)
+                .param("role", ROLE).update();
     }
 
     private Context seedContext() {
@@ -87,6 +104,7 @@ final class LabSpecimenApiTest {
 
     @Test
     void givenLabOrder_whenCreatingCollectingReceivingSpecimen_thenLifecycleRecorded() {
+        grantLaboratoryRole();
         Context context = seedContext();
         UUID orderItemId = seedOrderItem(context, "LAB");
 
@@ -114,6 +132,7 @@ final class LabSpecimenApiTest {
 
     @Test
     void givenNonLabOrderItem_whenCreatingSpecimen_thenOrderTypeInvalid() {
+        grantLaboratoryRole();
         Context context = seedContext();
         UUID medicationItemId = seedOrderItem(context, "MEDICATION");
         assertThatThrownBy(() -> specimens.createSpecimen(identity(), "spec-" + UUID.randomUUID(),
@@ -126,6 +145,7 @@ final class LabSpecimenApiTest {
 
     @Test
     void givenCollectedSpecimen_whenRejectingWithReason_thenLifecycleAndReasonRecorded() {
+        grantLaboratoryRole();
         Context context = seedContext();
         UUID orderItemId = seedOrderItem(context, "LAB");
         LabSpecimenWire created = specimens.createSpecimen(identity(), "spec-" + UUID.randomUUID(),
@@ -150,6 +170,7 @@ final class LabSpecimenApiTest {
 
     @Test
     void givenSpecimenIdentity_whenTampered_thenDatabaseRejectsMutation() {
+        grantLaboratoryRole();
         Context context = seedContext();
         UUID orderItemId = seedOrderItem(context, "LAB");
         LabSpecimenWire created = specimens.createSpecimen(identity(), "spec-" + UUID.randomUUID(),
@@ -160,6 +181,29 @@ final class LabSpecimenApiTest {
                 where tenant_id = cast(:tenant as uuid) and specimen_id = :specimen
                 """).param("tenant", TENANT).param("specimen", created.specimenId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenClinicianOnly_whenCreatingSpecimen_thenRoleIsRejected() {
+        Context context = seedContext();
+        UUID orderItemId = seedOrderItem(context, "LAB");
+
+        assertThatThrownBy(() -> specimens.createSpecimen(identity(), "spec-" + UUID.randomUUID(),
+                new LabSpecimenCreateRequestWire(organization, facility, context.patientId(),
+                        context.encounterId(), orderItemId, LabSpecimenCreateRequestWire.SpecimenTypeValue.BLOOD)))
+                .isInstanceOf(LabSpecimenException.class)
+                .satisfies(error -> assertThat(((LabSpecimenException) error).code())
+                        .isEqualTo("LAB_SPECIMEN_ROLE_REQUIRED"));
+    }
+
+    @AfterEach
+    void removeTemporaryLaboratoryRole() {
+        if (laboratoryRole == null) return;
+        jdbc.sql("""
+                delete from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=:role
+                """).param("tenant", TENANT).param("role", laboratoryRole).update();
+        laboratoryRole = null;
     }
 
     private record Context(UUID patientId, UUID encounterId) {}

@@ -5,9 +5,9 @@ import { createOpenEmrRouter } from './router';
 import { nativeVueRouteIds, primaryNavigationId, routeRegistry, specialtyGuardRouteIds, specialtyScopeForRoute } from './route-registry';
 
 describe('Vue route registry', () => {
-  it('registers the exact 194-route contract with one primary domain per route', () => {
-    expect(routeRegistry).toHaveLength(194);
-    expect(new Set(routeRegistry.map((route) => route.route_id)).size).toBe(194);
+  it('registers the exact 199-route contract with one primary domain per route', () => {
+    expect(routeRegistry).toHaveLength(199);
+    expect(new Set(routeRegistry.map((route) => route.route_id)).size).toBe(199);
     expect(routeRegistry.every((route) => Boolean(route.primary_domain))).toBe(true);
   });
 

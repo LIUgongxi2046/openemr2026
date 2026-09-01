@@ -23,7 +23,6 @@ const notice = ref('');
 const busy = ref(false);
 const dischargeDiagnosis = ref('');
 const dispositionCode = ref<'HOME' | 'TRANSFER_TO_FACILITY' | 'DEATH' | 'OTHER'>('HOME');
-const waiverReason = ref('');
 const createOpen = ref(false);
 const dischargeOpen = ref(false);
 const selectedRuleCode = ref('IP-DAILY-COURSE');
@@ -83,7 +82,7 @@ async function submitDischarge() {
   if (!journey.data.value || !dischargeDiagnosis.value.trim() || busy.value) return;
   busy.value = true; notice.value = '';
   try {
-    await dischargeInpatient(journey.data.value.lease, journey.data.value.overview, dischargeDiagnosis.value.trim(), dispositionCode.value, waiverReason.value.trim());
+    await dischargeInpatient(journey.data.value.lease, journey.data.value.overview, dischargeDiagnosis.value.trim(), dispositionCode.value);
     dischargeOpen.value = false;
     notice.value = '出院门禁已通过，床位和住院状态已同事务更新。';
     await journey.refetch();
@@ -179,7 +178,7 @@ function formatDate(value?: string | null) {
       </template>
 
       <template v-else>
-        <div class="discharge-workspace"><section class="editor-card"><div class="card-toolbar"><div><p class="eyebrow">服务端门禁</p><h2>{{ admission.status === 'DISCHARGED' ? '出院已完成' : '提交出院办理' }}</h2></div><span class="state-chip" :class="admission.status === 'DISCHARGED' ? 'signed' : 'draft'">{{ admission.status }}</span></div><div v-if="admission.status === 'DISCHARGED'" class="discharge-complete"><strong>患者已完成出院</strong><p>出院时间 {{ formatDate(admission.discharged_at) }}；床位释放、审计与 Outbox 已同事务提交。</p><RouterLink to="/archive-assets">进入病案归档就绪度</RouterLink></div><div v-else class="discharge-complete discharge-ready-action"><strong>出院操作将影响床位、在院状态和病案待归档队列</strong><p>系统会在提交时重新校验必需文书、岗位权限与并发版本。</p><button class="button primary" type="button" :disabled="busy || selectedActorKey !== 'AUTHOR'" @click="dischargeOpen = true">{{ selectedActorKey !== 'AUTHOR' ? '请切换作者岗位办理出院' : '打开出院办理' }}</button></div><BusinessActionDialog :open="dischargeOpen" title="校验并确认出院" description="确认后将释放床位、更新住院状态并生成审计与 Outbox 证据。" confirm-label="执行出院门禁" :busy="busy" width="wide" @cancel="dischargeOpen = false" @confirm="submitDischarge"><label>出院诊断<textarea v-model="dischargeDiagnosis" required rows="5" maxlength="2000" placeholder="填写主要出院诊断及必要的并存诊断" /></label><div class="dialog-grid"><label>出院去向<select v-model="dispositionCode"><option value="HOME">回家</option><option value="TRANSFER_TO_FACILITY">转其他医疗机构</option><option value="DEATH">死亡</option><option value="OTHER">其他</option></select></label><label>未完成文书豁免原因<textarea v-model="waiverReason" rows="3" maxlength="1000" placeholder="只在符合授权时填写" /></label></div><p class="dialog-warning">未完成必需文书默认阻断；豁免原因会永久留痕。</p></BusinessActionDialog></section><InpatientPrototypeRail mode="discharge" :patient-name="overview.patient_display_name" :bed-label="overview.bed_label" :pending-count="pendingTasks.length" :completed-count="completedTasks.length" /></div>
+        <div class="discharge-workspace"><section class="editor-card"><div class="card-toolbar"><div><p class="eyebrow">服务端门禁</p><h2>{{ admission.status === 'DISCHARGED' ? '出院已完成' : '提交出院办理' }}</h2></div><span class="state-chip" :class="admission.status === 'DISCHARGED' ? 'signed' : 'draft'">{{ admission.status }}</span></div><div v-if="admission.status === 'DISCHARGED'" class="discharge-complete"><strong>患者已完成出院</strong><p>出院时间 {{ formatDate(admission.discharged_at) }}；床位释放、审计与 Outbox 已同事务提交。</p><RouterLink to="/archive-assets">进入病案归档就绪度</RouterLink></div><div v-else class="discharge-complete discharge-ready-action"><strong>出院操作将影响床位、在院状态和病案待归档队列</strong><p>系统会在提交时重新校验必需文书、岗位权限与并发版本。</p><button class="button primary" type="button" :disabled="busy || selectedActorKey !== 'AUTHOR' || pendingTasks.length > 0" @click="dischargeOpen = true">{{ pendingTasks.length > 0 ? `尚有 ${pendingTasks.length} 项必需文书未完成` : selectedActorKey !== 'AUTHOR' ? '请切换作者岗位办理出院' : '打开出院办理' }}</button></div><BusinessActionDialog :open="dischargeOpen" title="校验并确认出院" description="必需文书必须全部完成；确认后将释放床位、更新住院状态并生成审计与 Outbox 证据。" confirm-label="执行出院门禁" :busy="busy" width="wide" @cancel="dischargeOpen = false" @confirm="submitDischarge"><label>出院诊断<textarea v-model="dischargeDiagnosis" required rows="5" maxlength="2000" placeholder="填写主要出院诊断及必要的并存诊断" /></label><label>出院去向<select v-model="dispositionCode"><option value="HOME">回家</option><option value="TRANSFER_TO_FACILITY">转其他医疗机构</option><option value="DEATH">死亡</option><option value="OTHER">其他</option></select></label><p class="dialog-warning">必需病历任务不得通过出院操作一键豁免；服务端会再次失败关闭校验。</p></BusinessActionDialog></section><InpatientPrototypeRail mode="discharge" :patient-name="overview.patient_display_name" :bed-label="overview.bed_label" :pending-count="pendingTasks.length" :completed-count="completedTasks.length" /></div>
       </template>
     </template>
   </section>

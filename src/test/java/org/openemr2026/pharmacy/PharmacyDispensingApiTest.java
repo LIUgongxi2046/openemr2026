@@ -51,6 +51,10 @@ final class PharmacyDispensingApiTest {
     }
 
     private Context seedContext() {
+        return seedContext("OUTPATIENT");
+    }
+
+    private Context seedContext(String encounterType) {
         UUID patientId = UUID.randomUUID();
         UUID encounterId = UUID.randomUUID();
         jdbc.sql("""
@@ -62,18 +66,50 @@ final class PharmacyDispensingApiTest {
                 insert into encounter(tenant_id, encounter_id, patient_id, organization_id, facility_id,
                   encounter_type, status, started_at, source_system, source_key)
                 values (cast(:tenant as uuid), :encounter, :patient, cast(:organization as uuid),
-                  cast(:facility as uuid), 'OUTPATIENT', 'IN_PROGRESS', now(), 'SYNTHETIC-PHARMACY', :source_key)
+                  cast(:facility as uuid), :encounter_type, 'IN_PROGRESS', now(), 'SYNTHETIC-PHARMACY', :source_key)
                 """).param("tenant", TENANT).param("encounter", encounterId).param("patient", patientId)
                 .param("organization", ORGANIZATION).param("facility", FACILITY)
+                .param("encounter_type", encounterType)
                 .param("source_key", UUID.randomUUID().toString()).update();
         return new Context(patientId, encounterId);
+    }
+
+    private MedicationOrder seedMedicationOrder(Context context, double quantity) {
+        UUID orderId = UUID.randomUUID();
+        UUID itemId = UUID.randomUUID();
+        jdbc.sql("""
+                insert into clinical_order(
+                  tenant_id, order_id, patient_id, encounter_id, facility_id, order_scope, status,
+                  clinical_indication, author_user_id, signed_by, signed_at, rule_watermark)
+                values (cast(:tenant as uuid), :order, :patient, :encounter, cast(:facility as uuid),
+                  'TEMPORARY', 'ACTIVE', '住院抗感染治疗', cast(:user as uuid), cast(:user as uuid),
+                  now(), 'RULESET-MEDICATION-6')
+                """).param("tenant", TENANT).param("order", orderId).param("patient", context.patientId())
+                .param("encounter", context.encounterId()).param("facility", FACILITY).param("user", USER).update();
+        jdbc.sql("""
+                insert into clinical_order_item(
+                  tenant_id, order_item_id, order_id, item_type, catalog_code, display_name,
+                  requested_quantity, quantity_unit, item_state, drug_code, dose_value, dose_unit, route_code)
+                values (cast(:tenant as uuid), :item, :order, 'MEDICATION', 'MED-IP-CEF', '头孢曲松钠',
+                  :quantity, '支', 'ACTIVE', 'DRUG-IP-CEF', 1, 'g', 'IV')
+                """).param("tenant", TENANT).param("item", itemId).param("order", orderId)
+                .param("quantity", quantity).update();
+        return new MedicationOrder(orderId, itemId);
     }
 
     private PharmacyDispensingWire prepare(Context context) {
         return dispensings.prepare(dispenser(), "pharm-" + UUID.randomUUID(),
                 new PharmacyDispensingPrepareRequestWire(organization, facility, context.patientId(),
-                        context.encounterId(), "DRUG-SYN-1", "BATCH-" + UUID.randomUUID().toString().substring(0, 8),
+                        context.encounterId(), null, null,
+                        "DRUG-SYN-1", "BATCH-" + UUID.randomUUID().toString().substring(0, 8),
                         10.0, "片", Instant.now()));
+    }
+
+    private PharmacyDispensingPrepareRequestWire inpatientPrepare(
+            Context context, MedicationOrder order, double quantity, String drugCode, String unit) {
+        return new PharmacyDispensingPrepareRequestWire(
+                organization, facility, context.patientId(), context.encounterId(), order.orderId(), order.itemId(),
+                drugCode, "IP-BATCH-" + UUID.randomUUID().toString().substring(0, 8), quantity, unit, Instant.now());
     }
 
     private PharmacyDispensingWire transition(
@@ -101,7 +137,7 @@ final class PharmacyDispensingApiTest {
         assertThat(dispensed.status()).isEqualTo(PharmacyDispensingWire.StatusValue.DISPENSED);
         assertThat(dispensed.dispensedAt()).isNotNull();
 
-        List<PharmacyDispensingWire> listed = dispensings.listDispensings(dispenser(), context.patientId());
+        List<PharmacyDispensingWire> listed = dispensings.listDispensings(dispenser(), context.patientId(), facility);
         assertThat(listed).extracting(PharmacyDispensingWire::dispensingId).contains(prepared.dispensingId());
     }
 
@@ -154,7 +190,7 @@ final class PharmacyDispensingApiTest {
 
         assertThat(voided.voidedAt()).isNotNull();
         assertThat(voided.voidReason()).contains("批次");
-        assertThat(dispensings.listDispensings(dispenser(), context.patientId()))
+        assertThat(dispensings.listDispensings(dispenser(), context.patientId(), facility))
                 .extracting(PharmacyDispensingWire::dispensingId).contains(prepared.dispensingId());
         assertThatThrownBy(() -> transition(verifier(), context, voided, "VERIFY"))
                 .isInstanceOf(PharmacyDispensingException.class)
@@ -197,5 +233,52 @@ final class PharmacyDispensingApiTest {
                 .isInstanceOf(DataAccessException.class);
     }
 
+    @Test
+    void givenInpatientDispensing_whenOrderMissingMismatchedOrOverQuantity_thenServerBlocksIt() {
+        Context context = seedContext("INPATIENT");
+        MedicationOrder order = seedMedicationOrder(context, 10.0);
+
+        assertThatThrownBy(() -> dispensings.prepare(dispenser(), "ip-missing-" + UUID.randomUUID(),
+                new PharmacyDispensingPrepareRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), null, null,
+                        "MED-IP-CEF", "IP-BATCH-MISSING", 1.0, "支", Instant.now())))
+                .isInstanceOf(PharmacyDispensingException.class)
+                .satisfies(error -> assertThat(((PharmacyDispensingException) error).code())
+                        .isEqualTo("INPATIENT_DISPENSING_ORDER_REQUIRED"));
+
+        assertThatThrownBy(() -> dispensings.prepare(dispenser(), "ip-mismatch-" + UUID.randomUUID(),
+                inpatientPrepare(context, order, 1.0, "MED-IP-WRONG", "支")))
+                .isInstanceOf(PharmacyDispensingException.class)
+                .satisfies(error -> assertThat(((PharmacyDispensingException) error).code())
+                        .isEqualTo("INPATIENT_DISPENSING_ORDER_MISMATCH"));
+
+        PharmacyDispensingWire prepared = dispensings.prepare(dispenser(), "ip-ok-" + UUID.randomUUID(),
+                inpatientPrepare(context, order, 8.0, "MED-IP-CEF", "支"));
+        assertThat(prepared.orderId()).isEqualTo(order.orderId());
+        assertThat(prepared.orderItemId()).isEqualTo(order.itemId());
+
+        assertThatThrownBy(() -> dispensings.prepare(dispenser(), "ip-exceed-" + UUID.randomUUID(),
+                inpatientPrepare(context, order, 3.0, "MED-IP-CEF", "支")))
+                .isInstanceOf(PharmacyDispensingException.class)
+                .satisfies(error -> assertThat(((PharmacyDispensingException) error).code())
+                        .isEqualTo("INPATIENT_DISPENSING_QUANTITY_EXCEEDED"));
+    }
+
+    @Test
+    void givenProductionRoleEnforcement_whenClinicianPrepares_thenPharmacistRoleIsRequired() {
+        Context context = seedContext();
+        dispensings.requireClinicalOperationRoles = true;
+        try {
+            assertThatThrownBy(() -> prepare(context))
+                    .isInstanceOf(PharmacyDispensingException.class)
+                    .satisfies(error -> assertThat(((PharmacyDispensingException) error).code())
+                            .isEqualTo("PHARMACIST_ROLE_REQUIRED"));
+        } finally {
+            dispensings.requireClinicalOperationRoles = false;
+        }
+    }
+
     private record Context(UUID patientId, UUID encounterId) {}
+
+    private record MedicationOrder(UUID orderId, UUID itemId) {}
 }

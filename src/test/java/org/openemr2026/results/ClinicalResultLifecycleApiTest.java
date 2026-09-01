@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -31,11 +32,12 @@ final class ClinicalResultLifecycleApiTest {
     @Autowired private JdbcClient jdbc;
     @Autowired private ObjectMapper objectMapper;
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private String activeRoleHeaders = ROLE;
 
     @Test
     void givenACompletedLabExecution_whenCriticalReportIsHandledAndCorrected_thenReceiptIsNotDispositionAndHistoryRemains()
             throws Exception {
-        Context context = seedCompletedLabExecution();
+        Context context = seedCompletedLabExecution(true);
         Lease lease = issueLease(context);
 
         HttpResponse<String> created = send("POST", "/api/v1/results", """
@@ -139,7 +141,27 @@ final class ClinicalResultLifecycleApiTest {
                 .isEqualTo("1:6.800000|2:4.200000");
     }
 
-    private Context seedCompletedLabExecution() {
+    @Test
+    void givenClinicianWithoutLaboratoryRole_whenSigningLabResult_thenRequestIsDenied() throws Exception {
+        Context context = seedCompletedLabExecution(false);
+        Lease lease = issueLease(context);
+
+        HttpResponse<String> denied = send("POST", "/api/v1/results", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "execution_task_id":"%s","source_system":"SYNTHETIC-LIS","source_report_key":"%s",
+                 "report_type":"LAB","conclusion":"越权签发应被拒绝","reported_at":"2026-08-14T11:00:00Z",
+                 "observations":[{"item_code":"K","item_name":"血钾","value_type":"NUMERIC",
+                   "numeric_value":4.2,"unit":"mmol/L","reference_low":3.5,"reference_high":5.5,
+                   "abnormal_flag":"NORMAL"}]}
+                """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId(),
+                context.executionTaskId(), context.sourceKey()), lease, context, UUID.randomUUID().toString());
+
+        assertThat(denied.statusCode()).isEqualTo(403);
+        assertThat(objectMapper.readTree(denied.body()).path("error").path("code").stringValue())
+                .isEqualTo("LAB_RESULT_AUTHOR_ROLE_REQUIRED");
+    }
+
+    private Context seedCompletedLabExecution(boolean grantLaboratoryRole) {
         UUID patientId = UUID.randomUUID();
         UUID encounterId = UUID.randomUUID();
         UUID orderId = UUID.randomUUID();
@@ -178,7 +200,22 @@ final class ClinicalResultLifecycleApiTest {
                   'COMPLETED', 1, 1, '次')
                 """).param("tenant", TENANT).param("task_id", taskId).param("order_id", orderId)
                 .param("item_id", itemId).param("patient", patientId).param("encounter", encounterId).update();
+        if (grantLaboratoryRole) grantLaboratoryRole();
         return new Context(patientId, encounterId, taskId, UUID.randomUUID().toString());
+    }
+
+    private void grantLaboratoryRole() {
+        UUID laboratoryRole = UUID.randomUUID();
+        jdbc.sql("""
+                insert into role_assignment(
+                  tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                select tenant_id, :laboratory_role, user_id, person_id, organization_id,
+                  facility_id, 'LAB_TECHNICIAN', now() - interval '1 day', 'ACTIVE'
+                from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=cast(:role as uuid)
+                """).param("laboratory_role", laboratoryRole).param("tenant", TENANT).param("role", ROLE).update();
+        activeRoleHeaders = ROLE + "," + laboratoryRole;
     }
 
     private Lease issueLease(Context context) throws Exception {
@@ -213,7 +250,16 @@ final class ClinicalResultLifecycleApiTest {
         return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .timeout(Duration.ofSeconds(10)).header("Authorization", "Bearer dev-synthetic-token")
                 .header("X-OpenEMR-Tenant-Id", TENANT).header("X-OpenEMR-User-Id", USER)
-                .header("X-OpenEMR-Role-Assignment-Ids", ROLE);
+                .header("X-OpenEMR-Role-Assignment-Ids", activeRoleHeaders);
+    }
+
+    @AfterEach
+    void removeTemporaryResultRoles() {
+        jdbc.sql("""
+                delete from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and user_id=cast(:user as uuid) and role_code='LAB_TECHNICIAN'
+                """).param("tenant", TENANT).param("user", USER).update();
+        activeRoleHeaders = ROLE;
     }
 
     private record Context(UUID patientId, UUID encounterId, UUID executionTaskId, String sourceKey) {}

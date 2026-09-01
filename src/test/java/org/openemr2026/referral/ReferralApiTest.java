@@ -27,6 +27,8 @@ final class ReferralApiTest {
     private static final String FACILITY = "018f0000-0000-7000-8000-00000000aa03";
     private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
+    private static final String RECEIVER_USER = "018f0000-0000-7000-8000-00000000aa06";
+    private static final String RECEIVER_ROLE = "018f0000-0000-7000-8000-00000000aa07";
 
     @Autowired
     private ReferralService referrals;
@@ -40,6 +42,11 @@ final class ReferralApiTest {
 
     private ClinicalIdentity identity() {
         return new ClinicalIdentity(tenant, UUID.fromString(USER), List.of(UUID.fromString(ROLE)));
+    }
+
+    private ClinicalIdentity receiverIdentity() {
+        return new ClinicalIdentity(
+                tenant, UUID.fromString(RECEIVER_USER), List.of(UUID.fromString(RECEIVER_ROLE)));
     }
 
     private Context seedContext() {
@@ -70,7 +77,12 @@ final class ReferralApiTest {
     }
 
     private ReferralWire transition(Context context, ReferralWire referral, String transition) {
-        return referrals.transition(identity(), "ref-t-" + UUID.randomUUID(), referral.referralId(),
+        return transitionAs(identity(), context, referral, transition);
+    }
+
+    private ReferralWire transitionAs(
+            ClinicalIdentity actor, Context context, ReferralWire referral, String transition) {
+        return referrals.transition(actor, "ref-t-" + UUID.randomUUID(), referral.referralId(),
                 new ReferralTransitionRequestWire(organization, facility, context.patientId(),
                         context.encounterId(), referral.rowVersion(),
                         ReferralTransitionRequestWire.TransitionValue.valueOf(transition)));
@@ -79,17 +91,29 @@ final class ReferralApiTest {
     @Test
     void givenInternalReferral_whenSendingAndAccepting_thenLifecycleRecorded() {
         Context context = seedContext();
-        ReferralWire draft = create(context, "INTERNAL", "心内科", null);
+        ReferralWire draft = create(context, "INTERNAL", "心血管内科", null);
         assertThat(draft.status()).isEqualTo(ReferralWire.StatusValue.DRAFT);
-        assertThat(draft.targetDepartment()).isEqualTo("心内科");
+        assertThat(draft.targetDepartment()).isEqualTo("心血管内科");
 
         ReferralWire sent = transition(context, draft, "SEND");
         assertThat(sent.status()).isEqualTo(ReferralWire.StatusValue.SENT);
         assertThat(sent.sentAt()).isNotNull();
+        assertThat(jdbc.sql("""
+                select state || '|' || business_state from clinical_task
+                where tenant_id=cast(:tenant as uuid) and source_type='CONSULTATION'
+                  and source_id=:referral and task_type='OUTPATIENT_REFERRAL_RESPONSE'
+                """).param("tenant", TENANT).param("referral", draft.referralId())
+                .query(String.class).single()).isEqualTo("PENDING|SENT");
 
-        ReferralWire accepted = transition(context, sent, "ACCEPT");
+        ReferralWire accepted = transitionAs(receiverIdentity(), context, sent, "ACCEPT");
         assertThat(accepted.status()).isEqualTo(ReferralWire.StatusValue.ACCEPTED);
         assertThat(accepted.resolvedAt()).isNotNull();
+        assertThat(jdbc.sql("""
+                select state from clinical_task
+                where tenant_id=cast(:tenant as uuid) and source_type='CONSULTATION'
+                  and source_id=:referral and task_type='OUTPATIENT_REFERRAL_RESPONSE'
+                """).param("tenant", TENANT).param("referral", draft.referralId())
+                .query(String.class).single()).isEqualTo("COMPLETED");
 
         List<ReferralWire> listed = referrals.listReferrals(identity(), context.patientId());
         assertThat(listed).extracting(ReferralWire::referralId).contains(draft.referralId());
@@ -100,14 +124,14 @@ final class ReferralApiTest {
         Context context = seedContext();
         ReferralWire draft = create(context, "EXTERNAL", null, "上级综合医院胸外科");
         ReferralWire sent = transition(context, draft, "SEND");
-        ReferralWire rejected = transition(context, sent, "REJECT");
+        ReferralWire rejected = transitionAs(receiverIdentity(), context, sent, "REJECT");
         assertThat(rejected.status()).isEqualTo(ReferralWire.StatusValue.REJECTED);
     }
 
     @Test
     void givenDraftReferral_whenEditingAndCancelling_thenDownstreamWorkIsNotCreated() {
         Context context = seedContext();
-        ReferralWire draft = create(context, "INTERNAL", "心内科", null);
+        ReferralWire draft = create(context, "INTERNAL", "心血管内科", null);
         ReferralWire edited = referrals.update(identity(), "ref-u-" + UUID.randomUUID(), draft.referralId(),
                 new ReferralUpdateRequestWire(organization, facility, context.patientId(), context.encounterId(),
                         ReferralUpdateRequestWire.ReferralTypeValue.INTERNAL, "肾内科", null,
@@ -132,10 +156,22 @@ final class ReferralApiTest {
     @Test
     void givenInvalidTransition_whenAcceptingDraft_thenRejected() {
         Context context = seedContext();
-        ReferralWire draft = create(context, "INTERNAL", "心内科", null);
+        ReferralWire draft = create(context, "INTERNAL", "心血管内科", null);
         assertThatThrownBy(() -> transition(context, draft, "ACCEPT"))
                 .isInstanceOf(ReferralException.class)
                 .satisfies(e -> assertThat(((ReferralException) e).code()).isEqualTo("REFERRAL_STATE_INVALID"));
+    }
+
+    @Test
+    void givenSentReferral_whenRequesterAttemptsSelfAcceptance_thenRejected() {
+        Context context = seedContext();
+        ReferralWire draft = create(context, "INTERNAL", "心血管内科", null);
+        ReferralWire sent = transition(context, draft, "SEND");
+
+        assertThatThrownBy(() -> transition(context, sent, "ACCEPT"))
+                .isInstanceOf(ReferralException.class)
+                .satisfies(e -> assertThat(((ReferralException) e).code())
+                        .isEqualTo("REFERRAL_SELF_RESOLUTION_FORBIDDEN"));
     }
 
     @Test

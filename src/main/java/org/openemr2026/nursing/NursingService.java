@@ -30,6 +30,7 @@ import org.openemr2026.contracts.ShiftHandoverWire;
 import org.openemr2026.contracts.VitalSignRecordRequestWire;
 import org.openemr2026.contracts.VitalSignRecordWire;
 import org.openemr2026.security.ClinicalIdentity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -39,6 +40,9 @@ final class NursingService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
 
+    @Value("${openemr2026.security.require-clinical-operation-roles:false}")
+    boolean requireClinicalOperationRoles;
+
     NursingService(JdbcClient jdbc, TransactionTemplate transactions) {
         this.jdbc = jdbc;
         this.transactions = transactions;
@@ -46,6 +50,7 @@ final class NursingService {
 
     VitalSignRecordWire recordVitalSigns(
             ClinicalIdentity identity, String idempotencyKey, VitalSignRecordRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         if (request.recordedAt() == null || request.source() == null) {
             throw invalid("recorded_at and source are required");
         }
@@ -99,6 +104,7 @@ final class NursingService {
 
     NursingCarePlanWire createCarePlan(
             ClinicalIdentity identity, String idempotencyKey, NursingCarePlanRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String problem = requireText(request.nursingProblem(), 2, "nursing_problem");
         String goal = requireText(request.goal(), 2, "goal");
         String intervention = requireText(request.intervention(), 2, "intervention");
@@ -144,6 +150,7 @@ final class NursingService {
     NursingCarePlanWire completeCarePlan(
             ClinicalIdentity identity, String idempotencyKey, UUID carePlanId,
             NursingCarePlanCompleteRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         if (request.disposition() == null) throw invalid("disposition is required");
         return transactions.execute(status -> {
             beginCommand(identity, "NURSING_CARE_PLAN_COMPLETE", idempotencyKey,
@@ -188,6 +195,7 @@ final class NursingService {
 
     MedicationAdministrationWire administerMedication(
             ClinicalIdentity identity, String idempotencyKey, MedicationAdministrationRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         if (request.executionTaskId() == null || request.drugCode() == null || request.doseValue() == null
                 || request.doseUnit() == null || request.routeCode() == null || request.administeredAt() == null
                 || request.verifiedBy() == null) {
@@ -296,6 +304,7 @@ final class NursingService {
 
     ShiftHandoverWire createHandover(
             ClinicalIdentity identity, String idempotencyKey, ShiftHandoverCreateRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String summary = requireText(request.handoverSummary(), 4, "handover_summary");
         if (request.shiftFrom() == null || request.shiftTo() == null || request.shiftTo().isBefore(request.shiftFrom())) {
             throw invalid("shift_to must be after shift_from");
@@ -338,6 +347,7 @@ final class NursingService {
 
     ShiftHandoverPatientWire addHandoverPatient(
             ClinicalIdentity identity, String idempotencyKey, ShiftHandoverPatientCreateRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String summary = requireText(request.summary(), 2, "summary");
         if (request.riskFlag() == null) throw invalid("risk_flag is required");
         return transactions.execute(status -> {
@@ -394,6 +404,7 @@ final class NursingService {
     ShiftHandoverPatientWire correctHandoverPatient(
             ClinicalIdentity identity, String idempotencyKey, UUID itemId,
             ShiftHandoverPatientCorrectionRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String summary = requireText(request.summary(), 2, "summary");
         String reason = requireText(request.reason(), 4, "reason");
         if (request.riskFlag() == null) throw invalid("risk_flag is required");
@@ -429,6 +440,7 @@ final class NursingService {
     ShiftHandoverPatientWire voidHandoverPatient(
             ClinicalIdentity identity, String idempotencyKey, UUID itemId,
             ShiftHandoverPatientVoidRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String reason = requireText(request.reason(), 4, "reason");
         return transactions.execute(status -> {
             beginCommand(identity, "SHIFT_HANDOVER_PATIENT_VOID", idempotencyKey,
@@ -503,6 +515,7 @@ final class NursingService {
 
     NursingDischargeClosureWire closeNursingDischarge(
             ClinicalIdentity identity, String idempotencyKey, NursingDischargeClosureRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "NURSING_DISCHARGE_CLOSE", idempotencyKey,
                     sha256(request.patientId() + "|" + request.encounterId()));
@@ -584,6 +597,7 @@ final class NursingService {
 
     NursingBedsideNoteWire syncBedsideNote(
             ClinicalIdentity identity, String idempotencyKey, NursingBedsideNoteCreateRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         if (request.noteType() == null || request.recordedAt() == null || request.syncedAt() == null) {
             throw invalid("note_type, recorded_at and synced_at are required");
         }
@@ -651,6 +665,7 @@ final class NursingService {
     ShiftHandoverWire completeHandover(
             ClinicalIdentity identity, String idempotencyKey, UUID handoverId,
             ShiftHandoverCompleteRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "SHIFT_HANDOVER_COMPLETE", idempotencyKey,
                     sha256(handoverId + "|" + request.expectedRowVersion()));
@@ -697,6 +712,7 @@ final class NursingService {
     ShiftHandoverWire correctHandover(
             ClinicalIdentity identity, String idempotencyKey, UUID handoverId,
             ShiftHandoverCorrectionRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String summary = requireText(request.handoverSummary(), 4, "handover_summary");
         String reason = requireText(request.reason(), 4, "reason");
         if (request.shiftFrom() == null || request.shiftTo() == null || !request.shiftTo().isAfter(request.shiftFrom())) {
@@ -773,6 +789,7 @@ final class NursingService {
     ShiftHandoverWire voidHandover(
             ClinicalIdentity identity, String idempotencyKey, UUID handoverId,
             ShiftHandoverVoidRequestWire request) {
+        requireNursingRole(identity, request.facilityId());
         String reason = requireText(request.reason(), 4, "reason");
         return transactions.execute(status -> {
             beginCommand(identity, "SHIFT_HANDOVER_VOID", idempotencyKey,
@@ -881,6 +898,29 @@ final class NursingService {
                         rs.getObject("diastolic_bp", Integer.class), nullableDouble(rs.getBigDecimal("spo2")),
                         rs.getLong("row_version")))
                 .optional().orElseThrow(() -> contextDenied());
+    }
+
+    private void requireNursingRole(ClinicalIdentity identity, UUID facilityId) {
+        if (!requireClinicalOperationRoles) return;
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new NursingException(
+                    "NURSING_ROLE_REQUIRED", 403, "An active registered nurse role is required");
+        }
+        long authorized = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id = :tenant and user_id = :user
+                  and role_assignment_id in (:assignments)
+                  and role_code in ('REGISTERED_NURSE', 'NURSE_MANAGER')
+                  and (facility_id is null or facility_id = :facility)
+                  and status = 'ACTIVE' and valid_from <= now()
+                  and (valid_until is null or valid_until > now())
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("facility", facilityId)
+                .query(Long.class).single();
+        if (authorized == 0) {
+            throw new NursingException(
+                    "NURSING_ROLE_REQUIRED", 403, "An active registered nurse role is required");
+        }
     }
 
     private void requireActiveEncounter(UUID tenantId, UUID patientId, UUID encounterId, UUID facilityId) {

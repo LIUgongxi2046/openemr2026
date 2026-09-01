@@ -54,9 +54,13 @@ final class EncounterStateMachineApiTest {
     }
 
     private EncounterWire create(UUID patientId, String initialStatus, Instant startedAt) {
+        return create(patientId, "EMERGENCY", initialStatus, startedAt);
+    }
+
+    private EncounterWire create(UUID patientId, String encounterType, String initialStatus, Instant startedAt) {
         String key = "enc-sm-" + UUID.randomUUID();
         return clinical.createEncounter(identity(), key, organization, facility, patientId,
-                "OUTPATIENT", initialStatus, null, null, startedAt, "OPENEMR2026-TEST", key);
+                encounterType, initialStatus, null, null, startedAt, "OPENEMR2026-TEST", key);
     }
 
     private UUID seedPatient() {
@@ -129,6 +133,18 @@ final class EncounterStateMachineApiTest {
                 identity(), organization, facility, UUID.fromString(PATIENT), encounter.encounterId());
         assertThat(events).hasSize(1);
         assertThat(events.get(0).toStatus()).isEqualTo(EncounterStateEventWire.ToStatusValue.IN_PROGRESS);
+    }
+
+    @Test
+    void givenOutpatientWithoutClinicalClosureEvidence_whenFinishing_thenServerRejectsTransition() {
+        Instant startedAt = Instant.parse("2026-08-21T01:30:00Z");
+        EncounterWire encounter = create(UUID.fromString(PATIENT), "OUTPATIENT", "IN_PROGRESS", startedAt);
+
+        assertCommandCode(() -> clinical.transitionEncounter(identity(), "enc-sm-opd-close-" + UUID.randomUUID(),
+                organization, facility, UUID.fromString(PATIENT), encounter.encounterId(), 1L, "FINISHED",
+                startedAt.plusSeconds(300), "门诊诊疗已完成"), "OUTPATIENT_CLOSURE_DOCUMENT_REQUIRED");
+        assertThat(clinical.getEncounter(identity(), organization, facility, UUID.fromString(PATIENT),
+                encounter.encounterId()).status()).isEqualTo(EncounterWire.StatusValue.IN_PROGRESS);
     }
 
     @Test

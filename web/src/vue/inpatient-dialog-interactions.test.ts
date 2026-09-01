@@ -39,7 +39,18 @@ describe('住院工作台九子菜单交互契约', () => {
     expect(pharmacy).toContain('title="编辑待核验摆药"');
     expect(pharmacy).toContain('title="作废摆药记录"');
     expect(pharmacy).toContain('voidInpatientPharmacyDispensing');
+    expect(pharmacy).toContain('有效药品医嘱');
+    expect(pharmacy).toContain('order_item_id: choice.item.order_item_id');
     expect(pharmacy).not.toContain('<AdminActionDialog');
+  });
+
+  it('病区护理页使用住院上下文接口闭环生命体征和护理计划', () => {
+    const ward = views['./views/WardPage.vue'];
+    expect(ward).toContain('recordInpatientVitalSigns');
+    expect(ward).toContain('createInpatientNursingCarePlan');
+    expect(ward).toContain('completeInpatientNursingCarePlan');
+    expect(ward).toContain('title="记录住院生命体征"');
+    expect(ward).toContain('title="新建护理计划"');
   });
 
   it('不再使用页面内嵌表单承载新建医嘱、结果、会诊和护理交班', () => {

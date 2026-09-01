@@ -13,6 +13,7 @@ import {
 const originalContext = {
   patientId: clinicalContext.patientId,
   encounterId: clinicalContext.encounterId,
+  patientDisplayName: clinicalContext.patientDisplayName,
   inpatientPatientId: clinicalContext.inpatientPatientId,
   inpatientEncounterId: clinicalContext.inpatientEncounterId,
   inpatientAdmissionId: clinicalContext.inpatientAdmissionId,
@@ -57,6 +58,7 @@ describe('诊疗执行中心患者下转流程', () => {
     activateExecutionPatient(outpatient);
     expect(clinicalContext.patientId).toBe(outpatient.patientId);
     expect(clinicalContext.encounterId).toBe(outpatient.encounterId);
+    expect(clinicalContext.patientDisplayName).toBe(outpatient.patientDisplayName);
 
     const inpatient: InpatientWorklistItemWire = {
       admission_id: '018f0000-0000-7000-8000-00000000bb13',

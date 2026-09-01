@@ -43,7 +43,7 @@ final class PharmacyDispensingController {
         if (!patientId.equals(patientContextId)) throw PharmacyDispensingService.contextDenied();
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(dispensings.listDispensings(identity, patientId));
+                .body(dispensings.listDispensings(identity, patientId, facilityId));
     }
 
     @PostMapping("/pharmacy-dispensings")

@@ -325,14 +325,15 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
                     targetStatus, occurredAt.toString(), String.valueOf(normalizedReason)));
             beginCommand(identity, "ENCOUNTER_STATE_TRANSITION", idempotencyKey, requestHash);
             EncounterHead current = jdbc.sql("""
-                    select status, row_version, started_at from encounter
+                    select status, row_version, started_at, encounter_type from encounter
                     where tenant_id=:tenant and encounter_id=:encounter and patient_id=:patient
                       and organization_id=:organization and facility_id=:facility
                     for update
                     """).param("tenant", identity.tenantId()).param("encounter", encounterId)
                     .param("patient", patientId).param("organization", organizationId).param("facility", facilityId)
                     .query((rs, row) -> new EncounterHead(rs.getString("status"), rs.getLong("row_version"),
-                            rs.getObject("started_at", OffsetDateTime.class).toInstant()))
+                            rs.getObject("started_at", OffsetDateTime.class).toInstant(),
+                            rs.getString("encounter_type")))
                     .optional().orElseThrow(ClinicalLifecycleService::notFound);
             if (current.rowVersion() != expectedRowVersion) {
                 throw new ClinicalCommandException("VERSION_CONFLICT", 409,
@@ -345,6 +346,9 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
             if (occurredAt.isBefore(current.startedAt())) {
                 throw new ClinicalCommandException("INVALID_ENCOUNTER_TRANSITION_TIME", 400,
                         "The transition time cannot be before the encounter start");
+            }
+            if ("OUTPATIENT".equals(current.encounterType()) && "FINISHED".equals(targetStatus)) {
+                validateOutpatientClosure(identity.tenantId(), patientId, encounterId);
             }
             setEncounterTransitionContext(identity.userId(), normalizedReason, occurredAt);
             int updated = jdbc.sql("""
@@ -1129,6 +1133,53 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
         };
     }
 
+    private void validateOutpatientClosure(UUID tenantId, UUID patientId, UUID encounterId) {
+        long signedDocuments = jdbc.sql("""
+                select count(*) from clinical_document
+                where tenant_id=:tenant and patient_id=:patient and encounter_id=:encounter
+                  and status in ('SIGNED','CORRECTED')
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query(Long.class).single();
+        if (signedDocuments < 1) {
+            throw new ClinicalCommandException("OUTPATIENT_CLOSURE_DOCUMENT_REQUIRED", 409,
+                    "A signed outpatient record is required before the encounter can be finished");
+        }
+        long confirmedPrimaryDiagnoses = jdbc.sql("""
+                select count(*) from clinical_diagnosis diagnosis
+                join clinical_diagnosis_version version
+                  on version.tenant_id=diagnosis.tenant_id
+                 and version.diagnosis_version_id=diagnosis.current_version_id
+                where diagnosis.tenant_id=:tenant and diagnosis.patient_id=:patient
+                  and diagnosis.encounter_id=:encounter and diagnosis.lifecycle_status='ACTIVE'
+                  and diagnosis.current_diagnosis_role='PRIMARY' and version.certainty='CONFIRMED'
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query(Long.class).single();
+        if (confirmedPrimaryDiagnoses < 1) {
+            throw new ClinicalCommandException("OUTPATIENT_CLOSURE_PRIMARY_DIAGNOSIS_REQUIRED", 409,
+                    "A confirmed active primary diagnosis is required before the encounter can be finished");
+        }
+        long unsignedOrders = jdbc.sql("""
+                select count(*) from clinical_order
+                where tenant_id=:tenant and patient_id=:patient and encounter_id=:encounter
+                  and status in ('DRAFT','VALIDATING')
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query(Long.class).single();
+        if (unsignedOrders > 0) {
+            throw new ClinicalCommandException("OUTPATIENT_CLOSURE_UNSIGNED_ORDER", 409,
+                    "Draft or validating orders must be signed or cancelled before the encounter can be finished");
+        }
+        long openCriticalValues = jdbc.sql("""
+                select count(*) from critical_value_case
+                where tenant_id=:tenant and patient_id=:patient and encounter_id=:encounter
+                  and state in ('OPEN','ACKNOWLEDGED')
+                """).param("tenant", tenantId).param("patient", patientId).param("encounter", encounterId)
+                .query(Long.class).single();
+        if (openCriticalValues > 0) {
+            throw new ClinicalCommandException("OUTPATIENT_CLOSURE_CRITICAL_VALUE_OPEN", 409,
+                    "All critical values must be disposed before the encounter can be finished");
+        }
+    }
+
     private EncounterWire encounter(UUID tenantId, UUID encounterId, UUID patientId, UUID facilityId) {
         return encounter(tenantId, encounterId, patientId, facilityId, null);
     }
@@ -1368,5 +1419,5 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
     private record VersionSections(UUID id, Map<String, Object> sections) {}
     private record TemplateBinding(UUID templateVersionId, int versionNo) {}
     private record IdempotencyReplay(String requestHash, String state, UUID resourceId) {}
-    private record EncounterHead(String status, long rowVersion, java.time.Instant startedAt) {}
+    private record EncounterHead(String status, long rowVersion, java.time.Instant startedAt, String encounterType) {}
 }

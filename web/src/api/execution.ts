@@ -407,6 +407,21 @@ export async function recordVitalSigns(
   return vitalSignRecordWireSchema.parse(await request('/vital-signs', json('POST', lease, vitalSignRecordRequestWireSchema.parse({ ...scoped(), ...input }))));
 }
 
+export async function listInpatientVitalSigns(lease: ContextLeaseWire): Promise<VitalSignRecordWire[]> {
+  return vitalSignRecordWireSchema.array().parse(await request(
+    `/vital-signs?encounter_id=${encodeURIComponent(clinicalContext.inpatientEncounterId)}`,
+    { headers: explicitContextHeaders(lease, clinicalContext.inpatientPatientId, clinicalContext.inpatientEncounterId) },
+  ));
+}
+
+export async function recordInpatientVitalSigns(
+  lease: ContextLeaseWire,
+  input: Omit<import('../generated/contracts').VitalSignRecordRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
+): Promise<VitalSignRecordWire> {
+  return vitalSignRecordWireSchema.parse(await request('/vital-signs', inpatientJson('POST', lease,
+    vitalSignRecordRequestWireSchema.parse({ ...inpatientScoped(), ...input }))));
+}
+
 export async function listNursingCarePlans(lease: ContextLeaseWire): Promise<NursingCarePlanWire[]> {
   return nursingCarePlanWireSchema.array().parse(await request(
     `/nursing-care-plans?encounter_id=${encodeURIComponent(clinicalContext.encounterId)}`,
@@ -431,6 +446,35 @@ export async function completeNursingCarePlan(
     `/nursing-care-plans/${plan.care_plan_id}/completions`,
     json('POST', lease, nursingCarePlanCompleteRequestWireSchema.parse({
       ...scoped(), expected_row_version: plan.row_version, disposition, evaluation,
+    })),
+  ));
+}
+
+export async function listInpatientNursingCarePlans(lease: ContextLeaseWire): Promise<NursingCarePlanWire[]> {
+  return nursingCarePlanWireSchema.array().parse(await request(
+    `/nursing-care-plans?encounter_id=${encodeURIComponent(clinicalContext.inpatientEncounterId)}`,
+    { headers: explicitContextHeaders(lease, clinicalContext.inpatientPatientId, clinicalContext.inpatientEncounterId) },
+  ));
+}
+
+export async function createInpatientNursingCarePlan(
+  lease: ContextLeaseWire,
+  input: Omit<import('../generated/contracts').NursingCarePlanRequestWire, 'organization_id' | 'facility_id' | 'patient_id' | 'encounter_id'>,
+): Promise<NursingCarePlanWire> {
+  return nursingCarePlanWireSchema.parse(await request('/nursing-care-plans', inpatientJson('POST', lease,
+    nursingCarePlanRequestWireSchema.parse({ ...inpatientScoped(), ...input }))));
+}
+
+export async function completeInpatientNursingCarePlan(
+  lease: ContextLeaseWire,
+  plan: NursingCarePlanWire,
+  disposition: 'COMPLETED' | 'DISCONTINUED',
+  evaluation?: string | null,
+): Promise<NursingCarePlanWire> {
+  return nursingCarePlanWireSchema.parse(await request(
+    `/nursing-care-plans/${plan.care_plan_id}/completions`,
+    inpatientJson('POST', lease, nursingCarePlanCompleteRequestWireSchema.parse({
+      ...inpatientScoped(), expected_row_version: plan.row_version, disposition, evaluation,
     })),
   ));
 }

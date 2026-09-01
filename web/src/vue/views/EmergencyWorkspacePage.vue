@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed } from 'vue';
-import { clinicalContext } from '../../clinical-api';
+import { clinicalContext, setEmergencyClinicalContext } from '../../clinical-api';
+import type { WaitingQueueEntryWire } from '../../generated/contracts';
 import {
   issueEmergencyFacilityLease,
   issueEmergencyLease,
@@ -89,7 +90,7 @@ const waitingList = computed(() => queue.value.filter((entry) => entry.status ==
 const activeResuscitations = computed(() => resuscitationList.value.filter((item) => item.status === 'IN_PROGRESS'));
 const pendingObservations = computed(() => observationList.value.filter((item) => item.disposition === 'PENDING'));
 const draftHandovers = computed(() => handoverList.value.filter((item) => item.status === 'DRAFT'));
-const currentQueueEntry = computed(() => queue.value.find((entry) => entry.patient_id === clinicalContext.emergencyPatientId) ?? queue.value[0] ?? null);
+const currentQueueEntry = computed(() => queue.value.find((entry) => entry.patient_id === clinicalContext.emergencyPatientId && entry.encounter_id === clinicalContext.emergencyEncounterId) ?? null);
 const currentTriage = computed(() => triageList.value[0] ?? null);
 const currentNursingRisk = computed(() => noteList.value.find((item) => item.risk_flag) ?? null);
 
@@ -125,13 +126,19 @@ function outcomeLabel(value: string | null | undefined) {
   return ({ ROSC: '恢复自主循环', DEATH: '死亡', TRANSFERRED: '转科' } as Record<string, string>)[value ?? ''] ?? (value ?? '—');
 }
 
+function switchEmergencyPatient(entry: WaitingQueueEntryWire) {
+  if (entry.patient_id === clinicalContext.emergencyPatientId && entry.encounter_id === clinicalContext.emergencyEncounterId) return;
+  setEmergencyClinicalContext(entry.patient_id, entry.encounter_id);
+  window.location.reload();
+}
+
 async function reload() {
   await Promise.all([preadmissions.refetch(), waitingQueue.refetch(), triages.refetch(), observations.refetch(), resuscitations.refetch(), nursingNotes.refetch(), domainSwitches.refetch(), handovers.refetch()]);
 }
 </script>
 
 <template>
-  <section data-page-root class="content vue-native-page">
+  <section data-page-root class="content vue-native-page emergency-workspace-page">
     <div class="page-head">
       <div class="page-title">
         <h1>急诊工作台</h1>
@@ -153,7 +160,7 @@ async function reload() {
         <div class="divider"></div>
         <div><b>急诊序号 {{ currentQueueEntry ? `#${currentQueueEntry.sequence_no}` : '—' }} · {{ queueStatusLabel(currentQueueEntry?.status ?? 'WAITING') }}</b><div class="meta">{{ formatTime(currentTriage?.triaged_at) }} 分诊 · 当前就诊 {{ shortId(clinicalContext.emergencyEncounterId) }}</div></div>
         <div class="divider"></div>
-        <div class="emergency-chief-complaint"><b>{{ currentTriage?.chief_complaint ?? '待补充主诉' }}</b><div class="meta">急诊医学科 · 腕带与患者上下文已核验</div></div>
+        <div class="emergency-chief-complaint"><b>{{ currentTriage?.chief_complaint ?? '待补充主诉' }}</b><div class="meta">急诊医学科 · 腕带状态请以护理执行页的真实核验记录为准</div></div>
         <span class="risk red">{{ triageLabel(currentTriage?.triage_level) }} · {{ currentTriage?.immediate_action_required ? '立即处置' : '持续评估' }}</span>
         <span v-if="highRiskNotes" class="risk red">高危护理 {{ highRiskNotes }}</span>
         <RouterLink class="btn sm emergency-switch-patient" to="/er-triage">切换急诊患者</RouterLink>
@@ -161,7 +168,7 @@ async function reload() {
 
       <div class="metric-grid emergency-metrics">
         <div class="metric"><div class="name">待预检分诊</div><div class="value">{{ waitingList.length }}</div><div class="trend danger-text">院区候诊共 {{ queue.length }} 人</div></div>
-        <div class="metric"><div class="name">抢救 / 绿色通道</div><div class="value danger-text">{{ activeResuscitations.length }} / {{ triageList.filter((item) => item.immediate_action_required).length }}</div><div class="trend">当前患者实时事实</div></div>
+        <div class="metric"><div class="name">抢救 / 需立即处置</div><div class="value danger-text">{{ activeResuscitations.length }} / {{ triageList.filter((item) => item.immediate_action_required).length }}</div><div class="trend">当前患者实时事实</div></div>
         <div class="metric"><div class="name">急会诊临期</div><div class="value">{{ draftHandovers.length }}</div><div class="trend warning-text">待完成交接 {{ draftHandovers.length }} 项</div></div>
         <div class="metric"><div class="name">留观待去向</div><div class="value">{{ pendingObservations.length }}</div><div class="trend">未登记预入院 {{ unregistered.length }} 人</div></div>
       </div>
@@ -174,6 +181,7 @@ async function reload() {
             <div v-for="entry in queue" :key="entry.waiting_queue_entry_id" class="queue-item" :class="{ active: entry.patient_id === currentQueueEntry?.patient_id }">
               <div class="queue-title"><span class="dot" :class="queueTone(entry.status)"></span>{{ entry.patient_display_name }} · #{{ entry.sequence_no }}<span class="status" :class="queueTone(entry.status)">{{ queueStatusLabel(entry.status) }}</span></div>
               <div class="queue-meta">{{ sexLabel(entry.patient_sex_code) }} · {{ ageFromBirthDate(entry.patient_birth_date) }}<span>叫号 {{ formatTime(entry.called_at) }}</span></div>
+              <button class="btn sm" type="button" :disabled="entry.patient_id === currentQueueEntry?.patient_id" @click="switchEmergencyPatient(entry)">{{ entry.patient_id === currentQueueEntry?.patient_id ? '当前患者' : '切换并重签租约' }}</button>
             </div>
           </div>
           <div class="notice info emergency-queue-notice"><div class="notice-title">预检分诊可追溯</div>保留分诊级别、判定依据和全部改级事实；当前另有 {{ unregistered.length }} 名先救治后补登患者。</div></section>

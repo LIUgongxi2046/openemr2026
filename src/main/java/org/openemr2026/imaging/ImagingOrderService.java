@@ -37,6 +37,9 @@ final class ImagingOrderService {
         if (paired && request.laterality() == ImagingOrderCreateRequestWire.LateralityValue.NONE) {
             throw invalid("laterality is required for paired body parts");
         }
+        requireRole(identity, request.facilityId(),
+                List.of("CLINICIAN", "ATTENDING_PHYSICIAN", "CHIEF_PHYSICIAN"),
+                "IMAGING_ORDER_PRESCRIBER_ROLE_REQUIRED");
         requireActiveEncounter(identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "IMAGING_ORDER_CREATE", idempotencyKey,
@@ -66,6 +69,14 @@ final class ImagingOrderService {
             ImagingOrderTransitionRequestWire request) {
         if (request.transition() == null) {
             throw invalid("transition is required");
+        }
+        if (request.transition() == ImagingOrderTransitionRequestWire.TransitionValue.CANCEL) {
+            requireRole(identity, request.facilityId(),
+                    List.of("CLINICIAN", "ATTENDING_PHYSICIAN", "CHIEF_PHYSICIAN"),
+                    "IMAGING_ORDER_PRESCRIBER_ROLE_REQUIRED");
+        } else {
+            requireRole(identity, request.facilityId(), List.of("RADIOLOGIST"),
+                    "IMAGING_ORDER_RADIOLOGIST_ROLE_REQUIRED");
         }
         return transactions.execute(status -> {
             beginCommand(identity, "IMAGING_ORDER_TRANSITION", idempotencyKey,
@@ -169,6 +180,27 @@ final class ImagingOrderService {
                 """).param("tenant", tenantId).param("encounter", encounterId).param("patient", patientId)
                 .param("facility", facilityId).query(Long.class).single();
         if (count != 1) throw contextDenied();
+    }
+
+    private void requireRole(
+            ClinicalIdentity identity, UUID facilityId, List<String> allowedRoles, String failureCode) {
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new ImagingOrderException(failureCode, 403,
+                    "The active role assignment is not permitted to perform this imaging workflow action");
+        }
+        long count = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id=:tenant and user_id=:user and role_assignment_id in (:assignments)
+                  and role_code in (:roles) and status='ACTIVE' and valid_from<=now()
+                  and (valid_until is null or valid_until>now())
+                  and (facility_id is null or facility_id=:facility)
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", allowedRoles)
+                .param("facility", facilityId).query(Long.class).single();
+        if (count < 1) {
+            throw new ImagingOrderException(failureCode, 403,
+                    "The active role assignment is not permitted to perform this imaging workflow action");
+        }
     }
 
     private void beginCommand(ClinicalIdentity identity, String scope, String key, String requestHash) {

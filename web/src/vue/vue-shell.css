@@ -820,6 +820,9 @@
   .emergency-right-rail .card-body > .notice:last-child { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
+  .emergency-workspace-page .page-head { height: auto; min-height: 0; padding: 10px 0 14px; }
+  .emergency-workspace-page .head-actions { margin-left: 0; flex-wrap: wrap; }
+  .emergency-workspace-page .head-actions > * { flex: 1 1 132px; text-align: center; }
   .emergency-patient-strip { align-items: flex-start; flex-wrap: wrap; }
   .emergency-patient-strip .divider { display: none; }
   .emergency-patient-strip > div { flex: 1 1 210px; }

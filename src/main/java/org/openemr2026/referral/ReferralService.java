@@ -41,7 +41,9 @@ final class ReferralService {
         if (request.referralType() == ReferralCreateRequestWire.ReferralTypeValue.EXTERNAL && organization == null) {
             throw invalid("target_organization is required for EXTERNAL referral");
         }
+        requireClinicianRole(identity, request.facilityId());
         requireActiveEncounter(identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId());
+        if (department != null) requireActiveDepartment(identity.tenantId(), request.facilityId(), department);
         return transactions.execute(status -> {
             beginCommand(identity, "REFERRAL_CREATE", idempotencyKey,
                     sha256(request.patientId() + "|" + request.encounterId() + "|" + request.referralType()
@@ -51,14 +53,15 @@ final class ReferralService {
                     insert into referral(
                       tenant_id, referral_id, patient_id, encounter_id, facility_id,
                       referral_type, target_department, target_organization, reason,
-                      clinical_summary, status)
+                      clinical_summary, status, requested_by)
                     values (:tenant, :referral, :patient, :encounter, :facility,
-                      :type, :department, :organization, :reason, :summary, 'DRAFT')
+                      :type, :department, :organization, :reason, :summary, 'DRAFT', :requester)
                     """).param("tenant", identity.tenantId()).param("referral", referralId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("facility", request.facilityId()).param("type", request.referralType().name())
                     .param("department", department).param("organization", organization)
-                    .param("reason", reason).param("summary", summary).update();
+                    .param("reason", reason).param("summary", summary)
+                    .param("requester", identity.userId()).update();
             appendEvidence(identity, request.patientId(), referralId, 1, "REFERRAL_CREATED", "ReferralCreated");
             completeCommand(identity, "REFERRAL_CREATE", idempotencyKey, referralId);
             return referral(identity.tenantId(), referralId, request.patientId());
@@ -71,18 +74,25 @@ final class ReferralService {
         if (request.transition() == null) {
             throw invalid("transition is required");
         }
+        requireClinicianRole(identity, request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "REFERRAL_TRANSITION", idempotencyKey,
                     sha256(referralId + "|" + request.expectedRowVersion() + "|" + request.transition()));
             ReferralHead current = jdbc.sql("""
-                    select status, row_version from referral
+                    select status, row_version, patient_id, encounter_id, facility_id,
+                      target_department, requested_by
+                    from referral
                     where tenant_id = :tenant and referral_id = :referral
                       and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
                       for update
                     """).param("tenant", identity.tenantId()).param("referral", referralId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("facility", request.facilityId())
-                    .query((rs, row) -> new ReferralHead(rs.getString("status"), rs.getLong("row_version")))
+                    .query((rs, row) -> new ReferralHead(
+                            rs.getString("status"), rs.getLong("row_version"),
+                            rs.getObject("patient_id", UUID.class), rs.getObject("encounter_id", UUID.class),
+                            rs.getObject("facility_id", UUID.class), rs.getString("target_department"),
+                            rs.getObject("requested_by", UUID.class)))
                     .optional().orElseThrow(ReferralService::contextDenied);
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new ReferralException(
@@ -97,17 +107,27 @@ final class ReferralService {
                             where tenant_id = :tenant and referral_id = :referral and row_version = :expected
                             """).param("tenant", identity.tenantId()).param("referral", referralId)
                             .param("expected", current.rowVersion()).update();
+                    createResponseTask(identity, referralId, current);
                 }
                 case ACCEPT, REJECT -> {
                     if (!"SENT".equals(current.status())) throw stateInvalid();
+                    if (identity.userId().equals(current.requestedBy())) {
+                        throw new ReferralException(
+                                "REFERRAL_SELF_RESOLUTION_FORBIDDEN", 403,
+                                "The requesting clinician cannot accept or reject the same referral");
+                    }
                     String target = request.transition()
                             == ReferralTransitionRequestWire.TransitionValue.ACCEPT ? "ACCEPTED" : "REJECTED";
                     jdbc.sql("""
-                            update referral set status = :status, resolved_at = now(),
+                            update referral set status = :status, resolved_at = now(), resolved_by = :actor,
                               row_version = row_version + 1, updated_at = now()
                             where tenant_id = :tenant and referral_id = :referral and row_version = :expected
-                            """).param("status", target).param("tenant", identity.tenantId())
+                            """).param("status", target).param("actor", identity.userId())
+                            .param("tenant", identity.tenantId())
                             .param("referral", referralId).param("expected", current.rowVersion()).update();
+                    settleResponseTask(identity, referralId,
+                            request.transition() == ReferralTransitionRequestWire.TransitionValue.ACCEPT
+                                    ? "COMPLETED" : "WITHDRAWN");
                 }
                 case CANCEL -> {
                     if (!"DRAFT".equals(current.status())) throw stateInvalid();
@@ -142,6 +162,8 @@ final class ReferralService {
         if (request.referralType() == ReferralUpdateRequestWire.ReferralTypeValue.EXTERNAL && organization == null) {
             throw invalid("target_organization is required for EXTERNAL referral");
         }
+        requireClinicianRole(identity, request.facilityId());
+        if (department != null) requireActiveDepartment(identity.tenantId(), request.facilityId(), department);
         return transactions.execute(status -> {
             beginCommand(identity, "REFERRAL_UPDATE", idempotencyKey,
                     sha256(referralId + "|" + request.expectedRowVersion() + "|" + request.referralType()
@@ -177,6 +199,115 @@ final class ReferralService {
                 """).param("tenant", identity.tenantId()).param("patient", patientId)
                 .query(UUID.class).list().stream()
                 .map(id -> referral(identity.tenantId(), id, patientId)).toList();
+    }
+
+    List<ReferralTarget> listTargets(ClinicalIdentity identity, UUID facilityId) {
+        return jdbc.sql("""
+                select department_id, department_code, display_name
+                from clinical_department
+                where tenant_id=:tenant and facility_id=:facility and status='ACTIVE'
+                  and (effective_until is null or effective_until>now())
+                  and unit_type in ('DEPARTMENT','MEDICAL_TECH')
+                order by case unit_type when 'DEPARTMENT' then 0 else 1 end, display_name
+                """).param("tenant", identity.tenantId()).param("facility", facilityId)
+                .query((rs, row) -> new ReferralTarget(
+                        rs.getObject("department_id", UUID.class), rs.getString("department_code"),
+                        rs.getString("display_name"))).list();
+    }
+
+    private void requireActiveDepartment(UUID tenantId, UUID facilityId, String displayName) {
+        long count = jdbc.sql("""
+                select count(*) from clinical_department
+                where tenant_id=:tenant and facility_id=:facility and display_name=:display_name
+                  and status='ACTIVE' and (effective_until is null or effective_until>now())
+                  and unit_type in ('DEPARTMENT','MEDICAL_TECH')
+                """).param("tenant", tenantId).param("facility", facilityId)
+                .param("display_name", displayName).query(Long.class).single();
+        if (count != 1) {
+            throw new ReferralException(
+                    "REFERRAL_TARGET_NOT_ACTIVE", 409,
+                    "The internal referral target is not an active department in this facility");
+        }
+    }
+
+    private void requireClinicianRole(ClinicalIdentity identity, UUID facilityId) {
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw clinicianRoleDenied();
+        }
+        long count = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id=:tenant and user_id=:user and role_assignment_id in (:assignments)
+                  and role_code in ('CLINICIAN','ATTENDING_PHYSICIAN','CHIEF_PHYSICIAN')
+                  and status='ACTIVE' and valid_from<=now()
+                  and (valid_until is null or valid_until>now())
+                  and (facility_id is null or facility_id=:facility)
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("facility", facilityId)
+                .query(Long.class).single();
+        if (count < 1) {
+            throw clinicianRoleDenied();
+        }
+    }
+
+    private static ReferralException clinicianRoleDenied() {
+        return new ReferralException("REFERRAL_CLINICIAN_ROLE_REQUIRED", 403,
+                "The active clinician role assignment is required for this referral workflow action");
+    }
+
+    private void createResponseTask(ClinicalIdentity identity, UUID referralId, ReferralHead referral) {
+        UUID taskId = UUID.randomUUID();
+        int inserted = jdbc.sql("""
+                insert into clinical_task(
+                  tenant_id, task_id, patient_id, encounter_id, facility_id,
+                  source_type, source_id, task_type, title, risk_level,
+                  state, business_state, due_at, source_route)
+                values (:tenant, :task, :patient, :encounter, :facility,
+                  'CONSULTATION', :referral, 'OUTPATIENT_REFERRAL_RESPONSE', :title, 'ROUTINE',
+                  'PENDING', 'SENT', now() + interval '24 hours', '#/opd-consult')
+                on conflict (tenant_id, source_type, source_id, task_type) do nothing
+                """).param("tenant", identity.tenantId()).param("task", taskId)
+                .param("patient", referral.patientId()).param("encounter", referral.encounterId())
+                .param("facility", referral.facilityId()).param("referral", referralId)
+                .param("title", (referral.targetDepartment() == null ? "院外转诊" : referral.targetDepartment())
+                        + " 会诊/转诊待响应").update();
+        if (inserted == 1) {
+            jdbc.sql("""
+                    insert into clinical_task_event(
+                      tenant_id, task_event_id, task_id, event_type,
+                      previous_state, resulting_state, actor_user_id)
+                    values (:tenant, gen_random_uuid(), :task, 'CREATED', null, 'PENDING', :actor)
+                    """).param("tenant", identity.tenantId()).param("task", taskId)
+                    .param("actor", identity.userId()).update();
+        }
+    }
+
+    private void settleResponseTask(ClinicalIdentity identity, UUID referralId, String state) {
+        List<TaskProjection> tasks = jdbc.sql("""
+                select task_id, state, row_version from clinical_task
+                where tenant_id=:tenant and source_type='CONSULTATION' and source_id=:referral
+                  and task_type='OUTPATIENT_REFERRAL_RESPONSE'
+                  and state not in ('COMPLETED','WITHDRAWN','EXPIRED') for update
+                """).param("tenant", identity.tenantId()).param("referral", referralId)
+                .query((rs, row) -> new TaskProjection(
+                        rs.getObject("task_id", UUID.class), rs.getString("state"), rs.getLong("row_version")))
+                .list();
+        for (TaskProjection task : tasks) {
+            jdbc.sql("""
+                    update clinical_task set state=:state, business_state=:state,
+                      row_version=row_version+1, updated_at=now()
+                    where tenant_id=:tenant and task_id=:task and row_version=:version
+                    """).param("state", state).param("tenant", identity.tenantId())
+                    .param("task", task.taskId()).param("version", task.rowVersion()).update();
+            jdbc.sql("""
+                    insert into clinical_task_event(
+                      tenant_id, task_event_id, task_id, event_type,
+                      previous_state, resulting_state, actor_user_id)
+                    values (:tenant, gen_random_uuid(), :task, :event, :previous, :state, :actor)
+                    """).param("tenant", identity.tenantId()).param("task", task.taskId())
+                    .param("event", "COMPLETED".equals(state) ? "SOURCE_COMPLETED" : "SOURCE_WITHDRAWN")
+                    .param("previous", task.state()).param("state", state)
+                    .param("actor", identity.userId()).update();
+        }
     }
 
     private ReferralWire referral(UUID tenantId, UUID referralId, UUID patientId) {
@@ -303,5 +434,9 @@ final class ReferralService {
         }
     }
 
-    private record ReferralHead(String status, long rowVersion) {}
+    record ReferralTarget(UUID departmentId, String departmentCode, String displayName) {}
+    private record TaskProjection(UUID taskId, String state, long rowVersion) {}
+    private record ReferralHead(
+            String status, long rowVersion, UUID patientId, UUID encounterId, UUID facilityId,
+            String targetDepartment, UUID requestedBy) {}
 }

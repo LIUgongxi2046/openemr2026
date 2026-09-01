@@ -14,7 +14,7 @@ const definition = computed(() => routeById.get(String(route.meta.contractId)));
     <h1>{{ definition?.title }}</h1>
     <section class="migration-notice" role="status">
       <strong>设计契约已登记，生产功能尚未开放</strong>
-      <p>该页面已进入 194 路由唯一注册表，但还没有通过对应业务切片的 API、权限、异常和恢复验收，因此不会展示患者数据或伪造可用按钮。</p>
+      <p>该页面已进入 199 路由唯一注册表，但还没有通过对应业务切片的 API、权限、异常和恢复验收，因此不会展示患者数据或伪造可用按钮。</p>
     </section>
     <dl class="route-contract-card">
       <div><dt>需求</dt><dd>{{ definition?.requirement_refs.join(' · ') }}</dd></div>

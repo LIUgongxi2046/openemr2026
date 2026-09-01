@@ -466,7 +466,8 @@ final class InpatientAdmissionApiTest {
         assertThat(jdbc.sql("""
                 select count(*) from clinical_task where tenant_id=cast(:tenant as uuid)
                   and source_type='CONSULTATION' and source_id=cast(:consultation as uuid)
-                  and task_type='CONSULTATION_RESPONSE' and state='COMPLETED' and risk_level='HIGH'
+                  and task_type='CONSULTATION_RESPONSE' and state='COMPLETED'
+                  and task_rule_config_id is not null and rule_snapshot is not null
                 """).param("tenant", TENANT).param("consultation", consultationId)
                 .query(Long.class).single()).isEqualTo(1);
         assertThat(jdbc.sql("""
@@ -833,7 +834,7 @@ final class InpatientAdmissionApiTest {
     }
 
     @Test
-    void givenOutstandingDocuments_whenDischarging_thenItBlocksUnlessTheAttendingRecordsAnExplicitWaiver()
+    void givenOutstandingDocuments_whenDischarging_thenItAlwaysBlocksAndLegacyWaiverCannotBypass()
             throws Exception {
         Ward ward = seedWardAndBed();
         Encounter context = seedInpatientEncounter("合成出院患者");
@@ -858,7 +859,7 @@ final class InpatientAdmissionApiTest {
                 """).param("tenant", TENANT).param("admission", admissionId)
                 .query(Long.class).single()).isEqualTo(1);
 
-        HttpResponse<String> discharged = send(
+        HttpResponse<String> legacyWaiverAttempt = send(
                 "POST", "/api/v1/inpatient/admissions/" + admissionId + "/discharges", """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
                  "expected_admission_row_version":1,"discharge_diagnosis":"心悸待查",
@@ -867,40 +868,28 @@ final class InpatientAdmissionApiTest {
                 """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
                 lease, context.patientId().toString(), context.encounterId().toString(),
                 UUID.randomUUID().toString());
-        assertThat(discharged.statusCode()).isEqualTo(200);
-        JsonNode body = objectMapper.readTree(discharged.body());
-        assertThat(body.path("admission").path("status").stringValue()).isEqualTo("DISCHARGED");
-        assertThat(body.path("admission").path("row_version").longValue()).isEqualTo(2);
-        for (JsonNode task : body.path("document_tasks")) {
-            assertThat(task.path("task_state").stringValue()).isEqualTo("WAIVED");
-        }
+        assertThat(legacyWaiverAttempt.statusCode()).isEqualTo(409);
+        assertThat(legacyWaiverAttempt.body()).contains("DISCHARGE_TASKS_OPEN");
         assertThat(jdbc.sql("""
                 select count(*) from bed_occupancy where tenant_id = cast(:tenant as uuid)
-                  and admission_id = cast(:admission as uuid) and ended_at is not null
-                  and end_reason = 'DISCHARGE'
+                  and admission_id = cast(:admission as uuid) and ended_at is null
                 """).param("tenant", TENANT).param("admission", admissionId)
                 .query(Long.class).single()).isEqualTo(1);
         assertThat(jdbc.sql("""
                 select status from encounter where tenant_id = cast(:tenant as uuid) and encounter_id = :encounter
                 """).param("tenant", TENANT).param("encounter", context.encounterId())
-                .query(String.class).single()).isEqualTo("FINISHED");
+                .query(String.class).single()).isEqualTo("IN_PROGRESS");
         assertThat(jdbc.sql("""
                 select count(*) from inpatient_discharge where tenant_id = cast(:tenant as uuid)
-                  and admission_id = cast(:admission as uuid) and disposition_code = 'HOME'
+                  and admission_id = cast(:admission as uuid)
                 """).param("tenant", TENANT).param("admission", admissionId)
-                .query(Long.class).single()).isEqualTo(1);
+                .query(Long.class).single()).isZero();
         assertThat(jdbc.sql("""
-                select count(*) from outbox_event where tenant_id = cast(:tenant as uuid)
-                  and aggregate_id = cast(:admission as uuid) and event_type = 'InpatientDischarged'
+                select count(*) from inpatient_document_task where tenant_id = cast(:tenant as uuid)
+                  and admission_id = cast(:admission as uuid)
+                  and task_state in ('PENDING', 'IN_PROGRESS', 'OVERDUE')
                 """).param("tenant", TENANT).param("admission", admissionId)
-                .query(Long.class).single()).isEqualTo(1);
-
-        Lease wardLease = issueLease(null, null);
-        HttpResponse<String> worklist = send(
-                "GET", "/api/v1/inpatient/worklist?ward_id=" + ward.wardId(), null,
-                wardLease, null, null, null);
-        assertThat(worklist.statusCode()).isEqualTo(200);
-        assertThat(worklist.body()).doesNotContain(admissionId);
+                .query(Long.class).single()).isGreaterThan(0);
     }
 
     private Ward seedWardAndBed() {

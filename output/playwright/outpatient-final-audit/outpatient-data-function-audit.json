@@ -1,5 +1,5 @@
 {
-  "run_at": "2026-08-31T01:27:57.729Z",
+  "run_at": "2026-08-31T16:46:57.302Z",
   "routes": [
     "outpatient",
     "opd-record",
@@ -9,8 +9,8 @@
     "opd-consult",
     "opd-followup"
   ],
-  "checks": 37,
-  "passed": 37,
+  "checks": 38,
+  "passed": 38,
   "failed": 0,
   "findings": [],
   "observations": [
@@ -76,12 +76,17 @@
     },
     {
       "route": "opd-results",
-      "name": "results-create-modal",
+      "name": "clinician-cannot-author-results",
       "status": "PASS"
     },
     {
       "route": "opd-results",
-      "name": "results-edit-modal",
+      "name": "radiologist-results-create-modal",
+      "status": "PASS"
+    },
+    {
+      "route": "opd-results",
+      "name": "radiologist-results-edit-modal",
       "status": "PASS"
     },
     {

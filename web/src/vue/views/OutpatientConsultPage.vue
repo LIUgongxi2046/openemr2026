@@ -3,24 +3,30 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import { clinicalContext } from '../../clinical-api';
 import type { ReferralWire } from '../../generated/contracts';
-import { createReferral, issueOutpatientPatientLease, listReferrals, transitionReferral, updateReferral } from '../../api/emergency';
+import { createReferral, issueOutpatientPatientLease, listReferrals, listReferralTargets, transitionReferral, updateReferral } from '../../api/emergency';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({
-  queryKey: ['opd-consult', 'lease'],
+  queryKey: ['opd-consult', 'lease', clinicalContext.patientId, clinicalContext.encounterId],
   queryFn: () => issueOutpatientPatientLease('OPD_CONSULT'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
 const itemsQuery = useQuery({
-  queryKey: ['opd-consult', 'referrals'],
+  queryKey: ['opd-consult', 'referrals', clinicalContext.patientId, clinicalContext.encounterId],
   queryFn: () => listReferrals(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value), retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? itemsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value) : null);
+const targetsQuery = useQuery({
+  queryKey: ['opd-consult', 'targets', clinicalContext.facilityId],
+  queryFn: () => listReferralTargets(leaseQuery.data.value!),
+  enabled: () => Boolean(leaseQuery.data.value), retry: false,
+});
+const issue = computed(() => (leaseQuery.error.value ?? itemsQuery.error.value ?? targetsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value ?? targetsQuery.error.value) : null);
 const items = computed(() => itemsQuery.data.value ?? []);
+const targets = computed(() => targetsQuery.data.value ?? []);
 
 const form = reactive({
   referral_type: 'INTERNAL' as 'INTERNAL' | 'EXTERNAL',
@@ -35,6 +41,11 @@ const createOpen = ref(false);
 const editTarget = ref<ReferralWire | null>(null);
 const transitionTarget = ref<ReferralWire | null>(null);
 const transitionAction = ref<'SEND' | 'ACCEPT' | 'REJECT' | 'CANCEL' | null>(null);
+const formReady = computed(() => Boolean(
+  form.reason.trim().length >= 2
+  && form.clinical_summary.trim().length >= 4
+  && (form.referral_type === 'INTERNAL' ? form.target_department : form.target_organization.trim()),
+));
 
 function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)) : '—';
@@ -47,7 +58,7 @@ async function reload() {
 
 async function create() {
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !form.reason.trim() || !form.clinical_summary.trim()) return;
+  if (!lease || busy.value || !formReady.value) return;
   busy.value = 'create'; notice.value = '';
   try {
     await createReferral(lease, {
@@ -86,7 +97,7 @@ function beginEdit(referral: ReferralWire) {
 async function saveEdit() {
   const lease = leaseQuery.data.value;
   const target = editTarget.value;
-  if (!lease || !target || busy.value || !form.reason.trim() || !form.clinical_summary.trim()) return;
+  if (!lease || !target || busy.value || !formReady.value) return;
   busy.value = `edit:${target.referral_id}`; notice.value = '';
   try {
     await updateReferral(lease, target, {
@@ -136,7 +147,7 @@ async function transition() {
       <div class="toolbar-actions"><RouterLink class="button secondary" to="/outpatient">返回门诊</RouterLink><button class="button primary" @click="beginCreate">新建会诊 / 转诊</button></div>
     </div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取会诊与转诊记录" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value || targetsQuery.isPending.value" kind="loading" message="正在读取会诊与转诊记录" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
@@ -175,17 +186,17 @@ async function transition() {
           </div>
       </section>
 
-      <BusinessActionDialog :open="createOpen" :title="editTarget ? '编辑会诊 / 转诊草稿' : '新建会诊 / 转诊'" description="申请首先建立为草稿，发送后才进入目标科室或机构待办。" eyebrow="门诊会诊转诊" :confirm-label="editTarget ? '保存草稿修改' : '建立申请草稿'" :busy="busy === 'create' || busy.startsWith('edit:')" width="wide" @cancel="createOpen = false; editTarget = null" @confirm="editTarget ? saveEdit() : create()">
+      <BusinessActionDialog :open="createOpen" :title="editTarget ? '编辑会诊 / 转诊草稿' : '新建会诊 / 转诊'" description="申请首先建立为草稿，发送后才进入目标科室或机构待办。" eyebrow="门诊会诊转诊" :confirm-label="editTarget ? '保存草稿修改' : '建立申请草稿'" :busy="busy === 'create' || busy.startsWith('edit:')" :confirm-disabled="!formReady" width="wide" @cancel="createOpen = false; editTarget = null" @confirm="editTarget ? saveEdit() : create()">
           <div class="admin-form">
             <label><span>类型</span><select v-model="form.referral_type"><option value="INTERNAL">院内会诊 / 转科</option><option value="EXTERNAL">院外转诊</option></select></label>
-            <label v-if="form.referral_type === 'INTERNAL'"><span>目标科室</span><select v-model="form.target_department" required><option value="">请选择</option><option>心血管内科</option><option>肾内科</option><option>营养科</option><option>全科医学科</option></select></label>
+            <label v-if="form.referral_type === 'INTERNAL'"><span>目标科室</span><select v-model="form.target_department" required><option value="">请选择当前院区在效科室</option><option v-for="target in targets" :key="target.department_id" :value="target.display_name">{{ target.display_name }} · {{ target.department_code }}</option></select><small v-if="targets.length === 0">当前院区无在效会诊目标，已禁止手工伪造科室。</small></label>
             <label v-else><span>目标机构</span><input v-model="form.target_organization" required placeholder="例：江城市康复医院" /></label>
             <label><span>转诊 / 会诊原因</span><textarea v-model="form.reason" rows="2" required placeholder="例：胸痛待排，需心血管会诊" /></label>
             <label><span>临床摘要</span><textarea v-model="form.clinical_summary" rows="3" required placeholder="病情摘要、已做检查与用药" /></label>
           </div>
       </BusinessActionDialog>
 
-      <BusinessActionDialog :open="Boolean(transitionTarget && transitionAction)" :title="transitionAction === 'SEND' ? '发送会诊 / 转诊' : transitionAction === 'ACCEPT' ? '接受会诊 / 转诊' : transitionAction === 'CANCEL' ? '删除会诊 / 转诊草稿' : '拒绝会诊 / 转诊'" :description="transitionAction === 'CANCEL' ? '删除将执行为带审计的逻辑取消，不再进入下游待办。' : transitionAction === 'REJECT' ? '拒绝会保留申请与审计证据。' : '确认后将推进转诊状态机并影响下游待办。'" eyebrow="门诊会诊转诊" :confirm-label="transitionAction === 'SEND' ? '确认发送' : transitionAction === 'ACCEPT' ? '确认接受' : transitionAction === 'CANCEL' ? '确认删除并取消' : '确认拒绝'" :danger="transitionAction === 'REJECT' || transitionAction === 'CANCEL'" :busy="Boolean(busy)" @cancel="transitionTarget = null; transitionAction = null" @confirm="transition"><p class="dialog-warning">{{ transitionTarget?.reason }} · {{ transitionTarget?.target_department || transitionTarget?.target_organization }}</p></BusinessActionDialog>
+      <BusinessActionDialog :open="Boolean(transitionTarget && transitionAction)" :title="transitionAction === 'SEND' ? '发送会诊 / 转诊' : transitionAction === 'ACCEPT' ? '接受会诊 / 转诊' : transitionAction === 'CANCEL' ? '删除会诊 / 转诊草稿' : '拒绝会诊 / 转诊'" :description="transitionAction === 'CANCEL' ? '删除将执行为带审计的逻辑取消，不再进入下游待办。' : transitionAction === 'REJECT' ? '拒绝会保留申请与审计证据；申请人不能自行拒绝。' : transitionAction === 'ACCEPT' ? '必须由接诊医师独立接受，申请人不能自接；确认后会结清下游待办。' : '确认后将生成目标科室会诊响应待办。'" eyebrow="门诊会诊转诊" :confirm-label="transitionAction === 'SEND' ? '确认发送' : transitionAction === 'ACCEPT' ? '确认接受' : transitionAction === 'CANCEL' ? '确认删除并取消' : '确认拒绝'" :danger="transitionAction === 'REJECT' || transitionAction === 'CANCEL'" :busy="Boolean(busy)" @cancel="transitionTarget = null; transitionAction = null" @confirm="transition"><p class="dialog-warning">{{ transitionTarget?.reason }} · {{ transitionTarget?.target_department || transitionTarget?.target_organization }}</p></BusinessActionDialog>
     </template>
   </section>
 </template>

@@ -29,7 +29,12 @@ const snapshotQuery = useQuery({
   retry: false, staleTime: 0, gcTime: 0,
 });
 
-watch(() => snapshotQuery.data.value?.lease, (lease) => { if (lease) contextStore.replaceFromLease(lease); }, { immediate: true });
+watch(() => snapshotQuery.data.value, (next) => {
+  if (!next) return;
+  contextStore.replaceFromLease(next.lease);
+  const document = next.documents.find((item) => item.status !== 'VOID') ?? next.documents[0];
+  if (document) contextStore.activateDocument(document.document_id);
+}, { immediate: true });
 
 const queue = computed(() => queueQuery.data.value ?? []);
 const filteredQueue = computed(() => {
@@ -60,7 +65,12 @@ const issue = computed(() => {
 
 function selectPatient(entry: WaitingQueueEntryWire) {
   if (busy.value) return;
-  contextStore.clear('OUTPATIENT_PATIENT_SWITCH');
+  contextStore.activateOutpatient({
+    patientId: entry.patient_id,
+    encounterId: entry.encounter_id,
+    patientDisplayName: entry.patient_display_name,
+    documentId: null,
+  });
   selectedPatientId.value = entry.patient_id;
   selectedEncounterId.value = entry.encounter_id;
   notice.value = `已切换至候诊 #${entry.sequence_no}；旧上下文租约已从客户端状态移除，新数据按新租约加载。`;
@@ -137,7 +147,7 @@ function printWorkspace() {
     <template v-else-if="snapshot">
       <section class="patient-strip outpatient-patient-strip" aria-label="当前患者上下文"><div class="patient-avatar">{{ patientLabel.slice(0, 1) }}</div><div class="patient-identity"><strong>{{ patientLabel }}</strong><span>{{ sexLabel(selectedQueueEntry?.patient_sex_code) }} · {{ age(selectedQueueEntry?.patient_birth_date) }} · 患者 …{{ selectedPatientId.slice(-8) }}</span></div><dl><div><dt>门诊号</dt><dd>OP…{{ selectedEncounterId.slice(-8) }}</dd></div><div><dt>就诊状态</dt><dd>{{ selectedQueueEntry ? clinicalCodeLabel(selectedQueueEntry.status) : '诊疗中' }}</dd></div><div><dt>临床摘要</dt><dd>{{ primaryDiagnosis?.diagnosis_text ?? '待完成诊断' }}</dd></div></dl><div class="patient-risk-tags"><span v-if="criticalValues.length" class="danger">危急值 {{ criticalValues.length }} 项</span><span v-if="provisionalDiagnoses.length" class="warning">待确认诊断 {{ provisionalDiagnoses.length }}</span><span v-if="!criticalValues.length && !provisionalDiagnoses.length" class="safe">无未闭环高风险</span></div><button class="button secondary switch-patient" type="button" @click="queueSearch = ''; queueFilter = 'ALL'">切换门诊患者</button></section>
       <div class="outpatient-dashboard">
-        <aside class="outpatient-queue admin-panel scroll-card"><header><div><h2>候诊队列</h2><p>{{ filteredQueue.length }} / {{ queue.length }} 人</p></div></header><div class="queue-filters"><input v-model="queueSearch" type="search" placeholder="筛选患者" aria-label="筛选患者" /><select v-model="queueFilter" aria-label="候诊状态筛选"><option value="ALL">全部状态</option><option value="WAITING">候诊</option><option value="CALLED">已叫号</option><option value="IN_CONSULTATION">接诊中</option><option value="COMPLETED">已完成</option></select></div><div v-if="!filteredQueue.length" class="admin-empty">当前筛选下暂无候诊患者。</div><div v-else class="queue-list"><article v-for="entry in filteredQueue" :key="entry.waiting_queue_entry_id" :class="{ active: entry.patient_id === selectedPatientId && entry.encounter_id === selectedEncounterId }"><button class="queue-patient" @click="selectPatient(entry)"><span class="queue-name"><i :class="entry.status.toLowerCase()" /> <b>{{ entry.patient_display_name }}</b><time>{{ entry.queue_date.slice(-5) }}</time></span><span>{{ clinicalCodeLabel(entry.status) }} · #{{ entry.sequence_no }}</span><small>{{ sexLabel(entry.patient_sex_code) }} · {{ age(entry.patient_birth_date) }} · 就诊 …{{ entry.encounter_id.slice(-8) }}</small></button><button v-if="entry.status === 'WAITING'" class="task-action" :disabled="Boolean(busy)" @click="beginCall(entry)">叫号</button></article></div></aside>
+        <aside class="outpatient-queue admin-panel scroll-card"><header><div><h2>候诊队列</h2><p>{{ filteredQueue.length }} / {{ queue.length }} 人</p></div></header><div class="queue-filters"><input v-model="queueSearch" type="search" placeholder="筛选患者" aria-label="筛选患者" /><select v-model="queueFilter" aria-label="候诊状态筛选"><option value="ALL">全部状态</option><option value="WAITING">候诊</option><option value="CALLED">已叫号</option><option value="IN_CONSULTATION">接诊中</option><option value="COMPLETED">已完成</option></select></div><div v-if="!filteredQueue.length" class="admin-empty">当前筛选下暂无候诊患者。</div><div v-else class="queue-list"><article v-for="entry in filteredQueue" :key="entry.waiting_queue_entry_id" :data-queue-sequence="entry.sequence_no" :class="{ active: entry.patient_id === selectedPatientId && entry.encounter_id === selectedEncounterId }"><button class="queue-patient" data-select-outpatient-patient :aria-label="`选择候诊 ${entry.sequence_no} 号患者 ${entry.patient_display_name}`" @click="selectPatient(entry)"><span class="queue-name"><i :class="entry.status.toLowerCase()" /> <b>{{ entry.patient_display_name }}</b><time>{{ entry.queue_date.slice(-5) }}</time></span><span>{{ clinicalCodeLabel(entry.status) }} · #{{ entry.sequence_no }}</span><small>{{ sexLabel(entry.patient_sex_code) }} · {{ age(entry.patient_birth_date) }} · 就诊 …{{ entry.encounter_id.slice(-8) }}</small></button><button v-if="entry.status === 'WAITING'" class="task-action" :disabled="Boolean(busy)" @click="beginCall(entry)">叫号</button></article></div></aside>
         <section class="outpatient-center">
           <section class="admin-panel encounter-editor scroll-card"><nav class="encounter-tabs"><RouterLink class="active" to="/outpatient">本次病历</RouterLink><RouterLink to="/opd-diagnosis">诊断</RouterLink><RouterLink to="/opd-orders">医嘱处方</RouterLink><RouterLink to="/opd-results">结果</RouterLink></nav><div class="encounter-body"><section class="previsit-summary"><strong>✦ AI 诊前摘要 <span>{{ snapshot.timeline.source_statuses.filter((item) => item.state === 'AVAILABLE').length }} 条授权来源</span></strong><p>已聚合 {{ timeline.length }} 条时间线事实、{{ diagnoses.length }} 条诊断、{{ activeOrders.length }} 条活动医嘱和 {{ results.length }} 份结果；摘要仅供医生核对。</p></section><h3>门诊病历</h3><div class="record-fields"><label><span>主诉 <em>*</em></span><textarea readonly rows="1" :value="sectionText('chief_complaint', '待在门诊病历中录入')" /></label><label><span>现病史 <em>*</em></span><textarea readonly rows="3" :value="sectionText('present_illness', '待在门诊病历中录入')" /></label><label><span>体格检查</span><textarea readonly rows="2" :value="sectionText('physical_exam', '暂无已保存体格检查')" /></label><label><span>诊断</span><textarea readonly rows="1" :value="primaryDiagnosis?.diagnosis_text ?? '待建立主诊断'" /></label></div><div v-if="provisionalDiagnoses.length || criticalValues.length" class="signing-warning"><strong>⚠ 签署前提示</strong><p v-if="provisionalDiagnoses.length">{{ provisionalDiagnoses.length }} 条初步诊断待确认。</p><p v-if="criticalValues.length">{{ criticalValues.length }} 项危急值尚未完成处置。</p></div></div><footer><span class="save-state">● {{ currentDocument ? `服务端已保存 v${currentDocument.version_no}` : '尚未建立当次病历' }}</span><div class="toolbar-actions"><RouterLink class="button secondary" to="/opd-record">{{ currentDocument ? '继续编辑' : '新建病历' }}</RouterLink><RouterLink class="button secondary" to="/record-qc">预览质控</RouterLink><RouterLink class="button primary" to="/record-sign">提交并签署</RouterLink></div></footer></section>
         </section>

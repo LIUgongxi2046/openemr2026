@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -38,6 +39,7 @@ final class OrderLifecycleApiTest {
     private ObjectMapper objectMapper;
 
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    private String activeRoleHeaders = ROLE;
 
     @Test
     void givenDraftOrder_whenEditing_thenVersionedContentChangesBeforeSigning() throws Exception {
@@ -71,6 +73,7 @@ final class OrderLifecycleApiTest {
     void givenOneEncounter_whenSigningAndPartiallyExecuting_thenEveryFactTracesToTheOrderAndWrongPatientIsDenied()
             throws Exception {
         Encounter context = seedEncounter();
+        grantLaboratoryRole();
         Lease lease = issueLease(context);
 
         HttpResponse<String> created = send("POST", "/api/v1/orders", """
@@ -175,6 +178,7 @@ final class OrderLifecycleApiTest {
     void givenAnInFlightExecution_whenStopped_thenOrderWaitsForTerminalFactAndEndsStopped()
             throws Exception {
         Encounter context = seedEncounter();
+        grantLaboratoryRole();
         Lease lease = issueLease(context);
         JsonNode active = createAndSign(context, lease, 2, "LAB-STOP-" + UUID.randomUUID());
         String orderId = active.path("order_id").stringValue();
@@ -232,6 +236,40 @@ final class OrderLifecycleApiTest {
                 lease, context, UUID.randomUUID().toString());
         assertThat(signed.statusCode()).isEqualTo(200);
         return objectMapper.readTree(signed.body());
+    }
+
+    @Test
+    void givenClinicianOnly_whenRecordingLabExecution_thenRequestIsDenied() throws Exception {
+        Encounter context = seedEncounter();
+        Lease lease = issueLease(context);
+        JsonNode active = createAndSign(context, lease, 1, "LAB-RBAC-" + UUID.randomUUID());
+        String taskId = active.path("execution_tasks").get(0).path("execution_task_id").stringValue();
+
+        HttpResponse<String> denied = send("POST", "/api/v1/executions/" + taskId + "/events", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
+                 "event_type":"COMPLETED","expected_task_row_version":1,"performed_quantity":1,
+                 "quantity_unit":"次","note":"越权执行尝试"}
+                """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
+                lease, context, UUID.randomUUID().toString());
+
+        assertThat(denied.statusCode()).isEqualTo(403);
+        assertThat(objectMapper.readTree(denied.body()).path("error").path("code").stringValue())
+                .isEqualTo("ORDER_EXECUTION_ROLE_REQUIRED");
+    }
+
+    private void grantLaboratoryRole() {
+        UUID laboratoryRole = UUID.randomUUID();
+        jdbc.sql("""
+                insert into role_assignment(
+                  tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                select tenant_id, :laboratory_role, user_id, person_id, organization_id,
+                  facility_id, 'LAB_TECHNICIAN', now() - interval '1 day', 'ACTIVE'
+                from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=cast(:role as uuid)
+                """).param("laboratory_role", laboratoryRole).param("tenant", TENANT)
+                .param("role", ROLE).update();
+        activeRoleHeaders = ROLE + "," + laboratoryRole;
     }
 
     private Encounter seedEncounter() {
@@ -308,7 +346,16 @@ final class OrderLifecycleApiTest {
                 .header("Authorization", "Bearer dev-synthetic-token")
                 .header("X-OpenEMR-Tenant-Id", TENANT)
                 .header("X-OpenEMR-User-Id", USER)
-                .header("X-OpenEMR-Role-Assignment-Ids", ROLE);
+                .header("X-OpenEMR-Role-Assignment-Ids", activeRoleHeaders);
+    }
+
+    @AfterEach
+    void removeTemporaryExecutionRoles() {
+        jdbc.sql("""
+                delete from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and user_id=cast(:user as uuid) and role_code='LAB_TECHNICIAN'
+                """).param("tenant", TENANT).param("user", USER).update();
+        activeRoleHeaders = ROLE;
     }
 
     private record Encounter(UUID patientId, UUID encounterId) {}

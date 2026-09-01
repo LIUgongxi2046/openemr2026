@@ -2,7 +2,7 @@ import type { InpatientWorklistItemWire, WaitingQueueEntryWire } from '../genera
 import type { ExecutionWorklistItemWire } from '../generated/contracts';
 import type { ExecutionDomain } from '../api/execution-center';
 import type { ComputedRef, InjectionKey, Ref } from 'vue';
-import { clinicalContext, selectInpatientContext } from '../clinical-api';
+import { selectInpatientContext, selectOutpatientContext } from '../clinical-api';
 
 export type ExecutionQueueMode = 'OUTPATIENT' | 'INPATIENT';
 
@@ -135,8 +135,11 @@ export function filterExecutionPatientRows(
 }
 
 export function activateExecutionPatient(row: ExecutionPatientRow): void {
-  clinicalContext.patientId = row.patientId;
-  clinicalContext.encounterId = row.encounterId;
+  selectOutpatientContext({
+    patientId: row.patientId,
+    encounterId: row.encounterId,
+    patientDisplayName: row.patientDisplayName,
+  });
   if (row.admissionId) {
     selectInpatientContext({
       admission_id: row.admissionId,

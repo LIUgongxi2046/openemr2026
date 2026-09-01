@@ -12,6 +12,7 @@ import org.openemr2026.contracts.ImagingOrderTransitionRequestWire;
 import org.openemr2026.contracts.ImagingOrderWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
@@ -37,9 +38,29 @@ final class ImagingOrderApiTest {
     private final UUID tenant = UUID.fromString(TENANT);
     private final UUID organization = UUID.fromString(ORGANIZATION);
     private final UUID facility = UUID.fromString(FACILITY);
+    private UUID radiologistRole;
 
     private ClinicalIdentity identity() {
         return new ClinicalIdentity(tenant, UUID.fromString(USER), List.of(UUID.fromString(ROLE)));
+    }
+
+    private ClinicalIdentity radiologistIdentity() {
+        return new ClinicalIdentity(tenant, UUID.fromString(USER),
+                List.of(UUID.fromString(ROLE), radiologistRole));
+    }
+
+    private void grantRadiologistRole() {
+        radiologistRole = UUID.randomUUID();
+        jdbc.sql("""
+                insert into role_assignment(
+                  tenant_id, role_assignment_id, user_id, person_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                select tenant_id, :radiologist_role, user_id, person_id, organization_id,
+                  facility_id, 'RADIOLOGIST', now() - interval '1 day', 'ACTIVE'
+                from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=cast(:role as uuid)
+                """).param("radiologist_role", radiologistRole).param("tenant", TENANT)
+                .param("role", ROLE).update();
     }
 
     private Context seedContext() {
@@ -71,7 +92,7 @@ final class ImagingOrderApiTest {
     }
 
     private ImagingOrderWire transition(Context context, ImagingOrderWire order, String transition) {
-        return orders.transitionOrder(identity(), "img-t-" + UUID.randomUUID(), order.imagingOrderId(),
+        return orders.transitionOrder(radiologistIdentity(), "img-t-" + UUID.randomUUID(), order.imagingOrderId(),
                 new ImagingOrderTransitionRequestWire(organization, facility, context.patientId(),
                         context.encounterId(), order.rowVersion(),
                         ImagingOrderTransitionRequestWire.TransitionValue.valueOf(transition)));
@@ -79,6 +100,7 @@ final class ImagingOrderApiTest {
 
     @Test
     void givenOrder_whenPerformingAndReporting_thenLifecycleRecorded() {
+        grantRadiologistRole();
         Context context = seedContext();
         ImagingOrderWire created = create(context, "CT", "CHEST", "NONE");
         assertThat(created.status()).isEqualTo(ImagingOrderWire.StatusValue.ORDERED);
@@ -106,6 +128,7 @@ final class ImagingOrderApiTest {
 
     @Test
     void givenInvalidTransition_whenTransitioning_thenRejected() {
+        grantRadiologistRole();
         Context context = seedContext();
         ImagingOrderWire created = create(context, "MRI", "HEAD", "NONE");
         assertThatThrownBy(() -> transition(context, created, "REPORT"))
@@ -123,6 +146,30 @@ final class ImagingOrderApiTest {
                 where tenant_id = cast(:tenant as uuid) and imaging_order_id = :order
                 """).param("tenant", TENANT).param("order", created.imagingOrderId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    @Test
+    void givenClinicianOnly_whenPerformingImaging_thenRoleIsRejected() {
+        Context context = seedContext();
+        ImagingOrderWire created = create(context, "CT", "CHEST", "NONE");
+
+        assertThatThrownBy(() -> orders.transitionOrder(identity(), "img-t-" + UUID.randomUUID(),
+                created.imagingOrderId(), new ImagingOrderTransitionRequestWire(
+                        organization, facility, context.patientId(), context.encounterId(), created.rowVersion(),
+                        ImagingOrderTransitionRequestWire.TransitionValue.PERFORM)))
+                .isInstanceOf(ImagingOrderException.class)
+                .satisfies(error -> assertThat(((ImagingOrderException) error).code())
+                        .isEqualTo("IMAGING_ORDER_RADIOLOGIST_ROLE_REQUIRED"));
+    }
+
+    @AfterEach
+    void removeTemporaryRadiologistRole() {
+        if (radiologistRole == null) return;
+        jdbc.sql("""
+                delete from role_assignment where tenant_id=cast(:tenant as uuid)
+                  and role_assignment_id=:role
+                """).param("tenant", TENANT).param("role", radiologistRole).update();
+        radiologistRole = null;
     }
 
     private record Context(UUID patientId, UUID encounterId) {}

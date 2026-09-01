@@ -86,9 +86,13 @@ const groups = computed(() => {
 // 路由域归类（coverage.js + app.js）
 const recordRoutes = ['record', 'record-editor', 'record-sources', 'record-qc', 'record-versions', 'record-sign', 'record-diff', 'lis-report', 'pacs-viewer'];
 const outpatientRoutes = ['outpatient', 'opd-record', 'opd-diagnosis', 'opd-orders', 'opd-results', 'opd-consult', 'opd-followup'];
-const emergencyRoutes = ['emergency', 'er-triage', 'er-record', 'er-observation', 'er-nursing', 'er-handoff'];
+const emergencyRoutes = [
+  'emergency', 'er-triage', 'er-record', 'er-observation', 'er-nursing', 'er-handoff',
+  'er-patient-overview', 'er-clinical-timeline', 'er-safety-gates', 'er-transfer-readiness', 'er-evidence-ledger',
+];
 const inpatientDocRoutes = ['inpatient-doc-editor', 'inpatient-doc-qc', 'inpatient-doc-versions'];
 const inpatientRoutes = ['inpatient', 'inpatient-overview', 'inpatient-course', ...inpatientDocRoutes, 'ip-orders', 'ip-results', 'ip-consult', 'ip-pathway', 'inpatient-discharge', 'ward'];
+const inpatientAgentContextRoutes = [...inpatientRoutes, 'inpatient-pharmacy'];
 const archiveRoutes = ['archive-assets', 'archive-catalog', 'archive-scan', 'archive-integrity', 'archive-borrow', 'archive-preservation', 'asset-detail'];
 
 const clinicalFoundationRoutes = ['clinical', 'unified-home', 'patient-registry', 'patient-merge', 'patient-timeline', 'emergency-access', 'appointment-registration', 'admission-bed'];
@@ -159,7 +163,7 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'domain', title: '临床业务门户', active: c, items: [['outpatient', '门诊工作台'], ['opd-record', '门诊病历'], ['opd-diagnosis', '诊断'], ['opd-orders', '医嘱处方'], ['opd-results', '检查检验'], ['opd-consult', '会诊转诊'], ['opd-followup', '随访终诊']] };
   }
   if (emergencyRoutes.includes(c)) {
-    return { kind: 'domain', title: '临床业务门户', active: c, items: [['emergency', '急诊工作台'], ['er-triage', '预检分诊'], ['er-record', '急诊病历'], ['er-observation', '抢救留观'], ['er-nursing', '急诊护理'], ['er-handoff', '急会诊与交接']] };
+    return { kind: 'domain', title: '临床业务门户', active: c, items: [['emergency', '急诊工作台'], ['er-triage', '预检分诊'], ['er-record', '急诊病历'], ['er-observation', '抢救留观'], ['er-nursing', '急诊护理'], ['er-handoff', '急会诊与交接'], ['er-patient-overview', '患者纵深']] };
   }
   if (inpatientRoutes.includes(c)) {
     return { kind: 'domain', title: '临床业务门户', active: c.startsWith('inpatient-doc') ? 'inpatient-course' : c, items: [['inpatient', '患者列表'], ['inpatient-overview', '患者总览'], ['inpatient-course', '病历文书'], ['ip-orders', '医嘱与用药'], ['ip-results', '检查检验'], ['ip-consult', '查房会诊'], ['ip-pathway', '临床路径'], ['ward', '护理摘要'], ['inpatient-discharge', '出院病案']] };
@@ -222,6 +226,7 @@ const subNav = computed<SubNav | null>(() => {
 const routeRoleContext = computed(() => {
   const id = routeId.value;
   if (id === 'ward') return '病区护士 · 心内科一病区';
+  if (id === 'inpatient-pharmacy') return '住院药师 · 住院药房';
   if (inpatientRoutes.includes(id)) return '住院医生 · 心内科一病区';
   if (emergencyRoutes.includes(id)) return '急诊医生 · 抢救区';
   if (id === 'clinical-tasks') return '任务中心';
@@ -236,7 +241,7 @@ const roleContext = computed(() => roleOptions.value.find((role) => role.id === 
 
 const assistantContext = computed(() => {
   const id = routeId.value;
-  if (inpatientRoutes.includes(id)) {
+  if (inpatientAgentContextRoutes.includes(id)) {
     return {
       label: `${roleContext.value} · 当前住院就诊`,
       patientId: clinicalContext.inpatientPatientId || null,

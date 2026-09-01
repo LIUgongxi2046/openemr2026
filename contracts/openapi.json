@@ -4840,6 +4840,33 @@
         }
       }
     },
+    "/emergency-identity-verifications": {
+      "get": {
+        "operationId": "listEmergencyIdentityVerifications",
+        "parameters": [
+          { "name": "patient_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "immutable emergency identity verification history",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EmergencyIdentityVerification" } } } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createEmergencyIdentityVerification",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyIdentityVerificationCreateRequest" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "identity verification attempt recorded",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyIdentityVerification" } } }
+          }
+        }
+      }
+    },
     "/emergency-triage-assessments": {
       "get": {
         "operationId": "listEmergencyTriageAssessments",
@@ -5549,6 +5576,24 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InfectionMonitoringEvent"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/referral-targets": {
+      "get": {
+        "operationId": "listReferralTargets",
+        "responses": {
+          "200": {
+            "description": "active internal consultation and referral targets in the current facility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ReferralTarget" }
                 }
               }
             }
@@ -8217,6 +8262,39 @@
         "responses": { "200": { "description": "unregistered emergency preadmission logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyPreadmission" } } } } }
       }
     },
+    "/emergency-coordination-cases": {
+      "get": {
+        "operationId": "listEmergencyCoordinationCases",
+        "parameters": [{ "name": "patient_id", "in": "query", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": { "200": { "description": "emergency consultation, handoff and transfer cases", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/EmergencyCoordinationCase" } } } } } }
+      },
+      "post": {
+        "operationId": "createEmergencyCoordinationCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCaseCreateRequest" } } } },
+        "responses": { "201": { "description": "coordination case created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCase" } } } } }
+      }
+    },
+    "/emergency-coordination-cases/{coordination_case_id}": {
+      "put": {
+        "operationId": "updateEmergencyCoordinationCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCaseUpdateRequest" } } } },
+        "responses": { "200": { "description": "open coordination case updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCase" } } } } }
+      }
+    },
+    "/emergency-coordination-cases/{coordination_case_id}/transitions": {
+      "post": {
+        "operationId": "transitionEmergencyCoordinationCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCaseTransitionRequest" } } } },
+        "responses": { "200": { "description": "coordination case acknowledged or completed", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCase" } } } } }
+      }
+    },
+    "/emergency-coordination-cases/{coordination_case_id}/voids": {
+      "post": {
+        "operationId": "voidEmergencyCoordinationCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCaseVoidRequest" } } } },
+        "responses": { "200": { "description": "coordination case logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmergencyCoordinationCase" } } } } }
+      }
+    },
     "/encounter-domain-switches": {
       "get": {
         "operationId": "listEncounterDomainSwitches",
@@ -9770,6 +9848,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClinicalTaskNotification"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diagnosis-terminology": {
+      "get": {
+        "operationId": "searchDiagnosisTerminology",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "maxLength": 100 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "active national clinical diagnosis terminology entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/DiagnosisTerminologyEntry" }
                 }
               }
             }
@@ -18402,6 +18512,22 @@
             "minLength": 1,
             "maxLength": 1000
           }
+        }
+      },
+      "DiagnosisTerminologyEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "terminology_system",
+          "terminology_release",
+          "code",
+          "display_name"
+        ],
+        "properties": {
+          "terminology_system": { "type": "string" },
+          "terminology_release": { "type": "string" },
+          "code": { "type": "string" },
+          "display_name": { "type": "string" }
         }
       },
       "ClinicalDiagnosis": {
@@ -27217,6 +27343,45 @@
           "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
         }
       },
+      "EmergencyIdentityVerification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verification_id", "patient_id", "encounter_id", "facility_id",
+          "identifier_type", "masked_identifier", "verification_purpose", "outcome",
+          "verified_by", "verified_at", "row_version"
+        ],
+        "properties": {
+          "verification_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "identifier_type": { "type": ["string", "null"] },
+          "masked_identifier": { "type": "string" },
+          "verification_purpose": { "type": "string", "enum": ["MEDICATION", "INFUSION", "SPECIMEN", "TRANSFER", "GENERAL"] },
+          "outcome": { "type": "string", "enum": ["MATCHED", "MISMATCHED", "NOT_FOUND"] },
+          "verified_by": { "type": "string", "format": "uuid" },
+          "verified_at": { "type": "string", "format": "date-time" },
+          "row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "EmergencyIdentityVerificationCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id", "facility_id", "patient_id", "encounter_id",
+          "identifier_value", "verification_purpose", "verified_at"
+        ],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "identifier_value": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "verification_purpose": { "type": "string", "enum": ["MEDICATION", "INFUSION", "SPECIMEN", "TRANSFER", "GENERAL"] },
+          "verified_at": { "type": "string", "format": "date-time" }
+        }
+      },
       "EmergencyTriageAssessment": {
         "type": "object",
         "additionalProperties": false,
@@ -27828,6 +27993,20 @@
             "type": "string",
             "format": "uuid"
           },
+          "order_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "order_item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
           "drug_code": {
             "type": "string",
             "minLength": 2,
@@ -27934,6 +28113,20 @@
           },
           "encounter_id": {
             "type": "string",
+            "format": "uuid"
+          },
+          "order_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "order_item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "uuid"
           },
           "drug_code": {
@@ -28493,6 +28686,16 @@
             "minLength": 2,
             "maxLength": 1000
           }
+        }
+      },
+      "ReferralTarget": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["department_id", "department_code", "display_name"],
+        "properties": {
+          "department_id": { "type": "string", "format": "uuid" },
+          "department_code": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "display_name": { "type": "string", "minLength": 1, "maxLength": 256 }
         }
       },
       "Referral": {
@@ -31532,13 +31735,49 @@
           "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
         }
       },
+      "EmergencyCoordinationCase": {
+        "type": "object", "additionalProperties": false,
+        "required": ["coordination_case_id", "patient_id", "encounter_id", "facility_id", "case_type", "priority", "target_unit", "requested_to", "summary", "risk_summary", "due_at", "status", "requested_by", "acknowledged_by", "acknowledged_at", "completed_by", "completed_at", "voided_by", "voided_at", "void_reason", "row_version"],
+        "properties": {
+          "coordination_case_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" },
+          "case_type": { "type": "string", "enum": ["CONSULTATION", "HANDOFF", "TRANSFER"] }, "priority": { "type": "string", "enum": ["IMMEDIATE", "URGENT", "ROUTINE"] }, "target_unit": { "type": "string" }, "requested_to": { "type": ["string", "null"], "format": "uuid" },
+          "summary": { "type": "string" }, "risk_summary": { "type": "string" }, "due_at": { "type": "string", "format": "date-time" }, "status": { "type": "string", "enum": ["OPEN", "ACKNOWLEDGED", "COMPLETED", "VOIDED"] }, "requested_by": { "type": "string", "format": "uuid" },
+          "acknowledged_by": { "type": ["string", "null"], "format": "uuid" }, "acknowledged_at": { "type": ["string", "null"], "format": "date-time" }, "completed_by": { "type": ["string", "null"], "format": "uuid" }, "completed_at": { "type": ["string", "null"], "format": "date-time" }, "voided_by": { "type": ["string", "null"], "format": "uuid" }, "voided_at": { "type": ["string", "null"], "format": "date-time" }, "void_reason": { "type": ["string", "null"] }, "row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "EmergencyCoordinationCaseCreateRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "case_type", "priority", "target_unit", "requested_to", "summary", "risk_summary", "due_at"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" },
+          "case_type": { "type": "string", "enum": ["CONSULTATION", "HANDOFF", "TRANSFER"] }, "priority": { "type": "string", "enum": ["IMMEDIATE", "URGENT", "ROUTINE"] }, "target_unit": { "type": "string", "minLength": 2, "maxLength": 256 }, "requested_to": { "type": ["string", "null"], "format": "uuid" }, "summary": { "type": "string", "minLength": 2, "maxLength": 4000 }, "risk_summary": { "type": "string", "minLength": 2, "maxLength": 4000 }, "due_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EmergencyCoordinationCaseUpdateRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "expected_row_version", "priority", "target_unit", "requested_to", "summary", "risk_summary", "due_at"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" }, "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "priority": { "type": "string", "enum": ["IMMEDIATE", "URGENT", "ROUTINE"] }, "target_unit": { "type": "string", "minLength": 2, "maxLength": 256 }, "requested_to": { "type": ["string", "null"], "format": "uuid" }, "summary": { "type": "string", "minLength": 2, "maxLength": 4000 }, "risk_summary": { "type": "string", "minLength": 2, "maxLength": 4000 }, "due_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EmergencyCoordinationCaseTransitionRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "expected_row_version", "transition"],
+        "properties": { "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" }, "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "transition": { "type": "string", "enum": ["ACKNOWLEDGE", "COMPLETE"] } }
+      },
+      "EmergencyCoordinationCaseVoidRequest": {
+        "type": "object", "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "expected_row_version", "reason"],
+        "properties": { "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" }, "encounter_id": { "type": "string", "format": "uuid" }, "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "reason": { "type": "string", "minLength": 4, "maxLength": 1000 } }
+      },
       "EncounterDomainSwitchCorrectionRequest": {
         "type": "object", "additionalProperties": false,
         "required": ["organization_id", "facility_id", "patient_id", "from_encounter_id", "to_encounter_id", "from_domain", "to_domain", "reason", "switched_at", "expected_row_version", "correction_reason"],
         "properties": {
           "organization_id": { "type": "string", "format": "uuid" }, "facility_id": { "type": "string", "format": "uuid" }, "patient_id": { "type": "string", "format": "uuid" },
           "from_encounter_id": { "type": "string", "format": "uuid" }, "to_encounter_id": { "type": "string", "format": "uuid" },
-          "from_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY"] }, "to_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY"] },
+          "from_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "INPATIENT"] }, "to_domain": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "INPATIENT"] },
           "reason": { "type": "string", "minLength": 2, "maxLength": 1000 }, "switched_at": { "type": "string", "format": "date-time" },
           "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }, "correction_reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
         }
@@ -31817,14 +32056,16 @@
             "type": "string",
             "enum": [
               "OUTPATIENT",
-              "EMERGENCY"
+              "EMERGENCY",
+              "INPATIENT"
             ]
           },
           "to_domain": {
             "type": "string",
             "enum": [
               "OUTPATIENT",
-              "EMERGENCY"
+              "EMERGENCY",
+              "INPATIENT"
             ]
           },
           "reason": {
@@ -31886,14 +32127,16 @@
             "type": "string",
             "enum": [
               "OUTPATIENT",
-              "EMERGENCY"
+              "EMERGENCY",
+              "INPATIENT"
             ]
           },
           "to_domain": {
             "type": "string",
             "enum": [
               "OUTPATIENT",
-              "EMERGENCY"
+              "EMERGENCY",
+              "INPATIENT"
             ]
           },
           "reason": {

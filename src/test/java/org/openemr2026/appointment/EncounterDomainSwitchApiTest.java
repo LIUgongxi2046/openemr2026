@@ -84,6 +84,19 @@ final class EncounterDomainSwitchApiTest {
         return encounterId;
     }
 
+    private UUID seedInpatientEncounter(UUID patientId) {
+        UUID encounterId = UUID.randomUUID();
+        jdbc.sql("""
+                insert into encounter(tenant_id, encounter_id, patient_id, organization_id, facility_id,
+                  encounter_type, status, started_at, source_system, source_key)
+                values (cast(:tenant as uuid), :encounter, :patient, cast(:organization as uuid),
+                  cast(:facility as uuid), 'INPATIENT', 'IN_PROGRESS', now(), 'SYNTHETIC-DSW', :source_key)
+                """).param("tenant", TENANT).param("encounter", encounterId).param("patient", patientId)
+                .param("organization", ORGANIZATION).param("facility", FACILITY)
+                .param("source_key", UUID.randomUUID().toString()).update();
+        return encounterId;
+    }
+
     private EncounterDomainSwitchWire record(
             Context context, UUID fromEncounterId, UUID toEncounterId,
             EncounterDomainSwitchRecordRequestWire.FromDomainValue from,
@@ -104,6 +117,24 @@ final class EncounterDomainSwitchApiTest {
 
         List<EncounterDomainSwitchWire> listed = switches.listSwitches(identity(), context.patientId());
         assertThat(listed).extracting(EncounterDomainSwitchWire::domainSwitchId).contains(recorded.domainSwitchId());
+    }
+
+    @Test
+    void givenEmergencyAdmission_whenRecording_thenInpatientDomainIsSupportedAndTypeChecked() {
+        Context context = seedContext();
+        UUID inpatientEncounterId = seedInpatientEncounter(context.patientId());
+
+        EncounterDomainSwitchWire recorded = record(context, context.emergencyEncounterId(), inpatientEncounterId,
+                EncounterDomainSwitchRecordRequestWire.FromDomainValue.EMERGENCY,
+                EncounterDomainSwitchRecordRequestWire.ToDomainValue.INPATIENT);
+
+        assertThat(recorded.toDomain()).isEqualTo(EncounterDomainSwitchWire.ToDomainValue.INPATIENT);
+        assertThatThrownBy(() -> record(context, context.outpatientEncounterId(), inpatientEncounterId,
+                EncounterDomainSwitchRecordRequestWire.FromDomainValue.EMERGENCY,
+                EncounterDomainSwitchRecordRequestWire.ToDomainValue.INPATIENT))
+                .isInstanceOf(EncounterDomainSwitchException.class)
+                .satisfies(error -> assertThat(((EncounterDomainSwitchException) error).code())
+                        .isEqualTo("CONTEXT_NOT_PERMITTED"));
     }
 
     @Test

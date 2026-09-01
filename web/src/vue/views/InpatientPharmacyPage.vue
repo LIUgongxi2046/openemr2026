@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
-import type { PharmacyDispensingWire } from '../../generated/contracts';
+import type { ClinicalOrderWire, PharmacyDispensingWire } from '../../generated/contracts';
 import { developmentCopy } from '../../development-copy';
+import { issueOrderLease, listClinicalOrders } from '../../clinical-api';
 import {
   issueInpatientExecutionLease, issueInpatientExecutionPatientLease, listInpatientPharmacyDispensings,
   prepareInpatientPharmacyDispensing, transitionInpatientPharmacyDispensing,
@@ -26,19 +27,36 @@ const writeLeaseQuery = useQuery({
   queryFn: () => issueInpatientExecutionLease('PHARMACY_WORKFLOW'),
   retry: false, staleTime: 5 * 60_000, gcTime: 0,
 });
+const ordersQuery = useQuery({
+  queryKey: ['execution', 'inpatient-pharmacy', 'active-medication-orders'],
+  queryFn: async () => {
+    const lease = await issueOrderLease('inpatient');
+    return listClinicalOrders(lease, 'inpatient');
+  },
+  retry: false, staleTime: 0, gcTime: 0,
+});
 const dispensingsQuery = useQuery({
   queryKey: ['execution', 'inpatient-pharmacy', 'dispensings'],
   queryFn: () => listInpatientPharmacyDispensings(leaseQuery.data.value!),
   enabled: () => Boolean(leaseQuery.data.value),
   retry: false,
 });
-const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value)
-  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? dispensingsQuery.error.value) : null);
+const issue = computed(() => (leaseQuery.error.value ?? writeLeaseQuery.error.value ?? ordersQuery.error.value ?? dispensingsQuery.error.value)
+  ? toClinicalIssue(leaseQuery.error.value ?? writeLeaseQuery.error.value ?? ordersQuery.error.value ?? dispensingsQuery.error.value) : null);
 const dispensings = computed(() => dispensingsQuery.data.value ?? []);
 const pendingCount = computed(() => dispensings.value.filter((d) => d.status !== 'DISPENSED' && !d.voided_at).length);
 const voidedCount = computed(() => dispensings.value.filter((d) => Boolean(d.voided_at)).length);
 
-const form = reactive({ drugCode: '', batchNumber: '', quantity: 1, quantityUnit: '片' });
+type MedicationOrderChoice = {
+  order: ClinicalOrderWire;
+  item: ClinicalOrderWire['items'][number];
+};
+const medicationOrderChoices = computed<MedicationOrderChoice[]>(() => (ordersQuery.data.value ?? [])
+  .filter((order) => ['SIGNED', 'ACTIVE', 'IN_PROGRESS'].includes(order.status))
+  .flatMap((order) => order.items
+    .filter((item) => item.item_type === 'MEDICATION' && ['ACTIVE', 'IN_PROGRESS'].includes(item.item_state))
+    .map((item) => ({ order, item }))));
+const form = reactive({ orderItemId: '', drugCode: '', batchNumber: '', quantity: 1, quantityUnit: '' });
 const busy = ref('');
 const notice = ref('');
 const createDialogOpen = ref(false);
@@ -53,19 +71,32 @@ function formatDate(value: string | null | undefined) {
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
 }
 
-async function reload() { notice.value = ''; await dispensingsQuery.refetch(); }
+async function reload() {
+  notice.value = '';
+  await Promise.all([dispensingsQuery.refetch(), ordersQuery.refetch()]);
+}
+
+function selectMedicationOrder() {
+  const choice = medicationOrderChoices.value.find(({ item }) => item.order_item_id === form.orderItemId);
+  if (!choice) { form.drugCode = ''; form.quantityUnit = ''; return; }
+  form.drugCode = choice.item.catalog_code;
+  form.quantityUnit = choice.item.quantity_unit;
+  form.quantity = Math.min(Math.max(form.quantity, 1), choice.item.requested_quantity);
+}
 
 async function prepare() {
   const lease = writeLeaseQuery.data.value;
-  if (!lease || busy.value || !form.drugCode.trim() || !form.batchNumber.trim() || form.quantity <= 0 || !form.quantityUnit.trim()) return;
+  const choice = medicationOrderChoices.value.find(({ item }) => item.order_item_id === form.orderItemId);
+  if (!lease || !choice || busy.value || !form.batchNumber.trim() || form.quantity <= 0) return;
   busy.value = 'prepare'; notice.value = '';
   try {
     await prepareInpatientPharmacyDispensing(lease, {
-      drug_code: form.drugCode.trim(), batch_number: form.batchNumber.trim(),
+      order_id: choice.order.order_id, order_item_id: choice.item.order_item_id,
+      drug_code: choice.item.catalog_code, batch_number: form.batchNumber.trim(),
       quantity: form.quantity, quantity_unit: form.quantityUnit.trim(),
       prepared_at: new Date().toISOString(),
     });
-    form.drugCode = ''; form.batchNumber = '';
+    form.orderItemId = ''; form.drugCode = ''; form.batchNumber = ''; form.quantityUnit = '';
     createDialogOpen.value = false;
     notice.value = '住院摆药已完成，双人核验后发往病区。';
     await dispensingsQuery.refetch();
@@ -142,7 +173,7 @@ async function voidDispensing() {
     <section class="patient-strip"><div class="patient-avatar">{{ developmentCopy.patientAvatar }}</div><div><strong>{{ developmentCopy.inpatientPatientName }}</strong><span>住院摆药与发药</span></div><dl><div><dt>发药前提</dt><dd>双人核验</dd></div><div><dt>给药执行</dt><dd>执行中心闭环</dd></div></dl><span class="lease-badge">当前住院患者 / 当前住院就诊</span></section>
     <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
 
-    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取住院摆药台账" />
+    <ClinicalPageState v-if="leaseQuery.isPending.value || writeLeaseQuery.isPending.value || ordersQuery.isPending.value || dispensingsQuery.isPending.value" kind="loading" message="正在读取住院摆药台账与有效医嘱" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
 
     <template v-else>
@@ -158,10 +189,10 @@ async function voidDispensing() {
           <div v-if="dispensings.length === 0" class="empty-state"><span>药</span><p>当前患者暂无摆药记录</p><small>在右侧录入药品与批次开始摆药</small></div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
-              <thead><tr><th>药品</th><th>批次</th><th>数量</th><th>核验人</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+              <thead><tr><th>药品 / 来源医嘱</th><th>批次</th><th>数量</th><th>核验人</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
               <tbody>
                 <tr v-for="dispensing in dispensings" :key="dispensing.dispensing_id">
-                  <td><strong><code>{{ dispensing.drug_code }}</code></strong><small>…{{ dispensing.dispensing_id.slice(-8) }}</small></td>
+                  <td><strong><code>{{ dispensing.drug_code }}</code></strong><small>{{ dispensing.order_item_id ? `医嘱项 …${dispensing.order_item_id.slice(-8)}` : '历史门诊摆药记录' }}</small></td>
                   <td>{{ dispensing.batch_number }}</td>
                   <td>{{ dispensing.quantity }} {{ dispensing.quantity_unit }}</td>
                   <td>{{ dispensing.verified_by ? `…${dispensing.verified_by.slice(-8)}` : '—' }}</td>
@@ -180,16 +211,18 @@ async function voidDispensing() {
           </div>
       </section>
 
-      <BusinessActionDialog :open="createDialogOpen" title="新增住院摆药" description="药品编码、批次与数量必填；摆药后需第二人核验。" eyebrow="诊疗执行 / 住院药房" confirm-label="确认摆药" :busy="busy === 'prepare'" @cancel="createDialogOpen = false" @confirm="prepare">
+      <BusinessActionDialog :open="createDialogOpen" title="新增住院摆药" description="只能从当前住院就诊已签署且有效的药品医嘱选择；累计摆药量不得超过医嘱量。" eyebrow="诊疗执行 / 住院药房" confirm-label="确认摆药" :busy="busy === 'prepare'" @cancel="createDialogOpen = false" @confirm="prepare">
         <div class="admin-form">
-          <label><span>药品编码</span><input v-model="form.drugCode" maxlength="64" required placeholder="例：DRUG-CEFTRIAXONE" /></label>
+          <label><span>有效药品医嘱</span><select v-model="form.orderItemId" required @change="selectMedicationOrder"><option value="">请选择已签署有效医嘱</option><option v-for="choice in medicationOrderChoices" :key="choice.item.order_item_id" :value="choice.item.order_item_id">{{ choice.item.display_name }} · {{ choice.item.catalog_code }} · {{ choice.item.requested_quantity }} {{ choice.item.quantity_unit }} · …{{ choice.order.order_id.slice(-8) }}</option></select></label>
+          <label><span>药品编码</span><input v-model="form.drugCode" readonly aria-readonly="true" placeholder="随医嘱自动带入" /></label>
           <label><span>批次号</span><input v-model="form.batchNumber" maxlength="64" required placeholder="例：BATCH-2026-0812" /></label>
           <label><span>数量</span><input v-model.number="form.quantity" type="number" min="0.01" step="0.01" required /></label>
-          <label><span>单位</span><input v-model="form.quantityUnit" maxlength="16" required /></label>
+          <label><span>单位</span><input v-model="form.quantityUnit" readonly aria-readonly="true" placeholder="随医嘱自动带入" /></label>
         </div>
+        <p v-if="medicationOrderChoices.length === 0" class="dialog-warning">当前没有可摆药的已签署有效药品医嘱，请先在“医嘱与用药”完成医嘱签署。</p>
       </BusinessActionDialog>
       <BusinessActionDialog :open="Boolean(editTarget)" title="编辑待核验摆药" description="只允许修改尚未核验且未作废的摆药；修改后行版本递增并写入审计链。" confirm-label="保存更正" :busy="busy.startsWith('update:')" @cancel="editTarget = null" @confirm="updateDispensing">
-        <div class="dialog-grid"><label>药品编码<input v-model="editForm.drugCode" maxlength="128" required /></label><label>批次号<input v-model="editForm.batchNumber" maxlength="128" required /></label><label>数量<input v-model.number="editForm.quantity" type="number" min="0.01" step="0.01" required /></label><label>单位<input v-model="editForm.quantityUnit" maxlength="32" required /></label></div>
+        <div class="dialog-grid"><label>药品编码<input v-model="editForm.drugCode" :readonly="Boolean(editTarget?.order_item_id)" maxlength="128" required /></label><label>批次号<input v-model="editForm.batchNumber" maxlength="128" required /></label><label>数量<input v-model.number="editForm.quantity" type="number" min="0.01" step="0.01" required /></label><label>单位<input v-model="editForm.quantityUnit" :readonly="Boolean(editTarget?.order_item_id)" maxlength="32" required /></label></div>
       </BusinessActionDialog>
       <BusinessActionDialog :open="Boolean(transitionTarget)" :title="transitionAction === 'VERIFY' ? '确认第二人核验' : '确认发往病区'" :description="transitionAction === 'VERIFY' ? '核验将锁定药品、批次和数量，核验人与摆药人必须分离。' : '发药后不可直接作废；退药需进入独立退药流程。'" :confirm-label="transitionAction === 'VERIFY' ? '确认核验' : '确认发药'" :busy="busy.startsWith(`${transitionAction}:`)" @cancel="transitionTarget = null" @confirm="transitionTarget && transition(transitionTarget, transitionAction)">
         <p v-if="transitionTarget" class="dialog-warning">{{ transitionTarget.drug_code }} · {{ transitionTarget.batch_number }} · {{ transitionTarget.quantity }} {{ transitionTarget.quantity_unit }}</p>

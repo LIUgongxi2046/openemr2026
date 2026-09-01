@@ -10,6 +10,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import org.openemr2026.contracts.ClinicalDiagnosisWire;
+import org.openemr2026.contracts.DiagnosisTerminologyEntryWire;
 import org.openemr2026.contracts.DiagnosisConfirmRequestWire;
 import org.openemr2026.contracts.DiagnosisControlRequestWire;
 import org.openemr2026.contracts.DiagnosisCorrectRequestWire;
@@ -406,6 +407,30 @@ final class DiagnosisService {
                 """).param("tenant", identity.tenantId()).param("event_id", UUID.randomUUID())
                 .param("diagnosis_id", diagnosisId).param("aggregate_version", aggregateVersion)
                 .param("event_type", eventType).update();
+    }
+
+    List<DiagnosisTerminologyEntryWire> searchTerminology(String query, int requestedLimit) {
+        String normalized = query == null ? "" : query.trim();
+        if (normalized.length() > 100) {
+            throw new DiagnosisException("DIAGNOSIS_TERMINOLOGY_QUERY_INVALID", 400,
+                    "Diagnosis terminology query must not exceed 100 characters");
+        }
+        int limit = Math.max(1, Math.min(requestedLimit, 100));
+        return jdbc.sql("""
+                select terminology_system, terminology_release, code, display_name
+                from diagnosis_terminology_entry
+                where lifecycle_status='ACTIVE' and effective_from<=current_date
+                  and (effective_to is null or effective_to>=current_date)
+                  and terminology_release not like 'SYNTHETIC%'
+                  and (:query='' or code ilike :pattern or display_name ilike :pattern)
+                order by case when code=:query then 0 when code ilike :prefix then 1 else 2 end,
+                  terminology_release desc, code
+                limit :limit
+                """).param("query", normalized).param("pattern", "%" + normalized + "%")
+                .param("prefix", normalized + "%").param("limit", limit)
+                .query((rs, row) -> new DiagnosisTerminologyEntryWire(
+                        rs.getString("terminology_system"), rs.getString("terminology_release"),
+                        rs.getString("code"), rs.getString("display_name"))).list();
     }
 
     private static DiagnosisException versionConflict() {

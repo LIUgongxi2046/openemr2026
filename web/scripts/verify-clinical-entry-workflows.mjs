@@ -66,8 +66,13 @@ try {
     }
     if (text.includes('号源 ID') || text.includes('创建班次号源')) throw new Error('预约页面仍暴露号源 UUID 或号源维护');
 
-    const slotSelect = page.locator('label').filter({ hasText: '可预约班次' }).locator('select');
-    await slotSelect.selectOption({ index: 1 });
+    await page.getByRole('button', { name: '新建预约' }).click();
+    const appointmentDialog = page.getByRole('dialog', { name: '新建预约' });
+    const slotSelect = appointmentDialog.getByLabel('可预约班次');
+    if (!(await slotSelect.inputValue())) await slotSelect.selectOption({ index: 1 });
+    await page.getByRole('button', { name: '新建预约' }).click();
+    const secondSlotSelect = page.getByRole('dialog', { name: '新建预约' }).getByLabel('可预约班次');
+    if (!(await secondSlotSelect.inputValue())) await secondSlotSelect.selectOption({ index: 1 });
     await page.getByRole('button', { name: '确认预约挂号' }).click();
     await page.getByText('预约挂号已写入数据库。', { exact: true }).waitFor({ timeout: 15_000 });
 
@@ -89,7 +94,10 @@ try {
     await page.getByText('预约挂号已写入数据库。', { exact: true }).waitFor({ timeout: 15_000 });
     const enabledCancellation = page.locator('.admin-table').first().locator('button:not([disabled])', { hasText: '退号' }).first();
     await enabledCancellation.click();
-    await page.getByText('退号完成，号源已释放。', { exact: true }).waitFor({ timeout: 15_000 });
+    const cancelDialog = page.getByRole('dialog', { name: '删除预约·退号' });
+    await cancelDialog.getByLabel('退号原因').fill('患者行程变更');
+    await cancelDialog.getByRole('button', { name: '确认退号' }).click();
+    await page.getByText('退号完成，号源已释放，取消理由已留痕。', { exact: true }).waitFor({ timeout: 15_000 });
 
     await page.screenshot({ path: resolve(outputDir, 'appointment-registration-v2-1440x1000.png'), fullPage: true });
     return '患者/医院/科室/医生/班次可见；预约、报到、叫号、接诊、退号全部写库成功';

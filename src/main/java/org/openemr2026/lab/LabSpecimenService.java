@@ -33,6 +33,7 @@ final class LabSpecimenService {
         if (request.orderItemId() == null || request.specimenType() == null) {
             throw invalid("order_item_id and specimen_type are required");
         }
+        requireRole(identity, request.facilityId(), List.of("LAB_TECHNICIAN"));
         return transactions.execute(status -> {
             beginCommand(identity, "LAB_SPECIMEN_CREATE", idempotencyKey,
                     sha256(request.orderItemId() + "|" + request.specimenType()));
@@ -72,6 +73,7 @@ final class LabSpecimenService {
 
     LabSpecimenWire collectSpecimen(
             ClinicalIdentity identity, String idempotencyKey, UUID specimenId, LabSpecimenCollectRequestWire request) {
+        requireRole(identity, request.facilityId(), List.of("LAB_TECHNICIAN", "REGISTERED_NURSE", "NURSE_MANAGER"));
         return transactions.execute(status -> {
             beginCommand(identity, "LAB_SPECIMEN_COLLECT", idempotencyKey,
                     sha256(specimenId + "|" + request.expectedRowVersion()));
@@ -98,6 +100,7 @@ final class LabSpecimenService {
 
     LabSpecimenWire receiveSpecimen(
             ClinicalIdentity identity, String idempotencyKey, UUID specimenId, LabSpecimenReceiveRequestWire request) {
+        requireRole(identity, request.facilityId(), List.of("LAB_TECHNICIAN"));
         return transactions.execute(status -> {
             beginCommand(identity, "LAB_SPECIMEN_RECEIVE", idempotencyKey,
                     sha256(specimenId + "|" + request.expectedRowVersion()));
@@ -128,6 +131,7 @@ final class LabSpecimenService {
         if (reason.length() < 2 || reason.length() > 1000) {
             throw invalid("rejection_reason must contain 2 to 1000 characters");
         }
+        requireRole(identity, request.facilityId(), List.of("LAB_TECHNICIAN"));
         return transactions.execute(status -> {
             beginCommand(identity, "LAB_SPECIMEN_REJECT", idempotencyKey,
                     sha256(specimenId + "|" + request.expectedRowVersion() + "|" + reason));
@@ -163,6 +167,29 @@ final class LabSpecimenService {
                 .param("encounter", encounterId).param("facility", facilityId)
                 .query(UUID.class).list().stream()
                 .map(id -> specimen(identity.tenantId(), id, patientId, encounterId)).toList();
+    }
+
+    private void requireRole(ClinicalIdentity identity, UUID facilityId, List<String> allowedRoles) {
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw roleDenied();
+        }
+        long count = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id=:tenant and user_id=:user and role_assignment_id in (:assignments)
+                  and role_code in (:roles) and status='ACTIVE' and valid_from<=now()
+                  and (valid_until is null or valid_until>now())
+                  and (facility_id is null or facility_id=:facility)
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", allowedRoles)
+                .param("facility", facilityId).query(Long.class).single();
+        if (count < 1) {
+            throw roleDenied();
+        }
+    }
+
+    private static LabSpecimenException roleDenied() {
+        return new LabSpecimenException("LAB_SPECIMEN_ROLE_REQUIRED", 403,
+                "The active role assignment is not permitted to perform this specimen workflow action");
     }
 
     private SpecimenHead lock(UUID tenantId, UUID specimenId, UUID patientId, UUID encounterId, UUID facilityId) {

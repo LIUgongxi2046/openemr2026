@@ -38,6 +38,15 @@ final class DiagnosisLifecycleApiTest {
         Encounter context = seedEncounter();
         Lease lease = issueLease(context);
 
+        HttpResponse<String> terminology = send(
+                "GET", "/api/v1/diagnosis-terminology?query=E11.9&limit=10", null, lease, context, null);
+        assertThat(terminology.statusCode()).isEqualTo(200);
+        JsonNode terminologyRows = objectMapper.readTree(terminology.body());
+        assertThat(terminologyRows.size()).isGreaterThanOrEqualTo(1);
+        assertThat(terminologyRows.get(0).path("code").stringValue()).isEqualTo("E11.9");
+        assertThat(terminologyRows.get(0).path("terminology_release").stringValue()).isEqualTo("2026B");
+        assertThat(terminologyRows.toString()).doesNotContain("SYNTHETIC");
+
         HttpResponse<String> created = send("POST", "/api/v1/diagnoses", createBody(
                 context, "PRIMARY", "PROVISIONAL", "2026A", "I10.0", "原发性高血压 2 级"),
                 lease, context, UUID.randomUUID().toString());

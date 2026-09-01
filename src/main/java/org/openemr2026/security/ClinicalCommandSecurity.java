@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.security.AuthorizationDecisionService.AuthorizationContext;
 import org.openemr2026.security.AuthorizationDecisionService.DepartmentWardScope;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
@@ -14,12 +15,16 @@ public final class ClinicalCommandSecurity {
     private final ClinicalIdentityProvider identities;
     private final JdbcClient jdbc;
     private final AuthorizationDecisionService authorization;
+    private final boolean requirePublishedAuthorization;
 
     ClinicalCommandSecurity(ClinicalIdentityProvider identities, JdbcClient jdbc,
-            AuthorizationDecisionService authorization) {
+            AuthorizationDecisionService authorization,
+            @Value("${openemr2026.security.require-published-authorization:false}")
+            boolean requirePublishedAuthorization) {
         this.identities = identities;
         this.jdbc = jdbc;
         this.authorization = authorization;
+        this.requirePublishedAuthorization = requirePublishedAuthorization;
     }
 
     public ClinicalIdentity authenticate(HttpServletRequest request) {
@@ -114,6 +119,11 @@ public final class ClinicalCommandSecurity {
             UUID encounterId,
             String purposeCode) {
         if (!authorization.hasPublishedPolicy(identity.tenantId(), "CLINICAL_CONTEXT", "LEASE_ISSUE")) {
+            if (requirePublishedAuthorization) {
+                throw new ClinicalAccessDeniedException(
+                        "AUTHORIZATION_POLICY_MISSING",
+                        "No published clinical-context authorization policy is available");
+            }
             return;
         }
         DepartmentWardScope scope = authorization.resolveScope(identity, organizationId, facilityId, encounterId);

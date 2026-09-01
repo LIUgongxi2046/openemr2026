@@ -115,5 +115,23 @@ final class NursingVitalSignsApiTest {
                 .isInstanceOf(DataAccessException.class);
     }
 
+    @Test
+    void givenProductionRoleEnforcement_whenClinicianWritesNursingFacts_thenNurseRoleIsRequired() {
+        Context context = seedContext();
+        nursing.requireClinicalOperationRoles = true;
+        try {
+            assertThatThrownBy(() -> nursing.recordVitalSigns(identity(), "vitals-role-" + UUID.randomUUID(),
+                    new VitalSignRecordRequestWire(
+                            organization, facility, context.patientId(), context.encounterId(), null,
+                            Instant.now(), VitalSignRecordRequestWire.SourceValue.MANUAL,
+                            36.8, 78, 15, 118, 76, 98.0)))
+                    .isInstanceOf(NursingException.class)
+                    .satisfies(error -> assertThat(((NursingException) error).code())
+                            .isEqualTo("NURSING_ROLE_REQUIRED"));
+        } finally {
+            nursing.requireClinicalOperationRoles = false;
+        }
+    }
+
     private record Context(UUID patientId, UUID encounterId) {}
 }

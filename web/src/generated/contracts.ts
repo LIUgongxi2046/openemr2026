@@ -839,6 +839,14 @@ export const diagnosisControlRequestWireSchema = z.object({
 }).strict();
 export type DiagnosisControlRequestWire = z.infer<typeof diagnosisControlRequestWireSchema>;
 
+export const diagnosisTerminologyEntryWireSchema = z.object({
+  "terminology_system": z.string(),
+  "terminology_release": z.string(),
+  "code": z.string(),
+  "display_name": z.string(),
+}).strict();
+export type DiagnosisTerminologyEntryWire = z.infer<typeof diagnosisTerminologyEntryWireSchema>;
+
 export const clinicalDiagnosisWireSchema = z.object({
   "diagnosis_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -2820,6 +2828,32 @@ export const emergencyClinicalFactVoidRequestWireSchema = z.object({
 }).strict();
 export type EmergencyClinicalFactVoidRequestWire = z.infer<typeof emergencyClinicalFactVoidRequestWireSchema>;
 
+export const emergencyIdentityVerificationWireSchema = z.object({
+  "verification_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "identifier_type": z.string().nullable(),
+  "masked_identifier": z.string(),
+  "verification_purpose": z.enum(["MEDICATION","INFUSION","SPECIMEN","TRANSFER","GENERAL"]),
+  "outcome": z.enum(["MATCHED","MISMATCHED","NOT_FOUND"]),
+  "verified_by": z.string().uuid(),
+  "verified_at": z.string(),
+  "row_version": z.number().int(),
+}).strict();
+export type EmergencyIdentityVerificationWire = z.infer<typeof emergencyIdentityVerificationWireSchema>;
+
+export const emergencyIdentityVerificationCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "identifier_value": z.string(),
+  "verification_purpose": z.enum(["MEDICATION","INFUSION","SPECIMEN","TRANSFER","GENERAL"]),
+  "verified_at": z.string(),
+}).strict();
+export type EmergencyIdentityVerificationCreateRequestWire = z.infer<typeof emergencyIdentityVerificationCreateRequestWireSchema>;
+
 export const emergencyTriageAssessmentWireSchema = z.object({
   "triage_assessment_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
@@ -2948,6 +2982,8 @@ export const pharmacyDispensingWireSchema = z.object({
   "patient_id": z.string().uuid(),
   "encounter_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
+  "order_id": z.string().uuid().nullable().optional(),
+  "order_item_id": z.string().uuid().nullable().optional(),
   "drug_code": z.string(),
   "batch_number": z.string(),
   "quantity": z.number(),
@@ -2969,6 +3005,8 @@ export const pharmacyDispensingPrepareRequestWireSchema = z.object({
   "facility_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
   "encounter_id": z.string().uuid(),
+  "order_id": z.string().uuid().nullable().optional(),
+  "order_item_id": z.string().uuid().nullable().optional(),
   "drug_code": z.string(),
   "batch_number": z.string(),
   "quantity": z.number(),
@@ -3088,6 +3126,13 @@ export const infectionMonitoringEventResolveRequestWireSchema = z.object({
   "conclusion": z.string(),
 }).strict();
 export type InfectionMonitoringEventResolveRequestWire = z.infer<typeof infectionMonitoringEventResolveRequestWireSchema>;
+
+export const referralTargetWireSchema = z.object({
+  "department_id": z.string().uuid(),
+  "department_code": z.string(),
+  "display_name": z.string(),
+}).strict();
+export type ReferralTargetWire = z.infer<typeof referralTargetWireSchema>;
 
 export const referralWireSchema = z.object({
   "referral_id": z.string().uuid(),
@@ -3900,14 +3945,89 @@ export const emergencyPreadmissionVoidRequestWireSchema = z.object({
 }).strict();
 export type EmergencyPreadmissionVoidRequestWire = z.infer<typeof emergencyPreadmissionVoidRequestWireSchema>;
 
+export const emergencyCoordinationCaseWireSchema = z.object({
+  "coordination_case_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "case_type": z.enum(["CONSULTATION","HANDOFF","TRANSFER"]),
+  "priority": z.enum(["IMMEDIATE","URGENT","ROUTINE"]),
+  "target_unit": z.string(),
+  "requested_to": z.string().uuid().nullable(),
+  "summary": z.string(),
+  "risk_summary": z.string(),
+  "due_at": z.string(),
+  "status": z.enum(["OPEN","ACKNOWLEDGED","COMPLETED","VOIDED"]),
+  "requested_by": z.string().uuid(),
+  "acknowledged_by": z.string().uuid().nullable(),
+  "acknowledged_at": z.string().nullable(),
+  "completed_by": z.string().uuid().nullable(),
+  "completed_at": z.string().nullable(),
+  "voided_by": z.string().uuid().nullable(),
+  "voided_at": z.string().nullable(),
+  "void_reason": z.string().nullable(),
+  "row_version": z.number().int(),
+}).strict();
+export type EmergencyCoordinationCaseWire = z.infer<typeof emergencyCoordinationCaseWireSchema>;
+
+export const emergencyCoordinationCaseCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "case_type": z.enum(["CONSULTATION","HANDOFF","TRANSFER"]),
+  "priority": z.enum(["IMMEDIATE","URGENT","ROUTINE"]),
+  "target_unit": z.string(),
+  "requested_to": z.string().uuid().nullable(),
+  "summary": z.string(),
+  "risk_summary": z.string(),
+  "due_at": z.string(),
+}).strict();
+export type EmergencyCoordinationCaseCreateRequestWire = z.infer<typeof emergencyCoordinationCaseCreateRequestWireSchema>;
+
+export const emergencyCoordinationCaseUpdateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "priority": z.enum(["IMMEDIATE","URGENT","ROUTINE"]),
+  "target_unit": z.string(),
+  "requested_to": z.string().uuid().nullable(),
+  "summary": z.string(),
+  "risk_summary": z.string(),
+  "due_at": z.string(),
+}).strict();
+export type EmergencyCoordinationCaseUpdateRequestWire = z.infer<typeof emergencyCoordinationCaseUpdateRequestWireSchema>;
+
+export const emergencyCoordinationCaseTransitionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "transition": z.enum(["ACKNOWLEDGE","COMPLETE"]),
+}).strict();
+export type EmergencyCoordinationCaseTransitionRequestWire = z.infer<typeof emergencyCoordinationCaseTransitionRequestWireSchema>;
+
+export const emergencyCoordinationCaseVoidRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "patient_id": z.string().uuid(),
+  "encounter_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+  "reason": z.string(),
+}).strict();
+export type EmergencyCoordinationCaseVoidRequestWire = z.infer<typeof emergencyCoordinationCaseVoidRequestWireSchema>;
+
 export const encounterDomainSwitchCorrectionRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
   "patient_id": z.string().uuid(),
   "from_encounter_id": z.string().uuid(),
   "to_encounter_id": z.string().uuid(),
-  "from_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
-  "to_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
+  "from_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
+  "to_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
   "reason": z.string(),
   "switched_at": z.string(),
   "expected_row_version": z.number().int(),
@@ -3984,8 +4104,8 @@ export const encounterDomainSwitchWireSchema = z.object({
   "patient_id": z.string().uuid(),
   "from_encounter_id": z.string().uuid(),
   "to_encounter_id": z.string().uuid(),
-  "from_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
-  "to_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
+  "from_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
+  "to_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
   "reason": z.string(),
   "switched_at": z.string(),
   "switched_by": z.string().uuid(),
@@ -3999,8 +4119,8 @@ export const encounterDomainSwitchRecordRequestWireSchema = z.object({
   "patient_id": z.string().uuid(),
   "from_encounter_id": z.string().uuid(),
   "to_encounter_id": z.string().uuid(),
-  "from_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
-  "to_domain": z.enum(["OUTPATIENT","EMERGENCY"]),
+  "from_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
+  "to_domain": z.enum(["OUTPATIENT","EMERGENCY","INPATIENT"]),
   "reason": z.string(),
   "switched_at": z.string(),
 }).strict();

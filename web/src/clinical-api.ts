@@ -29,6 +29,7 @@ import {
   clinicalTaskTeamQueueWireSchema,
   clinicalTaskNotificationWireSchema,
   medicationSafetyEvaluationWireSchema,
+  diagnosisTerminologyEntryWireSchema,
   clinicalDiagnosisWireSchema,
   clinicalResultWireSchema,
   criticalValueWireSchema,
@@ -53,6 +54,7 @@ import {
   documentSourceReferenceWireSchema,
   documentSourceBundleWireSchema,
   patientSummaryWireSchema,
+  encounterStateTransitionRequestWireSchema,
   encounterWireSchema,
   type AIProposalWire,
   type AIRunSnapshotWire,
@@ -117,6 +119,10 @@ import {
   type EncounterWire,
 } from './generated/contracts';
 import { authSession } from './auth-session';
+import {
+  persistActiveOutpatientContext,
+  restoreActiveOutpatientContext,
+} from './active-outpatient-context';
 
 const syntheticDefaults = {
   tenantId: '018f0000-0000-7000-8000-00000000aa01',
@@ -138,12 +144,34 @@ const syntheticDefaults = {
   departmentId: '018f0000-0000-7000-8000-00000000aa08',
 };
 
+const emergencyContextStorageKey = 'openemr2026.emergency-context.v1';
+
+function storedEmergencyContext(): { patientId: string; encounterId: string } | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(emergencyContextStorageKey) ?? 'null') as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    const value = parsed as Record<string, unknown>;
+    return typeof value.patientId === 'string' && typeof value.encounterId === 'string'
+      ? { patientId: value.patientId, encounterId: value.encounterId }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const selectedEmergencyContext = storedEmergencyContext();
+
 const developmentDefaults = import.meta.env.DEV ? syntheticDefaults : {
   tenantId: '', organizationId: '', facilityId: '', userId: '', roleId: '', adminRoleId: '',
   patientId: '', encounterId: '', emergencyPatientId: '', emergencyEncounterId: '', documentId: '', inpatientPatientId: '',
   inpatientEncounterId: '', inpatientAdmissionId: '', inpatientWardId: '',
   collaboratorUserId: '', departmentId: '',
 };
+
+const restoredOutpatientContext = restoreActiveOutpatientContext(
+  authSession.user?.user_id ?? developmentDefaults.userId,
+);
 
 export const clinicalContext = {
   tenantId: import.meta.env.VITE_TENANT_ID || developmentDefaults.tenantId,
@@ -152,11 +180,12 @@ export const clinicalContext = {
   userId: import.meta.env.VITE_USER_ID || developmentDefaults.userId,
   roleId: import.meta.env.VITE_ROLE_ASSIGNMENT_ID || developmentDefaults.roleId,
   adminRoleId: import.meta.env.VITE_ADMIN_ROLE_ASSIGNMENT_ID || developmentDefaults.adminRoleId,
-  patientId: import.meta.env.VITE_PATIENT_ID || developmentDefaults.patientId,
-  encounterId: import.meta.env.VITE_ENCOUNTER_ID || developmentDefaults.encounterId,
-  emergencyPatientId: import.meta.env.VITE_EMERGENCY_PATIENT_ID || developmentDefaults.emergencyPatientId,
-  emergencyEncounterId: import.meta.env.VITE_EMERGENCY_ENCOUNTER_ID || developmentDefaults.emergencyEncounterId,
-  documentId: import.meta.env.VITE_DOCUMENT_ID || developmentDefaults.documentId,
+  patientId: restoredOutpatientContext?.patientId || import.meta.env.VITE_PATIENT_ID || developmentDefaults.patientId,
+  encounterId: restoredOutpatientContext?.encounterId || import.meta.env.VITE_ENCOUNTER_ID || developmentDefaults.encounterId,
+  patientDisplayName: restoredOutpatientContext?.patientDisplayName || '',
+  emergencyPatientId: selectedEmergencyContext?.patientId || import.meta.env.VITE_EMERGENCY_PATIENT_ID || developmentDefaults.emergencyPatientId,
+  emergencyEncounterId: selectedEmergencyContext?.encounterId || import.meta.env.VITE_EMERGENCY_ENCOUNTER_ID || developmentDefaults.emergencyEncounterId,
+  documentId: restoredOutpatientContext?.documentId || import.meta.env.VITE_DOCUMENT_ID || developmentDefaults.documentId,
   inpatientPatientId: import.meta.env.VITE_INPATIENT_PATIENT_ID || developmentDefaults.inpatientPatientId,
   inpatientEncounterId: import.meta.env.VITE_INPATIENT_ENCOUNTER_ID || developmentDefaults.inpatientEncounterId,
   inpatientAdmissionId: import.meta.env.VITE_INPATIENT_ADMISSION_ID || developmentDefaults.inpatientAdmissionId,
@@ -165,12 +194,53 @@ export const clinicalContext = {
   departmentId: import.meta.env.VITE_DEPARTMENT_ID || developmentDefaults.departmentId,
 };
 
+export function setEmergencyClinicalContext(patientId: string, encounterId: string): void {
+  if (!patientId || !encounterId) {
+    throw new ClinicalApiError('EMERGENCY_CONTEXT_INVALID', '急诊患者与就诊上下文必须同时存在', 400);
+  }
+  clinicalContext.emergencyPatientId = patientId;
+  clinicalContext.emergencyEncounterId = encounterId;
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(emergencyContextStorageKey, JSON.stringify({ patientId, encounterId }));
+  }
+}
+
 if (authSession.user) {
   clinicalContext.tenantId = authSession.user.tenant_id;
   clinicalContext.organizationId = authSession.user.organization_id;
   clinicalContext.facilityId = authSession.user.facility_id;
   clinicalContext.userId = authSession.user.user_id;
   clinicalContext.roleId = authSession.user.role_assignment_ids[0] ?? clinicalContext.roleId;
+}
+
+export function selectOutpatientContext(input: {
+  patientId: string;
+  encounterId: string;
+  patientDisplayName?: string;
+  documentId?: string | null;
+}): void {
+  const changedPatient = clinicalContext.patientId !== input.patientId || clinicalContext.encounterId !== input.encounterId;
+  clinicalContext.patientId = input.patientId;
+  clinicalContext.encounterId = input.encounterId;
+  clinicalContext.patientDisplayName = input.patientDisplayName?.trim() || clinicalContext.patientDisplayName;
+  if (changedPatient || input.documentId !== undefined) clinicalContext.documentId = input.documentId ?? '';
+  persistActiveOutpatientContext({
+    ownerUserId: authSession.user?.user_id ?? clinicalContext.userId,
+    patientId: clinicalContext.patientId,
+    encounterId: clinicalContext.encounterId,
+    patientDisplayName: clinicalContext.patientDisplayName,
+    documentId: clinicalContext.documentId || null,
+    selectedAt: new Date().toISOString(),
+  });
+}
+
+export function selectOutpatientDocument(documentId: string): void {
+  selectOutpatientContext({
+    patientId: clinicalContext.patientId,
+    encounterId: clinicalContext.encounterId,
+    patientDisplayName: clinicalContext.patientDisplayName,
+    documentId,
+  });
 }
 
 function configuredBearer() {
@@ -1111,6 +1181,14 @@ export async function listClinicalDiagnoses(lease: ContextLeaseWire): Promise<Cl
   ));
 }
 
+export async function searchDiagnosisTerminology(lease: ContextLeaseWire, query = '') {
+  const parameters = new URLSearchParams({ query: query.trim(), limit: '100' });
+  return diagnosisTerminologyEntryWireSchema.array().parse(await request(
+    `/diagnosis-terminology?${parameters}`,
+    { headers: scopedHeaders(lease) },
+  ));
+}
+
 export async function createClinicalDiagnosis(
   lease: ContextLeaseWire,
   input: {
@@ -1845,7 +1923,6 @@ export async function dischargeInpatient(
   overview: InpatientOverviewWire,
   dischargeDiagnosis: string,
   dispositionCode: 'HOME' | 'TRANSFER_TO_FACILITY' | 'DEATH' | 'OTHER',
-  outstandingTaskWaiverReason: string,
 ): Promise<InpatientOverviewWire> {
   return inpatientOverviewWireSchema.parse(await request(
     `/inpatient/admissions/${overview.admission.admission_id}/discharges`,
@@ -1864,16 +1941,66 @@ export async function dischargeInpatient(
         expected_admission_row_version: overview.admission.row_version,
         discharge_diagnosis: dischargeDiagnosis,
         disposition_code: dispositionCode,
-        outstanding_task_waiver_reason: outstandingTaskWaiverReason || null,
       }),
     },
   ));
 }
 
 export async function loadCurrentDocument(lease: ContextLeaseWire): Promise<DocumentVersionWire> {
-  return documentVersionWireSchema.parse(await request(`/documents/${clinicalContext.documentId}`, {
+  if (clinicalContext.documentId) {
+    try {
+      return documentVersionWireSchema.parse(await request(`/documents/${clinicalContext.documentId}`, {
+        headers: scopedHeaders(lease),
+      }));
+    } catch (error) {
+      if (!(error instanceof ClinicalApiError) || ![403, 404].includes(error.status)) throw error;
+      // A document remembered by the browser may have been voided, reassigned, or
+      // selected under an older encounter. Never carry that identifier into the
+      // active encounter; rediscover the document through the scoped list API.
+      selectOutpatientContext({
+        patientId: clinicalContext.patientId,
+        encounterId: clinicalContext.encounterId,
+        patientDisplayName: clinicalContext.patientDisplayName,
+        documentId: null,
+      });
+    }
+  }
+  const documents = await loadEncounterDocuments(lease);
+  const current = documents.find((item) => item.status !== 'VOID') ?? documents[0];
+  if (!current) {
+    throw new ClinicalApiError('OUTPATIENT_DOCUMENT_NOT_FOUND', '当前就诊尚未建立门诊病历', 404);
+  }
+  selectOutpatientDocument(current.document_id);
+  return current;
+}
+
+export async function loadCurrentOutpatientEncounter(lease: ContextLeaseWire): Promise<EncounterWire> {
+  return encounterWireSchema.parse(await request(`/encounters/${clinicalContext.encounterId}`, {
     headers: scopedHeaders(lease),
   }));
+}
+
+export async function finishCurrentOutpatientEncounter(
+  lease: ContextLeaseWire,
+  encounter: EncounterWire,
+  reason: string,
+): Promise<EncounterWire> {
+  return encounterWireSchema.parse(await request(
+    `/encounters/${clinicalContext.encounterId}/state-transitions`,
+    {
+      method: 'POST',
+      headers: { ...scopedHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(encounterStateTransitionRequestWireSchema.parse({
+        organization_id: clinicalContext.organizationId,
+        facility_id: clinicalContext.facilityId,
+        patient_id: clinicalContext.patientId,
+        expected_row_version: encounter.row_version,
+        target_status: 'FINISHED',
+        occurred_at: new Date().toISOString(),
+        reason: reason.trim(),
+      })),
+    },
+  ));
 }
 
 export async function loadDocument(

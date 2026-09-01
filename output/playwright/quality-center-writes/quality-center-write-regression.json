@@ -1,7 +1,7 @@
 {
-  "run_at": "2026-08-31T01:33:55.342Z",
-  "base_url": "http://127.0.0.1:4177",
-  "data_suffix": "MTGKEEVG",
+  "run_at": "2026-08-31T16:25:04.482Z",
+  "base_url": "http://127.0.0.1:4190",
+  "data_suffix": "MTHG88KJ",
   "checks": [
     {
       "name": "quality-initiative-create-edit-delete",
@@ -37,17 +37,27 @@
     },
     {
       "method": "POST",
+      "url": "/api/v1/context-leases",
+      "status": 201
+    },
+    {
+      "method": "POST",
+      "url": "/api/v1/context-leases",
+      "status": 201
+    },
+    {
+      "method": "POST",
       "url": "/api/v1/configurations",
       "status": 201
     },
     {
       "method": "PUT",
-      "url": "/api/v1/configurations/c7734f76-8f94-4eca-80d8-c07e6e679c1d",
+      "url": "/api/v1/configurations/eaa83797-1ece-49a1-98be-c7787694bdf9",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "/api/v1/configurations/c7734f76-8f94-4eca-80d8-c07e6e679c1d/lifecycle",
+      "url": "/api/v1/configurations/eaa83797-1ece-49a1-98be-c7787694bdf9/lifecycle",
       "status": 200
     },
     {
@@ -57,12 +67,12 @@
     },
     {
       "method": "PUT",
-      "url": "/api/v1/configurations/68d1c2be-e56c-4d13-bc34-f0112704e55f",
+      "url": "/api/v1/configurations/b4f33ebf-a29d-4b34-86bf-7548cb5d974f",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "/api/v1/configurations/68d1c2be-e56c-4d13-bc34-f0112704e55f/lifecycle",
+      "url": "/api/v1/configurations/b4f33ebf-a29d-4b34-86bf-7548cb5d974f/lifecycle",
       "status": 200
     },
     {
@@ -72,17 +82,17 @@
     },
     {
       "method": "PUT",
-      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTGKEEVG",
+      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTHG88KJ",
       "status": 200
     },
     {
       "method": "PUT",
-      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTGKEEVG",
+      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTHG88KJ",
       "status": 200
     },
     {
       "method": "DELETE",
-      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTGKEEVG?expected_row_version=2",
+      "url": "/api/v1/specialty-support/018f0000-0000-7000-8000-00000000aa03/018f0000-0000-7000-8000-00000000aa08/E2E_MTHG88KJ?expected_row_version=2",
       "status": 204
     },
     {
@@ -102,7 +112,7 @@
     },
     {
       "method": "POST",
-      "url": "/api/v1/infection-monitoring-events/9709378e-5e3b-4d5b-a774-27f6d94b115b/resolutions",
+      "url": "/api/v1/infection-monitoring-events/73022364-33b4-4e07-90aa-7e24def1dfbd/resolutions",
       "status": 200
     },
     {
@@ -112,7 +122,7 @@
     },
     {
       "method": "POST",
-      "url": "/api/v1/infection-monitoring-events/89b89336-48e4-46cb-a1c8-1478d2eb3a48/resolutions",
+      "url": "/api/v1/infection-monitoring-events/5332b391-e7f3-457e-bd16-58e09e1a185e/resolutions",
       "status": 200
     },
     {
@@ -122,12 +132,12 @@
     },
     {
       "method": "PUT",
-      "url": "/api/v1/admin/credentials/90906356-f20d-490b-ac75-0541417b64f0",
+      "url": "/api/v1/admin/credentials/a3bbd7b0-c7f1-49e0-9c52-0ae99911f745",
       "status": 200
     },
     {
       "method": "POST",
-      "url": "/api/v1/admin/credentials/90906356-f20d-490b-ac75-0541417b64f0/revoke",
+      "url": "/api/v1/admin/credentials/a3bbd7b0-c7f1-49e0-9c52-0ae99911f745/revoke",
       "status": 200
     }
   ],

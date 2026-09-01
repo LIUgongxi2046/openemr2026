@@ -15,6 +15,7 @@ import org.openemr2026.contracts.PharmacyDispensingUpdateRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingVoidRequestWire;
 import org.openemr2026.contracts.PharmacyDispensingWire;
 import org.openemr2026.security.ClinicalIdentity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -24,6 +25,9 @@ final class PharmacyDispensingService {
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
 
+    @Value("${openemr2026.security.require-clinical-operation-roles:false}")
+    boolean requireClinicalOperationRoles;
+
     PharmacyDispensingService(JdbcClient jdbc, TransactionTemplate transactions) {
         this.jdbc = jdbc;
         this.transactions = transactions;
@@ -31,6 +35,7 @@ final class PharmacyDispensingService {
 
     PharmacyDispensingWire prepare(
             ClinicalIdentity identity, String idempotencyKey, PharmacyDispensingPrepareRequestWire request) {
+        requirePharmacist(identity, request.facilityId());
         String drug = requireText(request.drugCode(), 2, "drug_code");
         String batch = requireText(request.batchNumber(), 2, "batch_number");
         String unit = requireText(request.quantityUnit(), 1, "quantity_unit");
@@ -41,21 +46,39 @@ final class PharmacyDispensingService {
             throw invalid("prepared_at is required");
         }
         requireActiveEncounter(identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId());
+        boolean inpatient = "INPATIENT".equals(encounterType(
+                identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId()));
+        if (inpatient && (request.orderId() == null || request.orderItemId() == null)) {
+            throw new PharmacyDispensingException(
+                    "INPATIENT_DISPENSING_ORDER_REQUIRED", 409,
+                    "Inpatient dispensing must reference an active signed medication order item");
+        }
+        if ((request.orderId() == null) != (request.orderItemId() == null)) {
+            throw invalid("order_id and order_item_id must be supplied together");
+        }
         return transactions.execute(status -> {
             beginCommand(identity, "PHARMACY_DISPENSING_PREPARE", idempotencyKey,
-                    sha256(request.patientId() + "|" + request.encounterId() + "|" + drug + "|" + batch
+                    sha256(request.patientId() + "|" + request.encounterId() + "|" + request.orderItemId()
+                            + "|" + drug + "|" + batch
                             + "|" + request.quantity() + "|" + request.preparedAt()));
+            if (request.orderItemId() != null) {
+                requireDispensableMedication(identity.tenantId(), request.patientId(), request.encounterId(),
+                        request.facilityId(), request.orderId(), request.orderItemId(), drug, unit,
+                        BigDecimal.valueOf(request.quantity()), null);
+            }
             UUID dispensingId = UUID.randomUUID();
             jdbc.sql("""
                     insert into pharmacy_dispensing(
                       tenant_id, dispensing_id, patient_id, encounter_id, facility_id,
-                      drug_code, batch_number, quantity, quantity_unit, dispensed_by,
+                      order_id, order_item_id, drug_code, batch_number, quantity, quantity_unit, dispensed_by,
                       status, prepared_at)
                     values (:tenant, :dispensing, :patient, :encounter, :facility,
-                      :drug, :batch, :quantity, :unit, :dispensed_by, 'PREPARED', :prepared_at)
+                      :order_id, :order_item_id, :drug, :batch, :quantity, :unit, :dispensed_by,
+                      'PREPARED', :prepared_at)
                     """).param("tenant", identity.tenantId()).param("dispensing", dispensingId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
-                    .param("facility", request.facilityId()).param("drug", drug).param("batch", batch)
+                    .param("facility", request.facilityId()).param("order_id", request.orderId())
+                    .param("order_item_id", request.orderItemId()).param("drug", drug).param("batch", batch)
                     .param("quantity", BigDecimal.valueOf(request.quantity())).param("unit", unit)
                     .param("dispensed_by", identity.userId())
                     .param("prepared_at", request.preparedAt().atOffset(ZoneOffset.UTC)).update();
@@ -69,24 +92,15 @@ final class PharmacyDispensingService {
     PharmacyDispensingWire transition(
             ClinicalIdentity identity, String idempotencyKey, UUID dispensingId,
             PharmacyDispensingTransitionRequestWire request) {
+        requirePharmacist(identity, request.facilityId());
         if (request.transition() == null) {
             throw invalid("transition is required");
         }
         return transactions.execute(status -> {
             beginCommand(identity, "PHARMACY_DISPENSING_TRANSITION", idempotencyKey,
                     sha256(dispensingId + "|" + request.expectedRowVersion() + "|" + request.transition()));
-            DispensingHead current = jdbc.sql("""
-                    select status, dispensed_by, row_version, voided_at from pharmacy_dispensing
-                    where tenant_id = :tenant and dispensing_id = :dispensing
-                      and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
-                      for update
-                    """).param("tenant", identity.tenantId()).param("dispensing", dispensingId)
-                    .param("patient", request.patientId()).param("encounter", request.encounterId())
-                    .param("facility", request.facilityId())
-                    .query((rs, row) -> new DispensingHead(
-                            rs.getString("status"), rs.getObject("dispensed_by", UUID.class),
-                            rs.getLong("row_version"), rs.getObject("voided_at", OffsetDateTime.class)))
-                    .optional().orElseThrow(PharmacyDispensingService::contextDenied);
+            DispensingHead current = lockDispensing(identity, dispensingId, request.patientId(),
+                    request.encounterId(), request.facilityId());
             if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
                 throw new PharmacyDispensingException(
                         "PHARMACY_DISPENSING_VERSION_CONFLICT", 409, "The dispensing changed; reload before retrying");
@@ -130,6 +144,7 @@ final class PharmacyDispensingService {
     PharmacyDispensingWire update(
             ClinicalIdentity identity, String idempotencyKey, UUID dispensingId,
             PharmacyDispensingUpdateRequestWire request) {
+        requirePharmacist(identity, request.facilityId());
         String drug = requireText(request.drugCode(), 2, "drug_code");
         String batch = requireText(request.batchNumber(), 2, "batch_number");
         String unit = requireText(request.quantityUnit(), 1, "quantity_unit");
@@ -146,6 +161,11 @@ final class PharmacyDispensingService {
             if (!"PREPARED".equals(current.status()) || current.voidedAt() != null) {
                 throw new PharmacyDispensingException("PHARMACY_DISPENSING_STATE_INVALID", 409,
                         "Only an active prepared dispensing can be edited");
+            }
+            if (current.orderItemId() != null) {
+                requireDispensableMedication(identity.tenantId(), request.patientId(), request.encounterId(),
+                        request.facilityId(), current.orderId(), current.orderItemId(), drug, unit,
+                        BigDecimal.valueOf(request.quantity()), dispensingId);
             }
             int updated = jdbc.sql("""
                     update pharmacy_dispensing set drug_code = :drug, batch_number = :batch,
@@ -167,6 +187,7 @@ final class PharmacyDispensingService {
     PharmacyDispensingWire voidDispensing(
             ClinicalIdentity identity, String idempotencyKey, UUID dispensingId,
             PharmacyDispensingVoidRequestWire request) {
+        requirePharmacist(identity, request.facilityId());
         String reason = requireText(request.reason(), 4, "reason");
         return transactions.execute(status -> {
             beginCommand(identity, "PHARMACY_DISPENSING_VOID", idempotencyKey,
@@ -196,7 +217,9 @@ final class PharmacyDispensingService {
         });
     }
 
-    List<PharmacyDispensingWire> listDispensings(ClinicalIdentity identity, UUID patientId) {
+    List<PharmacyDispensingWire> listDispensings(
+            ClinicalIdentity identity, UUID patientId, UUID facilityId) {
+        requirePharmacist(identity, facilityId);
         return jdbc.sql("""
                 select dispensing_id from pharmacy_dispensing
                 where tenant_id = :tenant and patient_id = :patient
@@ -206,9 +229,32 @@ final class PharmacyDispensingService {
                 .map(id -> dispensing(identity.tenantId(), id, patientId)).toList();
     }
 
+    private void requirePharmacist(ClinicalIdentity identity, UUID facilityId) {
+        if (!requireClinicalOperationRoles) return;
+        if (identity.roleAssignmentIds().isEmpty()) {
+            throw new PharmacyDispensingException(
+                    "PHARMACIST_ROLE_REQUIRED", 403, "An active pharmacist role is required");
+        }
+        long authorized = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id = :tenant and user_id = :user
+                  and role_assignment_id in (:assignments) and role_code = 'PHARMACIST'
+                  and (facility_id is null or facility_id = :facility)
+                  and status = 'ACTIVE' and valid_from <= now()
+                  and (valid_until is null or valid_until > now())
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("facility", facilityId)
+                .query(Long.class).single();
+        if (authorized == 0) {
+            throw new PharmacyDispensingException(
+                    "PHARMACIST_ROLE_REQUIRED", 403, "An active pharmacist role is required");
+        }
+    }
+
     private PharmacyDispensingWire dispensing(UUID tenantId, UUID dispensingId, UUID patientId) {
         return jdbc.sql("""
-                select dispensing_id, patient_id, encounter_id, facility_id, drug_code, batch_number,
+                select dispensing_id, patient_id, encounter_id, facility_id, order_id, order_item_id,
+                  drug_code, batch_number,
                   quantity, quantity_unit, dispensed_by, verified_by, status,
                   prepared_at, verified_at, dispensed_at, voided_at, void_reason, row_version
                 from pharmacy_dispensing
@@ -217,6 +263,7 @@ final class PharmacyDispensingService {
                 .query((rs, row) -> new PharmacyDispensingWire(
                         rs.getObject("dispensing_id", UUID.class), rs.getObject("patient_id", UUID.class),
                         rs.getObject("encounter_id", UUID.class), rs.getObject("facility_id", UUID.class),
+                        rs.getObject("order_id", UUID.class), rs.getObject("order_item_id", UUID.class),
                         rs.getString("drug_code"), rs.getString("batch_number"),
                         rs.getBigDecimal("quantity").doubleValue(), rs.getString("quantity_unit"),
                         rs.getObject("dispensed_by", UUID.class), rs.getObject("verified_by", UUID.class),
@@ -243,10 +290,69 @@ final class PharmacyDispensingService {
         if (count != 1) throw contextDenied();
     }
 
+    private String encounterType(UUID tenantId, UUID patientId, UUID encounterId, UUID facilityId) {
+        return jdbc.sql("""
+                select encounter_type from encounter
+                where tenant_id = :tenant and encounter_id = :encounter and patient_id = :patient
+                  and facility_id = :facility and status in ('ARRIVED', 'IN_PROGRESS', 'SUSPENDED')
+                """).param("tenant", tenantId).param("encounter", encounterId).param("patient", patientId)
+                .param("facility", facilityId).query(String.class).optional()
+                .orElseThrow(PharmacyDispensingService::contextDenied);
+    }
+
+    private void requireDispensableMedication(
+            UUID tenantId, UUID patientId, UUID encounterId, UUID facilityId,
+            UUID orderId, UUID orderItemId, String drugCode, String unit,
+            BigDecimal requestedQuantity, UUID excludedDispensingId) {
+        PrescribedMedication prescribed = jdbc.sql("""
+                select item.catalog_code, item.requested_quantity, item.quantity_unit
+                from clinical_order medical_order
+                join clinical_order_item item on item.tenant_id = medical_order.tenant_id
+                  and item.order_id = medical_order.order_id
+                where medical_order.tenant_id = :tenant and medical_order.order_id = :order_id
+                  and medical_order.patient_id = :patient and medical_order.encounter_id = :encounter
+                  and medical_order.facility_id = :facility
+                  and medical_order.status in ('SIGNED', 'ACTIVE', 'IN_PROGRESS')
+                  and item.order_item_id = :order_item_id and item.item_type = 'MEDICATION'
+                  and item.item_state in ('ACTIVE', 'IN_PROGRESS')
+                for update of item
+                """).param("tenant", tenantId).param("order_id", orderId).param("patient", patientId)
+                .param("encounter", encounterId).param("facility", facilityId).param("order_item_id", orderItemId)
+                .query((rs, row) -> new PrescribedMedication(
+                        rs.getString("catalog_code"), rs.getBigDecimal("requested_quantity"),
+                        rs.getString("quantity_unit")))
+                .optional().orElseThrow(() -> new PharmacyDispensingException(
+                        "INPATIENT_MEDICATION_ORDER_NOT_DISPENSABLE", 409,
+                        "The referenced medication order item is missing, unsigned, stopped or not active"));
+        if (!prescribed.catalogCode().equals(drugCode) || !prescribed.quantityUnit().equals(unit)) {
+            throw new PharmacyDispensingException(
+                    "INPATIENT_DISPENSING_ORDER_MISMATCH", 409,
+                    "Drug code and quantity unit must match the referenced medication order item");
+        }
+        BigDecimal alreadyPrepared = excludedDispensingId == null
+                ? jdbc.sql("""
+                        select coalesce(sum(quantity), 0) from pharmacy_dispensing
+                        where tenant_id = :tenant and order_item_id = :order_item_id and voided_at is null
+                        """).param("tenant", tenantId).param("order_item_id", orderItemId)
+                        .query(BigDecimal.class).single()
+                : jdbc.sql("""
+                        select coalesce(sum(quantity), 0) from pharmacy_dispensing
+                        where tenant_id = :tenant and order_item_id = :order_item_id and voided_at is null
+                          and dispensing_id <> :excluded
+                        """).param("tenant", tenantId).param("order_item_id", orderItemId)
+                        .param("excluded", excludedDispensingId).query(BigDecimal.class).single();
+        if (alreadyPrepared.add(requestedQuantity).compareTo(prescribed.quantity()) > 0) {
+            throw new PharmacyDispensingException(
+                    "INPATIENT_DISPENSING_QUANTITY_EXCEEDED", 409,
+                    "Cumulative dispensing quantity exceeds the active medication order quantity");
+        }
+    }
+
     private DispensingHead lockDispensing(
             ClinicalIdentity identity, UUID dispensingId, UUID patientId, UUID encounterId, UUID facilityId) {
         return jdbc.sql("""
-                select status, dispensed_by, row_version, voided_at from pharmacy_dispensing
+                select status, dispensed_by, row_version, voided_at, order_id, order_item_id
+                from pharmacy_dispensing
                 where tenant_id = :tenant and dispensing_id = :dispensing
                   and patient_id = :patient and encounter_id = :encounter and facility_id = :facility
                 for update
@@ -254,7 +360,8 @@ final class PharmacyDispensingService {
                 .param("patient", patientId).param("encounter", encounterId).param("facility", facilityId)
                 .query((rs, row) -> new DispensingHead(rs.getString("status"),
                         rs.getObject("dispensed_by", UUID.class), rs.getLong("row_version"),
-                        rs.getObject("voided_at", OffsetDateTime.class)))
+                        rs.getObject("voided_at", OffsetDateTime.class),
+                        rs.getObject("order_id", UUID.class), rs.getObject("order_item_id", UUID.class)))
                 .optional().orElseThrow(PharmacyDispensingService::contextDenied);
     }
 
@@ -356,5 +463,9 @@ final class PharmacyDispensingService {
         }
     }
 
-    private record DispensingHead(String status, UUID dispensedBy, long rowVersion, OffsetDateTime voidedAt) {}
+    private record DispensingHead(
+            String status, UUID dispensedBy, long rowVersion, OffsetDateTime voidedAt,
+            UUID orderId, UUID orderItemId) {}
+
+    private record PrescribedMedication(String catalogCode, BigDecimal quantity, String quantityUnit) {}
 }

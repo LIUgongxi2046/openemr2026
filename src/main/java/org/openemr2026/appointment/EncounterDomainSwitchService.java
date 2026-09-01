@@ -45,7 +45,8 @@ final class EncounterDomainSwitchService {
                     "A domain switch must move between different encounters");
         }
         requireBothEncountersSamePatient(identity.tenantId(), request.patientId(),
-                request.fromEncounterId(), request.toEncounterId());
+                request.fromEncounterId(), request.toEncounterId(),
+                request.fromDomain().name(), request.toDomain().name());
         return transactions.execute(status -> {
             beginCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_RECORD", idempotencyKey,
                     sha256(request.patientId() + "|" + request.fromEncounterId() + "|" + request.toEncounterId()
@@ -94,7 +95,8 @@ final class EncounterDomainSwitchService {
             throw invalid("valid, different from/to encounters and domains are required");
         }
         requireBothEncountersSamePatient(identity.tenantId(), request.patientId(),
-                request.fromEncounterId(), request.toEncounterId());
+                request.fromEncounterId(), request.toEncounterId(),
+                request.fromDomain().name(), request.toDomain().name());
         return transactions.execute(status -> {
             beginCommand(identity, "ENCOUNTER_DOMAIN_SWITCH_CORRECT", idempotencyKey,
                     sha256(switchId + "|" + request.expectedRowVersion() + "|" + reason));
@@ -192,13 +194,17 @@ final class EncounterDomainSwitchService {
     }
 
     private void requireBothEncountersSamePatient(
-            UUID tenantId, UUID patientId, UUID fromEncounterId, UUID toEncounterId) {
+            UUID tenantId, UUID patientId, UUID fromEncounterId, UUID toEncounterId,
+            String fromDomain, String toDomain) {
         long count = jdbc.sql("""
                 select count(*) from encounter
                 where tenant_id = :tenant and patient_id = :patient
-                  and (encounter_id = :from or encounter_id = :to)
+                  and ((encounter_id = :from and encounter_type = :from_domain)
+                    or (encounter_id = :to and encounter_type = :to_domain))
                 """).param("tenant", tenantId).param("patient", patientId)
-                .param("from", fromEncounterId).param("to", toEncounterId).query(Long.class).single();
+                .param("from", fromEncounterId).param("to", toEncounterId)
+                .param("from_domain", fromDomain).param("to_domain", toDomain)
+                .query(Long.class).single();
         if (count != 2) throw contextDenied();
     }
 

@@ -16,6 +16,9 @@ server:
 
 openemr2026:
   synthetic-dataset-enabled: false
+  security:
+    require-published-authorization: true
+    require-clinical-operation-roles: true
   archive:
     storage-root: ${OPENEMR2026_ARCHIVE_STORAGE_ROOT:}
     ocr-endpoint: ${OPENEMR2026_ARCHIVE_OCR_ENDPOINT:}

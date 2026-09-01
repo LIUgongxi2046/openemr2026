@@ -7,7 +7,6 @@ const webDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const outputDir = resolve(webDir, '../output/playwright/inpatient-nested-crud');
 const baseUrl = (process.env.OPENEMR2026_BROWSER_BASE_URL || 'http://127.0.0.1:4178').replace(/\/$/, '');
 const stamp = Date.now().toString().slice(-8);
-const drugCode = `IP-DRUG-${stamp}`;
 const batch = `IP-BATCH-${stamp}`;
 const correctedBatch = `${batch}-R1`;
 const checks = [];
@@ -117,10 +116,14 @@ try {
     await go(routes[4]);
     await page.getByRole('button', { name: '新增摆药', exact: true }).click();
     let dialog = page.locator('dialog.business-dialog[open]');
-    await dialog.getByLabel('药品编码').fill(drugCode);
+    const orderSelect = dialog.getByLabel('有效药品医嘱');
+    const orderOptions = await orderSelect.locator('option').count();
+    if (orderOptions < 2) throw new Error('当前住院就诊缺少已签署有效药品医嘱，不能执行摆药闭环');
+    await orderSelect.selectOption({ index: 1 });
+    const drugCode = await dialog.getByLabel('药品编码').inputValue();
+    if (!drugCode) throw new Error('选择医嘱后未自动带入药品编码');
     await dialog.getByLabel('批次号').fill(batch);
-    await dialog.getByLabel('数量').fill('6');
-    await dialog.getByLabel('单位').fill('支');
+    await dialog.getByLabel('数量').fill('1');
     await dialog.getByRole('button', { name: '确认摆药', exact: true }).click();
 
     const row = page.locator('.admin-table tbody tr').filter({ hasText: drugCode });

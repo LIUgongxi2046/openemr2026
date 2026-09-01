@@ -47,6 +47,7 @@ final class ResultService {
                 || request.executionTaskId() == null || request.reportType() == null) {
             throw new ResultException("RESULT_REQUEST_INVALID", 400, "Result source, execution and report type are required");
         }
+        requireReportAuthorRole(identity, request.facilityId(), request.reportType().name());
         return transactions.execute(status -> {
             ExecutionFact execution = requireCompletedExecution(identity.tenantId(), request.executionTaskId(),
                     request.patientId(), request.encounterId(), request.facilityId());
@@ -113,6 +114,7 @@ final class ResultService {
         return transactions.execute(status -> {
             LockedResult locked = lockResult(identity.tenantId(), resultId, request.patientId(),
                     request.encounterId(), request.facilityId());
+            requireReportAuthorRole(identity, request.facilityId(), locked.reportType());
             if (locked.rowVersion() != request.expectedRowVersion()) throw resultVersionConflict();
             String requestHash = sha256(resultId + "|" + request.expectedRowVersion() + "|"
                     + request.correctionReason() + "|" + request.conclusion() + "|" + request.observations());
@@ -149,6 +151,10 @@ final class ResultService {
                     "CRITICAL_ACKNOWLEDGEMENT_INVALID", 400,
                     "Notification method and explicit recipient read-back confirmation are required");
         }
+        requireRole(identity, request.facilityId(), List.of(
+                "CLINICIAN", "CHIEF_PHYSICIAN", "ATTENDING_PHYSICIAN", "SURGEON",
+                "EMERGENCY_PHYSICIAN", "PEDIATRICIAN", "ICU_PHYSICIAN",
+                "REGISTERED_NURSE", "NURSE_MANAGER"), "CRITICAL_VALUE_RECEIVER_ROLE_REQUIRED");
         return transactions.execute(status -> {
             LockedCritical critical = lockCritical(identity.tenantId(), criticalValueId, request.patientId(),
                     request.encounterId(), request.facilityId());
@@ -184,6 +190,10 @@ final class ResultService {
                     "CRITICAL_DISPOSITION_INVALID", 400,
                     "Assessment, action, outcome and retest decision are required");
         }
+        requireRole(identity, request.facilityId(), List.of(
+                "CLINICIAN", "CHIEF_PHYSICIAN", "ATTENDING_PHYSICIAN", "SURGEON",
+                "EMERGENCY_PHYSICIAN", "PEDIATRICIAN", "ICU_PHYSICIAN"),
+                "CRITICAL_VALUE_DISPOSITION_ROLE_REQUIRED");
         return transactions.execute(status -> {
             LockedCritical critical = lockCritical(identity.tenantId(), criticalValueId, request.patientId(),
                     request.encounterId(), request.facilityId());
@@ -439,7 +449,7 @@ final class ResultService {
     private LockedResult lockResult(
             UUID tenantId, UUID resultId, UUID patientId, UUID encounterId, UUID facilityId) {
         return jdbc.sql("""
-                select result.current_version_id, result.row_version, version.version_no
+                select result.current_version_id, result.row_version, version.version_no, result.report_type
                 from clinical_result result
                 join clinical_result_version version on version.tenant_id = result.tenant_id
                   and version.result_version_id = result.current_version_id
@@ -451,7 +461,33 @@ final class ResultService {
                 .param("encounter", encounterId).param("facility", facilityId)
                 .query((rs, row) -> new LockedResult(
                         rs.getObject("current_version_id", UUID.class), rs.getLong("row_version"),
-                        rs.getLong("version_no"))).optional().orElseThrow(ResultService::contextDenied);
+                        rs.getLong("version_no"), rs.getString("report_type")))
+                .optional().orElseThrow(ResultService::contextDenied);
+    }
+
+    private void requireReportAuthorRole(ClinicalIdentity identity, UUID facilityId, String reportType) {
+        List<String> allowedRoles = "LAB".equals(reportType)
+                ? List.of("LAB_TECHNICIAN")
+                : List.of("RADIOLOGIST");
+        requireRole(identity, facilityId, allowedRoles,
+                "LAB".equals(reportType) ? "LAB_RESULT_AUTHOR_ROLE_REQUIRED" : "IMAGING_RESULT_AUTHOR_ROLE_REQUIRED");
+    }
+
+    private void requireRole(
+            ClinicalIdentity identity, UUID facilityId, List<String> allowedRoles, String failureCode) {
+        long count = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id=:tenant and user_id=:user and role_assignment_id in (:assignments)
+                  and role_code in (:roles) and status='ACTIVE' and valid_from<=now()
+                  and (valid_until is null or valid_until>now())
+                  and (facility_id is null or facility_id=:facility)
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", allowedRoles)
+                .param("facility", facilityId).query(Long.class).single();
+        if (count < 1) {
+            throw new ResultException(failureCode, 403,
+                    "The active role assignment is not permitted to perform this result workflow action");
+        }
     }
 
     private LockedCritical lockCritical(
@@ -664,7 +700,7 @@ final class ResultService {
     }
 
     private record ExecutionFact(UUID orderId, String itemType) {}
-    private record LockedResult(UUID currentVersionId, long rowVersion, long versionNo) {}
+    private record LockedResult(UUID currentVersionId, long rowVersion, long versionNo, String reportType) {}
     private record LockedCritical(String state, long rowVersion) {}
     private record CriticalTaskProjection(UUID taskId, String state, long rowVersion) {}
     private record ResultHead(

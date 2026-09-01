@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 531,
+  "operation_count": 540,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -1316,6 +1316,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createDocumentTemplateVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createEmergencyCoordinationCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-coordination-cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyCoordinationCaseCreateRequest",
+      "output_schema": "EmergencyCoordinationCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createEmergencyCoordinationCase",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createEmergencyIdentityVerification",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-identity-verifications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyIdentityVerificationCreateRequest",
+      "output_schema": "EmergencyIdentityVerification",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createEmergencyIdentityVerification",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -4280,6 +4314,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listEmergencyCoordinationCases",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/emergency-coordination-cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "EmergencyCoordinationCase[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listEmergencyCoordinationCases",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listEmergencyIdentityVerifications",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/emergency-identity-verifications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "EmergencyIdentityVerification[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listEmergencyIdentityVerifications",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listEmergencyNursingNotes",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -5619,6 +5687,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listReferrals",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listReferralTargets",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/referral-targets",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ReferralTarget[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listReferralTargets",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -7959,6 +8044,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "searchDiagnosisTerminology",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/diagnosis-terminology",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DiagnosisTerminologyEntry[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:searchDiagnosisTerminology",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "searchPatients",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8420,6 +8522,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "transitionEmergencyCoordinationCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-coordination-cases/{coordination_case_id}/transitions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyCoordinationCaseTransitionRequest",
+      "output_schema": "EmergencyCoordinationCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:transitionEmergencyCoordinationCase",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "transitionEncounterState",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8586,6 +8705,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:updateConfiguration",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "updateEmergencyCoordinationCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/emergency-coordination-cases/{coordination_case_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyCoordinationCaseUpdateRequest",
+      "output_schema": "EmergencyCoordinationCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateEmergencyCoordinationCase",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8875,6 +9011,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:voidDocumentAttachment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidEmergencyCoordinationCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/emergency-coordination-cases/{coordination_case_id}/voids",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "EmergencyCoordinationCaseVoidRequest",
+      "output_schema": "EmergencyCoordinationCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidEmergencyCoordinationCase",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

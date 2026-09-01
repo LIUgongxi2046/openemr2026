@@ -4,7 +4,7 @@
     "docs/design/ui-delivery/route-design-map.csv",
     "prototype/traceability.csv"
   ],
-  "route_count": 194,
+  "route_count": 199,
   "routes": [
     {
       "route_id": "admin",
@@ -3564,6 +3564,91 @@
       "artifact_path": "docs/design/ui-delivery/screens/ent-workbench.png"
     },
     {
+      "route_id": "er-clinical-timeline",
+      "path": "#/er-clinical-timeline",
+      "screen_id": "HASH-196",
+      "title": "急诊 L4 临床时间线",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "api_refs": [
+        "Clinical Core API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "offline",
+        "permission",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "PATIENT_CONTEXT",
+        "ENCOUNTER_OR_PURPOSE"
+      ],
+      "layout": "临床工作域",
+      "source_status": "IMPLEMENTED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/er-clinical-timeline.png"
+    },
+    {
+      "route_id": "er-evidence-ledger",
+      "path": "#/er-evidence-ledger",
+      "screen_id": "HASH-199",
+      "title": "急诊 L7 证据台账",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "offline",
+        "permission",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "临床工作域",
+      "source_status": "IMPLEMENTED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/er-evidence-ledger.png"
+    },
+    {
       "route_id": "er-handoff",
       "path": "#/er-handoff",
       "screen_id": "HASH-022",
@@ -3691,6 +3776,48 @@
       "artifact_path": "docs/design/ui-delivery/screens/er-observation.png"
     },
     {
+      "route_id": "er-patient-overview",
+      "path": "#/er-patient-overview",
+      "screen_id": "HASH-195",
+      "title": "急诊 L3 患者全景",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "offline",
+        "permission",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "临床工作域",
+      "source_status": "IMPLEMENTED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/er-patient-overview.png"
+    },
+    {
       "route_id": "er-record",
       "path": "#/er-record",
       "screen_id": "HASH-019",
@@ -3732,6 +3859,90 @@
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/er-record.png"
+    },
+    {
+      "route_id": "er-safety-gates",
+      "path": "#/er-safety-gates",
+      "screen_id": "HASH-197",
+      "title": "急诊 L5 安全门禁",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "offline",
+        "permission",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "临床工作域",
+      "source_status": "IMPLEMENTED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/er-safety-gates.png"
+    },
+    {
+      "route_id": "er-transfer-readiness",
+      "path": "#/er-transfer-readiness",
+      "screen_id": "HASH-198",
+      "title": "急诊 L6 去向与转运就绪度",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "offline",
+        "permission",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "临床工作域",
+      "source_status": "IMPLEMENTED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/er-transfer-readiness.png"
     },
     {
       "route_id": "er-triage",

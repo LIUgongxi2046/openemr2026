@@ -37,16 +37,28 @@ async function check(name, action) {
   }
 }
 
-async function login() {
+async function login(loginUsername = username) {
   currentRoute = 'login';
   await page.goto(`${baseUrl}/#/outpatient`, { waitUntil: 'domcontentloaded' });
   const submit = page.getByRole('button', { name: '登录系统' });
   if (await submit.isVisible().catch(() => false)) {
-    await page.getByLabel('用户名').fill(username);
+    await page.getByLabel('用户名').fill(loginUsername);
     await page.locator('#system-login-password').fill(password);
     await submit.click();
+    await page.waitForFunction(() => Boolean(sessionStorage.getItem('openemr2026.clinical-session')), undefined, { timeout: 30_000 });
   }
+  await page.goto(`${baseUrl}/#/outpatient`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => document.documentElement.dataset.routeId === 'outpatient', undefined, { timeout: 30_000 });
+}
+
+async function switchUser(loginUsername) {
+  await page.getByRole('button', { name: '用户登录与账户' }).click();
+  await page.getByRole('button', { name: '退出系统', exact: true }).click();
+  await page.getByRole('button', { name: '登录系统', exact: true }).waitFor({ state: 'visible' });
+  await page.getByLabel('用户名').fill(loginUsername);
+  await page.locator('#system-login-password').fill(password);
+  await page.getByRole('button', { name: '登录系统', exact: true }).click();
+  await page.waitForFunction(() => Boolean(sessionStorage.getItem('openemr2026.clinical-session')), undefined, { timeout: 30_000 });
 }
 
 async function openRoute(id) {
@@ -122,10 +134,13 @@ try {
     for (const label of navigationLabels) await page.getByRole('link', { name: label, exact: true }).first().waitFor({ state: 'visible' });
   });
   await check('outpatient-summary-has-realistic-workflow-data', async () => {
-    await page.locator('.queue-list article').first().waitFor({ state: 'visible' });
     await page.locator('.encounter-editor').waitFor({ state: 'visible' });
     await page.locator('.patient-context').waitFor({ state: 'visible' });
-    if (await page.locator('.queue-list article').count() < 3) throw new Error('候诊队列数据不足 3 条');
+    const patientName = (await page.locator('.outpatient-patient-strip strong').first().textContent())?.trim() ?? '';
+    if (!/^[一-龥]{2,4}$/.test(patientName) || /(合成|测试|患者)/.test(patientName)) {
+      throw new Error(`当前患者姓名不符合自然模拟数据规范：${patientName}`);
+    }
+    await page.locator('.previsit-summary').waitFor({ state: 'visible' });
   });
 
   await openRoute('opd-record');
@@ -185,8 +200,15 @@ try {
     if (await cards.count() < 1) throw new Error('异常结果筛选无结果');
     await page.getByLabel('分类').selectOption('ALL');
   });
-  await check('results-create-modal', () => expectDialogFromButton('录入结果', '录入已审核结果'));
-  await check('results-edit-modal', () => expectDialogFromButton('更正报告', '追加结果更正版本'));
+  await check('clinician-cannot-author-results', async () => {
+    if (await page.getByRole('button', { name: '录入结果', exact: true }).count()) throw new Error('临床医师不应拥有检验或影像报告签发入口');
+    await page.getByText('医生只读报告 / 处置危急值', { exact: true }).waitFor({ state: 'visible' });
+  });
+  await switchUser('chengyu.xie');
+  await openRoute('opd-results');
+  await check('radiologist-results-create-modal', () => expectDialogFromButton('录入结果', '录入已审核结果'));
+  await check('radiologist-results-edit-modal', () => expectDialogFromButton('更正报告', '追加结果更正版本'));
+  await switchUser(username);
 
   await openRoute('opd-consult');
   await check('consult-data-and-actions', async () => {

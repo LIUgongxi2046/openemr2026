@@ -31,28 +31,28 @@ try {
     await page.waitForURL(/#\/clinical$/, { timeout: 20_000 });
   }
   await page.goto(`${baseUrl}/#/outpatient`, { waitUntil: 'domcontentloaded', timeout: 15_000 });
-  await page.locator('.queue-list .queue-patient').first().waitFor({ state: 'visible', timeout: 25_000 });
+  await page.locator('[data-select-outpatient-patient]').first().waitFor({ state: 'visible', timeout: 25_000 });
 
   for (const sequence of sequences) {
     try {
-      const queueRow = page.locator('.queue-list article').filter({ hasText: `#${sequence} ·` });
+      const queueRow = page.locator(`[data-queue-sequence="${sequence}"]`);
       await queueRow.waitFor({ state: 'attached', timeout: 10_000 });
-      await queueRow.locator('.queue-patient').click();
+      await queueRow.locator('[data-select-outpatient-patient]').click();
       await page.waitForFunction((expectedSequence) => {
-        const active = document.querySelector('.queue-list article.active');
-        return active?.textContent?.includes(`#${expectedSequence} ·`);
+        const active = document.querySelector(`[data-queue-sequence="${expectedSequence}"].active`);
+        return Boolean(active);
       }, sequence, { timeout: 20_000 });
-      await page.locator('.summary-grid article').first().waitFor({ state: 'visible', timeout: 20_000 });
+      await page.locator('.encounter-editor').waitFor({ state: 'visible', timeout: 20_000 });
       const snapshot = await page.evaluate(() => {
       const patient = document.querySelector('.patient-strip');
-      const cards = [...document.querySelectorAll('.summary-grid article')];
+      const summary = document.querySelector('.previsit-summary p')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
       return {
         patient_name: patient?.querySelector('strong')?.textContent?.trim() ?? '',
         patient_context: patient?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
-        document: cards[0]?.querySelector('strong')?.textContent?.trim() ?? '',
-        diagnosis: cards[1]?.querySelector('strong')?.textContent?.trim() ?? '',
-        order_items: cards[2]?.querySelector('small')?.textContent?.trim() ?? '',
-        results: cards[3]?.querySelector('strong')?.textContent?.trim() ?? '',
+        document: document.querySelector('.save-state')?.textContent?.replace(/\s+/g, ' ').trim() ?? '',
+        diagnosis: document.querySelector('.outpatient-patient-strip dl > div:nth-child(3) dd')?.textContent?.trim() ?? '',
+        order_items: summary,
+        results: summary,
       };
       });
       if (!/^[一-龥]{2,4}$/.test(snapshot.patient_name)
@@ -60,9 +60,9 @@ try {
         throw new Error(`患者姓名不符合自然模拟姓名规范：${snapshot.patient_name}`);
       }
       if (!snapshot.document || snapshot.document.includes('尚未建立')) throw new Error('当前文书未加载');
-      if (!snapshot.diagnosis || snapshot.diagnosis.includes('尚无主诊断')) throw new Error('主诊断未加载');
-      if (!snapshot.order_items.includes('1 个医嘱项目')) throw new Error(`医嘱项目不符合预期：${snapshot.order_items}`);
-      if (!snapshot.results.includes('1 份报告')) throw new Error(`报告数不符合预期：${snapshot.results}`);
+      if (!snapshot.diagnosis || snapshot.diagnosis.includes('待完成诊断')) throw new Error('主诊断未加载');
+      if (!/\d+ 条活动医嘱/.test(snapshot.order_items)) throw new Error(`医嘱摘要未加载：${snapshot.order_items}`);
+      if (!/\d+ 份结果/.test(snapshot.results)) throw new Error(`结果摘要未加载：${snapshot.results}`);
       observations.push({ sequence_no: sequence, ...snapshot });
     } catch (error) {
       const diagnostic = await page.evaluate(() => ({

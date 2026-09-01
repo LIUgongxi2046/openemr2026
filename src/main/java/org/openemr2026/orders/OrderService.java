@@ -48,6 +48,7 @@ final class OrderService {
     ClinicalOrderWire create(
             ClinicalIdentity identity, String idempotencyKey, ClinicalOrderCreateRequestWire request) {
         validateCreate(request);
+        requirePrescriberRole(identity, request.facilityId());
         return transactions.execute(status -> {
             requireEncounter(identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId());
             String requestHash = sha256(request.patientId() + "|" + request.encounterId() + "|"
@@ -102,6 +103,7 @@ final class OrderService {
             ClinicalIdentity identity, String idempotencyKey, UUID orderId, long expectedVersion,
             ClinicalOrderCreateRequestWire request) {
         validateCreate(request);
+        requirePrescriberRole(identity, request.facilityId());
         return transactions.execute(status -> {
             LockedOrder current = lockOrder(
                     identity.tenantId(), orderId, request.patientId(), request.encounterId(), request.facilityId());
@@ -183,6 +185,7 @@ final class OrderService {
             String idempotencyKey,
             UUID orderId,
             ClinicalOrderSafetyCheckRequestWire request) {
+        requirePrescriberRole(identity, request.facilityId());
         if (request.expectedRowVersion() == null || request.ruleWatermark() == null
                 || request.ruleWatermark().isBlank()) {
             throw new OrderException(
@@ -207,6 +210,7 @@ final class OrderService {
             String idempotencyKey,
             UUID orderId,
             ClinicalOrderSignRequestWire request) {
+        requirePrescriberRole(identity, request.facilityId());
         if (request.expectedRowVersion() == null || request.ruleWatermark() == null
                 || request.ruleWatermark().isBlank()) {
             throw new OrderException("ORDER_SIGN_REQUEST_INVALID", 400, "Expected version and rule watermark are required");
@@ -299,6 +303,7 @@ final class OrderService {
             UUID orderId,
             ClinicalOrderControlRequestWire request,
             ControlAction action) {
+        requirePrescriberRole(identity, request.facilityId());
         if (request.expectedRowVersion() == null || request.reason() == null
                 || request.reason().isBlank() || request.reason().length() > 1000) {
             throw new OrderException(
@@ -399,6 +404,7 @@ final class OrderService {
         return transactions.execute(status -> {
             LockedTask task = lockTask(
                     identity.tenantId(), executionTaskId, request.patientId(), request.encounterId(), request.facilityId());
+            requireExecutionRole(identity, request.facilityId(), task.itemType());
             if (task.rowVersion() != request.expectedTaskRowVersion()) {
                 throw new OrderException("EXECUTION_VERSION_CONFLICT", 409, "The execution task changed; reload before recording");
             }
@@ -995,11 +1001,14 @@ final class OrderService {
     private LockedTask lockTask(
             UUID tenantId, UUID taskId, UUID patientId, UUID encounterId, UUID facilityId) {
         return jdbc.sql("""
-                select task.order_id, task.order_item_id, task.task_state, clinical_order.status as order_status,
+                select task.order_id, task.order_item_id, item.item_type, task.task_state,
+                  clinical_order.status as order_status,
                   task.requested_quantity, task.performed_quantity, task.quantity_unit, task.row_version
                 from order_execution_task task
                 join clinical_order clinical_order on clinical_order.tenant_id = task.tenant_id
                   and clinical_order.order_id = task.order_id
+                join clinical_order_item item on item.tenant_id = task.tenant_id
+                  and item.order_item_id = task.order_item_id
                 where task.tenant_id = :tenant and task.execution_task_id = :task_id
                   and task.patient_id = :patient and task.encounter_id = :encounter
                   and clinical_order.facility_id = :facility
@@ -1008,9 +1017,50 @@ final class OrderService {
                 .param("encounter", encounterId).param("facility", facilityId)
                 .query((rs, row) -> new LockedTask(
                         rs.getObject("order_id", UUID.class), rs.getObject("order_item_id", UUID.class),
-                        rs.getString("task_state"), rs.getString("order_status"), rs.getBigDecimal("requested_quantity"),
+                        rs.getString("item_type"), rs.getString("task_state"), rs.getString("order_status"),
+                        rs.getBigDecimal("requested_quantity"),
                         rs.getBigDecimal("performed_quantity"), rs.getString("quantity_unit"),
                         rs.getLong("row_version"))).optional().orElseThrow(OrderService::contextDenied);
+    }
+
+    private void requirePrescriberRole(ClinicalIdentity identity, UUID facilityId) {
+        requireRole(identity, facilityId,
+                List.of("CLINICIAN", "ATTENDING_PHYSICIAN", "CHIEF_PHYSICIAN"),
+                "ORDER_PRESCRIBER_ROLE_REQUIRED");
+    }
+
+    private void requireExecutionRole(ClinicalIdentity identity, UUID facilityId, String itemType) {
+        List<String> allowedRoles = switch (itemType) {
+            case "LAB" -> List.of("LAB_TECHNICIAN");
+            case "IMAGING" -> List.of("RADIOLOGIST");
+            case "MEDICATION", "NURSING" -> List.of("REGISTERED_NURSE", "NURSE_MANAGER");
+            case "TREATMENT", "DIET", "OTHER" ->
+                    List.of("CLINICIAN", "ATTENDING_PHYSICIAN", "CHIEF_PHYSICIAN",
+                            "REGISTERED_NURSE", "NURSE_MANAGER");
+            default -> List.of();
+        };
+        requireRole(identity, facilityId, allowedRoles, "ORDER_EXECUTION_ROLE_REQUIRED");
+    }
+
+    private void requireRole(
+            ClinicalIdentity identity, UUID facilityId, List<String> allowedRoles, String failureCode) {
+        if (identity.roleAssignmentIds().isEmpty() || allowedRoles.isEmpty()) {
+            throw new OrderException(failureCode, 403,
+                    "The active role assignment is not permitted to perform this order workflow action");
+        }
+        long count = jdbc.sql("""
+                select count(*) from role_assignment
+                where tenant_id=:tenant and user_id=:user and role_assignment_id in (:assignments)
+                  and role_code in (:roles) and status='ACTIVE' and valid_from<=now()
+                  and (valid_until is null or valid_until>now())
+                  and (facility_id is null or facility_id=:facility)
+                """).param("tenant", identity.tenantId()).param("user", identity.userId())
+                .param("assignments", identity.roleAssignmentIds()).param("roles", allowedRoles)
+                .param("facility", facilityId).query(Long.class).single();
+        if (count < 1) {
+            throw new OrderException(failureCode, 403,
+                    "The active role assignment is not permitted to perform this order workflow action");
+        }
     }
 
     private void rejectActiveDuplicates(UUID tenantId, UUID orderId, UUID encounterId) {
@@ -1261,7 +1311,7 @@ final class OrderService {
 
     private record LockedOrder(String status, long rowVersion) {}
     private record LockedTask(
-            UUID orderId, UUID orderItemId, String taskState, String orderStatus,
+            UUID orderId, UUID orderItemId, String itemType, String taskState, String orderStatus,
             BigDecimal requestedQuantity, BigDecimal performedQuantity,
             String quantityUnit, long rowVersion) {}
     private record OrderHead(

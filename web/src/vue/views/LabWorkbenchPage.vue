@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watchEffect } from 'vue';
-import type { LabSpecimenWire } from '../../generated/contracts';
-import { issueOrderLease, listClinicalOrders } from '../../clinical-api';
+import type { LabSpecimenWire, OrderExecutionTaskWire } from '../../generated/contracts';
+import { issueOrderLease, listClinicalOrders, recordOrderExecution } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen, rejectLabSpecimen } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -34,14 +34,14 @@ const ordersQuery = useQuery({
   queryKey: ['execution', 'lab-workbench', 'eligible-orders'],
   queryFn: async () => {
     const lease = await issueOrderLease('outpatient');
-    return listClinicalOrders(lease, 'outpatient');
+    return { lease, orders: await listClinicalOrders(lease, 'outpatient') };
   },
   retry: false,
 });
 const issue = computed(() => (leaseQuery.error.value ?? specimensQuery.error.value ?? ordersQuery.error.value)
   ? toClinicalIssue(leaseQuery.error.value ?? specimensQuery.error.value ?? ordersQuery.error.value) : null);
 const specimens = computed(() => specimensQuery.data.value ?? []);
-const eligibleOrderItems = computed(() => (ordersQuery.data.value ?? []).flatMap((order) => order.items)
+const eligibleOrderItems = computed(() => (ordersQuery.data.value?.orders ?? []).flatMap((order) => order.items)
   .filter((item) => item.item_type === 'LAB' && !specimens.value.some((specimen) => specimen.order_item_id === item.order_item_id)));
 const collectedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'COLLECTED').length);
 const receivedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'RECEIVED').length);
@@ -52,6 +52,7 @@ const notice = ref('');
 const createDialogOpen = ref(false);
 const rejectTarget = ref<LabSpecimenWire | null>(null);
 const rejectionReason = ref('');
+const completionTarget = ref<{ specimen: LabSpecimenWire; task: OrderExecutionTaskWire } | null>(null);
 
 watchEffect(() => {
   if (!form.orderItemId && eligibleOrderItems.value[0]) form.orderItemId = eligibleOrderItems.value[0].order_item_id;
@@ -62,6 +63,27 @@ function formatDate(value: string | null | undefined) {
 }
 
 async function reload() { notice.value = ''; await specimensQuery.refetch(); }
+
+function executionTask(specimen: LabSpecimenWire) {
+  return (ordersQuery.data.value?.orders ?? []).flatMap((order) => order.execution_tasks)
+    .find((task) => task.order_item_id === specimen.order_item_id);
+}
+
+async function completeExecution() {
+  const data = ordersQuery.data.value;
+  const target = completionTarget.value;
+  if (!data || !target || busy.value) return;
+  const remaining = target.task.requested_quantity - target.task.performed_quantity;
+  if (remaining <= 0) return;
+  busy.value = `complete:${target.task.execution_task_id}`; notice.value = '';
+  try {
+    await recordOrderExecution(data.lease, 'outpatient', target.task, 'COMPLETED', remaining);
+    completionTarget.value = null;
+    notice.value = '检验执行已完成，可在结果工作台录入并签署报告。';
+    await ordersQuery.refetch();
+  } catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
+  finally { busy.value = ''; }
+}
 
 async function create() {
   const lease = leaseQuery.data.value;
@@ -148,11 +170,12 @@ async function reject() {
                   <td><code>…{{ specimen.order_item_id.slice(-8) }}</code></td>
                   <td><small>{{ specimen.collected_by ? `…${specimen.collected_by.slice(-8)}` : '—' }}</small><small>{{ formatDate(specimen.collected_at) }}</small></td>
                   <td><small>{{ specimen.received_by ? `…${specimen.received_by.slice(-8)}` : '—' }}</small><small>{{ formatDate(specimen.received_at) }}</small></td>
-                  <td><span class="admin-status" :class="specimen.collection_status.toLowerCase()">{{ statusLabels[specimen.collection_status] }}</span></td>
+                  <td><span class="admin-status" :class="specimen.collection_status.toLowerCase()">{{ statusLabels[specimen.collection_status] }}</span><small v-if="executionTask(specimen)">{{ executionTask(specimen)?.task_state }}</small></td>
                   <td class="admin-actions">
                     <button v-if="specimen.collection_status === 'ORDERED'" class="task-action" :disabled="Boolean(busy)" @click="collect(specimen)">采集</button>
                     <button v-if="specimen.collection_status === 'COLLECTED'" class="task-action" :disabled="Boolean(busy)" @click="receive(specimen)">接收</button>
                     <button v-if="specimen.collection_status === 'ORDERED' || specimen.collection_status === 'COLLECTED'" class="task-action danger" :disabled="Boolean(busy)" @click="rejectTarget = specimen">拒收</button>
+                    <button v-if="specimen.collection_status === 'RECEIVED' && executionTask(specimen) && executionTask(specimen)?.task_state !== 'COMPLETED'" class="task-action" :disabled="Boolean(busy)" @click="completionTarget = { specimen, task: executionTask(specimen)! }">完成检验</button>
                   </td>
                 </tr>
               </tbody>
@@ -176,6 +199,13 @@ async function reject() {
         <form class="admin-form" @submit.prevent="reject">
           <label><span>拒收原因（必填）</span><textarea v-model="rejectionReason" rows="3" minlength="2" maxlength="1000" required placeholder="例：标本溶血，需重新采集" /></label>
           <button class="button danger full" :disabled="rejectionReason.trim().length < 2 || Boolean(busy)">{{ busy.startsWith('reject:') ? '正在拒收…' : '确认拒收标本' }}</button>
+        </form>
+      </AdminActionDialog>
+
+      <AdminActionDialog :open="Boolean(completionTarget)" title="确认检验执行完成" description="确认分析、复核与质控均已完成。完成后该医嘱项目可进入结果录入和签署流程。" eyebrow="诊疗执行 / 检验" :busy="busy.startsWith('complete:')" @update:open="completionTarget = $event ? completionTarget : null">
+        <form class="admin-form" @submit.prevent="completeExecution">
+          <p v-if="completionTarget" class="admin-form-hint">标本 …{{ completionTarget.specimen.specimen_id.slice(-8) }} · 本次完成 {{ completionTarget.task.requested_quantity - completionTarget.task.performed_quantity }} {{ completionTarget.task.quantity_unit }}</p>
+          <button class="button primary full" :disabled="Boolean(busy)">{{ busy.startsWith('complete:') ? '正在记录…' : '确认完成检验执行' }}</button>
         </form>
       </AdminActionDialog>
     </template>

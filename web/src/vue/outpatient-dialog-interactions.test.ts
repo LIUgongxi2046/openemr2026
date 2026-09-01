@@ -72,6 +72,16 @@ describe('outpatient workspace interaction contract', () => {
     expect(api).toContain('appointmentRescheduleRequestWireSchema');
   });
 
+  it('scopes every deep outpatient query to the selected patient or encounter', () => {
+    expect(source('./composables/use-current-document.ts')).toContain('contextStore.encounterId');
+    expect(source('./views/DiagnosisWorkspacePage.vue')).toContain("clinicalContext.encounterId");
+    expect(source('./views/OrdersWorkspacePage.vue')).toContain("clinicalContext.patientId");
+    expect(source('./views/ResultsWorkspacePage.vue')).toContain("clinicalContext.patientId");
+    expect(source('./views/OutpatientConsultPage.vue')).toContain("clinicalContext.encounterId");
+    expect(source('./views/OpdFollowupPage.vue')).toContain("clinicalContext.encounterId");
+    expect(source('./execution-patient-flow.ts')).toContain('selectOutpatientContext');
+  });
+
   it('uses append-only correction, replacement, revocation and void instead of destructive evidence mutation', () => {
     const sources = source('./views/RecordSourcesPage.vue');
     expect(sources).toContain('更新采用替换，删除采用业务作废');

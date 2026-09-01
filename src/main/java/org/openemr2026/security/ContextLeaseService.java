@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.openemr2026.security.AuthorizationDecisionService.AuthorizationContext;
 import org.openemr2026.security.AuthorizationDecisionService.DepartmentWardScope;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -17,13 +18,17 @@ final class ContextLeaseService {
     private final TransactionTemplate transactions;
     private final ContextLeasePolicy policy;
     private final AuthorizationDecisionService authorization;
+    private final boolean requirePublishedAuthorization;
 
     ContextLeaseService(JdbcClient jdbc, TransactionTemplate transactions, ContextLeasePolicy policy,
-            AuthorizationDecisionService authorization) {
+            AuthorizationDecisionService authorization,
+            @Value("${openemr2026.security.require-published-authorization:false}")
+            boolean requirePublishedAuthorization) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.policy = policy;
         this.authorization = authorization;
+        this.requirePublishedAuthorization = requirePublishedAuthorization;
     }
 
     ContextLease issue(
@@ -45,10 +50,15 @@ final class ContextLeaseService {
         });
     }
 
-    private void requirePublishedAuthorization(
+    void requirePublishedAuthorization(
             ClinicalIdentity identity, UUID organizationId, UUID facilityId,
             UUID patientId, UUID encounterId, String purposeCode) {
         if (!authorization.hasPublishedPolicy(identity.tenantId(), "CLINICAL_CONTEXT", "LEASE_ISSUE")) {
+            if (requirePublishedAuthorization) {
+                throw new ClinicalAccessDeniedException(
+                        "AUTHORIZATION_POLICY_MISSING",
+                        "No published clinical-context authorization policy is available");
+            }
             return;
         }
         DepartmentWardScope scope = authorization.resolveScope(identity, organizationId, facilityId, encounterId);

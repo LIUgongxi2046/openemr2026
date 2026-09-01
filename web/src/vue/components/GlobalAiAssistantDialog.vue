@@ -38,6 +38,15 @@ const selectedModelId = ref('');
 const authorizationLevel = ref<AuthorizationLevel>('STANDARD');
 const contextScopes = ref<ContextScope[]>(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS']);
 const teamCollapsed = ref(false);
+const routeAgentDefaults: Record<string, { main: string; stage: string }> = {
+  outpatient: { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
+  'opd-record': { main: 'DOCUMENT_DRAFTER', stage: 'OUTPATIENT' },
+  'opd-diagnosis': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
+  'opd-orders': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
+  'opd-results': { main: 'RESULT_FOLLOWUP_COORDINATOR', stage: 'NEW_RESULT' },
+  'opd-consult': { main: 'CARE_COORDINATOR', stage: 'CONSULT' },
+  'opd-followup': { main: 'CARE_COORDINATOR', stage: 'FOLLOWUP' },
+};
 
 const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelLeaseQuery = useQuery({ queryKey: ['global-eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
@@ -54,7 +63,14 @@ const childAgentCount = computed(() => agents.value.reduce((count, family) => co
 
 watch([() => props.open, () => props.mode], async ([open, mode]) => { await nextTick(); const element = rootElement.value; if (!(element instanceof HTMLDialogElement)) return; if (mode === 'center' && open && !element.open) element.showModal(); if (!open && element.open) element.close(); }, { immediate: true });
 watch([() => props.open, () => props.mode], ([open, mode]) => { if (!open) return; teamCollapsed.value = mode === 'side'; }, { immediate: true });
-watch(agents, (next) => { if (next.length && !next.some((family) => family.main_agent.agent_code === selectedAgentCode.value)) selectedAgentCode.value = next[0].main_agent.agent_code; }, { immediate: true });
+watch([agents, () => props.routeId, () => props.open], ([next, routeId, open]) => {
+  if (!open || !next.length) return;
+  const preferred = routeAgentDefaults[routeId];
+  const family = next.find((item) => item.main_agent.agent_code === preferred?.main) ?? next[0];
+  selectedAgentCode.value = family.main_agent.agent_code;
+  const child = family.child_agents.find((item) => item.stage_code === preferred?.stage) ?? family.child_agents[0];
+  selectedChildCode.value = child?.agent_code ?? '';
+}, { immediate: true });
 watch(selectedAgent, (agent) => { if (agent && !agent.child_agents.some((child) => child.agent_code === selectedChildCode.value)) selectedChildCode.value = agent.child_agents[0]?.agent_code ?? ''; });
 watch(availableModels, (next) => { if (next.length && !next.some((model) => model.model_deployment_id === selectedModelId.value)) selectedModelId.value = next[0].model_deployment_id; }, { immediate: true });
 

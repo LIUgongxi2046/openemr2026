@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watch } from 'vue';
+import { localCalendarDate } from '../../local-date';
 import type { AppointmentWire, PatientSummaryWire, WaitingQueueEntryWire } from '../../generated/contracts';
 import {
   bookAppointment, callWaitingQueueEntry, cancelAppointment, checkInAppointment, consultAppointment,
@@ -16,7 +17,7 @@ import { toClinicalIssue } from '../clinical-error';
 const facilityLease = useQuery({ queryKey: ['appointment', 'facility-lease'], queryFn: () => issueEmergencyFacilityLease('APPOINTMENT_SCHEDULING'), retry: false, staleTime: 300_000 });
 const slotsQuery = useQuery({
   queryKey: ['appointment', 'slots'],
-  queryFn: () => listScheduleSlots(facilityLease.data.value!, new Date().toISOString().slice(0, 10)),
+  queryFn: () => listScheduleSlots(facilityLease.data.value!, localCalendarDate()),
   enabled: () => Boolean(facilityLease.data.value), retry: false,
 });
 const queueQuery = useQuery({
@@ -44,12 +45,13 @@ const issue = computed(() => {
 });
 const slots = computed(() => slotsQuery.data.value ?? []);
 const queue = computed(() => queueQuery.data.value ?? []);
-const departments = computed(() => [...new Map(slots.value.map((slot) => [slot.department_id, slot.department_name])).entries()]);
-const doctors = computed(() => [...new Map(slots.value.filter((slot) => slot.department_id === form.department_id).map((slot) => [slot.doctor_user_id, slot.doctor_display_name])).entries()]);
-const availableSlots = computed(() => slots.value.filter((slot) => slot.status === 'OPEN' && slot.booked_count < slot.total_capacity
-  && slot.department_id === form.department_id && slot.doctor_user_id === form.doctor_user_id
+const selectableSlots = computed(() => slots.value.filter((slot) => slot.status === 'OPEN' && slot.booked_count < slot.total_capacity));
+const departments = computed(() => [...new Map(selectableSlots.value.map((slot) => [slot.department_id, slot.department_name])).entries()]);
+const doctors = computed(() => [...new Map(selectableSlots.value.filter((slot) => slot.department_id === form.department_id).map((slot) => [slot.doctor_user_id, slot.doctor_display_name])).entries()]);
+const availableSlots = computed(() => selectableSlots.value.filter((slot) =>
+  slot.department_id === form.department_id && slot.doctor_user_id === form.doctor_user_id
   && slot.schedule_slot_id !== editingAppointment.value?.schedule_slot_id));
-watch(slots, (items) => {
+watch(selectableSlots, (items) => {
   if (!form.department_id && items[0]) form.department_id = items[0].department_id;
   if (!form.doctor_user_id) form.doctor_user_id = items.find((item) => item.department_id === form.department_id)?.doctor_user_id ?? '';
 }, { immediate: true });
@@ -99,7 +101,10 @@ function beginCreate() {
   if (!selectedPatient.value) return;
   editingAppointment.value = null;
   operationReason.value = '';
-  form.schedule_slot_id = '';
+  const first = selectableSlots.value[0];
+  form.department_id = first?.department_id ?? '';
+  form.doctor_user_id = first?.doctor_user_id ?? '';
+  form.schedule_slot_id = first?.schedule_slot_id ?? '';
   activeForm.value = true;
 }
 
@@ -175,7 +180,7 @@ async function callEntry(entry: WaitingQueueEntryWire) {
           <header class="panel-subhead"><div><h2>今日候诊与叫号</h2><p>操作后实时写入数据库队列状态。</p></div></header><div v-if="!queue.length" class="admin-empty">今日暂无候诊患者。</div><div v-else class="admin-table-wrap"><table class="admin-table"><thead><tr><th>序号</th><th>患者</th><th>状态</th><th>叫号时间</th><th>操作</th></tr></thead><tbody><tr v-for="entry in queue" :key="entry.waiting_queue_entry_id"><td>#{{ entry.sequence_no }}</td><td><strong>{{ entry.patient_display_name }}</strong><small>{{ patientMeta(entry.patient_sex_code, entry.patient_birth_date, entry.patient_id) }}</small></td><td>{{ clinicalCodeLabel(entry.status) }}</td><td>{{ formatDate(entry.called_at) }}</td><td><button class="task-action" :disabled="Boolean(busy) || entry.status !== 'WAITING'" @click="callEntry(entry)">叫号</button></td></tr></tbody></table></div>
         </section>
       </div>
-      <BusinessActionDialog :open="activeForm" :title="editingAppointment ? '编辑预约·改约' : '新建预约'" :description="editingAppointment ? '改约会原子锁定新号源、释放原号源并追加审计事件。' : '医院、科室、医生与号源均来自业务配置。'" eyebrow="门诊 / 预约挂号" :confirm-label="editingAppointment ? '确认改约' : '确认预约挂号'" :busy="busy === 'book' || busy === 'reschedule'" width="wide" @cancel="activeForm = false; editingAppointment = null" @confirm="submitAppointment"><div class="dialog-grid"><label><span>患者</span><input :value="selectedPatient?.display_name" disabled /></label><label><span>医院 / 院区</span><input :value="slots[0]?.facility_name || '当前登录院区'" disabled /></label><label><span>科室</span><select v-model="form.department_id" required @change="form.doctor_user_id = ''; form.schedule_slot_id = ''"><option value="" disabled>请选择科室</option><option v-for="[id, name] in departments" :key="id" :value="id">{{ name }}</option></select></label><label><span>医生</span><select v-model="form.doctor_user_id" required @change="form.schedule_slot_id = ''"><option value="" disabled>请选择医生</option><option v-for="[id, name] in doctors" :key="id" :value="id">{{ name }}</option></select></label><label><span>可预约班次</span><select v-model="form.schedule_slot_id" required><option value="" disabled>请选择日期与时段</option><option v-for="slot in availableSlots" :key="slot.schedule_slot_id" :value="slot.schedule_slot_id">{{ slotLabel(slot) }}</option></select></label><label v-if="!editingAppointment"><span>挂号来源</span><select v-model="form.source"><option value="APPOINTMENT">预约</option><option value="WALK_IN">现场挂号</option><option value="EMERGENCY">急诊</option></select></label></div><p v-if="editingAppointment && !availableSlots.length" class="dialog-warning">当前医生暂无其他可用班次，请先配置新号源后再改约。</p><label v-if="editingAppointment">改约原因<textarea v-model="operationReason" required minlength="2" maxlength="1000" rows="3" placeholder="必填，将写入不可变预约事件" /></label></BusinessActionDialog>
+      <BusinessActionDialog :open="activeForm" :title="editingAppointment ? '编辑预约·改约' : '新建预约'" :description="editingAppointment ? '改约会原子锁定新号源、释放原号源并追加审计事件。' : '医院、科室、医生与号源均来自业务配置。'" eyebrow="门诊 / 预约挂号" :confirm-label="editingAppointment ? '确认改约' : '确认预约挂号'" :busy="busy === 'book' || busy === 'reschedule'" :confirm-disabled="!form.schedule_slot_id || (Boolean(editingAppointment) && operationReason.trim().length < 2)" width="wide" @cancel="activeForm = false; editingAppointment = null" @confirm="submitAppointment"><div class="dialog-grid"><label><span>患者</span><input :value="selectedPatient?.display_name" disabled /></label><label><span>医院 / 院区</span><input :value="slots[0]?.facility_name || '当前登录院区'" disabled /></label><label><span>科室</span><select v-model="form.department_id" required @change="form.doctor_user_id = ''; form.schedule_slot_id = ''"><option value="" disabled>请选择科室</option><option v-for="[id, name] in departments" :key="id" :value="id">{{ name }}</option></select></label><label><span>医生</span><select v-model="form.doctor_user_id" required @change="form.schedule_slot_id = ''"><option value="" disabled>请选择医生</option><option v-for="[id, name] in doctors" :key="id" :value="id">{{ name }}</option></select></label><label><span>可预约班次</span><select v-model="form.schedule_slot_id" required><option value="" disabled>请选择日期与时段</option><option v-for="slot in availableSlots" :key="slot.schedule_slot_id" :value="slot.schedule_slot_id">{{ slotLabel(slot) }}</option></select></label><label v-if="!editingAppointment"><span>挂号来源</span><select v-model="form.source"><option value="APPOINTMENT">预约</option><option value="WALK_IN">现场挂号</option><option value="EMERGENCY">急诊</option></select></label></div><p v-if="!availableSlots.length" class="dialog-warning">{{ editingAppointment ? '当前医生暂无其他可用班次，请先配置新号源后再改约。' : '当前院区没有可用号源，请联系门诊办配置班次容量。' }}</p><label v-if="editingAppointment">改约原因<textarea v-model="operationReason" required minlength="2" maxlength="1000" rows="3" placeholder="必填，将写入不可变预约事件" /></label></BusinessActionDialog>
       <BusinessActionDialog :open="Boolean(cancellingAppointment)" title="删除预约·退号" description="不会物理删除：预约转为已取消、释放号源，历史事件保留。" eyebrow="门诊 / 预约挂号" confirm-label="确认退号" danger :busy="busy === 'cancel'" @cancel="cancellingAppointment = null" @confirm="confirmCancel"><p class="dialog-warning">{{ cancellingAppointment?.doctor_display_name }} · {{ cancellingAppointment?.slot_date }} {{ cancellingAppointment?.slot_start_time.slice(0, 5) }}</p><label>退号原因<textarea v-model="operationReason" required minlength="2" maxlength="1000" rows="3" placeholder="必填，将写入不可变预约事件" /></label></BusinessActionDialog>
     </template>
   </section>

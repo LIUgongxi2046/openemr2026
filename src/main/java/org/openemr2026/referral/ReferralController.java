@@ -45,6 +45,18 @@ final class ReferralController {
                 .body(referrals.listReferrals(identity, patientId));
     }
 
+    @GetMapping("/referral-targets")
+    ResponseEntity<List<ReferralService.ReferralTarget>> targets(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId) {
+        ClinicalIdentity identity = security.authorize(
+                request, organizationId, facilityId, patientId, null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(referrals.listTargets(identity, facilityId));
+    }
+
     @PostMapping("/referrals")
     ResponseEntity<ReferralWire> create(
             HttpServletRequest request,

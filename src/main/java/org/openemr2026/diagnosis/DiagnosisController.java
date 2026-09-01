@@ -9,6 +9,7 @@ import org.openemr2026.contracts.DiagnosisConfirmRequestWire;
 import org.openemr2026.contracts.DiagnosisControlRequestWire;
 import org.openemr2026.contracts.DiagnosisCorrectRequestWire;
 import org.openemr2026.contracts.DiagnosisCreateRequestWire;
+import org.openemr2026.contracts.DiagnosisTerminologyEntryWire;
 import org.openemr2026.security.ClinicalCommandSecurity;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.http.CacheControl;
@@ -57,6 +58,20 @@ final class DiagnosisController {
         ClinicalIdentity identity = authorize(httpRequest, organizationId, facilityId, patientId, encounterId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(diagnoses.list(identity, patientId, encounterId, facilityId));
+    }
+
+    @GetMapping("/diagnosis-terminology")
+    ResponseEntity<List<DiagnosisTerminologyEntryWire>> terminology(
+            HttpServletRequest httpRequest,
+            @RequestParam(value = "query", required = false, defaultValue = "") String query,
+            @RequestParam(value = "limit", required = false, defaultValue = "50") int limit,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestHeader("X-Patient-Context") UUID patientId,
+            @RequestHeader("X-Encounter-Context") UUID encounterId) {
+        authorize(httpRequest, organizationId, facilityId, patientId, encounterId);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(diagnoses.searchTerminology(query, limit));
     }
 
     @PostMapping("/diagnoses/{diagnosisId}/confirm")
