@@ -761,6 +761,8 @@ export async function listClinicalOrders(
   mode: ClinicalTaskMode,
 ): Promise<ClinicalOrderWire[]> {
   const context = orderContext(mode);
+  // 未选择患者/就诊时不发请求：否则后端对空 encounter_id 返回 400。
+  if (!context.encounterId || !context.patientId) return [];
   return clinicalOrderWireSchema.array().parse(await request(
     `/orders?encounter_id=${context.encounterId}`,
     { headers: orderHeaders(lease, mode) },
@@ -772,6 +774,7 @@ export async function listClinicalTasks(
   mode: ClinicalTaskMode,
 ): Promise<ClinicalTaskWire[]> {
   const context = orderContext(mode);
+  if (!context.encounterId || !context.patientId) return [];
   const payload = await request(
     `/clinical-tasks?encounter_id=${context.encounterId}`,
     { headers: orderHeaders(lease, mode) },
@@ -1175,6 +1178,7 @@ export async function recordOrderExecution(
 }
 
 export async function listClinicalDiagnoses(lease: ContextLeaseWire): Promise<ClinicalDiagnosisWire[]> {
+  if (!clinicalContext.encounterId || !clinicalContext.patientId) return [];
   return clinicalDiagnosisWireSchema.array().parse(await request(
     `/diagnoses?encounter_id=${clinicalContext.encounterId}`,
     { headers: scopedHeaders(lease) },
@@ -1267,6 +1271,8 @@ export async function listClinicalResults(
   mode: 'outpatient' | 'inpatient' = 'outpatient',
 ): Promise<ClinicalResultWire[]> {
   const context = orderContext(mode);
+  // 未选择患者/就诊时不发请求：否则后端对空 encounter_id 返回 400。
+  if (!context.encounterId || !context.patientId) return [];
   return clinicalResultWireSchema.array().parse(await request(
     `/results?encounter_id=${context.encounterId}`,
     { headers: orderHeaders(lease, mode) },

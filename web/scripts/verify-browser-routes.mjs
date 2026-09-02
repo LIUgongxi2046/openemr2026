@@ -106,10 +106,11 @@ try {
   }
   currentRoute = 'unknown';
   await page.goto(`${baseUrl}/#/route-that-does-not-exist`, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('heading', { level: 1, name: '页面不存在或尚未登记' }).waitFor({ state: 'visible', timeout: 5_000 });
+  const unknownHeadingVisible = await page.getByRole('heading', { level: 1, name: '页面不存在或尚未登记' })
+    .waitFor({ state: 'visible', timeout: 5_000 }).then(() => true).catch(() => false);
   await waitForApiIdle();
   const unknownBody = await page.locator('body').innerText();
-  const unknownSafe = unknownBody.includes('页面不存在或尚未登记') && !unknownBody.includes('合成患者');
+  const unknownSafe = unknownHeadingVisible && unknownBody.includes('页面不存在或尚未登记') && !unknownBody.includes('合成患者');
   if (!unknownSafe) failures.push({ route: 'unknown', issue: 'UNKNOWN_ROUTE_NOT_FAIL_CLOSED' });
 
   const result = {
