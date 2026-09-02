@@ -54,6 +54,9 @@ final class ProductionEnvironmentPostProcessorTest {
                 .hasMessageContaining("signing.ca-base-uri")
                 .hasMessageContaining("encryption.kms-key-uri")
                 .hasMessageContaining("storage.endpoint")
+                .hasMessageContaining("archive.ocr-endpoint")
+                .hasMessageContaining("archive.cda-validation-endpoint")
+                .hasMessageContaining("archive.malware-scanner.host")
                 .hasMessageContaining("integration.truststore-ref")
                 .hasMessageContaining("database.password-ref");
     }
@@ -178,6 +181,9 @@ final class ProductionEnvironmentPostProcessorTest {
         properties.put("openemr2026.production.storage.object-lock-required", "true");
         properties.put("openemr2026.production.storage.access-key-ref", "env://TEST_STORAGE_ACCESS");
         properties.put("openemr2026.production.storage.secret-key-ref", "env://TEST_STORAGE_SECRET");
+        properties.put("openemr2026.archive.ocr-endpoint", "https://ocr.hospital.example/v1/extract");
+        properties.put("openemr2026.archive.cda-validation-endpoint", "https://hie.hospital.example/v1/cda/validate");
+        properties.put("openemr2026.archive.malware-scanner.host", "clamav.hospital.internal");
         properties.put("openemr2026.production.integration.truststore-ref", "env://TEST_INTEGRATION_TRUST");
         properties.put("openemr2026.production.integration.client-certificate-ref", "env://TEST_INTEGRATION_CERT");
         properties.put("openemr2026.production.database.password-ref", "env://TEST_DATABASE_PASSWORD");

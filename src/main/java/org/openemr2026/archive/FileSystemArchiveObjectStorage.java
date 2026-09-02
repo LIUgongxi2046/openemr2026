@@ -11,9 +11,11 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("!prod")
 final class FileSystemArchiveObjectStorage implements ArchiveObjectStorage {
     private static final int MAX_BYTES = 50 * 1024 * 1024;
     private static final Set<PosixFilePermission> READ_ONLY = Set.of(
@@ -27,6 +29,9 @@ final class FileSystemArchiveObjectStorage implements ArchiveObjectStorage {
         }
         this.root = Path.of(root).toAbsolutePath().normalize();
     }
+
+    @Override
+    public String provider() { return "FILESYSTEM_DEV"; }
 
     @Override
     public void putImmutable(String storageKey, byte[] content) {
@@ -73,7 +78,7 @@ final class FileSystemArchiveObjectStorage implements ArchiveObjectStorage {
     }
 
     @Override
-    public void seal(String storageKey, Instant retainUntil) {
+    public SealEvidence seal(String storageKey, Instant retainUntil) {
         Path target = resolve(storageKey);
         Path lock = resolve(storageKey + ".worm-lock");
         try {
@@ -100,6 +105,7 @@ final class FileSystemArchiveObjectStorage implements ArchiveObjectStorage {
             throw storageFailure("MEDICAL_RECORD_ASSET_WORM_LOCK_FAILED", 503,
                     "WORM lock could not be created");
         }
+        return new SealEvidence("FILESYSTEM_DEV", "filesystem-advisory:" + storageKey + ":" + retainUntil);
     }
 
     @Override

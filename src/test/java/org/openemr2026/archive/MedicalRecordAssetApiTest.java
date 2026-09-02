@@ -38,8 +38,8 @@ final class MedicalRecordAssetApiTest {
     private static final String TENANT = "018f0000-0000-7000-8000-00000000aa01";
     private static final String ORGANIZATION = "018f0000-0000-7000-8000-00000000aa02";
     private static final String FACILITY = "018f0000-0000-7000-8000-00000000aa03";
-    private static final String USER = "018f0000-0000-7000-8000-00000000aa04";
-    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
+    private static final String USER = "018f0000-0000-7000-8000-00000000aa14";
+    private static final String ROLE = "018f0000-0000-7000-8000-00000000aa15";
     private static final String CONTENT_HASH = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     @Autowired
@@ -54,6 +54,12 @@ final class MedicalRecordAssetApiTest {
 
     private ClinicalIdentity identity() {
         return new ClinicalIdentity(tenant, UUID.fromString(USER), List.of(UUID.fromString(ROLE)));
+    }
+
+    private ClinicalIdentity nonRecordsIdentity() {
+        return new ClinicalIdentity(tenant,
+                UUID.fromString("018f0000-0000-7000-8000-00000000aa04"),
+                List.of(UUID.fromString("018f0000-0000-7000-8000-00000000aa09")));
     }
 
     private UUID seedPatient() {
@@ -82,7 +88,7 @@ final class MedicalRecordAssetApiTest {
         assets.verifyIntegrity(identity(), "verify-" + UUID.randomUUID(), asset.medicalRecordAssetId(),
                 new MedicalRecordAssetIntegrityCheckRequestWire(
                         organization, facility, patientId, CONTENT_HASH, asset.rowVersion()));
-        return assets.listAssets(identity(), patientId).stream()
+        return assets.listAssets(identity(), organization, facility, patientId).stream()
                 .filter(candidate -> candidate.medicalRecordAssetId().equals(asset.medicalRecordAssetId()))
                 .findFirst().orElseThrow();
     }
@@ -99,9 +105,78 @@ final class MedicalRecordAssetApiTest {
         assertThat(registered.status()).isEqualTo(MedicalRecordAssetWire.StatusValue.ARCHIVED);
         assertThat(registered.contentHash()).isEqualTo(CONTENT_HASH);
 
-        List<MedicalRecordAssetWire> listed = assets.listAssets(identity(), patientId);
+        List<MedicalRecordAssetWire> listed = assets.listAssets(identity(), organization, facility, patientId);
         assertThat(listed).extracting(MedicalRecordAssetWire::medicalRecordAssetId)
                 .contains(registered.medicalRecordAssetId());
+    }
+
+    @Test
+    void productionRoleAndChineseRetentionGatesFailClosed() {
+        UUID patientId = seedPatient();
+        MedicalRecordAssetRegisterRequestWire fifteenYears = new MedicalRecordAssetRegisterRequestWire(
+                organization, facility, patientId, null,
+                MedicalRecordAssetRegisterRequestWire.AssetTypeValue.PAPER, "病案库房-3-2", CONTENT_HASH,
+                null, null, null, null, null, null, null, 15);
+        assertThatThrownBy(() -> assets.register(identity(), "retention-denied-" + UUID.randomUUID(), fifteenYears))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_REQUEST_INVALID"));
+        assertThatThrownBy(() -> assets.register(nonRecordsIdentity(), "role-denied-" + UUID.randomUUID(),
+                new MedicalRecordAssetRegisterRequestWire(
+                        organization, facility, patientId, null,
+                        MedicalRecordAssetRegisterRequestWire.AssetTypeValue.PAPER, "病案库房-3-2", CONTENT_HASH,
+                        null, null, null, null, null, null, null, 30)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_ROLE_REQUIRED"));
+        assertThatThrownBy(() -> assets.listAssets(nonRecordsIdentity(), organization, facility, patientId))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_ROLE_REQUIRED"));
+    }
+
+    @Test
+    void malwareAndCdaStatusesComeFromServerAdaptersNotUserClaims() {
+        UUID patientId = seedPatient();
+        byte[] eicar = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+                .getBytes(StandardCharsets.US_ASCII);
+        assertThatThrownBy(() -> assets.ingest(identity(), "eicar-" + UUID.randomUUID(),
+                new MedicalRecordAssetIngestRequestWire(
+                        organization, facility, patientId, null,
+                        MedicalRecordAssetIngestRequestWire.AssetTypeValue.DIGITAL, "安全测试站-01", "EICAR 合成检测文件",
+                        "eicar.txt", "text/plain", 1, "SECURITY-TEST", Base64.getEncoder().encodeToString(eicar),
+                        MedicalRecordAssetIngestRequestWire.CdaStatusValue.NOT_APPLICABLE, 30)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_MALWARE_REJECTED"));
+
+        assertThatThrownBy(() -> assets.register(identity(), "fake-cda-" + UUID.randomUUID(),
+                new MedicalRecordAssetRegisterRequestWire(
+                        organization, facility, patientId, null,
+                        MedicalRecordAssetRegisterRequestWire.AssetTypeValue.DIGITAL, "CDA导入站-01", CONTENT_HASH,
+                        "住院CDA", "application/xml", 1, "EMR",
+                        MedicalRecordAssetRegisterRequestWire.CdaStatusValue.VERIFIED,
+                        MedicalRecordAssetRegisterRequestWire.ScanStatusValue.NOT_APPLICABLE,
+                        MedicalRecordAssetRegisterRequestWire.PreservationStatusValue.NOT_SCHEDULED, 30)))
+                .isInstanceOf(MedicalRecordAssetException.class)
+                .satisfies(error -> assertThat(((MedicalRecordAssetException) error).code())
+                        .isEqualTo("MEDICAL_RECORD_ASSET_REQUEST_INVALID"));
+
+        byte[] cda = "<ClinicalDocument xmlns=\"urn:hl7-org:v3\"><id root=\"1.2.3\"/></ClinicalDocument>"
+                .getBytes(StandardCharsets.UTF_8);
+        MedicalRecordAssetWire pending = assets.ingest(identity(), "cda-ingest-" + UUID.randomUUID(),
+                new MedicalRecordAssetIngestRequestWire(
+                        organization, facility, patientId, null,
+                        MedicalRecordAssetIngestRequestWire.AssetTypeValue.DIGITAL, "CDA导入站-01", "住院CDA",
+                        "inpatient-cda.xml", "application/xml", 1, "EMR", Base64.getEncoder().encodeToString(cda),
+                        MedicalRecordAssetIngestRequestWire.CdaStatusValue.PENDING, 30));
+        MedicalRecordAssetWire validated = assets.validateCda(identity(), "cda-validate-" + UUID.randomUUID(),
+                pending.medicalRecordAssetId(),
+                new MedicalRecordAssetActionRequestWire(organization, facility, patientId, pending.rowVersion()));
+        assertThat(validated.cdaStatus()).isEqualTo(MedicalRecordAssetWire.CdaStatusValue.VERIFIED);
+        assertThat(validated.cdaValidationEngine()).isEqualTo("synthetic-secure-cda-structure-validator");
+        assertThat(validated.cdaValidationEvidenceHash()).matches("[0-9a-f]{64}");
+        assertThat(validated.cdaValidatedAt()).isNotNull();
     }
 
     @Test
@@ -210,7 +285,7 @@ final class MedicalRecordAssetApiTest {
         assets.verifyIntegrity(identity(), "verify-" + UUID.randomUUID(), registered.medicalRecordAssetId(),
                 new MedicalRecordAssetIntegrityCheckRequestWire(
                         organization, facility, patientId, wrongHash, registered.rowVersion()));
-        MedicalRecordAssetWire failed = assets.listAssets(identity(), patientId).getFirst();
+        MedicalRecordAssetWire failed = assets.listAssets(identity(), organization, facility, patientId).getFirst();
 
         assertThat(failed.integrityStatus()).isEqualTo(MedicalRecordAssetWire.IntegrityStatusValue.FAILED);
         assertThatThrownBy(() -> borrow(patientId, failed.medicalRecordAssetId(), failed.rowVersion(),
@@ -288,11 +363,12 @@ final class MedicalRecordAssetApiTest {
                         organization, facility, patientId, null,
                         MedicalRecordAssetIngestRequestWire.AssetTypeValue.SCAN, "\u626b\u63cf\u5de5\u4f5c\u7ad9-01", "\u5165\u9662\u8bb0\u5f55\u626b\u63cf\u4ef6",
                         "admission.txt", "text/plain", 1, "SCANNER-01", Base64.getEncoder().encodeToString(original),
-                        MedicalRecordAssetIngestRequestWire.CdaStatusValue.NOT_APPLICABLE, 15));
+                        MedicalRecordAssetIngestRequestWire.CdaStatusValue.NOT_APPLICABLE, 30));
 
         assertThat(ingested.storageStatus()).isEqualTo(MedicalRecordAssetWire.StorageStatusValue.AVAILABLE);
         assertThat(ingested.byteSize()).isEqualTo(original.length);
-        assertThat(assets.content(identity(), patientId, ingested.medicalRecordAssetId()).content())
+        assertThat(assets.content(identity(), organization, facility, patientId,
+                ingested.medicalRecordAssetId()).content())
                 .isEqualTo(original);
 
         MedicalRecordAssetWire ocr = assets.runOcr(identity(), "ocr-" + UUID.randomUUID(), ingested.medicalRecordAssetId(),
@@ -304,41 +380,51 @@ final class MedicalRecordAssetApiTest {
         assertThat(assets.verifyStoredContent(identity(), "storage-verify-" + UUID.randomUUID(),
                 ocr.medicalRecordAssetId(), new MedicalRecordAssetActionRequestWire(
                         organization, facility, patientId, ocr.rowVersion())).result().name()).isEqualTo("VERIFIED");
-        MedicalRecordAssetWire verified = assets.listAssets(identity(), patientId).getFirst();
+        MedicalRecordAssetWire verified = assets.listAssets(identity(), organization, facility, patientId).getFirst();
 
         MedicalRecordAssetDistributionPackageWire distribution = assets.createDistribution(identity(),
                 "distribution-" + UUID.randomUUID(), verified.medicalRecordAssetId(),
                 new MedicalRecordAssetDistributionCreateRequestWire(organization, facility, patientId,
-                        verified.rowVersion(), "\u4fdd\u9669\u7406\u8d54", "\u5408\u6210\u4fdd\u9669\u516c\u53f8", Instant.now().plus(7, ChronoUnit.DAYS)));
+                        verified.rowVersion(), "\u4fdd\u9669\u7406\u8d54", "\u5408\u6210\u4fdd\u9669\u516c\u53f8",
+                        MedicalRecordAssetDistributionCreateRequestWire.RequesterTypeValue.INSURER,
+                        "\u4fdd\u9669\u7406\u8d54\u6750\u6599\u4eba\u5de5\u6838\u9a8c", "\u60a3\u8005\u4e66\u9762\u6388\u6743\u53ca\u7406\u8d54\u7533\u8bf7",
+                        "\u5165\u9662\u8bb0\u5f55\u626b\u63cf\u4ef6\u5355\u4efd\u590d\u5236", true,
+                        MedicalRecordAssetDistributionCreateRequestWire.DeliveryChannelValue.SECURE_PORTAL,
+                        Instant.now().plus(7, ChronoUnit.DAYS)));
         MedicalRecordAssetService.DistributionBinary zip = assets.distributionContent(
-                identity(), patientId, verified.medicalRecordAssetId(), distribution.distributionPackageId());
+                identity(), organization, facility, patientId,
+                verified.medicalRecordAssetId(), distribution.distributionPackageId());
         assertThat(zip.content()).startsWith(new byte[] {'P', 'K'});
         assertThat(zip.contentHash()).isEqualTo(distribution.contentHash());
         MedicalRecordAssetDistributionPackageWire delivered = assets.deliverDistribution(identity(),
                 "deliver-" + UUID.randomUUID(), verified.medicalRecordAssetId(), distribution.distributionPackageId(),
                 new MedicalRecordAssetDistributionDeliveryRequestWire(
-                        organization, facility, patientId, distribution.rowVersion()));
+                        organization, facility, patientId, distribution.rowVersion(),
+                        "\u75c5\u6848\u7ba1\u7406\u4e13\u7528\u7ae0-TEST", "\u5408\u6210\u7b7e\u6536-TEST"));
         assertThat(delivered.status()).isEqualTo(MedicalRecordAssetDistributionPackageWire.StatusValue.DELIVERED);
 
-        MedicalRecordAssetWire current = assets.listAssets(identity(), patientId).getFirst();
+        MedicalRecordAssetWire current = assets.listAssets(identity(), organization, facility, patientId).getFirst();
         MedicalRecordAssetWire scheduled = assets.update(identity(), "schedule-real-" + UUID.randomUUID(),
                 current.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
                         organization, facility, patientId, current.displayName(), current.mediaType(), current.pageCount(),
                         current.sourceSystem(), current.custodyLocation(), MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
                         MedicalRecordAssetUpdateRequestWire.ScanStatusValue.OCR_REVIEWED,
-                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SCHEDULED, 15, current.rowVersion()));
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SCHEDULED, 30, current.rowVersion()));
         MedicalRecordAssetWire sealed = assets.update(identity(), "seal-real-" + UUID.randomUUID(),
                 scheduled.medicalRecordAssetId(), new MedicalRecordAssetUpdateRequestWire(
                         organization, facility, patientId, scheduled.displayName(), scheduled.mediaType(), scheduled.pageCount(),
                         scheduled.sourceSystem(), scheduled.custodyLocation(), MedicalRecordAssetUpdateRequestWire.CdaStatusValue.NOT_APPLICABLE,
                         MedicalRecordAssetUpdateRequestWire.ScanStatusValue.OCR_REVIEWED,
-                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SEALED, 15, scheduled.rowVersion()));
+                        MedicalRecordAssetUpdateRequestWire.PreservationStatusValue.SEALED, 30, scheduled.rowVersion()));
         assertThat(sealed.objectLockStatus()).isEqualTo(MedicalRecordAssetWire.ObjectLockStatusValue.LOCKED);
-        assertThat(sealed.wormRetainUntil()).isAfter(Instant.now().plus(14 * 365, ChronoUnit.DAYS));
+        assertThat(sealed.wormRetainUntil()).isAfter(Instant.now().plus(29 * 365, ChronoUnit.DAYS));
+        assertThat(sealed.retentionYears()).isEqualTo(30);
+        assertThat(sealed.recordCategory()).isEqualTo(MedicalRecordAssetWire.RecordCategoryValue.INPATIENT);
+        assertThat(sealed.objectLockEvidence()).contains("filesystem-advisory");
 
         assets.verifyStoredContent(identity(), "restore-" + UUID.randomUUID(), sealed.medicalRecordAssetId(),
                 new MedicalRecordAssetActionRequestWire(organization, facility, patientId, sealed.rowVersion()));
-        assertThat(assets.listAssets(identity(), patientId).getFirst().preservationStatus())
+        assertThat(assets.listAssets(identity(), organization, facility, patientId).getFirst().preservationStatus())
                 .isEqualTo(MedicalRecordAssetWire.PreservationStatusValue.VERIFIED);
         assertThatThrownBy(() -> jdbc.sql("""
                 update medical_record_asset set worm_retain_until = now()

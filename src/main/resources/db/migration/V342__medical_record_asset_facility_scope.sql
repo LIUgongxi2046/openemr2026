@@ -1,0 +1,3 @@
+-- Compatibility marker. The facility-scope migration retains its original V327 identity
+-- because deployed development databases have already recorded that version and checksum.
+-- Keeping this later version as a no-op lets branches that referenced V342 converge safely.

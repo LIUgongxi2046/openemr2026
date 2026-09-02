@@ -56,7 +56,7 @@ final class MedicalRecordAssetController {
         if (!patientId.equals(patientContextId)) throw MedicalRecordAssetService.contextDenied();
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(assets.listAssets(identity, patientId));
+                .body(assets.listAssets(identity, organizationId, facilityId, patientId));
     }
 
     @PostMapping("/medical-record-assets")
@@ -150,7 +150,7 @@ final class MedicalRecordAssetController {
             @RequestHeader("X-Patient-Context") UUID patientId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(assets.listIntegrityEvents(identity, patientId, assetId));
+                .body(assets.listIntegrityEvents(identity, organizationId, facilityId, patientId, assetId));
     }
 
     @PostMapping("/medical-record-assets/{asset_id}/integrity-events")
@@ -173,7 +173,8 @@ final class MedicalRecordAssetController {
             @RequestHeader("X-Facility-Context") UUID facilityId,
             @RequestHeader("X-Patient-Context") UUID patientId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
-        MedicalRecordAssetService.AssetBinary binary = assets.content(identity, patientId, assetId);
+        MedicalRecordAssetService.AssetBinary binary =
+                assets.content(identity, organizationId, facilityId, patientId, assetId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .contentType(MediaType.parseMediaType(binary.mediaType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
@@ -192,6 +193,18 @@ final class MedicalRecordAssetController {
                 request, command.organizationId(), command.facilityId(), command.patientId(), null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(assets.runOcr(identity, idempotencyKey, assetId, command));
+    }
+
+    @PostMapping("/medical-record-assets/{asset_id}/cda-validations")
+    ResponseEntity<MedicalRecordAssetWire> validateCda(
+            HttpServletRequest request,
+            @PathVariable("asset_id") UUID assetId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody MedicalRecordAssetActionRequestWire command) {
+        ClinicalIdentity identity = security.authorize(
+                request, command.organizationId(), command.facilityId(), command.patientId(), null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(assets.validateCda(identity, idempotencyKey, assetId, command));
     }
 
     @PostMapping("/medical-record-assets/{asset_id}/storage-verifications")
@@ -215,7 +228,7 @@ final class MedicalRecordAssetController {
             @RequestHeader("X-Patient-Context") UUID patientId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(assets.listDistributions(identity, patientId, assetId));
+                .body(assets.listDistributions(identity, organizationId, facilityId, patientId, assetId));
     }
 
     @PostMapping("/medical-record-assets/{asset_id}/distribution-packages")
@@ -253,7 +266,7 @@ final class MedicalRecordAssetController {
             @RequestHeader("X-Patient-Context") UUID patientId) {
         ClinicalIdentity identity = security.authorize(request, organizationId, facilityId, patientId, null);
         MedicalRecordAssetService.DistributionBinary binary =
-                assets.distributionContent(identity, patientId, assetId, packageId);
+                assets.distributionContent(identity, organizationId, facilityId, patientId, assetId, packageId);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
                         .filename(binary.filename(), StandardCharsets.UTF_8).build().toString())

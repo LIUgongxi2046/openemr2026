@@ -19,6 +19,11 @@ openemr2026:
   archive:
     storage-root: ${OPENEMR2026_ARCHIVE_STORAGE_ROOT:${java.io.tmpdir}/openemr2026-archive-objects}
     ocr-endpoint: ${OPENEMR2026_ARCHIVE_OCR_ENDPOINT:}
+    cda-validation-endpoint: ${OPENEMR2026_ARCHIVE_CDA_VALIDATION_ENDPOINT:}
+    malware-scanner:
+      host: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_HOST:}
+      port: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_PORT:3310}
+      timeout-millis: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_TIMEOUT_MILLIS:10000}
   security:
     emergency-reauthentication-max-age-seconds: 300
   outbox:

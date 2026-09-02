@@ -22,6 +22,11 @@ openemr2026:
   archive:
     storage-root: ${OPENEMR2026_ARCHIVE_STORAGE_ROOT:}
     ocr-endpoint: ${OPENEMR2026_ARCHIVE_OCR_ENDPOINT:}
+    cda-validation-endpoint: ${OPENEMR2026_ARCHIVE_CDA_VALIDATION_ENDPOINT:}
+    malware-scanner:
+      host: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_HOST:}
+      port: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_PORT:3310}
+      timeout-millis: ${OPENEMR2026_ARCHIVE_MALWARE_SCANNER_TIMEOUT_MILLIS:10000}
   medical-agent:
     external-models-enabled: ${OPENEMR2026_MEDICAL_AGENT_EXTERNAL_MODELS_ENABLED:false}
   production:
@@ -48,6 +53,7 @@ openemr2026:
     storage:
       endpoint: ${OPENEMR2026_OBJECT_STORAGE_ENDPOINT:}
       bucket: ${OPENEMR2026_OBJECT_STORAGE_BUCKET:}
+      region: ${OPENEMR2026_OBJECT_STORAGE_REGION:cn-north-1}
       access-key-ref: ${OPENEMR2026_OBJECT_STORAGE_ACCESS_KEY_REF:}
       secret-key-ref: ${OPENEMR2026_OBJECT_STORAGE_SECRET_KEY_REF:}
       object-lock-required: ${OPENEMR2026_OBJECT_STORAGE_LOCK_REQUIRED:true}

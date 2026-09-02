@@ -73,6 +73,9 @@ public final class ProductionEnvironmentPostProcessor implements EnvironmentPost
         requireTrue(environment, PREFIX + "storage.object-lock-required", violations);
         requireSecretRef(environment, PREFIX + "storage.access-key-ref", violations);
         requireSecretRef(environment, PREFIX + "storage.secret-key-ref", violations);
+        requireHttps(environment, "openemr2026.archive.ocr-endpoint", violations);
+        requireHttps(environment, "openemr2026.archive.cda-validation-endpoint", violations);
+        requireText(environment, "openemr2026.archive.malware-scanner.host", violations);
 
         requireSecretRef(environment, PREFIX + "integration.truststore-ref", violations);
         requireSecretRef(environment, PREFIX + "integration.client-certificate-ref", violations);

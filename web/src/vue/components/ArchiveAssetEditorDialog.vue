@@ -29,7 +29,7 @@ const emit = defineEmits<{ cancel: []; save: [draft: AssetDraft] }>();
 const form = reactive<AssetDraft>({
   assetType: 'DIGITAL', displayName: '', mediaType: 'application/xml', pageCount: 1,
   sourceSystem: 'openemr2026', location: '', contentHash: '', cdaStatus: 'NOT_APPLICABLE',
-  scanStatus: 'NOT_APPLICABLE', preservationStatus: 'NOT_SCHEDULED', retentionYears: 15,
+  scanStatus: 'NOT_APPLICABLE', preservationStatus: 'NOT_SCHEDULED', retentionYears: 30,
   file: null,
 });
 
@@ -45,7 +45,7 @@ watch(() => [props.open, props.asset, props.presetType] as const, ([open, asset,
   form.cdaStatus = asset?.cda_status ?? 'NOT_APPLICABLE';
   form.scanStatus = asset?.scan_status ?? (preset === 'SCAN' ? 'CAPTURED' : 'NOT_APPLICABLE');
   form.preservationStatus = asset?.preservation_status ?? 'NOT_SCHEDULED';
-  form.retentionYears = asset?.retention_years ?? 15;
+  form.retentionYears = asset?.retention_years ?? 30;
   form.file = null;
 }, { immediate: true });
 
@@ -62,7 +62,7 @@ function selectFile(event: Event) {
 function valid() {
   return form.displayName.trim().length >= 2 && form.mediaType.trim().length >= 3
     && form.sourceSystem.trim().length >= 2 && form.location.trim().length >= 2
-    && form.pageCount >= 1 && form.retentionYears >= 1
+    && form.pageCount >= 1 && form.retentionYears >= 15
     && Boolean(props.asset || form.file || (form.assetType === 'PAPER' && /^[0-9a-fA-F]{64}$/.test(form.contentHash.trim())));
 }
 </script>
@@ -79,10 +79,10 @@ function valid() {
       <label>页数 / 对象数<input v-model.number="form.pageCount" type="number" min="1" max="100000" /></label>
       <label>来源系统<input v-model="form.sourceSystem" maxlength="128" /></label>
       <label>当前保管位置<input v-model="form.location" maxlength="128" /></label>
-      <label>CDA 状态<select v-model="form.cdaStatus"><option value="NOT_APPLICABLE">不适用</option><option value="PENDING">待校验</option><option value="VERIFIED">已通过</option><option value="FAILED">未通过</option></select></label>
+      <label>CDA 状态<select v-model="form.cdaStatus" :disabled="Boolean(asset)"><option value="NOT_APPLICABLE">不适用</option><option value="PENDING">待服务端校验</option><option v-if="asset?.cda_status === 'VERIFIED'" value="VERIFIED">服务端校验通过</option><option v-if="asset?.cda_status === 'FAILED'" value="FAILED">服务端校验失败</option></select></label>
       <label>扫描流程<select v-model="form.scanStatus" disabled><option value="NOT_APPLICABLE">不适用</option><option value="CAPTURED">已采集</option><option value="OCR_REVIEWED">OCR 已复核</option><option value="INDEXED">已编目</option></select></label>
       <label>长期保存<select v-model="form.preservationStatus" disabled><option value="NOT_SCHEDULED">未纳入</option><option value="SCHEDULED">已排期</option><option value="SEALED">已封包</option><option value="VERIFIED">恢复验证通过</option></select></label>
-      <label>保管年限<input v-model.number="form.retentionYears" type="number" min="1" max="100" /></label>
+      <label>保管年限<input v-model.number="form.retentionYears" type="number" min="15" max="100" /><small>门急诊不少于15年；住院及患者级资产不少于30年，服务端按就诊类型强制校验。</small></label>
     </div>
     <label v-if="!asset">原始文件（最大 50 MiB）<input data-testid="asset-file" type="file" @change="selectFile" /></label>
     <p v-if="!asset && form.file" class="dialog-warning">服务端将从 {{ form.file.name }} 的实际字节计算 SHA-256，完成恶意特征检查后再不可变写入文件存储。</p>
