@@ -251,12 +251,51 @@ function defaultHistory(): RouterHistory {
   return createWebHashHistory();
 }
 
+const qualityDepthRoutes: RouteRecordRaw[] = [
+  { path: '/quality-center/initiatives/:parentId', moduleId: 'quality-center', contractId: 'quality-center' },
+  { path: '/department-qc/cases/:parentId', moduleId: 'department-qc', contractId: 'department-qc' },
+  { path: '/quality-rating/assessments/:parentId', moduleId: 'quality-rating', contractId: 'quality-rating' },
+  { path: '/infection-events/clues/:parentId', moduleId: 'infection-events', contractId: 'infection-events' },
+  { path: '/credentials/grants/:parentId', moduleId: 'credentials', contractId: 'credentials' },
+  { path: '/archive-assets/:parentId', moduleId: 'archive-assets', contractId: 'archive-assets' },
+].flatMap(({ path, moduleId, contractId }) => [
+  { suffix: 'actions', level: 5 }, { suffix: 'evidence', level: 6 }, { suffix: 'reviews', level: 7 },
+].map(({ suffix, level }): RouteRecordRaw => ({
+  path: `${path}/${suffix}`,
+  name: `${moduleId}-depth-${level}`,
+  component: () => import('./views/QualityGovernanceDepthPage.vue'),
+  props: (route) => ({ moduleId, parentId: String(route.params.parentId), level }),
+  meta: { contractId, primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE', 'SCOPE'], implementation: 'VUE_NATIVE' },
+})));
+
+const recordDepthRoutes: RouteRecordRaw[] = [
+  { path: '/record/documents/:documentId', name: 'record-document-depth-3', level: 3 },
+  { path: '/record/documents/:documentId/versions/:versionId', name: 'record-version-depth-4', level: 4 },
+  { path: '/record/documents/:documentId/versions/:versionId/signatures/:signatureId', name: 'record-signature-depth-5', level: 5 },
+  { path: '/record/documents/:documentId/versions/:versionId/signatures/:signatureId/sources/:sourceId', name: 'record-source-depth-6', level: 6 },
+  { path: '/record/documents/:documentId/versions/:versionId/signatures/:signatureId/sources/:sourceId/audit/:auditEventId', name: 'record-audit-depth-7', level: 7 },
+].map((definition): RouteRecordRaw => ({
+  path: definition.path,
+  name: definition.name,
+  component: () => import('./views/RecordEvidenceDepthPage.vue'),
+  props: { level: definition.level },
+  meta: {
+    contractId: 'record-versions', primaryDomain: 'RECORD',
+    guards: ['SESSION', 'ROLE', 'PATIENT_CONTEXT'], implementation: 'VUE_NATIVE',
+  },
+}));
+
 export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
   return createRouter({
     history,
     routes: [
       { path: '/', redirect: '/clinical' },
       ...buildContractRoutes(),
+      ...recordDepthRoutes,
+      {
+        path: '/archive-assets/:assetId', name: 'archive-asset-detail', component: () => import('./views/AssetDetailPage.vue'),
+        meta: { contractId: 'archive-assets', primaryDomain: 'ARCHIVE', guards: ['SESSION', 'ROLE', 'PATIENT_CONTEXT'], implementation: 'VUE_NATIVE' },
+      },
       {
         path: '/quality-center/initiatives', name: 'quality-initiatives', component: () => import('./views/QualityOperationsRoutePage.vue'), props: { moduleId: 'quality-center' },
         meta: { contractId: 'quality-center', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
@@ -299,6 +338,7 @@ export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
         path: '/credentials/grants/:credentialId', name: 'credential-grant-detail', component: () => import('./views/CredentialsPage.vue'), props: true,
         meta: { contractId: 'credentials', primaryDomain: 'QUALITY', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
       },
+      ...qualityDepthRoutes,
       {
         path: '/mock-interfaces',
         name: 'mock-interfaces',

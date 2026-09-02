@@ -28,22 +28,25 @@ import tools.jackson.databind.ObjectMapper;
 @Service
 final class DocumentGovernanceService {
 
-    private static final String RULE_VERSION = "openemr2026-core-1";
+    private static final String RULE_VERSION = "openemr2026-core-2";
 
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher events;
+    private final ClinicalSignatureProvider signatures;
 
     DocumentGovernanceService(
             JdbcClient jdbc,
             TransactionTemplate transactions,
             ObjectMapper objectMapper,
-            ApplicationEventPublisher events) {
+            ApplicationEventPublisher events,
+            ClinicalSignatureProvider signatures) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
         this.events = events;
+        this.signatures = signatures;
     }
 
     List<QualityFindingWire> runQualityChecks(
@@ -67,6 +70,8 @@ final class DocumentGovernanceService {
             if (!version.templateRequiredFields().contains("treatment_plan")) {
                 requireSection(expected, sections, "treatment_plan", "DOC-TREATMENT-PLAN-REQUIRED", "WARNING", "治疗与复诊计划尚未填写");
             }
+            addIndependentSectionChecks(
+                    expected, sections, sourceReferenceCount(identity.tenantId(), documentVersionId));
             String ruleVersion = RULE_VERSION + "+tpl-" + version.templateVersionNo()
                     + "-" + version.templateVersionId().toString().replace("-", "").substring(0, 12);
 
@@ -343,7 +348,10 @@ final class DocumentGovernanceService {
             }
 
             OffsetDateTime signedAt = OffsetDateTime.now(ZoneOffset.UTC);
-            String targetStatus = finalSignature ? "SIGNED" : "READY_TO_SIGN";
+            ClinicalSignatureProvider.SignatureAttestation attestation = signatures.attest(
+                    identity, documentId, documentVersionId, normalizedSignatureRole,
+                    version.contentHash(), signedAt.toInstant());
+            String targetStatus = finalSignature && attestation.valid() ? "SIGNED" : "READY_TO_SIGN";
             int versionUpdated = jdbc.sql("""
                     update clinical_document_version
                     set status = :target_status,
@@ -371,13 +379,15 @@ final class DocumentGovernanceService {
             jdbc.sql("""
                     insert into signature_evidence(
                       tenant_id, signature_id, document_id, document_version_id, signer_user_id,
-                      signature_role, signature_status, content_hash, signed_at)
+                      signature_role, signature_status, content_hash, credential_ref, signed_at)
                     values (:tenant, :signature, :document, :version, :signer,
-                      :role, 'PENDING_CA_EVIDENCE', :hash, :signed)
+                      :role, :signature_status, :hash, :credential_ref, :signed)
                     """)
                     .param("tenant", identity.tenantId()).param("signature", signatureId).param("document", documentId)
                     .param("version", documentVersionId).param("signer", identity.userId())
-                    .param("role", normalizedSignatureRole).param("hash", version.contentHash()).param("signed", signedAt).update();
+                    .param("role", normalizedSignatureRole).param("signature_status", attestation.status())
+                    .param("hash", version.contentHash()).param("credential_ref", attestation.credentialRef())
+                    .param("signed", signedAt).update();
             if (policy != null) {
                 jdbc.sql("""
                         update document_signature_policy
@@ -386,17 +396,20 @@ final class DocumentGovernanceService {
                         where tenant_id = :tenant and document_id = :document
                           and document_version_id = :version and row_version = :expected_policy_version
                         """).param("current_level", normalizedSignatureRole)
-                        .param("review_status", finalSignature ? "COMPLETED" : "IN_REVIEW")
+                        .param("review_status", finalSignature && attestation.valid() ? "COMPLETED" : "IN_REVIEW")
                         .param("tenant", identity.tenantId()).param("document", documentId)
                         .param("version", documentVersionId).param("expected_policy_version", policy.rowVersion()).update();
             }
-            String action = finalSignature ? "DOCUMENT_SIGNED" : "DOCUMENT_SIGNATURE_STEP_RECORDED";
+            String action = finalSignature && attestation.valid()
+                    ? "DOCUMENT_SIGNED" : "DOCUMENT_SIGNATURE_STEP_RECORDED";
             appendAudit(identity, action, "CLINICAL_DOCUMENT", documentId, patientId);
             appendSignatureOutbox(
                     identity.tenantId(), documentId, expectedRowVersion + 1, documentVersionId,
-                    finalSignature ? "DocumentSigned" : "DocumentSignatureStepRecorded", normalizedSignatureRole);
+                    finalSignature && attestation.valid()
+                            ? "DocumentSigned" : "DocumentSignatureStepRecorded",
+                    normalizedSignatureRole);
             completeCommand(identity, idempotencyKey, signatureId);
-            if (finalSignature) {
+            if (finalSignature && attestation.valid()) {
                 finalizeCorrectionIfPresent(identity, documentId, documentVersionId, signedAt);
                 events.publishEvent(new ClinicalDocumentSigned(
                         identity.tenantId(), identity.userId(), patientId, encounterId,
@@ -404,7 +417,7 @@ final class DocumentGovernanceService {
             }
             return new SignatureEvidenceWire(
                     signatureId, documentVersionId, identity.userId(), signedAt.toInstant(), version.contentHash(),
-                    SignatureEvidenceWire.SignatureStatusValue.PENDING_CA_EVIDENCE);
+                    SignatureEvidenceWire.SignatureStatusValue.valueOf(attestation.status()));
         });
     }
 
@@ -707,6 +720,47 @@ final class DocumentGovernanceService {
         if (value == null || (value instanceof String text && text.isBlank())) {
             findings.add(new FindingSpec(field, rule, severity, message));
         }
+    }
+
+    private static void addIndependentSectionChecks(
+            List<FindingSpec> findings, Map<String, Object> sections, long sourceReferenceCount) {
+        List<String> clinicalFields = List.of(
+                "chief_complaint", "present_illness", "past_history", "allergy_history",
+                "physical_exam", "auxiliary_exam", "assessment", "treatment_plan", "followup_plan");
+        for (int left = 0; left < clinicalFields.size(); left++) {
+            String leftField = clinicalFields.get(left);
+            String leftValue = normalizedSection(sections.get(leftField));
+            if (leftValue.length() < 8) continue;
+            for (int right = left + 1; right < clinicalFields.size(); right++) {
+                String rightField = clinicalFields.get(right);
+                if (leftValue.equals(normalizedSection(sections.get(rightField)))) {
+                    findings.add(new FindingSpec(
+                            rightField,
+                            "DOC-SECTION-DUPLICATE-" + rightField.replace('_', '-').toUpperCase(java.util.Locale.ROOT),
+                            "BLOCKING",
+                            "不同病历章节内容完全相同，请核对是否误复制：" + leftField + " / " + rightField));
+                }
+            }
+        }
+        if (!normalizedSection(sections.get("auxiliary_exam")).isEmpty() && sourceReferenceCount == 0) {
+            findings.add(new FindingSpec(
+                    "auxiliary_exam", "DOC-AUXILIARY-EXAM-SOURCE-REQUIRED", "WARNING",
+                    "辅助检查已录入，但当前版本未绑定 LIS/PACS 或其他来源证据"));
+        }
+    }
+
+    private long sourceReferenceCount(UUID tenantId, UUID versionId) {
+        return jdbc.sql("""
+                select count(*) from clinical_document_source_reference
+                where tenant_id = :tenant and document_version_id = :version
+                """).param("tenant", tenantId).param("version", versionId)
+                .query(Long.class).single();
+    }
+
+    private static String normalizedSection(Object value) {
+        return value instanceof String text
+                ? text.replaceAll("\\s+", "").trim()
+                : "";
     }
 
     private void beginCommand(ClinicalIdentity identity, String key, String requestHash) {

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 540,
+  "operation_count": 553,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -1945,6 +1945,57 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createPriceCatalogVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createQualityGovernanceAgentProposal",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/agent-proposals",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "QualityGovernanceAgentProposalRequest",
+      "output_schema": "QualityGovernanceAgentProposal",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createQualityGovernanceAgentProposal",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createQualityGovernanceRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/records",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "QualityGovernanceRecordCreateRequest",
+      "output_schema": "QualityGovernanceRecord",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createQualityGovernanceRecord",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createRecordReviewCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/record-center/review-cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "RecordReviewCaseCreateRequest",
+      "output_schema": "RecordReviewCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createRecordReviewCase",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -4229,6 +4280,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listDocumentAuditEvents",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/documents/{document_id}/audit-events",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DocumentAuditEvent[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDocumentAuditEvents",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listDocumentCorrections",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -5670,6 +5738,74 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listPromptReleases",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listQualityGovernanceAgentProposals",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/agent-proposals",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PATH_PARAMETERS",
+      "output_schema": "QualityGovernanceAgentProposal[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listQualityGovernanceAgentProposals",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listQualityGovernanceRecords",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/records",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PATH_PARAMETERS",
+      "output_schema": "QualityGovernanceRecord[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listQualityGovernanceRecords",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listRecordCenterWorklist",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/record-center/worklist",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "RecordCenterWorklistItem[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listRecordCenterWorklist",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listRecordReviewCases",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/record-center/review-cases",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "RecordReviewCase[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listRecordReviewCases",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8165,6 +8301,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "simulatePractitionerCredentialAuthorization",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/admin/credentials/{credential_id}/simulations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PractitionerCredentialSimulationRequest",
+      "output_schema": "PractitionerCredentialSimulation",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:simulatePractitionerCredentialAuthorization",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "startAdministrationJobRun",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8590,6 +8743,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "transitionRecordReviewCase",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/record-center/review-cases/{review_case_id}/transitions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "RecordReviewCaseTransitionRequest",
+      "output_schema": "RecordReviewCase",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:transitionRecordReviewCase",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "transitionReferral",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8862,6 +9032,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "updateQualityGovernanceRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "PUT",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/records/{quality_governance_record_id}",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "QualityGovernanceRecordUpdateRequest",
+      "output_schema": "QualityGovernanceRecord",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:updateQualityGovernanceRecord",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "updateReferralDraft",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "PATCH",
@@ -8926,6 +9113,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:validateConfigurationForm",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "verifyDocumentSignatures",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/documents/{document_id}/signature-verifications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DocumentSignatureVerificationRequest",
+      "output_schema": "DocumentSignatureVerificationRun",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:verifyDocumentSignatures",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -9147,6 +9351,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:voidPharmacyDispensing",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "voidQualityGovernanceRecord",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/quality-governance/{module_code}/{parent_resource_id}/records/{quality_governance_record_id}/void",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "QualityGovernanceRecordVoidRequest",
+      "output_schema": "QualityGovernanceRecord",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:voidQualityGovernanceRecord",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

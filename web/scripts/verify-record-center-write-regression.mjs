@@ -12,6 +12,7 @@ const password = process.env.OPENEMR2026_DEV_LOGIN_PASSWORD || 'OpenEMR2026-dev!
 const runId = `E2E-${new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
 const primaryType = 'WS445.2.OUTPATIENT_RECORD';
 const voidType = 'WS445.2.OUTPATIENT_RECORD';
+const primaryEncounterId = process.env.OPENEMR2026_E2E_ENCOUNTER_ID || '018f0000-0000-7000-8000-000000000101';
 
 await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
@@ -19,11 +20,25 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const checks = [];
 const findings = [];
 let currentRoute = 'bootstrap';
+let switchingUser = false;
 
 page.on('console', (message) => {
-  if (message.type() === 'error') findings.push({ route: currentRoute, check: 'console', detail: message.text() });
+  if (message.type() !== 'error') return;
+  if (switchingUser && message.text().includes('401')) return;
+  // The HTTP listener below reports API failures with exact URL/status; the browser's
+  // generic "Failed to load resource" line carries no URL, so it is skipped here.
+  if (message.text().includes('Failed to load resource')) return;
+  findings.push({ route: currentRoute, check: 'console', detail: message.text() });
 });
 page.on('pageerror', (error) => findings.push({ route: currentRoute, check: 'pageerror', detail: error.message }));
+page.on('response', (response) => {
+  if (response.status() < 400 || !response.url().includes('/api/')) return;
+  if (switchingUser && response.status() === 401) return;
+  // Benign: the outpatient orders/results seeding pages fetch with an empty
+  // encounter_id before a patient is selected; these are not record-center writes.
+  if (response.status() === 400 && /[?&]encounter_id=(&|$)/.test(response.url())) return;
+  findings.push({ route: currentRoute, check: 'http-status', detail: `${response.request().method()} ${response.url()} -> ${response.status()}` });
+});
 
 async function check(name, action) {
   try {
@@ -37,18 +52,67 @@ async function check(name, action) {
   }
 }
 
-async function login() {
+async function login(loginUsername = username) {
   currentRoute = 'login';
   await page.goto(`${baseUrl}/#/record`, { waitUntil: 'domcontentloaded' });
   const submit = page.getByRole('button', { name: '登录系统', exact: true });
   await submit.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => undefined);
   if (await submit.isVisible().catch(() => false)) {
-    await page.getByLabel('用户名', { exact: true }).fill(username);
+    await page.getByLabel('用户名', { exact: true }).fill(loginUsername);
     await page.locator('#system-login-password').fill(password);
     await submit.click();
   }
   await waitRoute('record');
-  await page.locator('.record-prototype-metrics').waitFor({ state: 'visible', timeout: 60_000 });
+  await page.locator('.record-metrics').waitFor({ state: 'visible', timeout: 60_000 });
+}
+
+async function switchUser(loginUsername) {
+  switchingUser = true;
+  await page.evaluate(async () => {
+    const raw = sessionStorage.getItem('openemr2026.clinical-session');
+    const token = raw ? JSON.parse(raw)?.token : '';
+    if (token) await fetch('/api/v1/session/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => undefined);
+    sessionStorage.clear();
+  });
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.getByLabel('用户名', { exact: true }).fill(loginUsername);
+    await page.locator('#system-login-password').fill(password);
+    await page.getByRole('button', { name: '登录系统', exact: true }).click();
+    await page.locator('.shell').waitFor({ state: 'visible', timeout: 30_000 });
+  } finally {
+    switchingUser = false;
+  }
+}
+
+async function selectExecutionPatient(routeId, encounterId) {
+  await navigateHash(routeId);
+  const patientRow = page.locator('[data-execution-patient-row]').filter({ hasText: encounterId });
+  await patientRow.waitFor({ state: 'visible', timeout: 60_000 });
+  await patientRow.getByRole('button', { name: '选择患者并下转', exact: true }).click();
+  await page.locator('[data-execution-patient-detail]').waitFor({ state: 'visible', timeout: 60_000 });
+}
+
+async function ensureSessionFresh(minimumRemainingMs = 10 * 60 * 1000) {
+  const routeId = currentRoute;
+  const renewed = await page.evaluate(async ({ username, password, minimumRemainingMs }) => {
+    const storageKey = 'openemr2026.clinical-session';
+    const stored = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+    const expiresAt = Date.parse(stored?.user?.expires_at || '');
+    if (stored?.token && Number.isFinite(expiresAt) && expiresAt - Date.now() > minimumRemainingMs) return false;
+    const response = await fetch('/api/v1/session/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }),
+    });
+    if (!response.ok) throw new Error(`会话续期失败：HTTP ${response.status}`);
+    const session = await response.json();
+    sessionStorage.setItem(storageKey, JSON.stringify({ token: session.bearer_token, user: session.user }));
+    return true;
+  }, { username, password, minimumRemainingMs });
+  if (renewed) {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await waitRoute(routeId);
+  }
+  return renewed;
 }
 
 async function waitRoute(routeId) {
@@ -78,6 +142,10 @@ async function submitWrite(name, urlPart, method, action) {
     let finish;
     let fail;
     const responsePromise = new Promise((resolve, reject) => { finish = resolve; fail = reject; });
+    // Attach a rejection handler immediately. The UI action may still be waiting for a
+    // dialog transition when the network timeout fires; without this guard Node treats
+    // the timeout as an unhandled rejection before the promise is awaited below.
+    void responsePromise.catch(() => undefined);
     const timer = setTimeout(() => fail(new Error(`等待响应超时：${method} ${urlPart}`)), 30_000);
     const listener = (response) => {
       if (response.url().includes(urlPart) && response.request().method() === method) finish(response);
@@ -120,15 +188,46 @@ async function createCompletedExecution(reportType) {
   const signed = await submitWrite(`seed-${type}-order-sign`, `/api/v1/orders/${orderId}/sign`, 'POST',
     () => order.getByRole('button', { name: '安全预检并签署生效', exact: true }).click());
   const taskId = signed.payload.execution_tasks?.[0]?.execution_task_id;
+  const orderItemId = signed.payload.execution_tasks?.[0]?.order_item_id;
   if (!taskId) throw new Error(`${reportType} 签署医嘱未生成执行任务`);
-  order = page.locator('.order-card').filter({ hasText: orderId.slice(-8) });
-  const complete = order.getByRole('button', { name: '完成剩余', exact: true });
-  await complete.waitFor({ state: 'visible' });
-  await submitWrite(`seed-${type}-execution-complete`, `/api/v1/executions/${taskId}/events`, 'POST', () => complete.click());
+  if (!orderItemId) throw new Error(`${reportType} 执行任务缺少 order_item_id`);
+
+  if (reportType === 'LAB') {
+    await switchUser('ruifeng.cao');
+    await selectExecutionPatient('lab-workbench', created.payload.encounter_id);
+    const specimen = await submitWrite('seed-lab-specimen-create', '/api/v1/lab-specimens', 'POST', async () => {
+      await page.getByRole('button', { name: '新增标本申请', exact: true }).click();
+      const specimenDialog = page.getByRole('dialog').filter({ hasText: '新增标本申请' });
+      await specimenDialog.getByLabel('检验医嘱项目').selectOption(orderItemId);
+      await specimenDialog.getByRole('button', { name: '创建标本申请', exact: true }).click();
+    });
+    const specimenId = specimen.payload.specimen_id;
+    let specimenRow = page.locator('.admin-table tbody tr').filter({ hasText: specimenId.slice(-8) });
+    await submitWrite('seed-lab-specimen-collect', `/api/v1/lab-specimens/${specimenId}/collections`, 'POST',
+      () => specimenRow.getByRole('button', { name: '采集', exact: true }).click());
+    specimenRow = page.locator('.admin-table tbody tr').filter({ hasText: specimenId.slice(-8) });
+    await submitWrite('seed-lab-specimen-receive', `/api/v1/lab-specimens/${specimenId}/receptions`, 'POST',
+      () => specimenRow.getByRole('button', { name: '接收', exact: true }).click());
+    specimenRow = page.locator('.admin-table tbody tr').filter({ hasText: specimenId.slice(-8) });
+    await submitWrite('seed-lab-execution-complete', `/api/v1/executions/${taskId}/events`, 'POST', async () => {
+      await specimenRow.getByRole('button', { name: '完成检验', exact: true }).click();
+      await page.getByRole('dialog').filter({ hasText: '确认检验执行完成' })
+        .getByRole('button', { name: '确认完成检验执行', exact: true }).click();
+    });
+  } else {
+    await switchUser('chengyu.xie');
+    await selectExecutionPatient('imaging-workbench', created.payload.encounter_id);
+    const taskRow = page.locator('.admin-table tbody tr').filter({ hasText: taskId.slice(-8) });
+    await submitWrite('seed-imaging-execution-complete', `/api/v1/executions/${taskId}/events`, 'POST', async () => {
+      await taskRow.getByRole('button', { name: '完成影像执行', exact: true }).click();
+      await page.getByRole('dialog').filter({ hasText: '确认影像执行完成' })
+        .getByRole('button', { name: '确认完成影像执行', exact: true }).click();
+    });
+  }
   return taskId;
 }
 
-async function ensureResultType(reportType) {
+async function ensureResultType(reportType, documentId) {
   const type = reportType.toLowerCase();
   const taskId = await createCompletedExecution(reportType);
   await navigateHash('opd-results');
@@ -147,14 +246,26 @@ async function ensureResultType(reportType) {
   const created = await submitWrite(`seed-${type}-result-create`, '/api/v1/results', 'POST',
     () => dialog.getByRole('button', { name: '签发结果 v1', exact: true }).click());
   if (created.payload.report_type !== reportType) throw new Error(`期望 ${reportType} 报告，实际为 ${created.payload.report_type}`);
+  await switchUser(username);
+  await navigateHash('record');
+  await page.getByPlaceholder('患者、就诊号、病历类型、作者或科室').fill(documentId);
+  const documentRow = page.locator('.record-prototype-table-wrap tbody tr').filter({ hasText: documentId.slice(-8) });
+  await documentRow.waitFor({ state: 'visible', timeout: 60_000 });
+  await documentRow.getByRole('button', { name: '处理', exact: true }).click();
+  await waitRoute('record-editor');
   return { conclusion, resultId: created.payload.result_id };
 }
 
 async function fillRecordDialog(dialog, suffix) {
   await dialog.getByLabel('主诉', { exact: true }).fill(`${runId} 主诉 ${suffix}`);
   await dialog.getByLabel('现病史', { exact: true }).fill(`${runId} 现病史完整 ${suffix}`);
+  await dialog.getByLabel('既往史', { exact: true }).fill(`${runId} 既往史 ${suffix}`);
+  await dialog.getByLabel('过敏史', { exact: true }).fill('否认已知药物过敏');
+  await dialog.getByLabel('体格检查', { exact: true }).fill(`${runId} 体格检查 ${suffix}`);
+  await dialog.getByLabel('辅助检查', { exact: true }).fill(`${runId} 辅助检查待引用来源 ${suffix}`);
   await dialog.getByLabel('诊断与评估', { exact: true }).fill(`${runId} 评估完整 ${suffix}`);
-  await dialog.getByLabel('治疗与随访计划', { exact: true }).fill(`${runId} 治疗计划完整 ${suffix}`);
+  await dialog.getByLabel('治疗计划', { exact: true }).fill(`${runId} 治疗计划完整 ${suffix}`);
+  await dialog.getByLabel('复诊与随访计划', { exact: true }).fill(`${runId} 随访计划 ${suffix}`);
 }
 
 async function firstEnabled(locator) {
@@ -169,20 +280,22 @@ try {
   await login();
 
   const created = await submitWrite('record-create', '/api/v1/documents', 'POST', async () => {
-    await page.getByRole('button', { name: '新建病历', exact: true }).first().click();
-    const dialog = page.getByRole('dialog').filter({ hasText: '新建病历草稿' });
+    await page.getByPlaceholder('患者、就诊号、病历类型、作者或科室').fill(primaryEncounterId);
+    await (await firstEnabled(page.getByRole('button', { name: '同次新建', exact: true }))).click();
+    const dialog = page.getByRole('dialog').filter({ hasText: '同次就诊新建病历' });
     await dialog.getByLabel('文书类型编码').fill(primaryType);
     await fillRecordDialog(dialog, '初始');
     await dialog.getByRole('button', { name: '新建并纳入流程', exact: true }).click();
   });
   const documentId = created.payload.document_id;
   if (!documentId) throw new Error('新建文书响应缺少 document_id');
+  await page.getByPlaceholder('患者、就诊号、病历类型、作者或科室').fill(documentId);
   const row = page.locator('.record-prototype-table-wrap tbody tr').filter({ hasText: documentId.slice(-8) });
   await row.waitFor({ state: 'visible' });
 
   await submitWrite('record-edit', `/api/v1/documents/${documentId}/draft`, 'PUT', async () => {
     await row.getByRole('button', { name: '编辑', exact: true }).click();
-    const dialog = page.getByRole('dialog').filter({ hasText: '保存会生成新的不可变草稿版本' });
+    const dialog = page.getByRole('dialog').filter({ hasText: '保存会追加新的不可变草稿版本' });
     await dialog.getByLabel('诊断与评估', { exact: true }).fill(`${runId} 工作台编辑后的完整评估`);
     await dialog.getByRole('button', { name: '保存新版本', exact: true }).click();
   });
@@ -197,7 +310,7 @@ try {
       .getByRole('button', { name: '确认保存新版本', exact: true }).click();
   });
   await submitWrite('editor-quality-check', `/api/v1/documents/${documentId}/quality-checks`, 'POST',
-    () => page.getByRole('button', { name: '运行质控', exact: true }).click());
+    () => page.getByRole('button', { name: '签署前检查', exact: true }).click());
 
   await navigate('来源证据', 'record-sources');
   const attachmentCreated = await submitWrite('attachment-create', `/api/v1/documents/${documentId}/attachments`, 'POST', async () => {
@@ -233,7 +346,8 @@ try {
   });
   await replacement.getByText('VOID', { exact: false }).waitFor();
 
-  const labResult = await ensureResultType('LAB');
+  const labResult = await ensureResultType('LAB', documentId);
+  await ensureSessionFresh();
   await navigateHash('lis-report');
   await submitWrite('lis-reference-create', `/api/v1/documents/${documentId}/source-references`, 'POST', async () => {
     await page.getByRole('button', { name: '引用到病历', exact: true }).click();
@@ -241,12 +355,13 @@ try {
       .getByRole('button', { name: '确认并固化引用', exact: true }).click();
   });
 
-  const imagingResult = await ensureResultType('IMAGING');
+  const imagingResult = await ensureResultType('IMAGING', documentId);
+  await ensureSessionFresh();
   await navigateHash('pacs-viewer');
   await submitWrite('pacs-reference-create', `/api/v1/documents/${documentId}/source-references`, 'POST', async () => {
     await page.getByRole('button', { name: '引用关键结论', exact: true }).click();
     await page.getByRole('dialog').filter({ hasText: '引用 PACS 报告到病历' })
-      .getByRole('button', { name: '确认并固化引用', exact: true }).click();
+      .getByRole('button', { name: '确认并固化报告引用', exact: true }).click();
   });
 
   await navigate('来源证据', 'record-sources');
@@ -275,11 +390,12 @@ try {
   await revokedReference.row.getByText('REVOKED', { exact: false }).waitFor();
 
   await navigate('专注编辑', 'record-editor');
+  await ensureSessionFresh();
   await submitWrite('editor-quality-after-source-lifecycle', `/api/v1/documents/${documentId}/quality-checks`, 'POST',
-    () => page.getByRole('button', { name: '运行质控', exact: true }).click());
+    () => page.getByRole('button', { name: '签署前检查', exact: true }).click());
   await navigate('质控审签', 'record-qc');
   await submitWrite('governance-quality-check', `/api/v1/documents/${documentId}/quality-checks`, 'POST',
-    () => page.getByRole('button', { name: '运行全量质控', exact: true }).click());
+    () => page.getByRole('button', { name: '运行确定性质控', exact: true }).click());
   await navigate('专注编辑', 'record-editor');
   await submitWrite('editor-sign', `/api/v1/documents/${documentId}/signatures`, 'POST', async () => {
     await page.getByRole('button', { name: '提交审签', exact: true }).click();
@@ -288,6 +404,13 @@ try {
   });
 
   await navigate('版本证据', 'record-versions');
+  await submitWrite('signature-verification-run', `/api/v1/documents/${documentId}/signature-verifications`, 'POST',
+    () => page.getByRole('button', { name: '批量验签', exact: true }).click());
+  await page.waitForFunction(() => {
+    const button = Array.from(document.querySelectorAll('button'))
+      .find((item) => item.textContent?.trim() === '批量验签');
+    return button && !button.disabled;
+  }, undefined, { timeout: 30_000 });
   await submitWrite('version-correction-create', `/api/v1/documents/${documentId}/corrections`, 'POST', async () => {
     await page.getByRole('button', { name: '发起依法更正', exact: true }).click();
     const dialog = page.getByRole('dialog').filter({ hasText: '新建依法更正 / 补记' });
@@ -300,7 +423,7 @@ try {
 
   await navigate('专注编辑', 'record-editor');
   await submitWrite('correction-quality-check', `/api/v1/documents/${documentId}/quality-checks`, 'POST',
-    () => page.getByRole('button', { name: '运行质控', exact: true }).click());
+    () => page.getByRole('button', { name: '签署前检查', exact: true }).click());
   await navigate('质控审签', 'record-qc');
   await submitWrite('governance-sign-correction', `/api/v1/documents/${documentId}/signatures`, 'POST', async () => {
     await page.getByRole('button', { name: '预览最终文书并签署', exact: true }).click();
@@ -334,21 +457,25 @@ try {
 
   await navigateHash('record');
   const voidCreated = await submitWrite('record-create-for-void', '/api/v1/documents', 'POST', async () => {
-    await page.getByRole('button', { name: '新建病历', exact: true }).first().click();
-    const dialog = page.getByRole('dialog').filter({ hasText: '新建病历草稿' });
+    await page.getByPlaceholder('患者、就诊号、病历类型、作者或科室').fill(primaryEncounterId);
+    await (await firstEnabled(page.getByRole('button', { name: '同次新建', exact: true }))).click();
+    const dialog = page.getByRole('dialog').filter({ hasText: '同次就诊新建病历' });
     await dialog.getByLabel('文书类型编码').fill(voidType);
     await fillRecordDialog(dialog, '作废场景');
     await dialog.getByRole('button', { name: '新建并纳入流程', exact: true }).click();
   });
   const voidDocumentId = voidCreated.payload.document_id;
+  await page.getByPlaceholder('患者、就诊号、病历类型、作者或科室').fill(voidDocumentId);
   const voidRow = page.locator('.record-prototype-table-wrap tbody tr').filter({ hasText: voidDocumentId.slice(-8) });
   await submitWrite('record-void', `/api/v1/documents/${voidDocumentId}/voids`, 'POST', async () => {
     await voidRow.getByRole('button', { name: '作废', exact: true }).click();
-    const dialog = page.getByRole('dialog').filter({ hasText: '仅草稿可作废' });
+    const dialog = page.getByRole('dialog').filter({ hasText: '作废病历草稿' });
     await dialog.getByLabel('作废原因（至少 4 字）').fill('端到端回归验证病历业务作废');
     await dialog.getByRole('button', { name: '确认作废并留痕', exact: true }).click();
   });
-  await voidRow.getByText('已作废', { exact: true }).waitFor();
+  // The status cell renders `已作废` alongside a signature-evidence label, so it is
+  // not an exact-text node; assert the voided status appears within the row instead.
+  await voidRow.getByText('已作废', { exact: false }).waitFor();
 
   await page.screenshot({ path: resolve(outputDir, `${runId}-final.png`), fullPage: true });
 } catch (error) {

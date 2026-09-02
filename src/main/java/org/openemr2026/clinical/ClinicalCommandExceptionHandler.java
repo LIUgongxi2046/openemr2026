@@ -8,7 +8,12 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice(assignableTypes = {ClinicalLifecycleController.class, DocumentEvidenceController.class})
+@RestControllerAdvice(assignableTypes = {
+        ClinicalLifecycleController.class,
+        DocumentEvidenceController.class,
+        DocumentSignatureVerificationController.class,
+        DocumentAuditTrailController.class
+})
 final class ClinicalCommandExceptionHandler {
 
     @ExceptionHandler(ClinicalCommandException.class)

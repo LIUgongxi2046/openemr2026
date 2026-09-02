@@ -25,7 +25,9 @@ import org.springframework.test.context.ActiveProfiles;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "spring.flyway.out-of-order=true")
 @ActiveProfiles("dev-synthetic")
 final class ClinicalLifecycleApiTest {
 
@@ -300,7 +302,7 @@ final class ClinicalLifecycleApiTest {
         JsonNode blockedSnapshot = objectMapper.readTree(governanceWithFindings.body());
         assertThat(blockedSnapshot.path("document_status").stringValue()).isEqualTo("DRAFT");
         assertThat(blockedSnapshot.path("quality_run").toString())
-                .contains("BLOCKED", "openemr2026-core-1", firstVersion);
+                .contains("BLOCKED", "openemr2026-core-2", firstVersion);
         // The published template may add stricter blocking fields on top of the core rules.
         // Assert the stable lower bound and the named core finding instead of coupling this
         // lifecycle test to a specific template revision.
@@ -310,7 +312,7 @@ final class ClinicalLifecycleApiTest {
                 .isGreaterThanOrEqualTo(1);
         assertThat(blockedSnapshot.path("quality_findings").size()).isGreaterThanOrEqualTo(3);
         assertThat(blockedSnapshot.path("quality_findings").toString())
-                .contains("openemr2026-core-1", "DOC-PRESENT-ILLNESS-REQUIRED", "BLOCKING");
+                .contains("openemr2026-core-2", "DOC-PRESENT-ILLNESS-REQUIRED", "BLOCKING");
         assertThat(blockedSnapshot.path("signatures")).isEmpty();
         assertThat(blockedSnapshot.path("review_decisions")).isEmpty();
         assertThat(blockedSnapshot.path("data_watermark").stringValue()).hasSize(64);
@@ -341,7 +343,7 @@ final class ClinicalLifecycleApiTest {
 
         HttpResponse<String> signed = sign(encounterLease, encounterId, documentId, completedVersion, 2);
         assertThat(signed.statusCode()).isEqualTo(201);
-        assertThat(signed.body()).contains("PENDING_CA_EVIDENCE", contentHash);
+        assertThat(signed.body()).contains("VALID", contentHash);
         assertThat(jdbc.sql("select status from clinical_document_version where tenant_id = :tenant and document_version_id = :version")
                 .param("tenant", UUID.fromString(TENANT)).param("version", UUID.fromString(completedVersion))
                 .query(String.class).single()).isEqualTo("SIGNED");
@@ -356,7 +358,21 @@ final class ClinicalLifecycleApiTest {
         assertThat(signedSnapshot.path("quality_findings")).isEmpty();
         assertThat(signedSnapshot.path("signatures")).hasSize(1);
         assertThat(signedSnapshot.path("signatures").get(0).toString())
-                .contains("PENDING_CA_EVIDENCE", "ATTENDING", "林伟 / William Lin", contentHash);
+                .contains("VALID", "ATTENDING", "林伟 / William Lin", contentHash, "SYNTHETIC-CA://");
+
+        HttpResponse<String> verification = send("POST",
+                "/api/v1/documents/" + documentId + "/signature-verifications", """
+                {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s","document_version_id":"%s"}
+                """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterId, completedVersion),
+                encounterLease, PATIENT, encounterId, UUID.randomUUID().toString());
+        assertThat(verification.statusCode()).isEqualTo(201);
+        assertThat(verification.body()).contains("\"outcome\":\"VALID\"", "SYNTHETIC_CA");
+        assertThat(jdbc.sql("""
+                select count(*) from document_signature_verification_run
+                where tenant_id = :tenant and document_id = :document
+                  and document_version_id = :version and outcome = 'VALID'
+                """).param("tenant", UUID.fromString(TENANT)).param("document", UUID.fromString(documentId))
+                .param("version", UUID.fromString(completedVersion)).query(Long.class).single()).isEqualTo(1L);
 
         assertThatThrownBy(() -> jdbc.sql("""
                 update clinical_document_version set sections = '{"chief_complaint":"tampered"}'
@@ -409,7 +425,15 @@ final class ClinicalLifecycleApiTest {
                 """.formatted(ORGANIZATION, FACILITY, PATIENT, encounterId), encounterLease, PATIENT, encounterId,
                 UUID.randomUUID().toString());
         assertThat(propagationRetry.statusCode()).isEqualTo(200);
-        assertThat(propagationRetry.body()).contains("FAILED", "ADAPTER_NOT_CONFIGURED", "\"attempt_count\":1");
+        assertThat(propagationRetry.body()).contains("SUCCEEDED", "\"attempt_count\":1");
+        assertThat(jdbc.sql("""
+                select count(*) from document_correction_event
+                where tenant_id = :tenant and correction_id = :correction
+                  and event_type = 'PROPAGATION_SUCCEEDED'
+                  and details ->> 'provider_code' = 'SYNTHETIC_HIE'
+                  and details ->> 'receipt_ref' like 'SYNTHETIC-HIE://%'
+                """).param("tenant", UUID.fromString(TENANT)).param("correction", UUID.fromString(correctionId))
+                .query(Long.class).single()).isEqualTo(1L);
 
         HttpResponse<String> revoked = send("POST", "/api/v1/documents/" + documentId + "/signature-revocations", """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",

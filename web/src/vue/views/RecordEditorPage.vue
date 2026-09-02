@@ -11,8 +11,13 @@ import { useCurrentDocument } from '../composables/use-current-document';
 const sectionFields = [
   ['chief_complaint', '主诉', 3],
   ['present_illness', '现病史', 6],
+  ['past_history', '既往史', 4],
+  ['allergy_history', '过敏史', 3],
+  ['physical_exam', '体格检查', 5],
+  ['auxiliary_exam', '辅助检查', 5],
   ['assessment', '诊断与评估', 3],
-  ['treatment_plan', '治疗与随访计划', 3],
+  ['treatment_plan', '治疗计划', 4],
+  ['followup_plan', '复诊与随访计划', 3],
 ] as const;
 
 const current = useCurrentDocument();
@@ -25,17 +30,6 @@ const saveState = ref<'idle' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'sign
 const saveDialogOpen = ref(false);
 const signDialogOpen = ref(false);
 const activeSection = ref('present_illness');
-
-const outlineSections = [
-  ['chief_complaint', '主诉', '完成', 'green'],
-  ['present_illness', '现病史', '当前', 'blue'],
-  ['present_illness', '既往史', '已纳入', 'green'],
-  ['assessment', '体格检查', '待确认', 'amber'],
-  ['assessment', '辅助检查', '待引用', 'amber'],
-  ['assessment', '诊断评估', '完成', 'green'],
-  ['treatment_plan', '治疗计划', '待确认', 'amber'],
-  ['treatment_plan', '复诊计划', '待完善', 'red'],
-] as const;
 
 const issue = computed(() => current.error.value ? toClinicalIssue(current.error.value) : null);
 const document = computed(() => current.data.value?.document);
@@ -103,6 +97,11 @@ function focusSection(field: string) {
   window.document.getElementById(`record-field-${field}`)?.focus();
 }
 
+function outlineState(field: string) {
+  if (activeSection.value === field) return ['当前', 'blue'] as const;
+  return String(sections.value[field] ?? '').trim() ? ['已填写', 'green'] as const : ['待完善', 'amber'] as const;
+}
+
 function confirmSign() {
   const snapshot = current.data.value;
   if (!snapshot || busy.value) return;
@@ -120,16 +119,16 @@ function confirmSign() {
 
 <template>
   <section data-page-root class="content vue-native-page">
-    <div class="page-heading"><div><h1>门诊病历 · 专注编辑</h1><p>{{ document ? `草稿 v${document.version_no}` : '当前版本' }} · 心内科门诊模板 · {{ saveStateLabel }}</p></div>
+    <div class="page-heading"><div><h1>病历 · 专注编辑</h1><p>{{ document ? `草稿 v${document.version_no} · ${document.document_type_code}` : '当前版本' }} · {{ saveStateLabel }}</p></div>
       <div class="toolbar-actions"><RouterLink class="btn" to="/record-sources">来源证据</RouterLink><button class="btn" type="button" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">质控 {{ findings.length }}</button><button class="btn primary" type="button" :disabled="Boolean(busy) || document?.status !== 'DRAFT' || saveState === 'dirty'" @click="sign">提交审签</button></div></div>
     <RecordPatientStrip />
     <ClinicalPageState v-if="current.isPending.value" kind="loading" message="正在加载当前病历版本" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="current.refetch()" />
     <div v-else-if="document && current.data.value" class="focus-editor record-real-focus">
-      <aside class="focus-outline card"><div class="card-head">文书章节 <span class="sub">{{ Math.round((filledSections / sectionFields.length) * 100) }}%</span></div><button v-for="(item, index) in outlineSections" :key="`${item[0]}-${index}`" class="outline-item" :class="{ active: activeSection === item[0] && item[1] === '现病史' }" type="button" @click="focusSection(item[0])"><span>{{ index + 1 }}</span><b>{{ item[1] }}</b><em class="status" :class="item[3]">{{ item[2] }}</em></button></aside>
-      <section class="card focus-canvas" aria-label="专注编辑器"><div class="editor-ribbon"><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；加粗不进入临床正文。'"><b>B</b></button><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；斜体不进入临床正文。'"><i>I</i></button><button class="btn sm" type="button" @click="focusSection('assessment')">结构化字段</button><RouterLink class="btn sm" to="/record-sources">插入来源</RouterLink><button class="btn sm" type="button" @click="notice = 'AI 续写必须从 AI 医助发起并保留来源，当前未自动改写正文。'">AI 续写</button><span class="grow" /><span class="status green">● {{ savedAt || '当前版本已载入' }}</span></div>
+      <aside class="focus-outline card"><div class="card-head">文书章节 <span class="sub">{{ Math.round((filledSections / sectionFields.length) * 100) }}%</span></div><button v-for="(item, index) in sectionFields" :key="item[0]" class="outline-item" :class="{ active: activeSection === item[0] }" type="button" @click="focusSection(item[0])"><span>{{ index + 1 }}</span><b>{{ item[1] }}</b><em class="status" :class="outlineState(item[0])[1]">{{ outlineState(item[0])[0] }}</em></button></aside>
+      <section class="card focus-canvas" aria-label="专注编辑器"><div class="editor-ribbon"><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；加粗不进入临床正文。'"><b>B</b></button><button class="btn sm" type="button" title="纯文本病历不写入富文本样式" @click="notice = '当前病历按纯文本语义保存；斜体不进入临床正文。'"><i>I</i></button><button class="btn sm" type="button" @click="focusSection('assessment')">结构化字段</button><RouterLink class="btn sm" to="/record-sources">插入来源</RouterLink><RouterLink class="btn sm" to="/record-qc">AI 质控建议</RouterLink><span class="grow" /><span class="status green">● {{ savedAt || '当前版本已载入' }}</span></div>
         <div v-if="notice" class="notice record-editor-notice" role="status">{{ notice }}</div><div v-if="saveState === 'conflict'" class="notice hard" role="alert"><div class="notice-title">版本冲突：系统已禁止覆盖</div>其他工作站已保存新版本，请刷新后基于当前版本继续。</div>
-        <article class="document-sheet"><h2>门诊病历</h2><p class="document-meta">当前患者 · 心血管内科 · {{ document.document_type_code }}</p><div v-for="field in sectionFields" :key="field[0]" class="doc-section"><b>{{ field[1] }}</b><textarea :id="`record-field-${field[0]}`" class="field textarea" :class="{ 'warning-field': field[0] === 'treatment_plan', 'source-field': field[0] === 'assessment' }" :value="String(sections[field[0]] ?? '')" :rows="field[2]" :readonly="document.status !== 'DRAFT' || saveState === 'conflict'" @focus="activeSection = field[0]" @input="updateSection(field[0], $event)" /></div></article>
+        <article class="document-sheet"><h2>临床病历</h2><p class="document-meta">当前患者 · 当前就诊 · {{ document.document_type_code }}</p><div v-for="field in sectionFields" :key="field[0]" class="doc-section"><b>{{ field[1] }}</b><textarea :id="`record-field-${field[0]}`" class="field textarea" :class="{ 'warning-field': field[0] === 'treatment_plan', 'source-field': field[0] === 'assessment' }" :value="String(sections[field[0]] ?? '')" :rows="field[2]" :readonly="document.status !== 'DRAFT' || saveState === 'conflict'" @focus="activeSection = field[0]" @input="updateSection(field[0], $event)" /></div></article>
         <div class="footer-actions"><RouterLink class="btn" to="/record">退出并保存</RouterLink><span class="grow" /><RouterLink class="btn" to="/record-sources">核验来源</RouterLink><button class="btn" type="button" :disabled="Boolean(busy) || saveState !== 'dirty'" @click="save">{{ saveState === 'saving' ? '保存中…' : '保存新版本' }}</button><button class="btn primary" type="button" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">签署前检查</button></div></section>
       <aside class="assist-rail"><RouterLink to="/record-sources"><b>源</b><span>来源</span></RouterLink><RouterLink to="/record-qc"><b>{{ findings.length }}</b><span>质控</span></RouterLink><RouterLink to="/record-versions"><b>v{{ document.version_no }}</b><span>版本</span></RouterLink><RouterLink to="/pacs-viewer"><b>影</b><span>影像</span></RouterLink></aside>
     </div>

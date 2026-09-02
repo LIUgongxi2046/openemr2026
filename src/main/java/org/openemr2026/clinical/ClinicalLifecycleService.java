@@ -5,6 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.HexFormat;
 import java.util.LinkedHashSet;
@@ -32,11 +33,17 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
     private final JdbcClient jdbc;
     private final TransactionTemplate transactions;
     private final ObjectMapper objectMapper;
+    private final CorrectionPropagationProvider correctionPropagationProvider;
 
-    ClinicalLifecycleService(JdbcClient jdbc, TransactionTemplate transactions, ObjectMapper objectMapper) {
+    ClinicalLifecycleService(
+            JdbcClient jdbc,
+            TransactionTemplate transactions,
+            ObjectMapper objectMapper,
+            CorrectionPropagationProvider correctionPropagationProvider) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
+        this.correctionPropagationProvider = correctionPropagationProvider;
     }
 
     List<PatientSummaryWire> searchPatients(ClinicalIdentity identity, String query, int requestedLimit) {
@@ -807,12 +814,15 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
             beginCommand(identity, "DOCUMENT_CORRECTION_PROPAGATE", idempotencyKey,
                     sha256(documentId + "|" + propagationId + "|" + expectedRowVersion));
             PropagationHead propagation = jdbc.sql("""
-                    select propagation.correction_id, propagation.row_version, correction.status
+                    select propagation.correction_id, propagation.row_version, correction.status,
+                      propagation.destination_code, version.content_hash
                     from document_correction_propagation propagation
                     join document_correction_case correction on correction.tenant_id = propagation.tenant_id
                       and correction.correction_id = propagation.correction_id
                     join clinical_document document on document.tenant_id = correction.tenant_id
                       and document.document_id = correction.document_id
+                    join clinical_document_version version on version.tenant_id = correction.tenant_id
+                      and version.document_version_id = correction.correction_document_version_id
                     where propagation.tenant_id = :tenant and propagation.propagation_id = :propagation
                       and correction.document_id = :document and document.patient_id = :patient
                       and document.encounter_id = :encounter
@@ -820,7 +830,8 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
                     """).param("tenant", identity.tenantId()).param("propagation", propagationId)
                     .param("document", documentId).param("patient", patientId).param("encounter", encounterId)
                     .query((rs, row) -> new PropagationHead(
-                            rs.getObject("correction_id", UUID.class), rs.getLong("row_version"), rs.getString("status")))
+                            rs.getObject("correction_id", UUID.class), rs.getLong("row_version"),
+                            rs.getString("status"), rs.getString("destination_code"), rs.getString("content_hash")))
                     .optional().orElseThrow(ClinicalLifecycleService::notFound);
             if (propagation.rowVersion() != expectedRowVersion) {
                 throw new ClinicalCommandException("VERSION_CONFLICT", 409, "The propagation state changed before retry");
@@ -830,24 +841,47 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
                         "Only a signed correction can be propagated");
             }
             OffsetDateTime attemptedAt = OffsetDateTime.now(java.time.ZoneOffset.UTC);
+            CorrectionPropagationProvider.DeliveryReceipt receipt = correctionPropagationProvider.deliver(
+                    identity, documentId, propagation.correctionId(), propagationId,
+                    propagation.destinationCode(), propagation.contentHash(), attemptedAt.toInstant());
+            String nextStatus = receipt.delivered() ? "SUCCEEDED" : "FAILED";
+            String eventType = receipt.delivered() ? "PROPAGATION_SUCCEEDED" : "PROPAGATION_FAILED";
+            String auditAction = receipt.delivered()
+                    ? "DOCUMENT_CORRECTION_PROPAGATION_SUCCEEDED"
+                    : "DOCUMENT_CORRECTION_PROPAGATION_FAILED";
             jdbc.sql("""
                     update document_correction_propagation
-                    set status = 'FAILED', attempt_count = attempt_count + 1,
-                      last_error_code = 'ADAPTER_NOT_CONFIGURED', last_attempt_at = :attempted,
-                      delivered_at = null, row_version = row_version + 1
+                    set status = :next_status, attempt_count = attempt_count + 1,
+                      last_error_code = :error_code, last_attempt_at = :attempted,
+                      delivered_at = :delivered_at, row_version = row_version + 1
                     where tenant_id = :tenant and propagation_id = :propagation and row_version = :expected
-                    """).param("attempted", attemptedAt).param("tenant", identity.tenantId())
+                    """).param("next_status", nextStatus)
+                    .param("error_code", receipt.errorCode(), Types.VARCHAR)
+                    .param("attempted", attemptedAt)
+                    .param("delivered_at", receipt.delivered() ? attemptedAt : null, Types.TIMESTAMP_WITH_TIMEZONE)
+                    .param("tenant", identity.tenantId())
                     .param("propagation", propagationId).param("expected", expectedRowVersion).update();
             jdbc.sql("""
                     insert into document_correction_event(
                       tenant_id, correction_event_id, correction_id, event_type, actor_user_id, details)
-                    values (:tenant, :event, :correction, 'PROPAGATION_FAILED', :actor,
-                      jsonb_build_object('propagation_id', :propagation, 'error_code', 'ADAPTER_NOT_CONFIGURED'))
+                    values (:tenant, :event, :correction, :event_type, :actor,
+                      jsonb_build_object(
+                        'propagation_id', :propagation,
+                        'provider_code', :provider_code,
+                        'receipt_ref', :receipt_ref,
+                        'error_code', :error_code,
+                        'content_hash', :content_hash))
                     """).param("tenant", identity.tenantId()).param("event", UUID.randomUUID())
                     .param("correction", propagation.correctionId()).param("actor", identity.userId())
-                    .param("propagation", propagationId).update();
-            appendAudit(identity, "DOCUMENT_CORRECTION_PROPAGATION_FAILED", "CLINICAL_DOCUMENT", documentId,
+                    .param("event_type", eventType).param("propagation", propagationId)
+                    .param("provider_code", receipt.providerCode())
+                    .param("receipt_ref", receipt.receiptRef(), Types.VARCHAR)
+                    .param("error_code", receipt.errorCode(), Types.VARCHAR)
+                    .param("content_hash", propagation.contentHash()).update();
+            appendAudit(identity, auditAction, "CLINICAL_DOCUMENT", documentId,
                     patientId, UUID.randomUUID().toString());
+            appendOutbox(identity.tenantId(), "CLINICAL_DOCUMENT", documentId, expectedRowVersion + 1,
+                    receipt.delivered() ? "DocumentCorrectionPropagated" : "DocumentCorrectionPropagationFailed");
             completeCommand(identity, "DOCUMENT_CORRECTION_PROPAGATE", idempotencyKey, propagationId);
             return correctionPropagation(identity.tenantId(), propagationId);
         });
@@ -1414,7 +1448,12 @@ final class ClinicalLifecycleService implements ClinicalDocumentGateway, Encount
     private record SignatureForRevocation(
             UUID documentVersionId, UUID signerUserId, String status, UUID currentVersionId, long rowVersion) {}
 
-    private record PropagationHead(UUID correctionId, long rowVersion, String correctionStatus) {}
+    private record PropagationHead(
+            UUID correctionId,
+            long rowVersion,
+            String correctionStatus,
+            String destinationCode,
+            String contentHash) {}
 
     private record VersionSections(UUID id, Map<String, Object> sections) {}
     private record TemplateBinding(UUID templateVersionId, int versionNo) {}

@@ -42,6 +42,48 @@
         "responses": { "204": { "description": "session revoked" } }
       }
     },
+    "/record-center/worklist": {
+      "get": {
+        "operationId": "listRecordCenterWorklist",
+        "parameters": [
+          { "name": "status", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "query", "in": "query", "required": false, "schema": { "type": "string", "maxLength": 256 } }
+        ],
+        "responses": {
+          "200": { "description": "role-scoped hospital record worklist", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecordCenterWorklistItem" } } } } }
+        }
+      }
+    },
+    "/record-center/review-cases": {
+      "get": {
+        "operationId": "listRecordReviewCases",
+        "parameters": [
+          { "name": "document_id", "in": "query", "required": false, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "review cases in authorized scope", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RecordReviewCase" } } } } }
+        }
+      },
+      "post": {
+        "operationId": "createRecordReviewCase",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecordReviewCaseCreateRequest" } } } },
+        "responses": {
+          "201": { "description": "durable review case created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecordReviewCase" } } } }
+        }
+      }
+    },
+    "/record-center/review-cases/{review_case_id}/transitions": {
+      "post": {
+        "operationId": "transitionRecordReviewCase",
+        "parameters": [
+          { "name": "review_case_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecordReviewCaseTransitionRequest" } } } },
+        "responses": {
+          "200": { "description": "review case transitioned with immutable event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RecordReviewCase" } } } }
+        }
+      }
+    },
     "/system/readiness": {
       "get": {
         "operationId": "getSystemReadiness",
@@ -585,6 +627,29 @@
               }
             }
           }
+        }
+      }
+    },
+    "/documents/{document_id}/signature-verifications": {
+      "post": {
+        "operationId": "verifyDocumentSignatures",
+        "parameters": [
+          { "name": "document_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocumentSignatureVerificationRequest" } } } },
+        "responses": {
+          "201": { "description": "immutable signature verification run", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DocumentSignatureVerificationRun" } } } }
+        }
+      }
+    },
+    "/documents/{document_id}/audit-events": {
+      "get": {
+        "operationId": "listDocumentAuditEvents",
+        "parameters": [
+          { "name": "document_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "patient-scoped document audit hash chain", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DocumentAuditEvent" } } } } }
         }
       }
     },
@@ -11655,6 +11720,24 @@
         }
       }
     },
+    "/admin/credentials/{credential_id}/simulations": {
+      "post": {
+        "operationId": "simulatePractitionerCredentialAuthorization",
+        "parameters": [
+          { "name": "credential_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredentialSimulationRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "deterministic read-only preview of the structured credential intersection",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PractitionerCredentialSimulation" } } }
+          }
+        }
+      }
+    },
     "/admin/access-policies": {
       "get": {
         "operationId": "listAuthorizationPolicies",
@@ -15246,6 +15329,75 @@
           "200": {
             "description": "deterministic fake assistant SSE stream"
           }
+        }
+      }
+    },
+    "/quality-governance/{module_code}/{parent_resource_id}/records": {
+      "parameters": [
+        { "name": "module_code", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "parent_resource_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+      ],
+      "get": {
+        "operationId": "listQualityGovernanceRecords",
+        "parameters": [
+          { "name": "record_kind", "in": "query", "required": false, "schema": { "type": "string", "enum": ["ACTION", "EVIDENCE", "REVIEW"] } }
+        ],
+        "responses": {
+          "200": { "description": "active quality-governance depth records", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/QualityGovernanceRecord" } } } } }
+        }
+      },
+      "post": {
+        "operationId": "createQualityGovernanceRecord",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecordCreateRequest" } } } },
+        "responses": {
+          "201": { "description": "quality-governance depth record created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecord" } } } }
+        }
+      }
+    },
+    "/quality-governance/{module_code}/{parent_resource_id}/records/{quality_governance_record_id}": {
+      "put": {
+        "operationId": "updateQualityGovernanceRecord",
+        "parameters": [
+          { "name": "module_code", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "parent_resource_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "quality_governance_record_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecordUpdateRequest" } } } },
+        "responses": {
+          "200": { "description": "quality-governance depth record updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecord" } } } }
+        }
+      }
+    },
+    "/quality-governance/{module_code}/{parent_resource_id}/records/{quality_governance_record_id}/void": {
+      "post": {
+        "operationId": "voidQualityGovernanceRecord",
+        "parameters": [
+          { "name": "module_code", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "parent_resource_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "quality_governance_record_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecordVoidRequest" } } } },
+        "responses": {
+          "200": { "description": "quality-governance depth record logically voided", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceRecord" } } } }
+        }
+      }
+    },
+    "/quality-governance/{module_code}/{parent_resource_id}/agent-proposals": {
+      "parameters": [
+        { "name": "module_code", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "parent_resource_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+      ],
+      "get": {
+        "operationId": "listQualityGovernanceAgentProposals",
+        "responses": {
+          "200": { "description": "quality-governance read-only agent proposals", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/QualityGovernanceAgentProposal" } } } } }
+        }
+      },
+      "post": {
+        "operationId": "createQualityGovernanceAgentProposal",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceAgentProposalRequest" } } } },
+        "responses": {
+          "201": { "description": "candidate advice generated without mutating quality facts", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/QualityGovernanceAgentProposal" } } } }
         }
       }
     },
@@ -28519,6 +28671,13 @@
           "encounter_id",
           "facility_id",
           "infection_type",
+          "event_category",
+          "detected_at",
+          "reporting_window_hours",
+          "report_deadline_at",
+          "external_report_required",
+          "external_report_state",
+          "reporting_policy_code",
           "reported_at",
           "status",
           "row_version"
@@ -28555,6 +28714,50 @@
               "string",
               "null"
             ],
+            "maxLength": 128
+          },
+          "event_category": {
+            "type": "string",
+            "enum": ["HAI_CASE", "HAI_OUTBREAK", "NOTIFIABLE_DISEASE"]
+          },
+          "onset_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reporting_window_hours": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 24
+          },
+          "report_deadline_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "external_report_required": {
+            "type": "boolean"
+          },
+          "external_report_state": {
+            "type": "string",
+            "enum": ["NOT_REQUIRED", "PENDING", "SUBMITTED", "ACKNOWLEDGED", "CORRECTED", "FAILED"]
+          },
+          "report_card_no": {
+            "type": ["string", "null"],
+            "maxLength": 128
+          },
+          "receipt_no": {
+            "type": ["string", "null"],
+            "maxLength": 128
+          },
+          "correction_of": {
+            "type": ["string", "null"],
+            "maxLength": 128
+          },
+          "reporting_policy_code": {
+            "type": "string",
             "maxLength": 128
           },
           "reported_at": {
@@ -28599,6 +28802,11 @@
           "patient_id",
           "encounter_id",
           "infection_type",
+          "event_category",
+          "detected_at",
+          "reporting_window_hours",
+          "external_report_required",
+          "reporting_policy_code",
           "reported_at"
         ],
         "properties": {
@@ -28633,6 +28841,31 @@
               "string",
               "null"
             ],
+            "maxLength": 128
+          },
+          "event_category": {
+            "type": "string",
+            "enum": ["HAI_CASE", "HAI_OUTBREAK", "NOTIFIABLE_DISEASE"]
+          },
+          "onset_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "detected_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reporting_window_hours": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 24
+          },
+          "external_report_required": {
+            "type": "boolean"
+          },
+          "reporting_policy_code": {
+            "type": "string",
+            "minLength": 4,
             "maxLength": 128
           },
           "reported_at": {
@@ -32170,10 +32403,15 @@
           "scan_status",
           "preservation_status",
           "retention_years",
+          "record_category",
+          "retention_basis_date",
+          "retention_until",
           "storage_status",
           "malware_scan_status",
           "ocr_status",
           "object_lock_status",
+          "storage_provider",
+          "legal_hold_status",
           "row_version"
         ],
         "properties": {
@@ -32251,6 +32489,9 @@
             "type": "string",
             "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"]
           },
+          "cda_validation_engine": { "type": ["string", "null"], "maxLength": 128 },
+          "cda_validation_evidence_hash": { "type": ["string", "null"], "minLength": 64, "maxLength": 64 },
+          "cda_validated_at": { "type": ["string", "null"], "format": "date-time" },
           "scan_status": {
             "type": "string",
             "enum": ["NOT_APPLICABLE", "CAPTURED", "OCR_REVIEWED", "INDEXED"]
@@ -32261,13 +32502,17 @@
           },
           "retention_years": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 15,
             "maximum": 100
           },
+          "record_category": { "type": "string", "enum": ["OUTPATIENT", "INPATIENT"] },
+          "retention_basis_date": { "type": "string", "format": "date" },
+          "retention_until": { "type": "string", "format": "date" },
           "original_filename": { "type": ["string", "null"], "maxLength": 255 },
           "byte_size": { "type": ["integer", "null"], "format": "int64", "minimum": 1 },
           "storage_status": { "type": "string", "enum": ["MISSING", "AVAILABLE", "SEALED"] },
           "malware_scan_status": { "type": "string", "enum": ["NOT_SCANNED", "PASSED", "REJECTED"] },
+          "malware_scan_engine": { "type": ["string", "null"], "maxLength": 128 },
           "ocr_status": { "type": "string", "enum": ["NOT_REQUESTED", "COMPLETED", "FAILED"] },
           "ocr_text": { "type": ["string", "null"] },
           "ocr_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
@@ -32275,6 +32520,9 @@
           "ocr_completed_at": { "type": ["string", "null"], "format": "date-time" },
           "object_lock_status": { "type": "string", "enum": ["UNLOCKED", "LOCKED"] },
           "worm_retain_until": { "type": ["string", "null"], "format": "date-time" },
+          "storage_provider": { "type": "string", "maxLength": 64 },
+          "object_lock_evidence": { "type": ["string", "null"], "maxLength": 512 },
+          "legal_hold_status": { "type": "string", "enum": ["NONE", "ACTIVE", "RELEASED"] },
           "last_verified_at": {
             "type": ["string", "null"],
             "format": "date-time"
@@ -32407,7 +32655,7 @@
           },
           "retention_years": {
             "type": "integer",
-            "minimum": 1,
+            "minimum": 15,
             "maximum": 100
           }
         }
@@ -32434,7 +32682,7 @@
           "source_system": { "type": "string", "minLength": 2, "maxLength": 128 },
           "content_base64": { "type": "string", "minLength": 1 },
           "cda_status": { "type": "string", "enum": ["NOT_APPLICABLE", "PENDING", "VERIFIED", "FAILED"] },
-          "retention_years": { "type": "integer", "minimum": 1, "maximum": 100 }
+          "retention_years": { "type": "integer", "minimum": 15, "maximum": 100 }
         }
       },
       "MedicalRecordAssetActionRequest": {
@@ -32451,7 +32699,7 @@
       "MedicalRecordAssetDistributionCreateRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "purpose", "recipient_name", "expires_at"],
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "purpose", "recipient_name", "requester_type", "identity_verification_method", "authorization_basis", "copy_scope", "separate_consent_confirmed", "delivery_channel", "expires_at"],
         "properties": {
           "organization_id": { "type": "string", "format": "uuid" },
           "facility_id": { "type": "string", "format": "uuid" },
@@ -32459,18 +32707,26 @@
           "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
           "purpose": { "type": "string", "minLength": 2, "maxLength": 500 },
           "recipient_name": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "requester_type": { "type": "string", "enum": ["PATIENT", "AUTHORIZED_AGENT", "INSURER", "PUBLIC_SECURITY", "JUDICIAL", "OTHER_AUTHORIZED"] },
+          "identity_verification_method": { "type": "string", "minLength": 4, "maxLength": 64 },
+          "authorization_basis": { "type": "string", "minLength": 4, "maxLength": 500 },
+          "copy_scope": { "type": "string", "minLength": 4, "maxLength": 500 },
+          "separate_consent_confirmed": { "type": "boolean" },
+          "delivery_channel": { "type": "string", "enum": ["ON_SITE", "SECURE_PORTAL", "ENCRYPTED_MEDIA"] },
           "expires_at": { "type": "string", "format": "date-time" }
         }
       },
       "MedicalRecordAssetDistributionDeliveryRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version"],
+        "required": ["organization_id", "facility_id", "patient_id", "expected_row_version", "hospital_seal_no", "delivery_receipt_no"],
         "properties": {
           "organization_id": { "type": "string", "format": "uuid" },
           "facility_id": { "type": "string", "format": "uuid" },
           "patient_id": { "type": "string", "format": "uuid" },
-          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 }
+          "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "hospital_seal_no": { "type": "string", "minLength": 4, "maxLength": 128 },
+          "delivery_receipt_no": { "type": "string", "minLength": 4, "maxLength": 128 }
         }
       },
       "MedicalRecordAssetDistributionPackage": {
@@ -32478,7 +32734,9 @@
         "additionalProperties": false,
         "required": [
           "distribution_package_id", "medical_record_asset_id", "patient_id", "purpose", "recipient_name",
-          "watermark_text", "original_filename", "media_type", "byte_size", "content_hash", "status",
+          "requester_type", "identity_verification_method", "authorization_basis", "copy_scope",
+          "separate_consent_confirmed", "delivery_channel", "watermark_text",
+          "original_filename", "media_type", "byte_size", "content_hash", "status",
           "expires_at", "created_by", "created_at", "row_version"
         ],
         "properties": {
@@ -32487,6 +32745,14 @@
           "patient_id": { "type": "string", "format": "uuid" },
           "purpose": { "type": "string" },
           "recipient_name": { "type": "string" },
+          "requester_type": { "type": "string", "enum": ["PATIENT", "AUTHORIZED_AGENT", "INSURER", "PUBLIC_SECURITY", "JUDICIAL", "OTHER_AUTHORIZED"] },
+          "identity_verification_method": { "type": "string" },
+          "authorization_basis": { "type": "string" },
+          "copy_scope": { "type": "string" },
+          "separate_consent_confirmed": { "type": "boolean" },
+          "delivery_channel": { "type": "string", "enum": ["ON_SITE", "SECURE_PORTAL", "ENCRYPTED_MEDIA"] },
+          "hospital_seal_no": { "type": ["string", "null"] },
+          "delivery_receipt_no": { "type": ["string", "null"] },
           "watermark_text": { "type": "string" },
           "original_filename": { "type": "string" },
           "media_type": { "type": "string" },
@@ -36707,6 +36973,36 @@
         "properties": {
           "expected_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
           "reason": { "type": "string", "minLength": 4, "maxLength": 1000 }
+        }
+      },
+      "PractitionerCredentialSimulationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action", "patient_relationship"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["PRESCRIPTION", "ANTIMICROBIAL_SPECIAL", "CONTROLLED_DRUG", "SURGERY", "PROCEDURE"]
+          },
+          "patient_relationship": { "type": "boolean" },
+          "surgery_level": { "type": ["integer", "null"], "minimum": 1, "maximum": 4 },
+          "procedure_code": { "type": ["string", "null"], "maxLength": 128 }
+        }
+      },
+      "PractitionerCredentialSimulation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["credential_id", "action", "decision", "reasons", "credential_row_version", "evaluated_at"],
+        "properties": {
+          "credential_id": { "type": "string", "format": "uuid" },
+          "action": {
+            "type": "string",
+            "enum": ["PRESCRIPTION", "ANTIMICROBIAL_SPECIAL", "CONTROLLED_DRUG", "SURGERY", "PROCEDURE"]
+          },
+          "decision": { "type": "string", "enum": ["ALLOW", "DENY"] },
+          "reasons": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "credential_row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "evaluated_at": { "type": "string", "format": "date-time" }
         }
       },
       "WorkforceIdentity": {
@@ -42329,6 +42625,239 @@
             "format": "int64",
             "minimum": 1
           }
+        }
+      },
+      "QualityGovernanceRecord": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quality_governance_record_id", "organization_id", "facility_id", "module_code", "parent_resource_id", "hierarchy_level", "record_kind", "record_code", "title", "owner", "status", "description", "payload", "row_version", "created_by", "updated_by", "created_at", "updated_at"],
+        "properties": {
+          "quality_governance_record_id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "module_code": { "type": "string", "enum": ["QUALITY_CENTER", "DEPARTMENT_QC", "QUALITY_RATING", "INFECTION_EVENTS", "CREDENTIALS", "ARCHIVE_ASSET"] },
+          "parent_resource_id": { "type": "string", "format": "uuid" },
+          "hierarchy_level": { "type": "integer", "minimum": 5, "maximum": 7 },
+          "record_kind": { "type": "string", "enum": ["ACTION", "EVIDENCE", "REVIEW"] },
+          "record_code": { "type": "string", "minLength": 2, "maxLength": 96 },
+          "title": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "owner": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "READY", "VERIFIED", "REJECTED", "CLOSED"] },
+          "due_at": { "type": ["string", "null"], "format": "date-time" },
+          "description": { "type": "string", "minLength": 4, "maxLength": 2000 },
+          "evidence_uri": { "type": ["string", "null"], "maxLength": 1000 },
+          "evidence_hash": { "type": ["string", "null"], "minLength": 64, "maxLength": 64 },
+          "payload": { "type": "object", "additionalProperties": true },
+          "row_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "created_by": { "type": "string", "format": "uuid" },
+          "updated_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "voided_at": { "type": ["string", "null"], "format": "date-time" },
+          "void_reason": { "type": ["string", "null"], "maxLength": 500 }
+        }
+      },
+      "QualityGovernanceRecordCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "record_kind", "record_code", "title", "owner", "status", "description", "payload"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "record_kind": { "type": "string", "enum": ["ACTION", "EVIDENCE", "REVIEW"] },
+          "record_code": { "type": "string", "minLength": 2, "maxLength": 96 },
+          "title": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "owner": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "READY", "VERIFIED", "REJECTED", "CLOSED"] },
+          "due_at": { "type": ["string", "null"], "format": "date-time" },
+          "description": { "type": "string", "minLength": 4, "maxLength": 2000 },
+          "evidence_uri": { "type": ["string", "null"], "maxLength": 1000 },
+          "evidence_hash": { "type": ["string", "null"], "minLength": 64, "maxLength": 64 },
+          "payload": { "type": "object", "additionalProperties": true }
+        }
+      },
+      "QualityGovernanceRecordUpdateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "title", "owner", "status", "description", "payload", "expected_version"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "minLength": 2, "maxLength": 256 },
+          "owner": { "type": "string", "minLength": 2, "maxLength": 128 },
+          "status": { "type": "string", "enum": ["OPEN", "IN_PROGRESS", "READY", "VERIFIED", "REJECTED", "CLOSED"] },
+          "due_at": { "type": ["string", "null"], "format": "date-time" },
+          "description": { "type": "string", "minLength": 4, "maxLength": 2000 },
+          "evidence_uri": { "type": ["string", "null"], "maxLength": 1000 },
+          "evidence_hash": { "type": ["string", "null"], "minLength": 64, "maxLength": 64 },
+          "payload": { "type": "object", "additionalProperties": true },
+          "expected_version": { "type": "integer", "format": "int64", "minimum": 1 }
+        }
+      },
+      "QualityGovernanceRecordVoidRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "expected_version", "reason"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "expected_version": { "type": "integer", "format": "int64", "minimum": 1 },
+          "reason": { "type": "string", "minLength": 8, "maxLength": 500 }
+        }
+      },
+      "QualityGovernanceAgentProposalRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "QualityGovernanceAgentProposal": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quality_governance_agent_proposal_id", "organization_id", "facility_id", "module_code", "parent_resource_id", "evidence_watermark", "risk_level", "summary", "prioritized_actions", "model_policy", "human_review_state", "generated_by", "created_at"],
+        "properties": {
+          "quality_governance_agent_proposal_id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "module_code": { "type": "string", "enum": ["QUALITY_CENTER", "DEPARTMENT_QC", "QUALITY_RATING", "INFECTION_EVENTS", "CREDENTIALS", "ARCHIVE_ASSET"] },
+          "parent_resource_id": { "type": "string", "format": "uuid" },
+          "evidence_watermark": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "risk_level": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+          "summary": { "type": "string", "minLength": 8, "maxLength": 2000 },
+          "prioritized_actions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 10 },
+          "model_policy": { "type": "string", "maxLength": 64 },
+          "human_review_state": { "type": "string", "enum": ["PENDING", "ACCEPTED", "REJECTED"] },
+          "generated_by": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RecordCenterWorklistItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["document_id", "document_version_id", "patient_id", "patient_name", "encounter_id", "encounter_type", "encounter_status", "document_type_code", "status", "version_no", "row_version", "content_hash", "author_name", "open_finding_count", "has_blocking_finding", "has_valid_signature", "updated_at"],
+        "properties": {
+          "document_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "patient_name": { "type": "string" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "encounter_type": { "type": "string", "enum": ["OUTPATIENT", "EMERGENCY", "INPATIENT"] },
+          "encounter_status": { "type": "string" },
+          "department_id": { "type": ["string", "null"], "format": "uuid" },
+          "department_name": { "type": ["string", "null"] },
+          "document_type_code": { "type": "string" },
+          "status": { "type": "string", "enum": ["DRAFT", "READY_TO_SIGN", "SIGNED", "CORRECTED", "VOID"] },
+          "version_no": { "type": "integer", "minimum": 1 },
+          "row_version": { "type": "integer", "minimum": 1 },
+          "content_hash": { "type": "string", "minLength": 64, "maxLength": 64 },
+          "author_name": { "type": "string" },
+          "open_finding_count": { "type": "integer", "minimum": 0 },
+          "has_blocking_finding": { "type": "boolean" },
+          "has_valid_signature": { "type": "boolean" },
+          "review_case_id": { "type": ["string", "null"], "format": "uuid" },
+          "review_status": { "type": ["string", "null"] },
+          "review_priority": { "type": ["string", "null"] },
+          "review_due_at": { "type": ["string", "null"], "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RecordReviewCaseCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["document_id", "document_version_id", "review_scope", "reason", "priority", "due_at"],
+        "properties": {
+          "document_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "review_scope": { "type": "string", "enum": ["RANDOM", "FOCUSED", "TERMINAL", "CORRECTION"] },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 },
+          "priority": { "type": "string", "enum": ["ROUTINE", "HIGH", "URGENT"] },
+          "assignee_user_id": { "type": ["string", "null"], "format": "uuid" },
+          "due_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RecordReviewCaseTransitionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["expected_row_version", "target_status", "reason"],
+        "properties": {
+          "expected_row_version": { "type": "integer", "minimum": 1 },
+          "target_status": { "type": "string", "enum": ["ASSIGNED", "IN_REVIEW", "REMEDIATION", "VERIFIED", "CLOSED", "VOID"] },
+          "reason": { "type": "string", "minLength": 4, "maxLength": 1000 },
+          "assignee_user_id": { "type": ["string", "null"], "format": "uuid" }
+        }
+      },
+      "RecordReviewCase": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["review_case_id", "patient_id", "patient_name", "encounter_id", "document_id", "document_version_id", "review_scope", "reason", "priority", "status", "due_at", "created_by", "created_by_name", "row_version", "created_at", "updated_at"],
+        "properties": {
+          "review_case_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "patient_name": { "type": "string" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "document_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "review_scope": { "type": "string", "enum": ["RANDOM", "FOCUSED", "TERMINAL", "CORRECTION"] },
+          "reason": { "type": "string" },
+          "priority": { "type": "string", "enum": ["ROUTINE", "HIGH", "URGENT"] },
+          "status": { "type": "string", "enum": ["OPEN", "ASSIGNED", "IN_REVIEW", "REMEDIATION", "VERIFIED", "CLOSED", "VOID"] },
+          "assignee_user_id": { "type": ["string", "null"], "format": "uuid" },
+          "assignee_name": { "type": ["string", "null"] },
+          "due_at": { "type": "string", "format": "date-time" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "created_by_name": { "type": "string" },
+          "void_reason": { "type": ["string", "null"] },
+          "row_version": { "type": "integer", "minimum": 1 },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DocumentSignatureVerificationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["organization_id", "facility_id", "patient_id", "encounter_id", "document_version_id"],
+        "properties": {
+          "organization_id": { "type": "string", "format": "uuid" },
+          "facility_id": { "type": "string", "format": "uuid" },
+          "patient_id": { "type": "string", "format": "uuid" },
+          "encounter_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "DocumentSignatureVerificationRun": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["verification_run_id", "document_id", "document_version_id", "outcome", "verified_count", "invalid_count", "provider_code", "details", "verified_at"],
+        "properties": {
+          "verification_run_id": { "type": "string", "format": "uuid" },
+          "document_id": { "type": "string", "format": "uuid" },
+          "document_version_id": { "type": "string", "format": "uuid" },
+          "outcome": { "type": "string", "enum": ["VALID", "INVALID"] },
+          "verified_count": { "type": "integer", "minimum": 0 },
+          "invalid_count": { "type": "integer", "minimum": 0 },
+          "provider_code": { "type": "string" },
+          "details": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+          "verified_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DocumentAuditEvent": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["audit_event_id", "occurred_at", "action_code", "resource_type", "resource_id", "trace_id", "event_hash", "details"],
+        "properties": {
+          "audit_event_id": { "type": "string", "format": "uuid" },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "actor_user_id": { "type": ["string", "null"], "format": "uuid" },
+          "action_code": { "type": "string" },
+          "resource_type": { "type": "string" },
+          "resource_id": { "type": "string", "format": "uuid" },
+          "trace_id": { "type": "string" },
+          "previous_hash": { "type": ["string", "null"] },
+          "event_hash": { "type": "string" },
+          "details": { "type": "object", "additionalProperties": true }
         }
       },
       "EntTreatmentCreateRequest": {

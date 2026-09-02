@@ -93,6 +93,13 @@ export async function runMedicalRecordAssetOcr(lease: ContextLeaseWire, asset: M
   }));
 }
 
+export async function validateMedicalRecordAssetCda(lease: ContextLeaseWire, asset: MedicalRecordAssetWire): Promise<MedicalRecordAssetWire> {
+  return medicalRecordAssetWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/cda-validations`, {
+    method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(medicalRecordAssetActionRequestWireSchema.parse({ ...orgFacilityPatient(), expected_row_version: asset.row_version })),
+  }));
+}
+
 export async function verifyMedicalRecordAssetStorage(lease: ContextLeaseWire, asset: MedicalRecordAssetWire): Promise<MedicalRecordAssetIntegrityEventWire> {
   return medicalRecordAssetIntegrityEventWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/storage-verifications`, {
     method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
@@ -107,24 +114,35 @@ export async function listMedicalRecordAssetDistributionPackages(lease: ContextL
 }
 
 export async function createMedicalRecordAssetDistribution(
-  lease: ContextLeaseWire, asset: MedicalRecordAssetWire, purpose: string, recipientName: string, expiresAt: string,
+  lease: ContextLeaseWire, asset: MedicalRecordAssetWire, input: {
+    purpose: string; recipientName: string; requesterType: MedicalRecordAssetDistributionPackageWire['requester_type'];
+    identityVerificationMethod: string; authorizationBasis: string; copyScope: string;
+    separateConsentConfirmed: boolean; deliveryChannel: MedicalRecordAssetDistributionPackageWire['delivery_channel'];
+    expiresAt: string;
+  },
 ): Promise<MedicalRecordAssetDistributionPackageWire> {
   return medicalRecordAssetDistributionPackageWireSchema.parse(await request(`/medical-record-assets/${asset.medical_record_asset_id}/distribution-packages`, {
     method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify(medicalRecordAssetDistributionCreateRequestWireSchema.parse({
-      ...orgFacilityPatient(), expected_row_version: asset.row_version, purpose, recipient_name: recipientName, expires_at: expiresAt,
+      ...orgFacilityPatient(), expected_row_version: asset.row_version,
+      purpose: input.purpose, recipient_name: input.recipientName, requester_type: input.requesterType,
+      identity_verification_method: input.identityVerificationMethod, authorization_basis: input.authorizationBasis,
+      copy_scope: input.copyScope, separate_consent_confirmed: input.separateConsentConfirmed,
+      delivery_channel: input.deliveryChannel, expires_at: input.expiresAt,
     })),
   }));
 }
 
 export async function deliverMedicalRecordAssetDistribution(
   lease: ContextLeaseWire, asset: MedicalRecordAssetWire, pkg: MedicalRecordAssetDistributionPackageWire,
+  hospitalSealNo: string, deliveryReceiptNo: string,
 ): Promise<MedicalRecordAssetDistributionPackageWire> {
   return medicalRecordAssetDistributionPackageWireSchema.parse(await request(
     `/medical-record-assets/${asset.medical_record_asset_id}/distribution-packages/${pkg.distribution_package_id}/deliveries`, {
       method: 'POST', headers: { ...assetHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(medicalRecordAssetDistributionDeliveryRequestWireSchema.parse({
         ...orgFacilityPatient(), expected_row_version: pkg.row_version,
+        hospital_seal_no: hospitalSealNo, delivery_receipt_no: deliveryReceiptNo,
       })),
     },
   ));
