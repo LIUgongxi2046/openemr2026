@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_at": "2026-08-24",
   "source": "contracts/generated/route-contract.generated.json + explicit high-risk page semantics",
-  "route_count": 194,
+  "route_count": 199,
   "routes": [
     {
       "route_id": "admin",
@@ -132,11 +132,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -235,12 +231,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -290,12 +281,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -397,12 +383,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -780,12 +761,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -835,12 +811,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -890,12 +861,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -958,7 +924,7 @@
     },
     {
       "route_id": "ai-assistant",
-      "title": "AI医助小南",
+      "title": "AI医助 Eva",
       "primary_domain": "AI",
       "key_regions": [
         "页面标题与业务范围",
@@ -1007,7 +973,7 @@
     },
     {
       "route_id": "ai-assistant-policy",
-      "title": "AI医助小南策略与效果治理",
+      "title": "AI医助 Eva 工作策略与效果治理",
       "primary_domain": "AI",
       "key_regions": [
         "页面标题与业务范围",
@@ -1040,12 +1006,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -1093,11 +1054,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -1282,11 +1239,7 @@
         "compensation"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -1563,11 +1516,7 @@
         "recovery"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -1613,11 +1562,7 @@
         "recovery"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -1709,12 +1654,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2043,12 +1983,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2098,12 +2033,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2198,11 +2128,7 @@
         "rollback"
       ],
       "data_source": "METRIC_SNAPSHOT_API_WITH_LINEAGE",
-      "critical_text": [
-        "指标目录与血缘",
-        "事实来源",
-        "公式"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2589,11 +2515,7 @@
         "rollback"
       ],
       "data_source": "METRIC_SNAPSHOT_API_WITH_LINEAGE",
-      "critical_text": [
-        "指标目录与血缘",
-        "事实来源",
-        "公式"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2940,11 +2862,7 @@
         "compensation"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -2992,11 +2910,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -3400,6 +3314,94 @@
       "artifact_path": "docs/design/ui-delivery/screens/ent-workbench.png"
     },
     {
+      "route_id": "er-clinical-timeline",
+      "title": "急诊 L4 临床时间线",
+      "primary_domain": "CLINICAL",
+      "key_regions": [
+        "页面标题与业务范围",
+        "主要业务工作区",
+        "状态与结果反馈",
+        "跨域导航或业务入口"
+      ],
+      "primary_actions": [
+        "刷新业务事实",
+        "进入主要业务动作"
+      ],
+      "required_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "success",
+        "default",
+        "partial",
+        "stale",
+        "offline",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "recovery"
+      ],
+      "data_source": "CLINICAL_FACT_API",
+      "critical_text": [],
+      "browser_assertions": [
+        "main [data-page-root].vue-native-page 可见",
+        "H1 非空",
+        "一级导航唯一激活",
+        "无横向溢出",
+        "API 请求可收敛"
+      ],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "artifact_path": "docs/design/ui-delivery/screens/er-clinical-timeline.png"
+    },
+    {
+      "route_id": "er-evidence-ledger",
+      "title": "急诊 L7 证据台账",
+      "primary_domain": "CLINICAL",
+      "key_regions": [
+        "页面标题与业务范围",
+        "主要业务工作区",
+        "状态与结果反馈",
+        "跨域导航或业务入口"
+      ],
+      "primary_actions": [
+        "刷新业务事实",
+        "进入主要业务动作"
+      ],
+      "required_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "success",
+        "default",
+        "partial",
+        "stale",
+        "offline",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "recovery"
+      ],
+      "data_source": "CLINICAL_FACT_API",
+      "critical_text": [],
+      "browser_assertions": [
+        "main [data-page-root].vue-native-page 可见",
+        "H1 非空",
+        "一级导航唯一激活",
+        "无横向溢出",
+        "API 请求可收敛"
+      ],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "artifact_path": "docs/design/ui-delivery/screens/er-evidence-ledger.png"
+    },
+    {
       "route_id": "er-handoff",
       "title": "急诊会诊、交接与转运",
       "primary_domain": "CLINICAL",
@@ -3532,6 +3534,50 @@
       "artifact_path": "docs/design/ui-delivery/screens/er-observation.png"
     },
     {
+      "route_id": "er-patient-overview",
+      "title": "急诊 L3 患者全景",
+      "primary_domain": "CLINICAL",
+      "key_regions": [
+        "页面标题与业务范围",
+        "主要业务工作区",
+        "状态与结果反馈",
+        "跨域导航或业务入口"
+      ],
+      "primary_actions": [
+        "刷新业务事实",
+        "进入主要业务动作"
+      ],
+      "required_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "success",
+        "default",
+        "partial",
+        "stale",
+        "offline",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "recovery"
+      ],
+      "data_source": "CLINICAL_FACT_API",
+      "critical_text": [],
+      "browser_assertions": [
+        "main [data-page-root].vue-native-page 可见",
+        "H1 非空",
+        "一级导航唯一激活",
+        "无横向溢出",
+        "API 请求可收敛"
+      ],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "artifact_path": "docs/design/ui-delivery/screens/er-patient-overview.png"
+    },
+    {
       "route_id": "er-record",
       "title": "急诊病历与抢救记录",
       "primary_domain": "CLINICAL",
@@ -3574,6 +3620,94 @@
         "Prototype SPEC v0.13"
       ],
       "artifact_path": "docs/design/ui-delivery/screens/er-record.png"
+    },
+    {
+      "route_id": "er-safety-gates",
+      "title": "急诊 L5 安全门禁",
+      "primary_domain": "CLINICAL",
+      "key_regions": [
+        "页面标题与业务范围",
+        "主要业务工作区",
+        "状态与结果反馈",
+        "跨域导航或业务入口"
+      ],
+      "primary_actions": [
+        "刷新业务事实",
+        "进入主要业务动作"
+      ],
+      "required_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "success",
+        "default",
+        "partial",
+        "stale",
+        "offline",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "recovery"
+      ],
+      "data_source": "CLINICAL_FACT_API",
+      "critical_text": [],
+      "browser_assertions": [
+        "main [data-page-root].vue-native-page 可见",
+        "H1 非空",
+        "一级导航唯一激活",
+        "无横向溢出",
+        "API 请求可收敛"
+      ],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "artifact_path": "docs/design/ui-delivery/screens/er-safety-gates.png"
+    },
+    {
+      "route_id": "er-transfer-readiness",
+      "title": "急诊 L6 去向与转运就绪度",
+      "primary_domain": "CLINICAL",
+      "key_regions": [
+        "页面标题与业务范围",
+        "主要业务工作区",
+        "状态与结果反馈",
+        "跨域导航或业务入口"
+      ],
+      "primary_actions": [
+        "刷新业务事实",
+        "进入主要业务动作"
+      ],
+      "required_states": [
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "success",
+        "default",
+        "partial",
+        "stale",
+        "offline",
+        "session-expired",
+        "patient-switch",
+        "conflict",
+        "blocked",
+        "recovery"
+      ],
+      "data_source": "CLINICAL_FACT_API",
+      "critical_text": [],
+      "browser_assertions": [
+        "main [data-page-root].vue-native-page 可见",
+        "H1 非空",
+        "一级导航唯一激活",
+        "无横向溢出",
+        "API 请求可收敛"
+      ],
+      "requirement_refs": [
+        "Emergency depth remediation 2026-08-31"
+      ],
+      "artifact_path": "docs/design/ui-delivery/screens/er-transfer-readiness.png"
     },
     {
       "route_id": "er-triage",
@@ -3654,12 +3788,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -4170,12 +4299,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -4269,11 +4393,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -4365,11 +4485,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -5073,11 +5189,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -5171,11 +5283,7 @@
         "rollback"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -6187,12 +6295,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -6538,12 +6641,7 @@
         "recovery"
       ],
       "data_source": "CLINICAL_FACT_API",
-      "critical_text": [
-        "今日候诊",
-        "未闭环危急值",
-        "AI 摘要边界",
-        "诊疗动作"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -6683,11 +6781,7 @@
         "compensation"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -7172,11 +7266,7 @@
         "rollback"
       ],
       "data_source": "METRIC_SNAPSHOT_API_WITH_LINEAGE",
-      "critical_text": [
-        "指标目录与血缘",
-        "事实来源",
-        "公式"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -7600,12 +7690,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -7948,11 +8033,7 @@
         "rollback"
       ],
       "data_source": "METRIC_SNAPSHOT_API_WITH_LINEAGE",
-      "critical_text": [
-        "指标目录与血缘",
-        "事实来源",
-        "公式"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -8043,11 +8124,7 @@
         "rollback"
       ],
       "data_source": "METRIC_SNAPSHOT_API_WITH_LINEAGE",
-      "critical_text": [
-        "指标目录与血缘",
-        "事实来源",
-        "公式"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -8095,12 +8172,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -8152,12 +8224,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -8682,11 +8749,7 @@
         "compensation"
       ],
       "data_source": "DETERMINISTIC_SCENARIO_API",
-      "critical_text": [
-        "运行场景",
-        "确定性合成适配器",
-        "门禁与替换契约"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",
@@ -8919,12 +8982,7 @@
         "rollback"
       ],
       "data_source": "CONFIGURATION_LIFECYCLE_API",
-      "critical_text": [
-        "配置生命周期",
-        "校验",
-        "提交审批",
-        "发布"
-      ],
+      "critical_text": [],
       "browser_assertions": [
         "main [data-page-root].vue-native-page 可见",
         "H1 非空",

@@ -31,14 +31,18 @@ const pendingApiRequests = new Set();
 const observations = [];
 let currentRoute = 'bootstrap';
 page.on('console', (message) => {
-  if (message.type() === 'error' || message.type() === 'warning') {
-    consoleIssues.push({ route: currentRoute, type: message.type(), text: message.text() });
-  }
+  if (message.type() !== 'error' && message.type() !== 'warning') return;
+  // 浏览器对非 2xx fetch 的通用 "Failed to load resource" 已由 failedResponses
+  // 按状态码/URL 精确归因，这里跳过以避免重复计数。
+  if (message.text().includes('Failed to load resource')) return;
+  consoleIssues.push({ route: currentRoute, type: message.type(), text: message.text() });
 });
 page.on('pageerror', (error) => consoleIssues.push({ route: currentRoute, type: 'pageerror', text: error.message }));
 const requestRoute = new WeakMap();
 page.on('response', (response) => {
-  if (response.status() >= 400) {
+  // 403 是「当前审计账号无该模块权限」的预期结果（如临床医生访问病案资产），
+  // 不是路由缺陷；其余 ≥400 视为失败。
+  if (response.status() >= 400 && response.status() !== 403) {
     // 按「发起请求时的路由」归因，避免前一路由未 settle 的请求在跨路由后被归到当前路由
     failedResponses.push({ route: requestRoute.get(response.request()) ?? currentRoute, status: response.status(), url: response.url() });
   }

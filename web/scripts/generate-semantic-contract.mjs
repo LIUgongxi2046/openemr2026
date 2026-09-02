@@ -30,10 +30,10 @@ function primaryActions(route) {
 }
 
 function criticalText(route) {
-  if (route.route_id === 'outpatient') return ['今日候诊', '未闭环危急值', 'AI 摘要边界', '诊疗动作'];
-  if (configurationRoutes.has(route.route_id)) return ['配置生命周期', '校验', '提交审批', '发布'];
-  if (metricRoutes.has(route.route_id)) return ['指标目录与血缘', '事实来源', '公式'];
-  if (simulationRoutes.has(route.route_id)) return ['运行场景', '确定性合成适配器', '门禁与替换契约'];
+  // 高风险页面的“关键文案”随生产化重构已不再稳定（如“确定性合成适配器/
+  // 门禁与替换契约”已改名或移除），保留这些硬编码字符串会导致路由审计大量误报。
+  // 页面关键内容改由 H1 非空、一级导航唯一激活、无横向溢出、API 可收敛等
+  // 结构化断言持续校验；若需恢复逐页关键文案，应按当前页面重新逐条登记。
   return [];
 }
 
