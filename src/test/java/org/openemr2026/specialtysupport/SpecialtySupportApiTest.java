@@ -118,15 +118,16 @@ final class SpecialtySupportApiTest {
     @Test
     void givenMissingEvidence_whenClaimingPositiveSupport_thenTheDeclarationIsRejected() throws Exception {
         UUID departmentId = UUID.randomUUID();
-        seedDepartmentAndPack(departmentId, UUID.randomUUID());
+        UUID packReleaseId = UUID.randomUUID();
+        seedDepartmentAndPack(departmentId, packReleaseId);
         Lease lease = issueOrganizationLease();
         MvcResult response = send("PUT",
                 "/api/v1/specialty-support/" + FACILITY + "/" + departmentId + "/MENTAL", """
                         {"organization_id":"%s","support_level":"BASIC_CLOSED_LOOP",
-                         "pack_release_id":null,"evidence_bundle_hash":null,
+                         "pack_release_id":"%s","evidence_bundle_hash":null,
                          "missing_safety_gates":["RESTRICTED_DATA_REVIEW"],
                          "expires_at":"2027-08-14T00:00:00Z","expected_row_version":0}
-                        """.formatted(ORGANIZATION), lease, UUID.randomUUID().toString());
+                        """.formatted(ORGANIZATION, packReleaseId), lease, UUID.randomUUID().toString());
 
         assertThat(response.getResponse().getStatus()).isEqualTo(409);
         assertThat(response.getResponse().getContentAsString()).contains("SAFETY_GATE_MISSING");

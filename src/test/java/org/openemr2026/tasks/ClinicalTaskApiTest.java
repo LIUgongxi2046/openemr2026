@@ -32,6 +32,8 @@ final class ClinicalTaskApiTest {
     private static final String ROLE = "018f0000-0000-7000-8000-00000000aa05";
     private static final String COLLABORATOR = "018f0000-0000-7000-8000-00000000aa06";
     private static final String COLLABORATOR_ROLE = "018f0000-0000-7000-8000-00000000aa07";
+    private static final String LAB_TECHNICIAN = "d1281807-abb4-3065-90e2-861ec72869fe";
+    private static final String LAB_TECHNICIAN_ROLE = "eff92d2b-de27-377a-9d5e-12c8371d048b";
 
     @LocalServerPort
     private int port;
@@ -83,12 +85,13 @@ final class ClinicalTaskApiTest {
         HttpResponse<String> forbiddenCompletion = taskCommand(context, lease, taskId, "complete", 3);
         assertThat(forbiddenCompletion.statusCode()).isEqualTo(404);
 
-        HttpResponse<String> execution = send("POST", "/api/v1/executions/" + executionTaskId + "/events", """
+        Lease labTechnicianLease = issueLeaseAs(context, LAB_TECHNICIAN, LAB_TECHNICIAN_ROLE);
+        HttpResponse<String> execution = sendAs("POST", "/api/v1/executions/" + executionTaskId + "/events", """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
                  "event_type":"COMPLETED","expected_task_row_version":1,"performed_quantity":1,
                  "quantity_unit":"次","note":"来源业务完成"}
                 """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
-                lease, context, UUID.randomUUID().toString());
+                labTechnicianLease, context, UUID.randomUUID().toString(), LAB_TECHNICIAN, LAB_TECHNICIAN_ROLE);
         assertThat(execution.statusCode()).isEqualTo(200);
 
         JsonNode completed = objectMapper.readTree(send(
@@ -211,13 +214,14 @@ final class ClinicalTaskApiTest {
                 collaboratorLease, context, UUID.randomUUID().toString(), COLLABORATOR, COLLABORATOR_ROLE).body());
         assertThat(escalationClaim.path("claimed_by").stringValue()).isEqualTo(COLLABORATOR);
 
+        Lease labTechnicianLease = issueLeaseAs(context, LAB_TECHNICIAN, LAB_TECHNICIAN_ROLE);
         HttpResponse<String> execution = sendAs(
                 "POST", "/api/v1/executions/" + executionTaskId + "/events", """
                 {"organization_id":"%s","facility_id":"%s","patient_id":"%s","encounter_id":"%s",
                  "event_type":"COMPLETED","expected_task_row_version":1,"performed_quantity":1,
                  "quantity_unit":"次","note":"协作后仍由来源业务完成"}
                 """.formatted(ORGANIZATION, FACILITY, context.patientId(), context.encounterId()),
-                collaboratorLease, context, UUID.randomUUID().toString(), COLLABORATOR, COLLABORATOR_ROLE);
+                labTechnicianLease, context, UUID.randomUUID().toString(), LAB_TECHNICIAN, LAB_TECHNICIAN_ROLE);
         assertThat(execution.statusCode()).isEqualTo(200);
 
         assertThat(jdbc.sql("""

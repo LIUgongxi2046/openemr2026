@@ -46,7 +46,7 @@ final class TertiaryBusinessConfigurationDatasetImportTest {
             assertThat(profiles).extracting(seed -> String.valueOf(seed.payload().get("profile_code")))
                     .doesNotHaveDuplicates().allSatisfy(code -> assertThat(code).isNotBlank());
             assertThat(profiles).allSatisfy(seed -> assertThat(seed.payload())
-                    .containsEntry("fixture_source", "tertiary-hospital-business-config-v2")
+                    .containsEntry("fixture_source", "tertiary-hospital-business-config-v3")
                     .containsEntry("hospital_level", "三级甲等")
                     .containsEntry("organization", "江城大学附属医院")
                     .containsKeys("controls", "evidence", "data_policy"));
@@ -75,7 +75,7 @@ final class TertiaryBusinessConfigurationDatasetImportTest {
                     from config_item
                     where tenant_id = :tenant and config_type = :type
                       and status = 'ACTIVE'
-                      and payload->>'fixture_source' = 'tertiary-hospital-business-config-v2'
+                      and payload->>'fixture_source' = 'tertiary-hospital-business-config-v3'
                     """).param("tenant", SyntheticDataImporter.TENANT_ID).param("type", type)
                     .query((rs, row) -> Map.of(
                             "configurations", rs.getInt("configurations"),
@@ -92,7 +92,7 @@ final class TertiaryBusinessConfigurationDatasetImportTest {
                 join config_item_revision revision on revision.tenant_id = item.tenant_id
                   and revision.config_id = item.config_id
                 where item.tenant_id = :tenant
-                  and item.payload->>'fixture_source' = 'tertiary-hospital-business-config-v2'
+                  and item.payload->>'fixture_source' = 'tertiary-hospital-business-config-v3'
                   and item.config_key like 'runtime-%'
                 """).param("tenant", SyntheticDataImporter.TENANT_ID).query(Integer.class).single();
         assertThat(revisions).isEqualTo(32);
