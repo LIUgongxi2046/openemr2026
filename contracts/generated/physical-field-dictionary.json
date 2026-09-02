@@ -232,7 +232,8 @@
     "src/main/resources/db/migration/V330__record_center_worklist_and_review_case.sql",
     "src/main/resources/db/migration/V340__document_signature_verification_run.sql",
     "src/main/resources/db/migration/V341__infection_cn_reporting.sql",
-    "src/main/resources/db/migration/V342__medical_record_asset_facility_scope.sql"
+    "src/main/resources/db/migration/V342__medical_record_asset_facility_scope.sql",
+    "src/main/resources/db/migration/V343__expand_medical_agent_team.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
   "field_count": 3156,
