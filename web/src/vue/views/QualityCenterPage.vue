@@ -21,7 +21,7 @@ const verifiedProjects = computed(() => new Set((ratingQuery.data.value ?? []).f
 <template>
   <section data-page-root class="content vue-native-page quality-center-page">
     <div class="page-head"><div class="page-title"><h1>医疗质量中心</h1><p>院科病历质量、评级证据、院感事件和临床资质统一治理</p></div><div class="head-actions"><RouterLink class="btn" to="/quality-center/initiatives">角色工作台</RouterLink><RouterLink class="btn primary" to="/clinical-tasks">查看全部待办</RouterLink></div></div>
-    <section class="hub-hero" aria-label="医疗质量中心治理摘要"><div><span>QUALITY &amp; SAFETY</span><h2>把每个质量指标落回患者、文书、规则、缺陷和整改证据</h2><p>功能存在不等于有效应用；中心同时呈现覆盖范围、数据质量、问题工单、整改复核与评级取证快照。具体病历和病案证据使用明确跨域入口查看。</p></div><div class="hub-score"><b>{{ leaseQuery.isPending.value || ratingQuery.isPending.value ? '…' : `${mappedProjects}/39` }}</b><span>已建档范围，其中 {{ verifiedProjects }} 项已验证</span></div></section>
+    <section class="hub-hero" aria-label="医疗质量中心治理摘要"><div><span>质量与安全</span><h2>把每个质量指标落回患者、文书、规则、缺陷和整改证据</h2><p>功能存在不等于有效应用；中心同时呈现覆盖范围、数据质量、问题工单、整改复核与评级取证快照。具体病历和病案证据使用明确跨域入口查看。</p></div><div class="hub-score"><b>{{ leaseQuery.isPending.value || ratingQuery.isPending.value ? '…' : `${mappedProjects}/39` }}</b><span>已建档范围，其中 {{ verifiedProjects }} 项已验证</span></div></section>
     <nav class="hub-module-grid quality-center-modules" aria-label="医疗质量中心功能入口"><RouterLink v-for="item in modules" :key="item.to" class="hub-module" :to="item.to"><span>{{ item.icon }}</span><b>{{ item.title }}</b><p>{{ item.description }}</p><i>进入 →</i></RouterLink></nav>
   </section>
 </template>

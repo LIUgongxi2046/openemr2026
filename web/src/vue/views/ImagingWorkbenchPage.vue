@@ -140,7 +140,7 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
     <template v-else>
       <section class="admin-metrics" aria-label="影像检查统计">
         <article><span>检查数</span><strong>{{ orders.length }}</strong><small>当前患者</small></article>
-        <article><span>已报告</span><strong>{{ reportedCount }}</strong><small>REPORTED</small></article>
+        <article><span>已报告</span><strong>{{ reportedCount }}</strong></article>
         <article><span>造影剂</span><strong>{{ orders.filter((o) => o.contrast_required).length }}</strong><small>需造影</small></article>
       </section>
 

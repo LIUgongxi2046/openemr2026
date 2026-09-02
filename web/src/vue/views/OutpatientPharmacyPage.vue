@@ -92,8 +92,8 @@ async function transition(dispensing: PharmacyDispensingWire, action: 'VERIFY' |
     <template v-else>
       <section class="admin-metrics" aria-label="门诊药房统计">
         <article><span>调剂笔数</span><strong>{{ dispensings.length }}</strong><small>当前患者</small></article>
-        <article><span>待核验</span><strong>{{ preparedCount }}</strong><small>PREPARED</small></article>
-        <article><span>已发药</span><strong>{{ dispensedCount }}</strong><small>DISPENSED</small></article>
+        <article><span>待核验</span><strong>{{ preparedCount }}</strong></article>
+        <article><span>已发药</span><strong>{{ dispensedCount }}</strong></article>
       </section>
 
       <section class="admin-panel">

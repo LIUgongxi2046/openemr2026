@@ -111,8 +111,8 @@ async function submitReverse(charge: ChargeItemWire) {
     <template v-else>
       <section class="admin-metrics" aria-label="收费统计">
         <article><span>收费笔数</span><strong>{{ charges.length }}</strong><small>当前就诊</small></article>
-        <article><span>已收金额</span><strong>{{ totalAmount.toFixed(2) }}</strong><small>CHARGED</small></article>
-        <article><span>冲正笔数</span><strong>{{ reversedCount }}</strong><small>REVERSED</small></article>
+        <article><span>已收金额</span><strong>{{ totalAmount.toFixed(2) }}</strong></article>
+        <article><span>冲正笔数</span><strong>{{ reversedCount }}</strong></article>
       </section>
 
       <section class="admin-panel">

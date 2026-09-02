@@ -153,8 +153,8 @@ async function transition() {
     <template v-else>
       <section class="admin-metrics" aria-label="会诊转诊统计">
         <article><span>转诊记录</span><strong>{{ items.length }}</strong><small>患者 …{{ clinicalContext.patientId.slice(-8) }}</small></article>
-        <article><span>待发送</span><strong>{{ items.filter((i) => i.status === 'DRAFT').length }}</strong><small>DRAFT</small></article>
-        <article><span>已接受</span><strong>{{ items.filter((i) => i.status === 'ACCEPTED').length }}</strong><small>ACCEPTED</small></article>
+        <article><span>待发送</span><strong>{{ items.filter((i) => i.status === 'DRAFT').length }}</strong></article>
+        <article><span>已接受</span><strong>{{ items.filter((i) => i.status === 'ACCEPTED').length }}</strong></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 

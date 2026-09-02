@@ -175,7 +175,7 @@ async function computeMember() {
     <template v-else>
       <section class="admin-metrics" aria-label="队列统计">
         <article><span>队列总数</span><strong>{{ cohorts.length }}</strong><small>当前筛选</small></article>
-        <article><span>有效队列</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
+        <article><span>有效队列</span><strong>{{ activeCount }}</strong></article>
         <article><span>快照数</span><strong>{{ selectedCohort ? snapshots.length : 0 }}</strong><small>{{ selectedCohort ? selectedCohort.cohort_code : '未选择' }}</small></article>
         <article><span>成员数</span><strong>{{ selectedCohort ? members.length : 0 }}</strong><small>{{ selectedCohort ? selectedCohort.cohort_code : '未选择' }}</small></article>
       </section>

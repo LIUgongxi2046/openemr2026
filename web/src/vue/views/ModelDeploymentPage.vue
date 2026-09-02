@@ -238,7 +238,7 @@ async function revokeProcessingApproval() {
     <template v-else>
       <section class="admin-metrics" aria-label="模型部署统计">
         <article><span>模型部署</span><strong>{{ models.length }}</strong><small>全部登记</small></article>
-        <article><span>有效部署</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
+        <article><span>有效部署</span><strong>{{ activeCount }}</strong></article>
         <article><span>API 已就绪</span><strong>{{ connectedCount }}</strong><small>已通过真实连通验证</small></article>
         <article><span>未就绪连接</span><strong>{{ Math.max(activeCount - connectedCount, 0) }}</strong><small>需补充连接配置</small></article>
       </section>

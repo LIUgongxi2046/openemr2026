@@ -101,7 +101,7 @@ async function record() {
     <template v-else>
       <section class="admin-metrics" aria-label="评估统计">
         <article><span>评估记录</span><strong>{{ evaluations.length }}</strong><small>当前模型</small></article>
-        <article><span>通过</span><strong>{{ passedCount }}</strong><small>PASSED</small></article>
+        <article><span>通过</span><strong>{{ passedCount }}</strong></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 

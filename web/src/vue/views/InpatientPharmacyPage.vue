@@ -180,7 +180,7 @@ async function voidDispensing() {
       <section class="admin-metrics" aria-label="住院药房统计">
         <article><span>摆药笔数</span><strong>{{ dispensings.length }}</strong><small>当前患者</small></article>
         <article><span>未发药</span><strong>{{ pendingCount }}</strong><small>待核验 / 待发</small></article>
-        <article><span>已发药</span><strong>{{ dispensings.filter((item) => item.status === 'DISPENSED').length }}</strong><small>DISPENSED</small></article>
+        <article><span>已发药</span><strong>{{ dispensings.filter((item) => item.status === 'DISPENSED').length }}</strong></article>
         <article><span>已作废</span><strong>{{ voidedCount }}</strong><small>保留审计证据</small></article>
       </section>
 

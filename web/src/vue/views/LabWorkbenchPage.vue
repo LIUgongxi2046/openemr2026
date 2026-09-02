@@ -154,8 +154,8 @@ async function reject() {
     <template v-else>
       <section class="admin-metrics" aria-label="检验标本统计">
         <article><span>标本数</span><strong>{{ specimens.length }}</strong><small>当前就诊</small></article>
-        <article><span>已采集</span><strong>{{ collectedCount }}</strong><small>COLLECTED</small></article>
-        <article><span>已接收</span><strong>{{ receivedCount }}</strong><small>RECEIVED</small></article>
+        <article><span>已采集</span><strong>{{ collectedCount }}</strong></article>
+        <article><span>已接收</span><strong>{{ receivedCount }}</strong></article>
       </section>
 
       <section class="admin-panel">

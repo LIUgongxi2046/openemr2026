@@ -148,8 +148,8 @@ async function destroySelected() { if (selectedRequest.value) await destroy(sele
     <template v-else>
       <section class="admin-metrics" aria-label="请求统计">
         <article><span>当前请求</span><strong>{{ requests.length }}</strong><small>默认排除终态历史</small></article>
-        <article><span>待审批</span><strong>{{ requestedCount }}</strong><small>REQUESTED</small></article>
-        <article><span>已导出</span><strong>{{ exportedCount }}</strong><small>EXPORTED</small></article>
+        <article><span>待审批</span><strong>{{ requestedCount }}</strong></article>
+        <article><span>已导出</span><strong>{{ exportedCount }}</strong></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
 

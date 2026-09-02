@@ -282,7 +282,7 @@ async function deactivate(rule: DataQualityRuleWire) {
     <template v-else>
       <section class="admin-metrics" aria-label="数据质量统计">
         <article><span>规则总数</span><strong>{{ rules.length }}</strong><small>当前筛选</small></article>
-        <article><span>有效规则</span><strong>{{ activeCount }}</strong><small>ACTIVE</small></article>
+        <article><span>有效规则</span><strong>{{ activeCount }}</strong></article>
         <article><span>阻断级问题</span><strong>{{ blockingCount }}</strong><small>影响新业务流程</small></article>
         <article><span>警告级问题</span><strong>{{ warningCount }}</strong><small>进入整改队列</small></article>
       </section>

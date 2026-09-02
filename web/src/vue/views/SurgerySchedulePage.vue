@@ -102,7 +102,7 @@ async function transition(procedure: SurgicalProcedureWire, action: 'TIME_OUT' |
       <section class="admin-metrics" aria-label="手术排程统计">
         <article><span>手术台次</span><strong>{{ procedures.length }}</strong><small>当前患者</small></article>
         <article><span>已核查</span><strong>{{ timeoutCount }}</strong><small>TIME_OUT</small></article>
-        <article><span>已完成</span><strong>{{ procedures.filter((p) => p.status === 'COMPLETED').length }}</strong><small>COMPLETED</small></article>
+        <article><span>已完成</span><strong>{{ procedures.filter((p) => p.status === 'COMPLETED').length }}</strong></article>
       </section>
 
       <section class="admin-panel">

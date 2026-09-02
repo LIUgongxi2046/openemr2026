@@ -23,7 +23,7 @@ const modules = [
 
     <section class="hub-hero" aria-label="数据中心治理摘要">
       <div>
-        <span>TRUSTED DATA CENTER</span>
+        <span>可信数据中心</span>
         <h2>技术消息、临床对象、数据质量和利用授权在同一治理链上可追溯</h2>
         <p>数据中心不成为绕过临床权限的超级入口；每个页面继续执行患者关系、项目用途、最小字段和导出审批。</p>
       </div>

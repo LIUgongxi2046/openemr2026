@@ -152,7 +152,7 @@ function go(to: string): void {
   <section class="portal-ai-intro" aria-labelledby="portal-ai-title">
     <img src="/brand/ai-medical-assistant-eva.png" alt="" width="52" height="52" />
     <div class="portal-ai-copy">
-      <span>AI CAPABILITIES</span>
+      <span>AI 能力</span>
       <h2 id="portal-ai-title">AI医助 Eva 随诊协同</h2>
       <p>结合当前患者、就诊、页面和任务上下文，提供有来源、可回看的诊疗辅助；所有结果均需医务人员确认后才能进入业务流程。</p>
     </div>
