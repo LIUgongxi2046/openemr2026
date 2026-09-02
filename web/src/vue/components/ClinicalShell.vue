@@ -58,19 +58,19 @@ const guideTarget = ref<string | null>(null);
 interface NavItem { id: string; label: string; icon: string; group: string; count?: string }
 const navigation: NavItem[] = [
   { id: 'clinical', label: '临床业务门户', icon: '⌂', group: '临床工作域' },
-  { id: 'outpatient', label: '门诊工作台', icon: '◫', group: '临床工作域', count: '6' },
-  { id: 'emergency', label: '急诊工作台', icon: '✚', group: '临床工作域', count: '6' },
-  { id: 'inpatient', label: '住院工作站', icon: '▥', group: '临床工作域', count: '5' },
-  { id: 'record', label: '全院病历中心', icon: '▤', group: '病历与质量', count: '3' },
-  { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量', count: '7' },
-  { id: 'archive-assets', label: '病案资产中心', icon: '▣', group: '病历与质量', count: '3' },
-  { id: 'care-operations', label: '诊疗执行中心', icon: '✚', group: '业务协同', count: '12' },
-  { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同', count: '9' },
-  { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心', count: '6' },
-  { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心', count: '9' },
-  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心', count: '13' },
+  { id: 'outpatient', label: '门诊工作台', icon: '◫', group: '临床工作域' },
+  { id: 'emergency', label: '急诊工作台', icon: '✚', group: '临床工作域' },
+  { id: 'inpatient', label: '住院工作站', icon: '▥', group: '临床工作域' },
+  { id: 'record', label: '全院病历中心', icon: '▤', group: '病历与质量' },
+  { id: 'quality-center', label: '医疗质量中心', icon: '◈', group: '病历与质量' },
+  { id: 'archive-assets', label: '病案资产中心', icon: '▣', group: '病历与质量' },
+  { id: 'care-operations', label: '诊疗执行中心', icon: '✚', group: '业务协同' },
+  { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同' },
+  { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心' },
+  { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心' },
+  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心' },
   { id: 'workflow', label: '业务配置', icon: '⌘', group: '管理与配置' },
-  { id: 'admin', label: '系统管理', icon: '⚙', group: '管理与配置', count: '7' },
+  { id: 'admin', label: '系统管理', icon: '⚙', group: '管理与配置' },
 ];
 
 const groups = computed(() => {
@@ -444,7 +444,7 @@ async function closeAssistant() {
           class="nav-item"
           :class="{ active: isActive(item.id) }"
           :aria-current="isActive(item.id) ? 'page' : undefined"
-        ><span class="nav-icon" aria-hidden="true">{{ item.icon }}</span><span class="nav-label">{{ item.label }}</span><span v-if="item.count" class="nav-count">{{ item.count }}</span></RouterLink>
+        ><span class="nav-icon" aria-hidden="true">{{ item.icon }}</span><span class="nav-label">{{ item.label }}</span></RouterLink>
       </template>
     </aside>
     <main id="main-content" class="main">

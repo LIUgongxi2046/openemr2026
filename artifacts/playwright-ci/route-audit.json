@@ -1,8 +1,1658 @@
 {
-  "routes": 194,
-  "verified": 194,
-  "failures": [],
+  "routes": 199,
+  "verified": 0,
+  "failures": [
+    {
+      "route": "admin",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-audit",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-auth",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "admin-auth",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "admin-auth",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "admin-auth",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-dictionaries",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "admin-jobs",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "admin-master-data",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-org",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "admin-parameters",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-permissions",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-roles",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-templates",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admin-users",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "admission-bed",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "agent",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "agent-catalog",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "agent-compose",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "agent-compose",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "agent-compose",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "agent-compose",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "agent-compose",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "agent-context",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "agent-context",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "agent-context",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "agent-context",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "agent-context",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "agent-evals",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "agent-evals",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "agent-evals",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "agent-evals",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "agent-evals",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-action-review",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-assistant",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "ai-assistant-policy",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-capture",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "ai-capture",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "ai-capture",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "ai-capture",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-center",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ai-reminder-detail",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "aiops",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "anesthesia-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "anesthesia-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "anesthesia-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "anesthesia-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "appointment-registration",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-assets",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-borrow",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-catalog",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-integrity",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-preservation",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "archive-preservation",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "archive-preservation",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "archive-preservation",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "archive-scan",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "archive-scan",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "archive-scan",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "archive-scan",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "asset-detail",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "backup",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "backup",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "backup",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "backup",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "backup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "billing",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "capability-pack",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "care-operations",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "clinical",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "clinical-tasks",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "cohort-builder",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "config-release",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "config-release",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "config-release",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "config-release",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "config-release",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "config-upgrade",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "credentials",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "data-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "指标目录与血缘"
+    },
+    {
+      "route": "data-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    },
+    {
+      "route": "data-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "公式"
+    },
+    {
+      "route": "data-center",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "data-quality",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dental-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "department-qc",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "指标目录与血缘"
+    },
+    {
+      "route": "department-qc",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    },
+    {
+      "route": "department-qc",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "公式"
+    },
+    {
+      "route": "department-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "dermatology-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "device-monitoring",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "device-monitoring",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "device-monitoring",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "device-monitoring",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "devices",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "devices",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "devices",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "devices",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "emergency",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "emergency-access",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ent-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-clinical-timeline",
+      "issue": "SEMANTIC_CONTRACT_MISSING"
+    },
+    {
+      "route": "er-clinical-timeline",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-evidence-ledger",
+      "issue": "SEMANTIC_CONTRACT_MISSING"
+    },
+    {
+      "route": "er-evidence-ledger",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-handoff",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-nursing",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-observation",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-patient-overview",
+      "issue": "SEMANTIC_CONTRACT_MISSING"
+    },
+    {
+      "route": "er-patient-overview",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-safety-gates",
+      "issue": "SEMANTIC_CONTRACT_MISSING"
+    },
+    {
+      "route": "er-safety-gates",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-transfer-readiness",
+      "issue": "SEMANTIC_CONTRACT_MISSING"
+    },
+    {
+      "route": "er-transfer-readiness",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "er-triage",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "form-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "form-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "form-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "form-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "form-designer",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "imaging-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "infection-events",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-course",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-discharge",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-doc-editor",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-doc-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-doc-versions",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-overview",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "inpatient-pharmacy",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "install",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "install",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "install",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "install",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "install",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "integration",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "integration-connectors",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "integration-connectors",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "integration-connectors",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "integration-connectors",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "integration-mapping",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "integration-messages",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "integration-messages",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "integration-messages",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "integration-messages",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ip-consult",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ip-orders",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ip-pathway",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ip-results",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "lab-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "lis-report",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "login-context",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "mental-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "migration",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "model-connection",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "model-connection",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "model-connection",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "model-connection",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "model-evaluation",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "model-routing",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "model-routing",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "model-routing",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "model-routing",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "models",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "neonatal-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "obgyn-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-consult",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-diagnosis",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-orders",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opd-results",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "opensource",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "operations",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "operations",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "operations",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "operations",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "operations",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ophthalmology-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "outpatient",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "今日候诊"
+    },
+    {
+      "route": "outpatient",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "未闭环危急值"
+    },
+    {
+      "route": "outpatient",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "AI 摘要边界"
+    },
+    {
+      "route": "outpatient",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "诊疗动作"
+    },
+    {
+      "route": "outpatient",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "outpatient-pharmacy",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pacs-viewer",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pathology-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "pathology-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "pathology-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "pathology-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "patient-merge",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "patient-registry",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "patient-timeline",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "pediatrics-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "quality-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "指标目录与血缘"
+    },
+    {
+      "route": "quality-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    },
+    {
+      "route": "quality-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "公式"
+    },
+    {
+      "route": "quality-center",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "quality-rating",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-diff",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-editor",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-sign",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-sources",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "record-versions",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "release-gates",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "release-gates",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "release-gates",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "release-gates",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "release-gates",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "reproductive-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "research",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "指标目录与血缘"
+    },
+    {
+      "route": "research",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    },
+    {
+      "route": "research",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "公式"
+    },
+    {
+      "route": "research",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "research-dataset",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "research-stats",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "指标目录与血缘"
+    },
+    {
+      "route": "research-stats",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "事实来源"
+    },
+    {
+      "route": "research-stats",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "公式"
+    },
+    {
+      "route": "research-stats",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "rule-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "rule-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "rule-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "rule-center",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "rule-center",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "scope-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "scope-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "scope-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "scope-designer",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "scope-designer",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "skill-catalog",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "specialty-center",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "specialty-coverage",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "surgery-schedule",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-care",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-evidence",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-followup",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-qc",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-record",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-treatment",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tcm-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "therapy-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "运行场景"
+    },
+    {
+      "route": "therapy-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "确定性合成适配器"
+    },
+    {
+      "route": "therapy-workbench",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "门禁与替换契约"
+    },
+    {
+      "route": "therapy-workbench",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "tool-catalog",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "transfusion",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "unified-home",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "ward",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "workflow",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "配置生命周期"
+    },
+    {
+      "route": "workflow",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "校验"
+    },
+    {
+      "route": "workflow",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "提交审批"
+    },
+    {
+      "route": "workflow",
+      "issue": "CRITICAL_SEMANTIC_TEXT_MISSING",
+      "text": "发布"
+    },
+    {
+      "route": "workflow",
+      "issue": "PRIMARY_NAV_ACTIVE_COUNT",
+      "actual": 0
+    },
+    {
+      "route": "unknown",
+      "issue": "UNKNOWN_ROUTE_NOT_FAIL_CLOSED"
+    }
+  ],
   "consoleIssues": [],
   "failedResponses": [],
-  "unknownSafe": true
+  "unknownSafe": false
 }

@@ -124,6 +124,7 @@ import {
   restoreActiveOutpatientContext,
 } from './active-outpatient-context';
 
+// 仅 dev-synthetic 合成环境的兜底身份与上下文；生产构建必须由 OIDC 会话注入，不依赖这些默认值。
 const syntheticDefaults = {
   tenantId: '018f0000-0000-7000-8000-00000000aa01',
   organizationId: '018f0000-0000-7000-8000-00000000aa02',
