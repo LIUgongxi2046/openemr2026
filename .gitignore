@@ -1,6 +1,8 @@
 .DS_Store
 .gradle/
 build/
+build-opd-*/
+build-outpatient-audit/
 web/node_modules/
 web/dist/
 *.tsbuildinfo
