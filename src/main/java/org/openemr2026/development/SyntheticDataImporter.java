@@ -301,7 +301,10 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000ee04', 'RESULT_FOLLOWUP_COORDINATOR', '结果闭环医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee05', 'CARE_COORDINATOR', '诊疗协同医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee06', 'INFECTION_SURVEILLANCE', '院感监测医助团队'),
-                  ('018f0000-0000-7000-8000-00000000ee07', 'INSURANCE_COMPLIANCE', '医保合规医助团队')
+                  ('018f0000-0000-7000-8000-00000000ee07', 'INSURANCE_COMPLIANCE', '医保合规医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee08', 'MEDICAL_TECH_SCHEDULING', '医技预约调度医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee09', 'RESEARCH_FOLLOWUP', '科研随访医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee10', 'PATIENT_EDUCATION', '患者宣教医助团队')
                 ) as seed(agent_registry_id, agent_code, agent_name)
                 on conflict (tenant_id, agent_registry_id) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -435,7 +438,10 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f304', 'BUDGET_RESULT_FOLLOWUP', '结果闭环医助单次处理上限', 24000::bigint, 120),
                   ('018f0000-0000-7000-8000-00000000f305', 'BUDGET_CARE_COORDINATOR', '诊疗协同医助单次处理上限', 22000::bigint, 120),
                   ('018f0000-0000-7000-8000-00000000f306', 'BUDGET_INFECTION_SURVEILLANCE', '院感监测医助单次处理上限', 16000::bigint, 90),
-                  ('018f0000-0000-7000-8000-00000000f307', 'BUDGET_INSURANCE_COMPLIANCE', '医保合规医助单次处理上限', 20000::bigint, 100)
+                  ('018f0000-0000-7000-8000-00000000f307', 'BUDGET_INSURANCE_COMPLIANCE', '医保合规医助单次处理上限', 20000::bigint, 100),
+                  ('018f0000-0000-7000-8000-00000000f308', 'BUDGET_MEDICAL_TECH_SCHEDULING', '医技预约调度医助单次处理上限', 16000::bigint, 80),
+                  ('018f0000-0000-7000-8000-00000000f309', 'BUDGET_RESEARCH_FOLLOWUP', '科研随访医助单次处理上限', 16000::bigint, 80),
+                  ('018f0000-0000-7000-8000-00000000f310', 'BUDGET_PATIENT_EDUCATION', '患者宣教医助单次处理上限', 12000::bigint, 60)
                 ) as seed(budget_id, budget_code, budget_name, max_tokens, max_duration_seconds)
                 on conflict (tenant_id, budget_code) do nothing
                 """).param("tenant", TENANT_ID).update();

@@ -38,7 +38,10 @@ const selectedModelId = ref('');
 const authorizationLevel = ref<AuthorizationLevel>('STANDARD');
 const contextScopes = ref<ContextScope[]>(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS']);
 const teamCollapsed = ref(false);
+// 路由 → 医助编排偏好：按页面上下文自动选中主医助与阶段，覆盖门诊、急诊、
+// 住院、病历、质控、院感、医保、医技、科研与宣教等环节。
 const routeAgentDefaults: Record<string, { main: string; stage: string }> = {
+  // 门诊
   outpatient: { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
   'opd-record': { main: 'DOCUMENT_DRAFTER', stage: 'OUTPATIENT' },
   'opd-diagnosis': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
@@ -46,6 +49,33 @@ const routeAgentDefaults: Record<string, { main: string; stage: string }> = {
   'opd-results': { main: 'RESULT_FOLLOWUP_COORDINATOR', stage: 'NEW_RESULT' },
   'opd-consult': { main: 'CARE_COORDINATOR', stage: 'CONSULT' },
   'opd-followup': { main: 'CARE_COORDINATOR', stage: 'FOLLOWUP' },
+  // 急诊
+  emergency: { main: 'ENCOUNTER_SUMMARIZER', stage: 'TRIAGE' },
+  'er-record': { main: 'DOCUMENT_DRAFTER', stage: 'EMERGENCY' },
+  // 住院
+  inpatient: { main: 'ENCOUNTER_SUMMARIZER', stage: 'INPATIENT_DAILY' },
+  'inpatient-course': { main: 'DOCUMENT_DRAFTER', stage: 'FIRST_COURSE' },
+  'inpatient-discharge': { main: 'PATIENT_EDUCATION', stage: 'MEDICATION_GUIDE' },
+  // 全院病历中心
+  record: { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
+  'record-editor': { main: 'DOCUMENT_DRAFTER', stage: 'OUTPATIENT' },
+  'record-sources': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
+  'record-qc': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
+  'record-versions': { main: 'RECORD_QC', stage: 'CORRECTION' },
+  // 医疗质量中心
+  'quality-center': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
+  'department-qc': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
+  'infection-events': { main: 'INFECTION_SURVEILLANCE', stage: 'INFECTION_CASE' },
+  // 病案资产中心
+  'archive-assets': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
+  // 费用 / 医保
+  billing: { main: 'INSURANCE_COMPLIANCE', stage: 'CHARGE' },
+  // 医技预约调度
+  'lab-workbench': { main: 'MEDICAL_TECH_SCHEDULING', stage: 'EXAM_SLOT' },
+  'imaging-workbench': { main: 'MEDICAL_TECH_SCHEDULING', stage: 'EQUIPMENT' },
+  // 科研
+  research: { main: 'RESEARCH_FOLLOWUP', stage: 'COHORT' },
+  'cohort-builder': { main: 'RESEARCH_FOLLOWUP', stage: 'COHORT' },
 };
 
 const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
