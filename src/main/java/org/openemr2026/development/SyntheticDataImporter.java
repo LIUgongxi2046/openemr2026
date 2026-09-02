@@ -299,7 +299,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000ee02', 'DOCUMENT_DRAFTER', '文书起草医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee03', 'RECORD_QC', '病历质控医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee04', 'RESULT_FOLLOWUP_COORDINATOR', '结果闭环医助团队'),
-                  ('018f0000-0000-7000-8000-00000000ee05', 'CARE_COORDINATOR', '诊疗协同医助团队')
+                  ('018f0000-0000-7000-8000-00000000ee05', 'CARE_COORDINATOR', '诊疗协同医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee06', 'INFECTION_SURVEILLANCE', '院感监测医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee07', 'INSURANCE_COMPLIANCE', '医保合规医助团队')
                 ) as seed(agent_registry_id, agent_code, agent_name)
                 on conflict (tenant_id, agent_registry_id) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -431,7 +433,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f302', 'BUDGET_DOCUMENT_DRAFTER', '文书起草医助单次处理上限', 22000::bigint, 120),
                   ('018f0000-0000-7000-8000-00000000f303', 'BUDGET_RECORD_QC', '病历质控医助单次处理上限', 16000::bigint, 90),
                   ('018f0000-0000-7000-8000-00000000f304', 'BUDGET_RESULT_FOLLOWUP', '结果闭环医助单次处理上限', 24000::bigint, 120),
-                  ('018f0000-0000-7000-8000-00000000f305', 'BUDGET_CARE_COORDINATOR', '诊疗协同医助单次处理上限', 22000::bigint, 120)
+                  ('018f0000-0000-7000-8000-00000000f305', 'BUDGET_CARE_COORDINATOR', '诊疗协同医助单次处理上限', 22000::bigint, 120),
+                  ('018f0000-0000-7000-8000-00000000f306', 'BUDGET_INFECTION_SURVEILLANCE', '院感监测医助单次处理上限', 16000::bigint, 90),
+                  ('018f0000-0000-7000-8000-00000000f307', 'BUDGET_INSURANCE_COMPLIANCE', '医保合规医助单次处理上限', 20000::bigint, 100)
                 ) as seed(budget_id, budget_code, budget_name, max_tokens, max_duration_seconds)
                 on conflict (tenant_id, budget_code) do nothing
                 """).param("tenant", TENANT_ID).update();
