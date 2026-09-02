@@ -17,6 +17,8 @@ const open = computed(() => items.value.filter(isOpen));
 const blocking = computed(() => open.value.filter((item) => payload(item).severity === 'BLOCKING'));
 const overdue = computed(() => open.value.filter((item) => payload(item).due_at && new Date(String(payload(item).due_at)).getTime() < Date.now()));
 const closedRate = computed(() => items.value.length ? ((items.value.length - open.value.length) / items.value.length * 100).toFixed(1) : '0.0');
+const traceable = computed(() => items.value.filter((item) => payload(item).china_policy_basis && payload(item).source_reference));
+const traceabilityRate = computed(() => items.value.length ? (traceable.value.length / items.value.length * 100).toFixed(1) : '0.0');
 const metrics = computed<QualityOverviewMetric[]>(() => [
   { label: '待整改缺陷', value: open.value.length, hint: '可下钻到业务对象' },
   { label: '阻断缺陷', value: blocking.value.length, hint: '可下钻到业务对象' },
@@ -25,7 +27,7 @@ const metrics = computed<QualityOverviewMetric[]>(() => [
 ]);
 const rows = computed<QualityOverviewRow[]>(() => [
   { object: '高风险待办', keyData: String(blocking.value.length), progress: `${open.value.length} 项开放缺陷`, status: blocking.value.length ? '需处理' : '正常', tone: blocking.value.length ? 'red' : 'green' },
-  { object: '规则覆盖率', keyData: `${Math.max(0, 100 - overdue.value.length * 2).toFixed(1)}%`, progress: `${overdue.value.length} 项逾期`, status: overdue.value.length ? '降级' : '正常', tone: overdue.value.length ? 'yellow' : 'green' },
+  { object: '制度与来源可追溯率', keyData: `${traceabilityRate.value}%`, progress: `${traceable.value.length}/${items.value.length} 项同时具备制度依据与来源`, status: Number(traceabilityRate.value) >= 100 ? '正常' : '待补齐', tone: Number(traceabilityRate.value) >= 100 ? 'green' : 'yellow' },
   { object: '本期闭环率', keyData: `${closedRate.value}%`, progress: `已闭环 ${items.value.length - open.value.length} 项`, status: Number(closedRate.value) >= 96 ? '达标' : '观察', tone: Number(closedRate.value) >= 96 ? 'green' : 'blue' },
 ]);
 const issue = computed(() => leaseQuery.error.value ?? itemsQuery.error.value ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value).message : '');

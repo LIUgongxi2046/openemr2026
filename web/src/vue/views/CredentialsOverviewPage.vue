@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { loadWorkforceIdentities } from '../../clinical-api';
-import { listPractitionerCredentials, type PractitionerCredential } from '../../api/credentials';
+import { listPractitionerCredentials, simulatePractitionerCredentialAuthorization, type PractitionerCredential } from '../../api/credentials';
+import type { PractitionerCredentialSimulationWire } from '../../generated/contracts';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
@@ -15,7 +16,10 @@ const credentialsQuery = useQuery({ queryKey: ['quality-overview', 'credentials'
 const identities = computed(() => identitiesQuery.data.value ?? []);
 const credentials = computed(() => credentialsQuery.data.value ?? []);
 const search = ref(''); const department = ref('ALL'); const sort = ref('EXPIRING'); const selectedId = ref('');
-const reminderOpen = ref(false); const simulationOpen = ref(false); const simulationAction = ref('PRESCRIPTION'); const patientRelation = ref(true);
+const reminderOpen = ref(false); const simulationOpen = ref(false);
+const simulationAction = ref<'PRESCRIPTION' | 'ANTIMICROBIAL_SPECIAL' | 'CONTROLLED_DRUG' | 'SURGERY' | 'PROCEDURE'>('PRESCRIPTION');
+const patientRelation = ref(true); const surgeryLevel = ref(1); const procedureCode = ref('');
+const simulationBusy = ref(false); const simulationResult = ref<PractitionerCredentialSimulationWire | null>(null);
 const now = computed(() => Date.now());
 const active = computed(() => credentials.value.filter((item) => item.status === 'ACTIVE' && (!item.valid_until || new Date(item.valid_until).getTime() > now.value)));
 const expiring = computed(() => active.value.filter((item) => item.valid_until && new Date(item.valid_until).getTime() <= now.value + 30 * 86400_000));
@@ -40,20 +44,32 @@ watch(selected, (item) => { if (item) selectedId.value = item.credential_id; }, 
 const selectedIdentity = computed(() => selected.value ? identityByPerson.value.get(selected.value.person_id) : undefined);
 const selectedScope = computed(() => selected.value?.practice_scope ?? {});
 const scopeText = computed(() => Object.entries(selectedScope.value).map(([key, value]) => `${key}: ${String(value)}`).join('；') || '未声明具体范围');
-const simulationPassed = computed(() => {
-  const item = selected.value;
-  if (!item || item.status !== 'ACTIVE' || (item.valid_until && new Date(item.valid_until).getTime() <= now.value) || !patientRelation.value) return false;
-  const scope = JSON.stringify(item.practice_scope).toUpperCase();
-  if (simulationAction.value === 'SURGERY') return /SURGER|PROCEDURE|LEVEL/.test(scope);
-  if (simulationAction.value === 'CONTROLLED_DRUG') return /CONTROLLED|NARCOTIC|麻精/.test(scope);
-  return true;
-});
 const issue = computed(() => identitiesQuery.error.value ?? credentialsQuery.error.value ? toClinicalIssue(identitiesQuery.error.value ?? credentialsQuery.error.value) : null);
 function typeLabel(type: string) { return ({ PHYSICIAN_LICENSE: '医师执业证', NURSE_LICENSE: '护士执业证', PHARMACIST_LICENSE: '药师资质', TECHNICIAN_LICENSE: '技师资质', OTHER: '其他资质' } as Record<string, string>)[type] ?? type; }
 function position(item: PractitionerCredential) { return selectedId.value === item.credential_id ? selectedIdentity.value?.position_code ?? typeLabel(item.credential_type) : identityByPerson.value.get(item.person_id)?.position_code ?? typeLabel(item.credential_type); }
 function scopeValue(item: PractitionerCredential) { return String(item.practice_scope.specialty ?? item.practice_scope.scope ?? '机构授权范围'); }
-function orderAuthority(item: PractitionerCredential) { return item.status === 'ACTIVE' ? (item.credential_type === 'PHYSICIAN_LICENSE' ? '普通处方；临床医嘱' : '岗位内医嘱执行') : '已阻断'; }
-function technicalAuthority(item: PractitionerCredential) { const scope = JSON.stringify(item.practice_scope); return /procedure|surgery|level/i.test(scope) ? '按执业范围授权' : '无手术授权'; }
+function orderAuthority(item: PractitionerCredential) {
+  if (item.status !== 'ACTIVE') return '已阻断';
+  const prescription = item.practice_scope.prescription_authority === 'ORDINARY' ? '普通处方' : '无处方权';
+  return item.credential_type === 'PHYSICIAN_LICENSE' ? prescription : '岗位内医嘱执行';
+}
+function technicalAuthority(item: PractitionerCredential) {
+  const level = Number(item.practice_scope.max_surgery_level ?? 0);
+  const procedures = Array.isArray(item.practice_scope.procedure_codes) ? item.practice_scope.procedure_codes.length : 0;
+  return level > 0 || procedures > 0 ? `手术 ${level} 级 / 技术 ${procedures} 项` : '无手术/技术授权';
+}
+async function runSimulation() {
+  const item = selected.value; if (!item || simulationBusy.value) return;
+  simulationBusy.value = true; simulationResult.value = null;
+  try {
+    simulationResult.value = await simulatePractitionerCredentialAuthorization(item, {
+      action: simulationAction.value, patient_relationship: patientRelation.value,
+      surgery_level: simulationAction.value === 'SURGERY' ? surgeryLevel.value : null,
+      procedure_code: simulationAction.value === 'PROCEDURE' ? procedureCode.value.trim() : null,
+    });
+  } finally { simulationBusy.value = false; }
+}
+watch([selectedId, simulationAction, patientRelation, surgeryLevel, procedureCode], () => { simulationResult.value = null; });
 </script>
 
 <template>
@@ -75,7 +91,7 @@ function technicalAuthority(item: PractitionerCredential) { const scope = JSON.s
     </template>
 
     <AdminActionDialog v-model:open="reminderOpen" title="30 日内到期提醒" description="到期记录来自真实资质台账；可进入三级页面编辑有效期或撤销授权。"><div class="reminder-list"><article v-for="item in expiring" :key="item.credential_id"><b>{{ item.person_display_name }}</b><span>{{ typeLabel(item.credential_type) }} · {{ formatQualityDate(item.valid_until) }}</span></article><p v-if="!expiring.length">当前没有 30 日内到期的有效资质。</p></div><template #footer="{ close }"><button class="btn" type="button" @click="close">关闭</button><button class="btn primary" type="button" @click="close(); router.push('/credentials/grants')">进入授权台账</button></template></AdminActionDialog>
-    <AdminActionDialog v-model:open="simulationOpen" title="临床授权模拟" description="按照当前资质状态、有效期、执业范围与患者关系即时计算，不写入业务事实。"><form class="admin-form"><label><span>模拟人员</span><select v-model="selectedId"><option v-for="item in credentials" :key="item.credential_id" :value="item.credential_id">{{ item.person_display_name }} · {{ item.registration_number }}</option></select></label><label><span>临床动作</span><select v-model="simulationAction"><option value="PRESCRIPTION">普通处方/医嘱</option><option value="CONTROLLED_DRUG">麻精处方</option><option value="SURGERY">手术/技术操作</option></select></label><label><input v-model="patientRelation" type="checkbox" /> 当前患者属于本人医疗组</label></form><div class="simulation-result" :class="simulationPassed ? 'pass' : 'deny'"><b>{{ simulationPassed ? '允许执行' : '阻断执行' }}</b><span>{{ simulationPassed ? '当前交集满足最小授权条件，实际动作仍会在提交前重新鉴权。' : '资质状态、范围或患者关系不满足，关键临床动作不会提交。' }}</span></div><template #footer="{ close }"><button class="btn primary" type="button" @click="close">完成模拟</button></template></AdminActionDialog>
+    <AdminActionDialog v-model:open="simulationOpen" title="临床授权模拟" description="请求由后端按结构化资质、有效期、动作参数和患者关系精确计算；结果写审计链，不写临床事实。" :busy="simulationBusy"><form class="admin-form" @submit.prevent="runSimulation"><label><span>模拟人员</span><select v-model="selectedId"><option v-for="item in credentials" :key="item.credential_id" :value="item.credential_id">{{ item.person_display_name }} · {{ item.registration_number }}</option></select></label><label><span>临床动作</span><select v-model="simulationAction"><option value="PRESCRIPTION">普通处方/医嘱</option><option value="ANTIMICROBIAL_SPECIAL">特殊使用级抗菌药物</option><option value="CONTROLLED_DRUG">麻精处方</option><option value="SURGERY">手术分级</option><option value="PROCEDURE">技术操作目录</option></select></label><label v-if="simulationAction === 'SURGERY'"><span>申请手术级别</span><select v-model="surgeryLevel"><option :value="1">一级</option><option :value="2">二级</option><option :value="3">三级</option><option :value="4">四级</option></select></label><label v-if="simulationAction === 'PROCEDURE'"><span>技术操作编码</span><input v-model="procedureCode" maxlength="128" required /></label><label><input v-model="patientRelation" type="checkbox" /> 当前患者属于本人医疗组</label></form><div v-if="simulationResult" class="simulation-result" :class="simulationResult.decision === 'ALLOW' ? 'pass' : 'deny'"><b>{{ simulationResult.decision === 'ALLOW' ? '允许预览' : '阻断预览' }}</b><span>{{ simulationResult.reasons.join('；') }}。实际临床动作提交前必须再次鉴权。</span></div><template #footer="{ close }"><button class="btn" type="button" @click="close">关闭</button><button class="btn primary" type="button" :disabled="simulationBusy || !selected" @click="runSimulation">{{ simulationBusy ? '计算中…' : '执行后端鉴权模拟' }}</button></template></AdminActionDialog>
   </section>
 </template>
 

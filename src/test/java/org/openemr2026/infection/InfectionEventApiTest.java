@@ -62,11 +62,14 @@ final class InfectionEventApiTest {
     }
 
     private InfectionMonitoringEventWire report(Context context, String type) {
+        Instant detectedAt = Instant.now().minusSeconds(60);
         return events.report(identity(), "inf-" + UUID.randomUUID(),
                 new InfectionMonitoringEventReportRequestWire(organization, facility, context.patientId(),
                         context.encounterId(),
                         InfectionMonitoringEventReportRequestWire.InfectionTypeValue.valueOf(type),
-                        "ORGANISM-SYN", Instant.now()));
+                        "ORGANISM-SYN", InfectionMonitoringEventReportRequestWire.EventCategoryValue.HAI_CASE,
+                        detectedAt.minusSeconds(3600), detectedAt, 24, false,
+                        "HOSPITAL-INFECTION-POLICY-V1", Instant.now()));
     }
 
     private InfectionMonitoringEventWire resolve(

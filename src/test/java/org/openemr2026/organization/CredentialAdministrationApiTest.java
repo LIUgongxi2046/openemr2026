@@ -62,7 +62,7 @@ final class CredentialAdministrationApiTest {
         MvcResult created = send("POST", "/api/v1/admin/credentials", """
                 {"person_id":"%s","credential_type":"PHYSICIAN_LICENSE",
                  "registration_number":"%s","issuing_authority":"端到端测试卫健委",
-                 "practice_scope":{"specialty":"CARDIOLOGY"},"valid_from":"%s",
+                 "practice_scope":{"schema_version":2,"specialty_code":"CARDIOLOGY","authorization_basis":"MEDICAL_AFFAIRS_TEST_APPROVAL","prescription_authority":"ORDINARY","antimicrobial_level":"RESTRICTED","controlled_drug_authorized":false,"max_surgery_level":2,"procedure_codes":["PROC-ECHO"],"temporary_authorization":false},"valid_from":"%s",
                  "valid_until":"%s","expected_row_version":0}
                 """.formatted(personId, registration, from, until));
         assertThat(created.getResponse().getStatus()).withFailMessage(created.getResponse().getContentAsString()).isEqualTo(201);
@@ -75,13 +75,25 @@ final class CredentialAdministrationApiTest {
         MvcResult updated = send("PUT", "/api/v1/admin/credentials/" + credentialId, """
                 {"person_id":"%s","credential_type":"PHYSICIAN_LICENSE",
                  "registration_number":"%s","issuing_authority":"端到端测试卫健委",
-                 "practice_scope":{"specialty":"CARDIOLOGY","procedure":"LEVEL_3"},"valid_from":"%s",
+                 "practice_scope":{"schema_version":2,"specialty_code":"CARDIOLOGY","authorization_basis":"MEDICAL_AFFAIRS_TEST_APPROVAL","prescription_authority":"ORDINARY","antimicrobial_level":"SPECIAL","controlled_drug_authorized":true,"max_surgery_level":3,"procedure_codes":["PROC-ECHO","PROC-ABLATION"],"temporary_authorization":false},"valid_from":"%s",
                  "valid_until":"%s","expected_row_version":1}
                 """.formatted(personId, registration, from, until));
         assertThat(updated.getResponse().getStatus()).withFailMessage(updated.getResponse().getContentAsString()).isEqualTo(200);
         assertThat(objectMapper.readTree(updated.getResponse().getContentAsString()).path("row_version").asLong()).isEqualTo(2);
-        assertThat(jdbc.sql("select practice_scope ->> 'procedure' from practitioner_credential where tenant_id = :tenant and credential_id = :credential")
-                .param("tenant", TENANT).param("credential", credentialId).query(String.class).single()).isEqualTo("LEVEL_3");
+        assertThat(jdbc.sql("select practice_scope ->> 'max_surgery_level' from practitioner_credential where tenant_id = :tenant and credential_id = :credential")
+                .param("tenant", TENANT).param("credential", credentialId).query(String.class).single()).isEqualTo("3");
+
+        MvcResult allowed = send("POST", "/api/v1/admin/credentials/" + credentialId + "/simulations", """
+                {"action":"SURGERY","patient_relationship":true,"surgery_level":3,"procedure_code":null}
+                """);
+        assertThat(allowed.getResponse().getStatus()).withFailMessage(allowed.getResponse().getContentAsString()).isEqualTo(200);
+        assertThat(objectMapper.readTree(allowed.getResponse().getContentAsString()).path("decision").stringValue()).isEqualTo("ALLOW");
+
+        MvcResult denied = send("POST", "/api/v1/admin/credentials/" + credentialId + "/simulations", """
+                {"action":"SURGERY","patient_relationship":true,"surgery_level":4,"procedure_code":null}
+                """);
+        assertThat(denied.getResponse().getStatus()).withFailMessage(denied.getResponse().getContentAsString()).isEqualTo(200);
+        assertThat(objectMapper.readTree(denied.getResponse().getContentAsString()).path("decision").stringValue()).isEqualTo("DENY");
 
         MvcResult revoked = send("POST", "/api/v1/admin/credentials/" + credentialId + "/revoke", """
                 {"expected_row_version":2,"reason":"端到端回归验证撤销立即生效"}
@@ -96,7 +108,7 @@ final class CredentialAdministrationApiTest {
                   and (valid_until is null or valid_until > now())
                 """).param("tenant", TENANT).param("credential", credentialId).query(Long.class).single()).isZero();
         assertThat(jdbc.sql("select count(*) from audit_event where tenant_id = :tenant and resource_id = :credential and resource_type = 'PRACTITIONER_CREDENTIAL'")
-                .param("tenant", TENANT).param("credential", credentialId).query(Long.class).single()).isEqualTo(3);
+                .param("tenant", TENANT).param("credential", credentialId).query(Long.class).single()).isEqualTo(5);
         assertThat(jdbc.sql("select count(*) from outbox_event where tenant_id = :tenant and aggregate_id = :credential and aggregate_type = 'PRACTITIONER_CREDENTIAL'")
                 .param("tenant", TENANT).param("credential", credentialId).query(Long.class).single()).isEqualTo(3);
     }

@@ -103,4 +103,31 @@ describe('medical quality center full secondary-menu CRUD', () => {
     expect(infection).toContain("'排除院感线索'");
     expect(infection).not.toMatch(/window\.(?:prompt|confirm)\s*\(/);
   });
+
+  it('implements real level-five through level-seven routes with modal CRUD and candidate-only Agent proposals', () => {
+    const router = source('./router.ts');
+    const page = source('./views/QualityGovernanceDepthPage.vue');
+    const api = source('../api/quality-governance.ts');
+    for (const suffix of ['actions', 'evidence', 'reviews']) expect(router).toContain(`suffix: '${suffix}'`);
+    for (const operation of ['createQualityGovernanceRecord', 'updateQualityGovernanceRecord', 'voidQualityGovernanceRecord', 'createQualityGovernanceAgentProposal']) {
+      expect(api).toContain(operation);
+      expect(page).toContain(operation);
+    }
+    expect(page).toContain('AdminActionDialog');
+    expect(page).toContain('AdminConfirmDialog');
+    expect(page).toContain('候选建议');
+  });
+
+  it('uses China reporting fields and backend credential simulation rather than fake formulas or JSON regex authorization', () => {
+    const infection = source('./views/InfectionEventsPage.vue');
+    const credentials = source('./views/CredentialsOverviewPage.vue');
+    const credentialEditor = source('./views/CredentialsPage.vue');
+    for (const field of ['eventCategory', 'reportingWindowHours', 'externalReportRequired', 'reportingPolicyCode']) expect(infection).toContain(field);
+    expect(credentials).toContain('simulatePractitionerCredentialAuthorization');
+    expect(credentials).not.toContain('JSON.stringify(item.practice_scope).toUpperCase()');
+    expect(credentialEditor).toContain('schema_version: 2');
+    expect(credentialEditor).not.toContain('执业范围 JSON');
+    expect(source('./views/QualityCenterPage.vue')).not.toContain('<b>39/39</b>');
+    expect(source('./views/DepartmentQcPage.vue')).not.toContain('100 - overdue');
+  });
 });

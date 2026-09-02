@@ -7,9 +7,12 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.HexFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.openemr2026.contracts.PractitionerCredentialSimulationRequestWire;
+import org.openemr2026.contracts.PractitionerCredentialSimulationWire;
 import org.openemr2026.security.ClinicalIdentity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -139,6 +142,36 @@ final class CredentialAdministrationService {
         });
     }
 
+    PractitionerCredentialSimulationWire simulate(
+            ClinicalIdentity identity, UUID credentialId,
+            PractitionerCredentialSimulationRequestWire request) {
+        requireAdministrator(identity);
+        if (request == null || request.action() == null || request.patientRelationship() == null) {
+            throw invalid("Simulation action and patient relationship are required");
+        }
+        if (request.action() == PractitionerCredentialSimulationRequestWire.ActionValue.SURGERY
+                && (request.surgeryLevel() == null || request.surgeryLevel() < 1 || request.surgeryLevel() > 4)) {
+            throw invalid("A surgery simulation requires surgery_level from 1 to 4");
+        }
+        if (request.action() == PractitionerCredentialSimulationRequestWire.ActionValue.PROCEDURE
+                && blank(request.procedureCode())) {
+            throw invalid("A procedure simulation requires an exact procedure_code");
+        }
+        return transactions.execute(status -> {
+            PractitionerCredentialWire credential = get(identity, credentialId);
+            List<String> reasons = evaluate(credential, request);
+            PractitionerCredentialSimulationWire.DecisionValue decision = reasons.isEmpty()
+                    ? PractitionerCredentialSimulationWire.DecisionValue.ALLOW
+                    : PractitionerCredentialSimulationWire.DecisionValue.DENY;
+            if (reasons.isEmpty()) reasons = List.of("结构化资质、有效期、临床动作与患者关系交集满足");
+            auditSimulation(identity, credential, request.action().name(), decision.name(), reasons);
+            return new PractitionerCredentialSimulationWire(
+                    credential.credentialId(),
+                    PractitionerCredentialSimulationWire.ActionValue.valueOf(request.action().name()),
+                    decision, reasons, credential.rowVersion(), Instant.now());
+        });
+    }
+
     private PractitionerCredentialWire get(ClinicalIdentity identity, UUID credentialId) {
         return list(identity, null).stream().filter(item -> item.credentialId().equals(credentialId)).findFirst()
                 .orElseThrow(() -> new OrganizationAdministrationException(
@@ -153,6 +186,64 @@ final class CredentialAdministrationService {
                 || (update ? request.expectedRowVersion() < 1 : request.expectedRowVersion() != 0)) {
             throw invalid("Complete credential fields, a valid period and expected version are required");
         }
+        validateStructuredScope(request.practiceScope(), request.credentialType());
+    }
+
+    private void validateStructuredScope(Map<String, Object> scope, String credentialType) {
+        if (scope == null || number(scope.get("schema_version"), -1) != 2
+                || blank(text(scope.get("specialty_code")))
+                || blank(text(scope.get("authorization_basis")))) {
+            throw invalid("practice_scope must use schema_version 2 with specialty_code and authorization_basis");
+        }
+        String prescription = text(scope.get("prescription_authority"));
+        String antimicrobial = text(scope.get("antimicrobial_level"));
+        int surgery = number(scope.get("max_surgery_level"), -1);
+        if (!List.of("NONE", "ORDINARY").contains(prescription)
+                || !List.of("NONE", "NON_RESTRICTED", "RESTRICTED", "SPECIAL").contains(antimicrobial)
+                || !(scope.get("controlled_drug_authorized") instanceof Boolean)
+                || surgery < 0 || surgery > 4
+                || !(scope.get("procedure_codes") instanceof List<?> procedures)
+                || procedures.stream().anyMatch(item -> !(item instanceof String code) || blank(code))) {
+            throw invalid("practice_scope contains an invalid structured clinical authorization value");
+        }
+        if (!"PHYSICIAN_LICENSE".equals(credentialType)
+                && (!"NONE".equals(prescription) || !"NONE".equals(antimicrobial)
+                || Boolean.TRUE.equals(scope.get("controlled_drug_authorized")) || surgery > 0)) {
+            throw invalid("Prescription, controlled-drug and surgery authority requires a physician credential");
+        }
+    }
+
+    private List<String> evaluate(
+            PractitionerCredentialWire credential,
+            PractitionerCredentialSimulationRequestWire request) {
+        List<String> reasons = new ArrayList<>();
+        Instant now = Instant.now();
+        if (!"ACTIVE".equals(credential.status())) reasons.add("资质状态不是有效");
+        if (credential.validFrom().isAfter(now)
+                || (credential.validUntil() != null && !credential.validUntil().isAfter(now))) {
+            reasons.add("当前时间不在资质有效期内");
+        }
+        if (!request.patientRelationship()) reasons.add("当前患者不在本人有效诊疗关系内");
+        Map<String, Object> scope = credential.practiceScope();
+        switch (request.action()) {
+            case PRESCRIPTION -> {
+                if (!"ORDINARY".equals(text(scope.get("prescription_authority")))) reasons.add("未授予普通处方权");
+            }
+            case ANTIMICROBIAL_SPECIAL -> {
+                if (!"SPECIAL".equals(text(scope.get("antimicrobial_level")))) reasons.add("未授予特殊使用级抗菌药物处方权");
+            }
+            case CONTROLLED_DRUG -> {
+                if (!Boolean.TRUE.equals(scope.get("controlled_drug_authorized"))) reasons.add("未授予麻精药品处方权");
+            }
+            case SURGERY -> {
+                if (number(scope.get("max_surgery_level"), 0) < request.surgeryLevel()) reasons.add("申请的手术级别超出授权上限");
+            }
+            case PROCEDURE -> {
+                List<String> procedures = stringList(scope.get("procedure_codes"));
+                if (!procedures.contains(request.procedureCode().trim())) reasons.add("技术操作编码未在精确授权清单中");
+            }
+        }
+        return reasons;
     }
 
     private void requireActivePerson(UUID tenantId, UUID personId) {
@@ -222,6 +313,28 @@ final class CredentialAdministrationService {
                 .param("person", personId).update();
     }
 
+    private void auditSimulation(ClinicalIdentity identity, PractitionerCredentialWire credential,
+            String action, String decision, List<String> reasons) {
+        jdbc.sql("select tenant_id from tenant where tenant_id = :tenant for update")
+                .param("tenant", identity.tenantId()).query(UUID.class).single();
+        String previous = jdbc.sql("select event_hash from audit_event where tenant_id = :tenant order by occurred_at desc, audit_event_id desc limit 1")
+                .param("tenant", identity.tenantId()).query(String.class).optional().orElse(null);
+        UUID audit = UUID.randomUUID(); String trace = UUID.randomUUID().toString();
+        String eventHash = sha256(identity.tenantId() + "|" + audit + "|CREDENTIAL_AUTHORIZATION_SIMULATED|"
+                + credential.credentialId() + "|" + trace + "|" + (previous == null ? "GENESIS" : previous));
+        jdbc.sql("""
+                insert into audit_event(tenant_id, audit_event_id, occurred_at, actor_user_id,
+                  action_code, resource_type, resource_id, trace_id, previous_hash, event_hash, details)
+                values (:tenant, :audit, now(), :actor, 'CREDENTIAL_AUTHORIZATION_SIMULATED',
+                  'PRACTITIONER_CREDENTIAL', :credential, :trace, :previous, :hash,
+                  jsonb_build_object('clinical_action', :clinical_action, 'decision', :decision,
+                    'reasons', cast(:reasons as jsonb), 'credential_row_version', :version))
+                """).param("tenant", identity.tenantId()).param("audit", audit).param("actor", identity.userId())
+                .param("credential", credential.credentialId()).param("trace", trace).param("previous", previous)
+                .param("hash", eventHash).param("clinical_action", action).param("decision", decision)
+                .param("reasons", jsonList(reasons)).param("version", credential.rowVersion()).update();
+    }
+
     @SuppressWarnings("unchecked")
     private PractitionerCredentialWire map(java.sql.ResultSet rs) throws java.sql.SQLException {
         Map<String, Object> scope;
@@ -237,6 +350,17 @@ final class CredentialAdministrationService {
     private String json(Map<String, Object> value) {
         try { return objectMapper.writeValueAsString(value == null ? Map.of() : value); }
         catch (Exception invalid) { throw invalid("Credential practice scope must be valid JSON"); }
+    }
+    private String jsonList(List<String> value) {
+        try { return objectMapper.writeValueAsString(value); }
+        catch (Exception invalid) { throw new IllegalStateException("Could not serialize authorization reasons", invalid); }
+    }
+    private static boolean blank(String value) { return value == null || value.trim().isEmpty(); }
+    private static String text(Object value) { return value instanceof String text ? text.trim() : ""; }
+    private static int number(Object value, int fallback) { return value instanceof Number number ? number.intValue() : fallback; }
+    private static List<String> stringList(Object value) {
+        if (!(value instanceof List<?> list)) return List.of();
+        return list.stream().filter(String.class::isInstance).map(String.class::cast).map(String::trim).toList();
     }
     private static String hash(CredentialWriteRequest request) {
         return request.personId() + "|" + request.credentialType() + "|" + request.registrationNumber() + "|"

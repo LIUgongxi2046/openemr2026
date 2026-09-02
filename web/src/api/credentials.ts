@@ -1,6 +1,9 @@
 import { adminRequest } from '../clinical-api';
 import {
   practitionerCredentialWireSchema,
+  practitionerCredentialSimulationRequestWireSchema,
+  practitionerCredentialSimulationWireSchema,
+  type PractitionerCredentialSimulationWire,
   type PractitionerCredentialWire,
 } from '../generated/contracts';
 
@@ -29,5 +32,14 @@ export async function revokePractitionerCredential(item: PractitionerCredential,
   return practitionerCredentialWireSchema.parse(await adminRequest(`/admin/credentials/${item.credential_id}/revoke`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
     body: JSON.stringify({ expected_row_version: item.row_version, reason }),
+  }));
+}
+export async function simulatePractitionerCredentialAuthorization(
+  item: PractitionerCredential,
+  input: { action: 'PRESCRIPTION' | 'ANTIMICROBIAL_SPECIAL' | 'CONTROLLED_DRUG' | 'SURGERY' | 'PROCEDURE'; patient_relationship: boolean; surgery_level?: number | null; procedure_code?: string | null },
+): Promise<PractitionerCredentialSimulationWire> {
+  return practitionerCredentialSimulationWireSchema.parse(await adminRequest(`/admin/credentials/${item.credential_id}/simulations`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(practitionerCredentialSimulationRequestWireSchema.parse(input)),
   }));
 }

@@ -77,6 +77,7 @@ watch(() => route.query.create, (value) => {
   <section data-page-root class="content admin-content vue-native-page">
     <nav v-if="$route.path.includes('/assessments')" class="quality-breadcrumb" aria-label="评级取证层级导航"><RouterLink to="/quality-center">医疗质量中心</RouterLink><span>/</span><RouterLink to="/quality-rating">评级取证</RouterLink><span>/</span><RouterLink to="/quality-rating/assessments">支持评估台账</RouterLink><template v-if="assessmentId"><span>/</span><b>评估详情</b></template></nav>
     <div class="page-heading admin-heading"><div><p class="eyebrow">质量与安全 / {{ assessmentId ? '四级评估详情' : '评级取证' }}</p><h1>医疗质量与电子病历评级看板</h1><p>39 项评价的功能、应用范围、四维数据质量和证据快照；未验证科室不能升级支持级别。</p></div><div class="toolbar-actions"><RouterLink v-if="!$route.path.includes('/assessments')" class="button secondary" to="/quality-rating/assessments">打开三级台账</RouterLink><RouterLink v-if="assessmentId" class="button secondary" to="/quality-rating/assessments">返回台账</RouterLink><button class="button primary" @click="openCreate">新建评级证据</button></div></div>
+    <nav v-if="assessmentId" class="quality-depth-links"><RouterLink :to="`/quality-rating/assessments/${assessmentId}/actions`">L5 整改动作</RouterLink><RouterLink :to="`/quality-rating/assessments/${assessmentId}/evidence`">L6 证据束</RouterLink><RouterLink :to="`/quality-rating/assessments/${assessmentId}/reviews`">L7 复核 / Agent</RouterLink></nav>
     <ClinicalPageState v-if="leaseQuery.isPending.value || assessmentsQuery.isPending.value" kind="loading" message="正在读取支持评估" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="assessmentsQuery.refetch()" />
     <template v-else>
@@ -93,5 +94,5 @@ watch(() => route.query.create, (value) => {
 </template>
 
 <style scoped>
-.quality-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#667085;font-size:13px}.quality-breadcrumb a{color:#245493;text-decoration:none}.quality-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr))}.full-span{grid-column:1/-1}@media(max-width:640px){.quality-dialog-form{grid-template-columns:1fr}.full-span{grid-column:auto}}
+.quality-breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:12px;color:#667085;font-size:13px}.quality-breadcrumb a{color:#245493;text-decoration:none}.quality-depth-links{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.quality-depth-links a{padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:#245493;text-decoration:none}.quality-dialog-form{grid-template-columns:repeat(2,minmax(0,1fr))}.full-span{grid-column:1/-1}@media(max-width:640px){.quality-dialog-form{grid-template-columns:1fr}.full-span{grid-column:auto}}
 </style>

@@ -38,7 +38,12 @@ export async function listInfectionMonitoringEvents(lease: ContextLeaseWire): Pr
 
 export async function reportInfectionMonitoringEvent(
   lease: ContextLeaseWire,
-  input: { infection_type: string; organism_code?: string | null; reported_at: string },
+  input: {
+    infection_type: string; organism_code?: string | null;
+    event_category: 'HAI_CASE' | 'HAI_OUTBREAK' | 'NOTIFIABLE_DISEASE';
+    onset_at?: string | null; detected_at: string; reporting_window_hours: 2 | 24;
+    external_report_required: boolean; reporting_policy_code: string; reported_at: string;
+  },
 ): Promise<InfectionMonitoringEventWire> {
   return infectionMonitoringEventWireSchema.parse(await request('/infection-monitoring-events', {
     method: 'POST',
@@ -49,6 +54,8 @@ export async function reportInfectionMonitoringEvent(
       patient_id: clinicalContext.patientId,
       encounter_id: clinicalContext.encounterId,
       ...input,
+      onset_at: input.onset_at ? new Date(input.onset_at).toISOString() : null,
+      detected_at: new Date(input.detected_at).toISOString(),
       reported_at: new Date(input.reported_at).toISOString(),
     })),
   }));

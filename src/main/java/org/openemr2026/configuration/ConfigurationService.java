@@ -427,6 +427,11 @@ final class ConfigurationService {
     }
 
     private void validateQualityOperation(String configType, Map<String, Object> payload, List<String> errors) {
+        if (number(payload.get("schema_version")) < 2) {
+            errors.add("中国医疗生产质量工作项必须使用 schema_version 2");
+        }
+        if (text(payload.get("china_policy_basis")).length() < 4) errors.add("必须关联中国医疗制度或院级制度依据");
+        if (text(payload.get("source_reference")).length() < 4) errors.add("必须关联可追溯的权威来源引用");
         String severity = text(payload.get("severity"));
         if (!List.of("INFO", "WARNING", "BLOCKING").contains(severity)) {
             errors.add("质量工作项风险等级无效");
@@ -450,6 +455,39 @@ final class ConfigurationService {
         };
         if (!allowedStatuses.contains(text(payload.get("workflow_status")))) {
             errors.add("质量工作项流程状态与子菜单不匹配");
+        }
+        switch (configType) {
+            case "QUALITY_INITIATIVE" -> {
+                if (text(payload.get("indicator_code")).length() < 2) errors.add("院级质量改进项目必须关联质量指标编码");
+            }
+            case "DEPARTMENT_QC_CASE" -> {
+                if (text(payload.get("core_system_code")).length() < 2) errors.add("院科质控必须关联核心制度编码");
+                if (text(payload.get("sample_method")).length() < 4) errors.add("院科质控必须说明抽样方法");
+                long sampleSize = number(payload.get("sample_size"));
+                if (sampleSize < 1 || sampleSize > 100_000) errors.add("抽样样本量必须位于 1 至 100000");
+            }
+            case "QUALITY_RATING_EVIDENCE" -> {
+                if (!"EMR_LEVEL_0_8_39_ITEMS".equals(text(payload.get("evaluation_framework")))) {
+                    errors.add("评级取证必须明确电子病历 0至8 级 39 项评价框架");
+                }
+                if (text(payload.get("evaluation_project_code")).length() < 2) errors.add("评级取证必须关联评价项目编码");
+                if (!List.of("FUNCTION", "SCOPE", "DATA_QUALITY", "EFFECTIVENESS")
+                        .contains(text(payload.get("evaluation_dimension")))) errors.add("评级维度必须为功能、应用范围、数据质量或实效");
+            }
+            case "INFECTION_CONTROL_CASE" -> {
+                if (!List.of("HAI_CASE", "HAI_OUTBREAK", "NOTIFIABLE_DISEASE")
+                        .contains(text(payload.get("event_category")))) errors.add("院感工作项事件类别无效");
+                if (!List.of(2L, 24L).contains(number(payload.get("reporting_window_hours")))) {
+                    errors.add("院感/传染病上报时限必须明确为 2 小时或 24 小时");
+                }
+            }
+            case "CLINICAL_CREDENTIAL_GRANT" -> {
+                if (!List.of("PRESCRIPTION", "ANTIMICROBIAL", "CONTROLLED_DRUG", "SURGERY", "PROCEDURE", "TEMPORARY")
+                        .contains(text(payload.get("authorization_category")))) errors.add("临床资质授权类别无效");
+                if (text(payload.get("clinical_action_code")).length() < 2) errors.add("临床资质必须关联实时鉴权动作编码");
+                if (!Boolean.TRUE.equals(payload.get("human_review_required"))) errors.add("临床资质授权必须经人工审批");
+            }
+            default -> { }
         }
     }
 

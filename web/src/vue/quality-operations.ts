@@ -54,7 +54,7 @@ export const qualityOperationDefinitions: Record<QualityOperationModuleId, Quali
     title: '评级项目与证据快照', itemLabel: '评级证据',
     description: '逐项管理评价标准、证据责任人、证据缺口与取证有效期。',
     flowImpact: '未验证或逾期证据形成评级缺口，阻止对应评价项目标记为达标。',
-    routeBase: '/quality-rating/evidence-items',
+    routeBase: '/quality-rating/assessments',
     workflow: ['映射评价项目', '采集证据', '质量校验', '固化证据快照'],
     statuses: [
       { value: 'GAP', label: '证据缺口' }, { value: 'COLLECTING', label: '取证中' },
@@ -66,7 +66,7 @@ export const qualityOperationDefinitions: Record<QualityOperationModuleId, Quali
     title: '院感整改与防控任务', itemLabel: '院感任务',
     description: '把已上报线索、人工复核和防控措施组织成可追踪的整改任务。',
     flowImpact: '确认的高风险院感任务进入防控队列，逾期未控制时持续升级。',
-    routeBase: '/infection-events/control-tasks',
+    routeBase: '/infection-events/clues',
     workflow: ['线索上报', '人工复核', '执行防控措施', '效果复核闭环'],
     statuses: [
       { value: 'REPORTED', label: '已上报' }, { value: 'INVESTIGATING', label: '调查中' },
@@ -78,7 +78,7 @@ export const qualityOperationDefinitions: Record<QualityOperationModuleId, Quali
     title: '临床资质授权计划', itemLabel: '授权计划',
     description: '管理处方、医嘱、手术、技术和临时授权的申请、有效期与撤销计划。',
     flowImpact: '待审批、即将到期或撤销的授权进入医务管理队列；关键临床动作仍执行实时鉴权。',
-    routeBase: '/credentials/authorization-plans',
+    routeBase: '/credentials/grants',
     workflow: ['提交授权范围', '资质与岗位核验', '授权生效', '到期/撤销复核'],
     statuses: [
       { value: 'PENDING', label: '待审批' }, { value: 'ACTIVE', label: '有效授权' },

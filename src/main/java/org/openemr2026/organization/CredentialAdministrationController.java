@@ -3,6 +3,8 @@ package org.openemr2026.organization;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
+import org.openemr2026.contracts.PractitionerCredentialSimulationRequestWire;
+import org.openemr2026.contracts.PractitionerCredentialSimulationWire;
 import org.openemr2026.organization.CredentialAdministrationService.CredentialRevokeRequest;
 import org.openemr2026.organization.CredentialAdministrationService.CredentialWriteRequest;
 import org.openemr2026.organization.CredentialAdministrationService.PractitionerCredentialWire;
@@ -59,5 +61,13 @@ final class CredentialAdministrationController {
             @PathVariable UUID credentialId, @RequestBody CredentialRevokeRequest body) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(credentials.revoke(security.authenticate(request), idempotencyKey, credentialId, body));
+    }
+
+    @PostMapping("/{credentialId}/simulations")
+    ResponseEntity<PractitionerCredentialSimulationWire> simulate(
+            HttpServletRequest request, @PathVariable UUID credentialId,
+            @RequestBody PractitionerCredentialSimulationRequestWire body) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(credentials.simulate(security.authenticate(request), credentialId, body));
     }
 }

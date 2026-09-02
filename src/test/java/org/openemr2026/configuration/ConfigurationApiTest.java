@@ -472,7 +472,7 @@ final class ConfigurationApiTest {
 
     private Map<String, Object> qualityOperationPayload(String type, String status, int score) {
         return Map.ofEntries(
-                Map.entry("schema_version", 1),
+                Map.entry("schema_version", 2),
                 Map.entry("module_id", type.toLowerCase()),
                 Map.entry("owner", "医务处质量管理科"),
                 Map.entry("scope", "本部院区全院"),
@@ -481,6 +481,20 @@ final class ConfigurationApiTest {
                 Map.entry("due_at", "2026-09-30T18:00:00+08:00"),
                 Map.entry("score", score),
                 Map.entry("description", "医疗质量工作项需要形成闭环证据"),
-                Map.entry("flow_impact", "开放工作项进入责任队列并影响质量指标"));
+                Map.entry("flow_impact", "开放工作项进入责任队列并影响质量指标"),
+                Map.entry("china_policy_basis", "医疗质量管理办法与院级制度"),
+                Map.entry("source_reference", "config://quality-test/source"),
+                Map.entry("indicator_code", "MQI-TEST-001"),
+                Map.entry("core_system_code", "CORE-MR-01"),
+                Map.entry("sample_method", "人工分层随机抽样"),
+                Map.entry("sample_size", 30),
+                Map.entry("evaluation_framework", "EMR_LEVEL_0_8_39_ITEMS"),
+                Map.entry("evaluation_project_code", "EMR39-P01"),
+                Map.entry("evaluation_dimension", "DATA_QUALITY"),
+                Map.entry("event_category", "HAI_CASE"),
+                Map.entry("reporting_window_hours", 24),
+                Map.entry("authorization_category", "PROCEDURE"),
+                Map.entry("clinical_action_code", "CLINICAL_PROCEDURE_EXECUTE"),
+                Map.entry("human_review_required", true));
     }
 }

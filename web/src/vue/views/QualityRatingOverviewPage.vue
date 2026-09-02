@@ -11,11 +11,12 @@ const router = useRouter();
 const leaseQuery = useQuery({ queryKey: ['quality-overview', 'rating', 'lease'], queryFn: issueSpecialtySupportLease, retry: false, staleTime: 5 * 60_000 });
 const dataQuery = useQuery({ queryKey: ['quality-overview', 'rating'], queryFn: () => loadSpecialtySupportAssessments(leaseQuery.data.value!), enabled: () => Boolean(leaseQuery.data.value), retry: false, staleTime: 0 });
 const items = computed(() => dataQuery.data.value ?? []);
+const mappedProjectCount = computed(() => new Set(items.value.map((item) => item.clinical_scope_code)).size);
 const ready = computed(() => items.value.filter((item) => ['GENERAL_AVAILABLE', 'BASIC_CLOSED_LOOP'].includes(item.support_level)));
 const pending = computed(() => items.value.filter((item) => ['PACK_PENDING', 'UNSUPPORTED'].includes(item.support_level)));
 const gaps = computed(() => items.value.filter((item) => item.missing_safety_gates.length));
 const metrics = computed<QualityOverviewMetric[]>(() => [
-  { label: '项目映射', value: `${items.value.length}/39`, hint: '可下钻到业务对象' },
+  { label: '已建档评价范围', value: `${mappedProjectCount.value}/39`, hint: '按临床范围编码去重，不伪造满分' },
   { label: '有效应用达标', value: ready.value.length, hint: '可下钻到业务对象' },
   { label: '待整改', value: pending.value.length, hint: '可下钻到业务对象' },
   { label: '证据缺口', value: gaps.value.length, hint: '可下钻到业务对象' },
@@ -23,7 +24,7 @@ const metrics = computed<QualityOverviewMetric[]>(() => [
 const coverage = computed(() => items.value.length ? (ready.value.length / items.value.length * 100).toFixed(1) : '0.0');
 const rows = computed<QualityOverviewRow[]>(() => [
   { object: '高风险待办', keyData: String(gaps.value.length), progress: `${pending.value.length} 项待整改`, status: gaps.value.length ? '需处理' : '正常', tone: gaps.value.length ? 'red' : 'green' },
-  { object: '证据覆盖率', keyData: `${coverage.value}%`, progress: `${items.value.length} 个已映射项目`, status: Number(coverage.value) >= 90 ? '正常' : '降级', tone: Number(coverage.value) >= 90 ? 'green' : 'yellow' },
+  { object: '证据覆盖率', keyData: `${coverage.value}%`, progress: `${mappedProjectCount.value} 个已建档评价范围`, status: Number(coverage.value) >= 90 ? '正常' : '降级', tone: Number(coverage.value) >= 90 ? 'green' : 'yellow' },
   { object: '本期达标率', keyData: `${coverage.value}%`, progress: '目标 ≥96%', status: Number(coverage.value) >= 96 ? '达标' : '观察', tone: Number(coverage.value) >= 96 ? 'green' : 'blue' },
 ]);
 const issue = computed(() => leaseQuery.error.value ?? dataQuery.error.value ? toClinicalIssue(leaseQuery.error.value ?? dataQuery.error.value).message : '');

@@ -48,8 +48,12 @@ const busy = ref('');
 const notice = ref('');
 const form = reactive({
   key: '', name: '', owner: '', scope: '', severity: 'WARNING', workflowStatus: '',
-  dueAt: '', score: 80, description: '', flowImpact: '',
+  dueAt: '', score: 80, description: '', flowImpact: '', policyBasis: '', sourceReference: '',
+  indicatorCode: '', coreSystemCode: '', sampleMethod: '人工分层随机抽样', sampleSize: 30,
 });
+const policyOptions = computed(() => props.moduleId === 'department-qc'
+  ? ['病历管理制度', '三级查房制度', '危急值报告制度', '会诊制度', '疑难病例讨论制度']
+  : ['医疗质量管理办法', '医疗质量安全核心制度要点', '院级医疗质量安全管理制度']);
 
 function text(item: ConfigurationItemWire, key: string, fallback = '—') {
   const value = (item.payload as Record<string, unknown> | undefined)?.[key];
@@ -92,21 +96,34 @@ function resetForm(item?: ConfigurationItemWire | null) {
   form.score = item ? number(item, 'score') : 80;
   form.description = item ? text(item, 'description', '') : '';
   form.flowImpact = item ? text(item, 'flow_impact', definition.value.flowImpact) : definition.value.flowImpact;
+  form.policyBasis = item ? text(item, 'china_policy_basis', '') : policyOptions.value[0];
+  form.sourceReference = item ? text(item, 'source_reference', '') : '';
+  form.indicatorCode = item ? text(item, 'indicator_code', '') : '';
+  form.coreSystemCode = item ? text(item, 'core_system_code', '') : '';
+  form.sampleMethod = item ? text(item, 'sample_method', '人工分层随机抽样') : '人工分层随机抽样';
+  form.sampleSize = item ? number(item, 'sample_size') : 30;
 }
 function openCreate() { resetForm(); notice.value = ''; editorOpen.value = true; }
 function openEdit(item: ConfigurationItemWire) { resetForm(item); notice.value = ''; editorOpen.value = true; }
 function requestDelete(item: ConfigurationItemWire) { deleting.value = item; deleteOpen.value = true; }
 function payload() {
   return {
-    schema_version: 1, module_id: definition.value.id, owner: form.owner.trim(), scope: form.scope.trim(),
+    schema_version: 2, module_id: definition.value.id, owner: form.owner.trim(), scope: form.scope.trim(),
     severity: form.severity, workflow_status: form.workflowStatus,
     due_at: form.dueAt ? new Date(form.dueAt).toISOString() : null,
     score: Number(form.score), description: form.description.trim(), flow_impact: form.flowImpact.trim(),
+    china_policy_basis: form.policyBasis, source_reference: form.sourceReference.trim(),
+    indicator_code: form.indicatorCode.trim().toUpperCase() || null,
+    core_system_code: form.coreSystemCode.trim().toUpperCase() || null,
+    sample_method: form.sampleMethod.trim(), sample_size: Number(form.sampleSize),
   };
 }
 async function save() {
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !form.key.trim() || !form.name.trim() || !form.owner.trim() || !form.scope.trim() || !form.description.trim()) return;
+  if (!lease || busy.value || !form.key.trim() || !form.name.trim() || !form.owner.trim() || !form.scope.trim()
+    || !form.description.trim() || !form.policyBasis || !form.sourceReference.trim()
+    || (props.moduleId === 'quality-center' && !form.indicatorCode.trim())
+    || (props.moduleId === 'department-qc' && (!form.coreSystemCode.trim() || form.sampleSize < 1))) return;
   busy.value = 'save'; notice.value = '';
   try {
     if (editing.value) {
@@ -188,6 +205,12 @@ watch(() => route.query.create, (value) => {
         <label><span>流程状态</span><select v-model="form.workflowStatus"><option v-for="status in definition.statuses" :key="status.value" :value="status.value">{{ status.label }}</option></select></label>
         <label><span>完成时限</span><input v-model="form.dueAt" type="datetime-local" required /></label>
         <label><span>质量评分</span><input v-model.number="form.score" type="number" min="0" max="100" step="1" required /></label>
+        <label><span>中国医疗制度依据</span><select v-model="form.policyBasis" required><option v-for="item in policyOptions" :key="item" :value="item">{{ item }}</option></select></label>
+        <label><span>权威来源引用</span><input v-model="form.sourceReference" required maxlength="1000" placeholder="document://... / config://..." /></label>
+        <label v-if="moduleId === 'quality-center'"><span>质量指标编码</span><input v-model="form.indicatorCode" required maxlength="96" placeholder="例：MQI-2026-001" /></label>
+        <label v-if="moduleId === 'department-qc'"><span>核心制度编码</span><input v-model="form.coreSystemCode" required maxlength="96" placeholder="例：CORE-MR-01" /></label>
+        <label v-if="moduleId === 'department-qc'"><span>抽样方法</span><input v-model="form.sampleMethod" required maxlength="256" /></label>
+        <label v-if="moduleId === 'department-qc'"><span>样本量</span><input v-model.number="form.sampleSize" type="number" min="1" max="100000" required /></label>
         <label class="full-span"><span>问题 / 证据说明</span><textarea v-model="form.description" required maxlength="2000" rows="3" /></label>
         <label class="full-span"><span>流程影响与处置动作</span><textarea v-model="form.flowImpact" required maxlength="1000" rows="3" /></label>
       </form>

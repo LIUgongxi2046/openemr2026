@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HexFormat;
 import java.util.List;
@@ -29,25 +30,54 @@ final class InfectionEventService {
     InfectionMonitoringEventWire report(
             ClinicalIdentity identity, String idempotencyKey,
             InfectionMonitoringEventReportRequestWire request) {
-        if (request.infectionType() == null || request.reportedAt() == null) {
-            throw invalid("infection_type and reported_at are required");
+        if (request.infectionType() == null || request.eventCategory() == null
+                || request.detectedAt() == null || request.reportedAt() == null
+                || request.reportingWindowHours() == null || request.externalReportRequired() == null) {
+            throw invalid("infection type, category, detection time, reporting window and report time are required");
         }
+        if (request.reportingWindowHours() != 2 && request.reportingWindowHours() != 24) {
+            throw invalid("reporting_window_hours must be 2 or 24 according to the selected reporting policy");
+        }
+        if (request.eventCategory() != InfectionMonitoringEventReportRequestWire.EventCategoryValue.HAI_CASE
+                && !request.externalReportRequired()) {
+            throw invalid("outbreak and notifiable disease events must enter the external reporting queue");
+        }
+        if (request.onsetAt() != null && request.onsetAt().isAfter(request.detectedAt())) {
+            throw invalid("onset_at cannot be after detected_at");
+        }
+        if (request.detectedAt().isAfter(request.reportedAt())
+                || request.reportedAt().isAfter(Instant.now().plusSeconds(300))) {
+            throw invalid("detected_at cannot be after reported_at and reported_at cannot be in the future");
+        }
+        String policyCode = requireText(request.reportingPolicyCode(), 4, "reporting_policy_code");
         requireActiveEncounter(identity.tenantId(), request.patientId(), request.encounterId(), request.facilityId());
         return transactions.execute(status -> {
             beginCommand(identity, "INFECTION_EVENT_REPORT", idempotencyKey,
                     sha256(request.patientId() + "|" + request.encounterId() + "|" + request.infectionType()
-                            + "|" + request.reportedAt()));
+                            + "|" + request.eventCategory() + "|" + request.detectedAt() + "|"
+                            + request.reportingWindowHours() + "|" + request.externalReportRequired() + "|"
+                            + policyCode + "|" + request.reportedAt()));
             UUID eventId = UUID.randomUUID();
             jdbc.sql("""
                     insert into infection_monitoring_event(
                       tenant_id, infection_event_id, patient_id, encounter_id, facility_id,
-                      infection_type, organism_code, reported_at, status)
+                      infection_type, organism_code, event_category, onset_at, detected_at,
+                      reporting_window_hours, report_deadline_at, external_report_required,
+                      external_report_state, reporting_policy_code, reported_at, status)
                     values (:tenant, :event, :patient, :encounter, :facility,
-                      :infection_type, :organism, :reported_at, 'REPORTED')
+                      :infection_type, :organism, :event_category, :onset_at, :detected_at,
+                      :reporting_window, :detected_at + make_interval(hours => :reporting_window),
+                      :external_required, :external_state, :policy_code, :reported_at, 'REPORTED')
                     """).param("tenant", identity.tenantId()).param("event", eventId)
                     .param("patient", request.patientId()).param("encounter", request.encounterId())
                     .param("facility", request.facilityId()).param("infection_type", request.infectionType().name())
                     .param("organism", blankToNull(request.organismCode()))
+                    .param("event_category", request.eventCategory().name())
+                    .param("onset_at", utc(request.onsetAt())).param("detected_at", utc(request.detectedAt()))
+                    .param("reporting_window", request.reportingWindowHours())
+                    .param("external_required", request.externalReportRequired())
+                    .param("external_state", request.externalReportRequired() ? "PENDING" : "NOT_REQUIRED")
+                    .param("policy_code", policyCode)
                     .param("reported_at", request.reportedAt().atOffset(ZoneOffset.UTC)).update();
             appendEvidence(identity, request.patientId(), eventId, 1,
                     "INFECTION_EVENT_REPORTED", "InfectionEventReported");
@@ -113,7 +143,10 @@ final class InfectionEventService {
     private InfectionMonitoringEventWire event(UUID tenantId, UUID eventId, UUID patientId) {
         return jdbc.sql("""
                 select infection_event_id, patient_id, encounter_id, facility_id, infection_type,
-                  organism_code, reported_at, status, conclusion, resolved_at, row_version
+                  organism_code, event_category, onset_at, detected_at, reporting_window_hours,
+                  report_deadline_at, external_report_required, external_report_state,
+                  report_card_no, receipt_no, correction_of, reporting_policy_code,
+                  reported_at, status, conclusion, resolved_at, row_version
                 from infection_monitoring_event
                 where tenant_id = :tenant and infection_event_id = :event and patient_id = :patient
                 """).param("tenant", tenantId).param("event", eventId).param("patient", patientId)
@@ -122,6 +155,15 @@ final class InfectionEventService {
                         rs.getObject("encounter_id", UUID.class), rs.getObject("facility_id", UUID.class),
                         InfectionMonitoringEventWire.InfectionTypeValue.valueOf(rs.getString("infection_type")),
                         rs.getString("organism_code"),
+                        InfectionMonitoringEventWire.EventCategoryValue.valueOf(rs.getString("event_category")),
+                        instant(rs.getObject("onset_at", OffsetDateTime.class)),
+                        instant(rs.getObject("detected_at", OffsetDateTime.class)),
+                        rs.getInt("reporting_window_hours"),
+                        instant(rs.getObject("report_deadline_at", OffsetDateTime.class)),
+                        rs.getBoolean("external_report_required"),
+                        InfectionMonitoringEventWire.ExternalReportStateValue.valueOf(rs.getString("external_report_state")),
+                        rs.getString("report_card_no"), rs.getString("receipt_no"),
+                        rs.getString("correction_of"), rs.getString("reporting_policy_code"),
                         rs.getObject("reported_at", OffsetDateTime.class).toInstant(),
                         InfectionMonitoringEventWire.StatusValue.valueOf(rs.getString("status")),
                         rs.getString("conclusion"),
@@ -209,6 +251,14 @@ final class InfectionEventService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static OffsetDateTime utc(Instant value) {
+        return value == null ? null : value.atOffset(ZoneOffset.UTC);
+    }
+
+    private static Instant instant(OffsetDateTime value) {
+        return value == null ? null : value.toInstant();
     }
 
     private static InfectionEventException invalid(String message) {
