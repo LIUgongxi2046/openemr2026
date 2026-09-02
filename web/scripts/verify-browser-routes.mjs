@@ -65,6 +65,20 @@ async function waitForApiIdle(timeoutMs = 10_000) {
 }
 
 try {
+  // 登录：路由审计需要已认证会话，否则所有路由都会被重定向到登录页，
+  // 导致后续 H1/语义/导航断言全部误报。
+  const loginUsername = process.env.OPENEMR2026_DEV_LOGIN_USERNAME || 'linwei';
+  const loginPassword = process.env.OPENEMR2026_DEV_LOGIN_PASSWORD || 'OpenEMR2026-dev!';
+  await page.goto(`${baseUrl}/#/clinical`, { waitUntil: 'domcontentloaded' });
+  const loginSubmit = page.getByRole('button', { name: '登录系统', exact: true });
+  await loginSubmit.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => undefined);
+  if (await loginSubmit.isVisible().catch(() => false)) {
+    await page.getByLabel('用户名', { exact: true }).fill(loginUsername);
+    await page.locator('#system-login-password').fill(loginPassword);
+    await loginSubmit.click();
+  }
+  await page.locator('main').waitFor({ state: 'visible', timeout: 30_000 });
+
   for (const route of routes) {
     currentRoute = route.id;
     await page.goto(`${baseUrl}/#/${route.id}`, { waitUntil: 'domcontentloaded' });
