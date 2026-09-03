@@ -44,11 +44,14 @@ final class ModelDeploymentService {
 
     ModelDeploymentWire register(
             ClinicalIdentity identity, String idempotencyKey, ModelDeploymentRegisterRequestWire request) {
-        if (request.modelCode() == null || request.modelCode().isBlank() || request.providerCode() == null
-                || request.providerCode().isBlank() || request.displayName() == null || request.displayName().isBlank()
+        if (request.providerCode() == null || request.providerCode().isBlank()
+                || request.displayName() == null || request.displayName().isBlank()
                 || request.residencyPolicy() == null) {
-            throw invalid("model_code, provider_code, display_name and residency_policy are required");
+            throw invalid("provider_code, display_name and residency_policy are required");
         }
+        String modelCode = (request.modelCode() == null || request.modelCode().isBlank())
+                ? generatedModelCode()
+                : request.modelCode().trim();
         String endpointUrl = normalizeEndpoint(request.endpointUrl());
         String requestedApiKeyRef = normalizeSecretReference(request.apiKeyRef());
         String rawApiKey = normalizeApiKey(request.apiKey());
@@ -60,15 +63,15 @@ final class ModelDeploymentService {
         }
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_DEPLOYMENT_REGISTER", idempotencyKey,
-                    sha256(request.modelCode() + "|" + request.providerCode() + "|" + request.residencyPolicy()));
+                    sha256(modelCode + "|" + request.providerCode() + "|" + request.residencyPolicy()));
             boolean codeExists = jdbc.sql("""
                     select exists(select 1 from model_deployment
                     where tenant_id = :tenant and model_code = :code)
-                    """).param("tenant", identity.tenantId()).param("code", request.modelCode())
+                    """).param("tenant", identity.tenantId()).param("code", modelCode)
                     .query(Boolean.class).single();
             if (codeExists) {
                 throw new ModelDeploymentException("MODEL_DEPLOYMENT_CODE_EXISTS", 409,
-                        "模型编码 " + request.modelCode() + " 已存在，请使用不同的模型编码");
+                        "模型编码 " + modelCode + " 已存在，请使用不同的模型编码");
             }
             UUID deploymentId = UUID.randomUUID();
             String apiKeyRef = requestedApiKeyRef;
@@ -84,7 +87,7 @@ final class ModelDeploymentService {
                     values (:tenant, :deployment, :model_code, :provider_code, :display_name,
                       :residency_policy, :endpoint_url, :api_key_ref, :connection_status, 'ACTIVE', 'EVALUATING')
                     """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
-                    .param("model_code", request.modelCode()).param("provider_code", request.providerCode())
+                    .param("model_code", modelCode).param("provider_code", request.providerCode())
                     .param("display_name", request.displayName().trim())
                     .param("residency_policy", request.residencyPolicy().name())
                     .param("endpoint_url", endpointUrl).param("api_key_ref", apiKeyRef)
@@ -422,9 +425,13 @@ final class ModelDeploymentService {
         String normalized = value.trim();
         if (normalized.length() < 8 || normalized.length() > 4096
                 || normalized.chars().anyMatch(Character::isWhitespace)) {
-            throw invalid("api_key must contain 8 to 4096 non-whitespace characters");
+            throw invalid("API Key 需为 8–4096 位且不含空格；请粘贴提供方控制台签发的完整密钥，或留空稍后再填");
         }
         return normalized;
+    }
+
+    private static String generatedModelCode() {
+        return "model-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
 
     private String credentialHint(String reference) {

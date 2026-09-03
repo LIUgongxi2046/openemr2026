@@ -71,6 +71,16 @@ final class ModelDeploymentApiTest {
     }
 
     @Test
+    void givenNullModelCode_whenRegistering_thenAutoGeneratesUniqueCode() {
+        ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, null,
+                        "LOCAL-INFER", "自动编号模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY,
+                        null, null, null));
+        assertThat(registered.modelCode()).startsWith("model-");
+        assertThat(registered.modelCode()).hasSize(18);
+    }
+
+    @Test
     void givenReadyConnection_whenPublishing_thenApprovedForEvaRouting() {
         String modelCode = "MODEL-" + UUID.randomUUID();
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
@@ -91,7 +101,7 @@ final class ModelDeploymentApiTest {
     }
 
     @Test
-    void givenDuplicateModelCode_whenRegistering_thenConstraintConflict() {
+    void givenDuplicateModelCode_whenRegistering_thenCodeExistsConflict() {
         String modelCode = "MODEL-" + UUID.randomUUID();
         models.register(identity(), "model-" + UUID.randomUUID(), new ModelDeploymentRegisterRequestWire(
                 organization, facility, modelCode, "PROV-A", "模型A",
@@ -99,7 +109,9 @@ final class ModelDeploymentApiTest {
         assertThatThrownBy(() -> models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode, "PROV-B", "模型B",
                         ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY, null, null, null)))
-                .isInstanceOf(DataAccessException.class);
+                .isInstanceOf(ModelDeploymentException.class)
+                .satisfies(error -> assertThat(((ModelDeploymentException) error).code())
+                        .isEqualTo("MODEL_DEPLOYMENT_CODE_EXISTS"));
     }
 
     @Test

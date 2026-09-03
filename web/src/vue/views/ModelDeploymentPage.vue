@@ -49,7 +49,6 @@ const activeCount = computed(() => models.value.filter((model) => model.status =
 const connectedCount = computed(() => models.value.filter((model) => model.connection_status === 'READY').length);
 
 const form = reactive({
-  modelCode: '',
   providerCode: '',
   displayName: '',
   residencyPolicy: 'LOCAL_PREFERRED' as ResidencyPolicy,
@@ -90,15 +89,6 @@ function applyProviderPreset() {
   const preset = providerOptions.find((item) => item.code === form.providerCode);
   if (!preset) return;
   form.endpointUrl = preset.endpoint;
-  if (!form.modelCode) {
-    let candidate = preset.model;
-    let suffix = 2;
-    while (models.value.some((model) => model.model_code === candidate)) {
-      candidate = `${preset.model}-${suffix}`;
-      suffix += 1;
-    }
-    form.modelCode = candidate;
-  }
   if (!form.displayName && preset.label !== '其他兼容接口') form.displayName = `${preset.label} 医疗模型`;
 }
 
@@ -109,7 +99,7 @@ async function reload() {
 
 function resetForm() {
   editingModel.value = null;
-  form.modelCode = ''; form.providerCode = ''; form.displayName = '';
+  form.providerCode = ''; form.displayName = '';
   form.residencyPolicy = 'LOCAL_PREFERRED'; form.endpointUrl = ''; form.apiKey = '';
   form.credentialAction = 'KEEP';
   showApiKey.value = false;
@@ -122,7 +112,7 @@ function openCreate() {
 
 function edit(model: ModelDeploymentWire) {
   editingModel.value = model;
-  form.modelCode = model.model_code; form.providerCode = model.provider_code;
+  form.providerCode = model.provider_code;
   form.displayName = model.display_name; form.residencyPolicy = model.residency_policy;
   form.endpointUrl = model.endpoint_url ?? ''; form.apiKey = '';
   form.credentialAction = 'KEEP'; notice.value = ''; editorOpen.value = true;
@@ -130,7 +120,7 @@ function edit(model: ModelDeploymentWire) {
 
 async function saveModel() {
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !form.modelCode.trim() || !form.providerCode.trim() || !form.displayName.trim()) return;
+  if (!lease || busy.value || !form.providerCode.trim() || !form.displayName.trim()) return;
   busy.value = editingModel.value ? 'update' : 'create'; notice.value = '';
   try {
     if (editingModel.value) {
@@ -144,7 +134,7 @@ async function saveModel() {
       notice.value = '模型配置已更新，请执行“测试连接”；验证成功后才会进入 Eva 模型路由。';
     } else {
       await registerModelDeployment(lease, {
-        model_code: form.modelCode.trim(), provider_code: form.providerCode.trim(),
+        provider_code: form.providerCode.trim(),
         display_name: form.displayName.trim(), residency_policy: form.residencyPolicy,
         endpoint_url: form.endpointUrl.trim() || null, api_key_ref: null, api_key: form.apiKey.trim() || null,
       });
@@ -251,7 +241,7 @@ async function revokeProcessingApproval() {
       <div>
         <p class="eyebrow">AI 中心 / 模型 API 配置</p>
         <h1>模型服务与 API 配置</h1>
-        <p>在这里配置模型提供方、API 地址、模型标识和 API Key，供 Eva 及医助团队调用。</p>
+        <p>在这里配置模型提供方、API 地址和 API Key，供 Eva 及医助团队调用。</p>
       </div>
     </div>
 
@@ -271,8 +261,8 @@ async function revokeProcessingApproval() {
         <header><div><h2>大模型 API 在哪里配置？</h2><p>当前位置：AI 中心 → 模型服务 → 登记模型 API。</p></div><span class="admin-status active">已支持</span></header>
         <div class="model-api-guide-grid">
           <article><b>① 选择模型提供方</b><p>支持 DeepSeek、通义千问、智谱、豆包以及其他 OpenAI 兼容接口。</p></article>
-          <article><b>② 填写 API 地址和模型标识</b><p>API 地址必须使用 HTTPS；模型标识应与提供方控制台保持一致。</p></article>
-          <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。</p></article>
+          <article><b>② 填写 API 地址</b><p>API 地址必须使用 HTTPS；模型标识由系统自动生成，无需手动填写。</p></article>
+          <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥，也可留空稍后补充。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。</p></article>
         </div>
       </section>
 
@@ -305,12 +295,11 @@ async function revokeProcessingApproval() {
       <AdminActionDialog v-model:open="editorOpen" :title="editingModel ? '编辑模型 API' : '新建模型 API 配置'" description="保存后，Eva 及医助团队的后续任务会读取最新有效连接配置。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
           <form class="admin-form ai-center-dialog-form" @submit.prevent="saveModel">
             <label><span>模型提供方</span><select v-model="form.providerCode" required :disabled="Boolean(editingModel)" @change="applyProviderPreset"><option value="" disabled>请选择提供方</option><option v-for="provider in providerOptions" :key="provider.code" :value="provider.code">{{ provider.label }}</option></select></label>
-            <label><span>模型标识（同一提供方下需唯一）</span><input v-model="form.modelCode" maxlength="128" required :disabled="Boolean(editingModel)" placeholder="例：deepseek-v4-flash" /></label>
             <label><span>显示名称</span><input v-model="form.displayName" maxlength="256" required placeholder="例：DeepSeek 医疗主模型" /></label>
             <label><span>驻留策略</span><select v-model="form.residencyPolicy"><option v-for="(name, policy) in residencyPolicyLabels" :key="policy" :value="policy">{{ name }}</option></select></label>
             <label><span>API 地址</span><input v-model="form.endpointUrl" maxlength="512" required placeholder="例：https://api.deepseek.com" /></label>
             <label v-if="editingModel"><span>密钥处理</span><select v-model="form.credentialAction"><option value="KEEP">保留当前 API Key</option><option value="REPLACE">更换 API Key</option><option value="CLEAR">清除 API Key</option></select><small v-if="editingModel.credential_hint">当前：{{ editingModel.credential_hint }}</small></label>
-            <label v-if="!editingModel || form.credentialAction === 'REPLACE'"><span>API Key</span><div class="api-key-input-row"><input v-model="form.apiKey" :type="showApiKey ? 'text' : 'password'" maxlength="4096" :required="!editingModel || form.credentialAction === 'REPLACE'" autocomplete="new-password" placeholder="请粘贴模型提供方签发的 API Key" /><button class="button secondary" type="button" @click="showApiKey = !showApiKey">{{ showApiKey ? '隐藏' : '显示' }}</button></div><small>密钥仅在本次保存时传输，保存后只显示末四位。</small></label>
+            <label v-if="!editingModel || form.credentialAction === 'REPLACE'"><span>API Key（可留空，稍后再填）</span><div class="api-key-input-row"><input v-model="form.apiKey" :type="showApiKey ? 'text' : 'password'" maxlength="4096" minlength="8" autocomplete="new-password" placeholder="粘贴提供方控制台签发的 API Key（如 sk-…，8 位以上）" /><button class="button secondary" type="button" @click="showApiKey = !showApiKey">{{ showApiKey ? '隐藏' : '显示' }}</button></div><small>密钥仅在保存时传输，保存后只显示末四位；未填写时模型暂无法连接，可稍后通过“编辑 → 更换 API Key”补充。</small></label>
             <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy ? '正在保存…' : editingModel ? '保存变更' : '保存 API 配置' }}</button></div>
           </form>
       </AdminActionDialog>

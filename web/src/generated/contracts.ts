@@ -1837,7 +1837,7 @@ export type ModelDeploymentWire = z.infer<typeof modelDeploymentWireSchema>;
 export const modelDeploymentRegisterRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
-  "model_code": z.string(),
+  "model_code": z.string().nullable().optional(),
   "provider_code": z.string(),
   "display_name": z.string(),
   "residency_policy": z.enum(["ON_PREM_ONLY","LOCAL_PREFERRED","CLOUD_ALLOWED"]),

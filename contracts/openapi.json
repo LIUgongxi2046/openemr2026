@@ -27253,7 +27253,6 @@
         "required": [
           "organization_id",
           "facility_id",
-          "model_code",
           "provider_code",
           "display_name",
           "residency_policy"
@@ -27268,7 +27267,10 @@
             "format": "uuid"
           },
           "model_code": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 128
           },
           "provider_code": {
