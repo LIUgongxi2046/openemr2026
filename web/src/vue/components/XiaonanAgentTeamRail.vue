@@ -66,22 +66,6 @@ function teamName(agent: MedicalAgentFamilyWire) {
           @click="emit('example', example, selectedAgent)"
         >{{ doctorFacingAiText(example) }}</button>
       </details>
-
-      <details open>
-        <summary>诊疗环节医助 <span>{{ selectedAgent.child_agents.length }}</span></summary>
-        <article v-for="child in selectedAgent.child_agents" :key="child.agent_code">
-          <div><b>{{ doctorFacingAiText(child.display_name) }}</b><small>{{ doctorFacingAiText(child.current_action) }}</small></div>
-          <div class="xiaonan-child-actions">
-            <button
-              v-for="example in child.question_examples.slice(0, 1)"
-              :key="example"
-              type="button"
-              @click="emit('example', example, selectedAgent, child)"
-            >示例：{{ doctorFacingAiText(example) }}</button>
-            <button class="run" type="button" :disabled="busy" @click="emit('runChild', selectedAgent, child)">直接安排</button>
-          </div>
-        </article>
-      </details>
     </section>
   </aside>
 </template>
