@@ -52,11 +52,7 @@ function teamName(agent: MedicalAgentFamilyWire) {
     <section v-if="selectedAgent && !collapsed" class="xiaonan-agent-capabilities">
       <details class="xiaonan-agent-intro" open>
         <summary>医助团队介绍</summary>
-        <strong>{{ teamName(selectedAgent) }}</strong>
-        <em>{{ doctorFacingAiText(selectedAgent.main_agent.display_role) }}</em>
         <p>{{ doctorFacingAiText(selectedAgent.main_agent.description) }}</p>
-        <p class="xiaonan-agent-output">产出：{{ doctorFacingAiText(selectedAgent.main_agent.contribution_label) }}</p>
-        <small>仅生成可追溯草稿，临床写入需你确认</small>
       </details>
     </section>
   </aside>
@@ -85,11 +81,7 @@ header button { display: grid; place-items: center; width: 30px; height: 30px; f
 .xiaonan-agent-capabilities { min-height: 0; padding: 10px; overflow-y: auto; }
 .xiaonan-agent-intro { padding: 10px; border: 1px solid #cfe0ef; border-radius: 10px; background: #fff; }
 .xiaonan-agent-intro summary { display: flex; align-items: center; justify-content: space-between; color: #405870; font-size: 10px; font-weight: 800; cursor: pointer; }
-.xiaonan-agent-intro strong { display: block; margin-top: 8px; color: #24628f; font-size: 11px; }
-.xiaonan-agent-intro em { display: block; margin-top: 2px; color: #7c8b9a; font-size: 8px; font-style: normal; }
 .xiaonan-agent-intro p { margin: 7px 0 0; color: #526a80; font-size: 9px; line-height: 1.6; }
-.xiaonan-agent-intro .xiaonan-agent-output { padding-top: 7px; border-top: 1px dashed #dce6ef; }
-.xiaonan-agent-intro small { display: block; margin-top: 8px; padding-top: 7px; color: #7c8b9a; border-top: 1px dashed #dce6ef; font-size: 8px; line-height: 1.5; }
 .xiaonan-rail-state { padding: 18px 10px; color: #74869a; font-size: 9px; text-align: center; }
 @media (max-width: 760px) {
   .xiaonan-harness-team-rail { width: 100%; height: auto; border-right: 0; border-bottom: 1px solid #d8e3ef; }
