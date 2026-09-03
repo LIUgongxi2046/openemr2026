@@ -61,6 +61,15 @@ final class ModelDeploymentService {
         return transactions.execute(status -> {
             beginCommand(identity, "MODEL_DEPLOYMENT_REGISTER", idempotencyKey,
                     sha256(request.modelCode() + "|" + request.providerCode() + "|" + request.residencyPolicy()));
+            boolean codeExists = jdbc.sql("""
+                    select exists(select 1 from model_deployment
+                    where tenant_id = :tenant and model_code = :code)
+                    """).param("tenant", identity.tenantId()).param("code", request.modelCode())
+                    .query(Boolean.class).single();
+            if (codeExists) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_CODE_EXISTS", 409,
+                        "模型编码 " + request.modelCode() + " 已存在，请使用不同的模型编码");
+            }
             UUID deploymentId = UUID.randomUUID();
             String apiKeyRef = requestedApiKeyRef;
             if (rawApiKey != null) {

@@ -90,7 +90,15 @@ function applyProviderPreset() {
   const preset = providerOptions.find((item) => item.code === form.providerCode);
   if (!preset) return;
   form.endpointUrl = preset.endpoint;
-  if (!form.modelCode) form.modelCode = preset.model;
+  if (!form.modelCode) {
+    let candidate = preset.model;
+    let suffix = 2;
+    while (models.value.some((model) => model.model_code === candidate)) {
+      candidate = `${preset.model}-${suffix}`;
+      suffix += 1;
+    }
+    form.modelCode = candidate;
+  }
   if (!form.displayName && preset.label !== '其他兼容接口') form.displayName = `${preset.label} 医疗模型`;
 }
 
@@ -297,7 +305,7 @@ async function revokeProcessingApproval() {
       <AdminActionDialog v-model:open="editorOpen" :title="editingModel ? '编辑模型 API' : '新建模型 API 配置'" description="保存后，Eva 及医助团队的后续任务会读取最新有效连接配置。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
           <form class="admin-form ai-center-dialog-form" @submit.prevent="saveModel">
             <label><span>模型提供方</span><select v-model="form.providerCode" required :disabled="Boolean(editingModel)" @change="applyProviderPreset"><option value="" disabled>请选择提供方</option><option v-for="provider in providerOptions" :key="provider.code" :value="provider.code">{{ provider.label }}</option></select></label>
-            <label><span>模型标识</span><input v-model="form.modelCode" maxlength="128" required :disabled="Boolean(editingModel)" placeholder="例：deepseek-v4-flash" /></label>
+            <label><span>模型标识（同一提供方下需唯一）</span><input v-model="form.modelCode" maxlength="128" required :disabled="Boolean(editingModel)" placeholder="例：deepseek-v4-flash" /></label>
             <label><span>显示名称</span><input v-model="form.displayName" maxlength="256" required placeholder="例：DeepSeek 医疗主模型" /></label>
             <label><span>驻留策略</span><select v-model="form.residencyPolicy"><option v-for="(name, policy) in residencyPolicyLabels" :key="policy" :value="policy">{{ name }}</option></select></label>
             <label><span>API 地址</span><input v-model="form.endpointUrl" maxlength="512" required placeholder="例：https://api.deepseek.com" /></label>
