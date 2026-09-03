@@ -8,12 +8,14 @@ import {
 import { parseClinicalRequest, parseClinicalResponse } from '../clinical-contract';
 import {
   medicalAgentFamilyWireSchema,
+  medicalAgentRoutingWireSchema,
   medicalAgentRunCancelRequestWireSchema,
   medicalAgentRunCreateRequestWireSchema,
   medicalAgentRunRetryRequestWireSchema,
   medicalAgentRunWireSchema,
   type ContextLeaseWire,
   type MedicalAgentFamilyWire,
+  type MedicalAgentRoutingWire,
   type MedicalAgentRunWire,
 } from '../generated/contracts';
 
@@ -31,13 +33,23 @@ export async function listMedicalAgentCatalog(lease: ContextLeaseWire): Promise<
   ));
 }
 
+export async function resolveMedicalAgentRouting(
+  lease: ContextLeaseWire,
+  sourceRoute: string,
+): Promise<MedicalAgentRoutingWire> {
+  return parseClinicalResponse(medicalAgentRoutingWireSchema, await request(
+    `/medical-agents/routing?source_route=${encodeURIComponent(sourceRoute)}`,
+    { headers: wardHeaders(lease) },
+  ));
+}
+
 export async function createMedicalAgentRun(
   lease: ContextLeaseWire,
   input: {
     patientId: string;
     encounterId: string;
-    mainAgentCode: string;
-    stageCode: string;
+    mainAgentCode: string | null;
+    stageCode: string | null;
     sourceRoute?: string | null;
     targetType?: 'ENCOUNTER' | 'DOCUMENT' | 'RESULT' | 'TASK' | 'CARE_PLAN';
     targetId?: string;

@@ -1307,7 +1307,7 @@ final class MedicalAgentHarnessService {
         if (explicit) {
             return command;
         }
-        AgentOrchestrator.Routing routing = orchestrator.resolve(command.sourceRoute());
+        AgentOrchestrator.Routing routing = orchestrator.resolve(command.sourceRoute(), command.objective());
         return new CreateRunCommand(command.organizationId(), command.facilityId(), command.patientId(),
                 command.encounterId(), command.contextLeaseId(), routing.mainAgentCode(), routing.stageCode(),
                 command.targetType(), command.targetId(), command.objective(), command.modelDeploymentId(),

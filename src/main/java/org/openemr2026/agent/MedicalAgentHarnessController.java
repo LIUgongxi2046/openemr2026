@@ -15,6 +15,7 @@ import org.openemr2026.agent.MedicalAgentHarnessService.RetryRunCommand;
 import org.openemr2026.contracts.MedicalAgentChildRunWire;
 import org.openemr2026.contracts.MedicalAgentFamilyWire;
 import org.openemr2026.contracts.MedicalAgentReleaseWire;
+import org.openemr2026.contracts.MedicalAgentRoutingWire;
 import org.openemr2026.contracts.MedicalAgentRunCreateRequestWire;
 import org.openemr2026.contracts.MedicalAgentRunCancelRequestWire;
 import org.openemr2026.contracts.MedicalAgentRunEventWire;
@@ -39,10 +40,26 @@ final class MedicalAgentHarnessController {
 
     private final ClinicalCommandSecurity security;
     private final MedicalAgentHarnessService harness;
+    private final AgentOrchestrator orchestrator;
 
-    MedicalAgentHarnessController(ClinicalCommandSecurity security, MedicalAgentHarnessService harness) {
+    MedicalAgentHarnessController(ClinicalCommandSecurity security, MedicalAgentHarnessService harness,
+            AgentOrchestrator orchestrator) {
         this.security = security;
         this.harness = harness;
+        this.orchestrator = orchestrator;
+    }
+
+    @GetMapping("/routing")
+    ResponseEntity<MedicalAgentRoutingWire> routing(
+            HttpServletRequest request,
+            @RequestHeader("X-Organization-Context") UUID organizationId,
+            @RequestHeader("X-Facility-Context") UUID facilityId,
+            @RequestParam("source_route") String sourceRoute) {
+        security.authorizeForPurposes(request, organizationId, facilityId, null, null,
+                Set.of("MEDICAL_AGENT_CATALOG"));
+        AgentOrchestrator.Routing routing = orchestrator.resolve(sourceRoute);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(new MedicalAgentRoutingWire(routing.mainAgentCode(), routing.stageCode()));
     }
 
     @GetMapping("/catalog")

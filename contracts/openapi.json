@@ -11068,6 +11068,20 @@
         }
       }
     },
+    "/medical-agents/routing": {
+      "get": {
+        "operationId": "resolveMedicalAgentRouting",
+        "parameters": [
+          { "name": "source_route", "in": "query", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "default main-agent and clinical stage for a UI route",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MedicalAgentRouting" } } }
+          }
+        }
+      }
+    },
     "/medical-agents/runs": {
       "get": {
         "operationId": "listMedicalAgentRuns",
@@ -36121,6 +36135,15 @@
         "properties": {
           "main_agent": { "$ref": "#/components/schemas/MedicalAgentRelease" },
           "child_agents": { "type": "array", "items": { "$ref": "#/components/schemas/MedicalAgentRelease" } }
+        }
+      },
+      "MedicalAgentRouting": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["main_agent_code", "stage_code"],
+        "properties": {
+          "main_agent_code": { "type": "string" },
+          "stage_code": { "type": "string" }
         }
       },
       "MedicalAgentRunCreateRequest": {

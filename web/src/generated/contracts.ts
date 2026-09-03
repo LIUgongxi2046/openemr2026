@@ -5132,6 +5132,12 @@ export const medicalAgentFamilyWireSchema = z.object({
 }).strict();
 export type MedicalAgentFamilyWire = z.infer<typeof medicalAgentFamilyWireSchema>;
 
+export const medicalAgentRoutingWireSchema = z.object({
+  "main_agent_code": z.string(),
+  "stage_code": z.string(),
+}).strict();
+export type MedicalAgentRoutingWire = z.infer<typeof medicalAgentRoutingWireSchema>;
+
 export const medicalAgentRunCreateRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),

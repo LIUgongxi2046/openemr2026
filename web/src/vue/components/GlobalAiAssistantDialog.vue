@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
-import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, retryMedicalAgentRun } from '../../api/medical-agents';
+import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, resolveMedicalAgentRouting, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
@@ -38,50 +38,15 @@ const selectedModelId = ref('');
 const authorizationLevel = ref<AuthorizationLevel>('STANDARD');
 const contextScopes = ref<ContextScope[]>(['RECORDS', 'ORDERS', 'RESULTS', 'TASKS']);
 const teamCollapsed = ref(false);
-// 路由 → 医助编排偏好：按页面上下文自动选中主医助与阶段，覆盖门诊、急诊、
-// 住院、病历、质控、院感、医保、医技、科研与宣教等环节。
-const routeAgentDefaults: Record<string, { main: string; stage: string }> = {
-  // 门诊
-  outpatient: { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
-  'opd-record': { main: 'DOCUMENT_DRAFTER', stage: 'OUTPATIENT' },
-  'opd-diagnosis': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
-  'opd-orders': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
-  'opd-results': { main: 'RESULT_FOLLOWUP_COORDINATOR', stage: 'NEW_RESULT' },
-  'opd-consult': { main: 'CARE_COORDINATOR', stage: 'CONSULT' },
-  'opd-followup': { main: 'CARE_COORDINATOR', stage: 'FOLLOWUP' },
-  // 急诊
-  emergency: { main: 'ENCOUNTER_SUMMARIZER', stage: 'TRIAGE' },
-  'er-record': { main: 'DOCUMENT_DRAFTER', stage: 'EMERGENCY' },
-  // 住院
-  inpatient: { main: 'ENCOUNTER_SUMMARIZER', stage: 'INPATIENT_DAILY' },
-  'inpatient-course': { main: 'DOCUMENT_DRAFTER', stage: 'FIRST_COURSE' },
-  'inpatient-discharge': { main: 'PATIENT_EDUCATION', stage: 'MEDICATION_GUIDE' },
-  // 全院病历中心
-  record: { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
-  'record-editor': { main: 'DOCUMENT_DRAFTER', stage: 'OUTPATIENT' },
-  'record-sources': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
-  'record-qc': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
-  'record-versions': { main: 'RECORD_QC', stage: 'CORRECTION' },
-  // 医疗质量中心
-  'quality-center': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
-  'department-qc': { main: 'RECORD_QC', stage: 'ACTIVE_RECORD' },
-  'infection-events': { main: 'INFECTION_SURVEILLANCE', stage: 'INFECTION_CASE' },
-  // 病案资产中心
-  'archive-assets': { main: 'ENCOUNTER_SUMMARIZER', stage: 'ACTIVE_ENCOUNTER' },
-  // 费用 / 医保
-  billing: { main: 'INSURANCE_COMPLIANCE', stage: 'CHARGE' },
-  // 医技预约调度
-  'lab-workbench': { main: 'MEDICAL_TECH_SCHEDULING', stage: 'EXAM_SLOT' },
-  'imaging-workbench': { main: 'MEDICAL_TECH_SCHEDULING', stage: 'EQUIPMENT' },
-  // 科研
-  research: { main: 'RESEARCH_FOLLOWUP', stage: 'COHORT' },
-  'cohort-builder': { main: 'RESEARCH_FOLLOWUP', stage: 'COHORT' },
-};
+// 医生是否在医助团队里手动选择了主医助/子医助；未手动选择时由后端按
+// source_route 动态编排（单一事实来源在后端 AgentOrchestrator）。
+const userOverride = ref(false);
 
 const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelLeaseQuery = useQuery({ queryKey: ['global-eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelsQuery = useQuery({ queryKey: ['global-eva', 'models'], queryFn: () => listModelDeployments(modelLeaseQuery.data.value!), enabled: computed(() => props.open && Boolean(modelLeaseQuery.data.value)), retry: false, staleTime: 60_000 });
 const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: computed(() => props.open && hasPatientContext.value), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const routingQuery = useQuery({ queryKey: computed(() => ['global-eva', 'routing', props.routeId]), queryFn: async () => resolveMedicalAgentRouting(await issueMedicalAgentCatalogLease(), props.routeId), enabled: computed(() => props.open && Boolean(props.routeId)), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 
 const agents = computed(() => agentQuery.data.value ?? []);
 const availableModels = computed(() => (modelsQuery.data.value ?? []).filter((model) => model.status === 'ACTIVE' && model.evaluation_status === 'APPROVED' && model.connection_status === 'READY'));
@@ -93,14 +58,15 @@ const childAgentCount = computed(() => agents.value.reduce((count, family) => co
 
 watch([() => props.open, () => props.mode], async ([open, mode]) => { await nextTick(); const element = rootElement.value; if (!(element instanceof HTMLDialogElement)) return; if (mode === 'center' && open && !element.open) element.showModal(); if (!open && element.open) element.close(); }, { immediate: true });
 watch([() => props.open, () => props.mode], ([open, mode]) => { if (!open) return; teamCollapsed.value = mode === 'side'; }, { immediate: true });
-watch([agents, () => props.routeId, () => props.open], ([next, routeId, open]) => {
+watch([agents, routingQuery.data, () => props.routeId, () => props.open], ([next, routing, routeId, open]) => {
   if (!open || !next.length) return;
-  const preferred = routeAgentDefaults[routeId];
-  const family = next.find((item) => item.main_agent.agent_code === preferred?.main) ?? next[0];
+  if (userOverride.value) return;
+  const family = next.find((item) => item.main_agent.agent_code === routing?.main_agent_code) ?? next[0];
   selectedAgentCode.value = family.main_agent.agent_code;
-  const child = family.child_agents.find((item) => item.stage_code === preferred?.stage) ?? family.child_agents[0];
+  const child = family.child_agents.find((item) => item.stage_code === routing?.stage_code) ?? family.child_agents[0];
   selectedChildCode.value = child?.agent_code ?? '';
 }, { immediate: true });
+watch(() => props.routeId, () => { userOverride.value = false; });
 watch(selectedAgent, (agent) => { if (agent && !agent.child_agents.some((child) => child.agent_code === selectedChildCode.value)) selectedChildCode.value = agent.child_agents[0]?.agent_code ?? ''; });
 watch(availableModels, (next) => { if (next.length && !next.some((model) => model.model_deployment_id === selectedModelId.value)) selectedModelId.value = next[0].model_deployment_id; }, { immediate: true });
 
@@ -110,8 +76,8 @@ function requestClose() { emit('close'); }
 function changeMode(mode: 'center' | 'side') { if (mode !== props.mode) emit('mode-change', mode); }
 function cancel(event: Event) { event.preventDefault(); requestClose(); }
 function closed() { if (props.open) requestClose(); }
-function selectAgent(agent: MedicalAgentFamilyWire) { selectedAgentCode.value = agent.main_agent.agent_code; }
-function useQuestionExample(example: string, agent: MedicalAgentFamilyWire, child?: MedicalAgentReleaseWire) { selectedAgentCode.value = agent.main_agent.agent_code; if (child) selectedChildCode.value = child.agent_code; draft.value = doctorFacingAiText(example); }
+function selectAgent(agent: MedicalAgentFamilyWire) { selectedAgentCode.value = agent.main_agent.agent_code; userOverride.value = true; }
+function useQuestionExample(example: string, agent: MedicalAgentFamilyWire, child?: MedicalAgentReleaseWire) { selectedAgentCode.value = agent.main_agent.agent_code; if (child) selectedChildCode.value = child.agent_code; draft.value = doctorFacingAiText(example); userOverride.value = true; }
 function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) { useQuestionExample(child.question_examples[0] ?? child.current_action, agent, child); }
 
 function initialEvents(child: MedicalAgentReleaseWire): TaskEvent[] { return [
@@ -148,7 +114,7 @@ async function send() {
   messages.value.push({ id: crypto.randomUUID(), role: 'user', text }); messages.value.push({ id: responseId, role: 'assistant', text: '', events: initialEvents(child) }); draft.value = '';
   try {
     const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId;
-    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, sourceRoute: props.routeId, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: userOverride.value ? agent.main_agent.agent_code : null, stageCode: userOverride.value ? child.stage_code : null, sourceRoute: props.routeId, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
     const response = messages.value.find((item) => item.id === responseId)!; applyRun(response, run, child.display_name);
     await pollRun(response, lease, patientId, encounterId, child.display_name);
   } catch (error) { const next = toClinicalIssue(error); const response = messages.value.find((item) => item.id === responseId)!; response.text = `任务未完成：${next.message}`; response.events = (response.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' }); notice.value = `${next.code}：${next.message}`; }
