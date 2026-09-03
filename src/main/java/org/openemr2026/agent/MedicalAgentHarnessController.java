@@ -67,10 +67,10 @@ final class MedicalAgentHarnessController {
             HttpServletRequest request,
             @RequestHeader("X-Organization-Context") UUID organizationId,
             @RequestHeader("X-Facility-Context") UUID facilityId) {
-        security.authorizeForPurposes(request, organizationId, facilityId, null, null,
+        ClinicalIdentity identity = security.authorizeForPurposes(request, organizationId, facilityId, null, null,
                 Set.of("MEDICAL_AGENT_CATALOG"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(harness.catalog().stream().map(MedicalAgentHarnessController::wire).toList());
+                .body(harness.catalog(identity.tenantId()).stream().map(MedicalAgentHarnessController::wire).toList());
     }
 
     @PostMapping("/runs")
@@ -201,7 +201,7 @@ final class MedicalAgentHarnessController {
                 release.stageCode(), release.description(), release.doctorFacingSummary(), release.displayRole(),
                 release.currentAction(), release.contributionLabel(), release.questionExamples(),
                 release.outputSchema(), MedicalAgentReleaseWire.AutonomyLevelValue.valueOf(release.autonomyLevel()),
-                release.maxSteps(), release.maxToolCalls(), release.maxDurationSeconds());
+                release.maxSteps(), release.maxToolCalls(), release.maxDurationSeconds(), release.usageCount());
     }
 
     private static MedicalAgentRunWire wire(RunView run) {

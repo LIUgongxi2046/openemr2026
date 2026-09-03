@@ -5124,6 +5124,7 @@ export const medicalAgentReleaseWireSchema = z.object({
   "max_steps": z.number().int(),
   "max_tool_calls": z.number().int(),
   "max_duration_seconds": z.number().int(),
+  "usage_count": z.number().int(),
 }).strict();
 export type MedicalAgentReleaseWire = z.infer<typeof medicalAgentReleaseWireSchema>;
 

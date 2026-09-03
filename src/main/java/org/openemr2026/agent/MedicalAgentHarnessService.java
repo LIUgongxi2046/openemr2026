@@ -54,12 +54,14 @@ final class MedicalAgentHarnessService {
         this.orchestrator = orchestrator;
     }
 
-    List<AgentFamilyView> catalog() {
+    List<AgentFamilyView> catalog(UUID tenantId) {
         List<AgentReleaseRow> rows = jdbc.sql("""
                 select release.agent_code, release.release_version, release.display_name, release.agent_level,
                   release.parent_agent_code, release.stage_code, release.description, release.doctor_facing_summary,
                   release.display_role, release.current_action, release.contribution_label, release.output_schema,
                   release.autonomy_level, release.max_steps, release.max_tool_calls, release.max_duration_seconds,
+                  (select count(*) from medical_agent_run run
+                   where run.tenant_id = :tenant and run.root_agent_code = release.agent_code) as usage_count,
                   coalesce(jsonb_agg(example.question_text order by example.example_order)
                     filter (where example.question_text is not null), '[]'::jsonb)::text as question_examples
                 from medical_agent_release release
@@ -73,14 +75,16 @@ final class MedicalAgentHarnessService {
                   release.autonomy_level, release.max_steps, release.max_tool_calls, release.max_duration_seconds
                 order by case when release.agent_level = 'MAIN' then 0 else 1 end,
                   release.parent_agent_code, release.stage_code, release.agent_code
-                """).query((rs, row) -> new AgentReleaseRow(
+                """).param("tenant", tenantId)
+                .query((rs, row) -> new AgentReleaseRow(
                         rs.getString("agent_code"), rs.getString("release_version"), rs.getString("display_name"),
                         rs.getString("agent_level"), rs.getString("parent_agent_code"), rs.getString("stage_code"),
                         rs.getString("description"), rs.getString("doctor_facing_summary"),
                         rs.getString("display_role"), rs.getString("current_action"),
                         rs.getString("contribution_label"), rs.getString("output_schema"),
                         rs.getString("autonomy_level"), rs.getInt("max_steps"), rs.getInt("max_tool_calls"),
-                        rs.getInt("max_duration_seconds"), listOfStrings(rs.getString("question_examples")))).list();
+                        rs.getInt("max_duration_seconds"), rs.getInt("usage_count"),
+                        listOfStrings(rs.getString("question_examples")))).list();
         Map<String, List<AgentReleaseView>> children = new LinkedHashMap<>();
         rows.stream().filter(row -> "CHILD".equals(row.level())).forEach(row ->
                 children.computeIfAbsent(row.parentCode(), ignored -> new ArrayList<>()).add(view(row)));
@@ -1356,7 +1360,7 @@ final class MedicalAgentHarnessService {
         return new AgentReleaseView(row.code(), row.version(), row.displayName(), row.level(), row.parentCode(),
                 row.stageCode(), row.description(), row.doctorFacingSummary(), row.displayRole(), row.currentAction(),
                 row.contributionLabel(), row.questionExamples(), row.outputSchema(), row.autonomyLevel(),
-                row.maxSteps(), row.maxToolCalls(), row.maxDurationSeconds());
+                row.maxSteps(), row.maxToolCalls(), row.maxDurationSeconds(), row.usageCount());
     }
 
     @SuppressWarnings("unchecked")
@@ -1427,7 +1431,7 @@ final class MedicalAgentHarnessService {
             String parentAgentCode, String stageCode, String description, String doctorFacingSummary,
             String displayRole, String currentAction, String contributionLabel, List<String> questionExamples,
             String outputSchema, String autonomyLevel,
-            int maxSteps, int maxToolCalls, int maxDurationSeconds) {}
+            int maxSteps, int maxToolCalls, int maxDurationSeconds, int usageCount) {}
 
     record RunView(UUID runId, UUID contextLeaseId, String rootAgentCode, String rootAgentVersion,
             String compositionCode, String compositionVersion, String requestedStage, UUID patientId,
@@ -1461,7 +1465,7 @@ final class MedicalAgentHarnessService {
             String parentCode, String stageCode, String description, String doctorFacingSummary,
             String displayRole, String currentAction,
             String contributionLabel, String outputSchema, String autonomyLevel, int maxSteps,
-            int maxToolCalls, int maxDurationSeconds, List<String> questionExamples) {}
+            int maxToolCalls, int maxDurationSeconds, int usageCount, List<String> questionExamples) {}
     private record MainReleaseRow(String agentCode, String agentVersion, String compositionCode,
             String compositionVersion) {}
     private record NodeRow(String agentCode, String agentVersion, String displayName, String displayRole,

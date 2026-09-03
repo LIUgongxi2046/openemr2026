@@ -40,13 +40,14 @@ function teamName(agent: MedicalAgentFamilyWire) {
       >
         <i aria-hidden="true">{{ teamName(agent).slice(0, 1) }}</i>
         <span v-if="!collapsed"><b>{{ teamName(agent) }}</b><small>{{ doctorFacingAiText(agent.main_agent.display_role) }} · {{ agent.child_agents.length }} 位医助</small></span>
+        <em v-if="!collapsed" class="xiaonan-usage">已用 {{ agent.main_agent.usage_count }} 次</em>
       </button>
     </nav>
   </aside>
 </template>
 
 <style scoped>
-.xiaonan-harness-team-rail { display: grid; grid-template-rows: auto auto minmax(0,1fr); width: 278px; min-width: 0; height: 100%; overflow: hidden; border-right: 1px solid #d8e3ef; background: #f6f9fd; transition: width .18s ease; }
+.xiaonan-harness-team-rail { display: grid; grid-template-rows: auto minmax(0,1fr); width: 278px; min-width: 0; height: 100%; overflow: hidden; border-right: 1px solid #d8e3ef; background: #f6f9fd; transition: width .18s ease; }
 .xiaonan-harness-team-rail.collapsed { width: 62px; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 58px; padding: 11px 12px; border-bottom: 1px solid #d8e3ef; background: #fff; }
 header > div { display: grid; gap: 3px; min-width: 0; }
@@ -54,8 +55,8 @@ header strong { color: #263f58; font-size: 13px; }
 header span { color: #738397; font-size: 9px; }
 header button { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; padding: 0; color: #315a83; border: 1px solid #c8d7e7; border-radius: 8px; background: #f8fbff; font-size: 21px; cursor: pointer; }
 .collapsed header { justify-content: center; padding-inline: 8px; }
-.xiaonan-team-list { display: grid; gap: 6px; padding: 10px; border-bottom: 1px solid #d8e3ef; }
-.xiaonan-team-list > button { display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 7px; color: inherit; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
+.xiaonan-team-list { display: grid; gap: 6px; padding: 10px; overflow-y: auto; }
+.xiaonan-team-list > button { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 7px; color: inherit; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
 .xiaonan-team-list > button:hover { background: #edf5ff; }
 .xiaonan-team-list > button.selected { border-color: #9dbfe6; background: #e8f2ff; box-shadow: 0 0 0 1px rgb(23 105 224 / 8%); }
 .xiaonan-team-list > button:disabled { opacity: .55; cursor: not-allowed; }
@@ -63,6 +64,7 @@ header button { display: grid; place-items: center; width: 30px; height: 30px; f
 .xiaonan-team-list span { display: grid; gap: 3px; min-width: 0; }
 .xiaonan-team-list b { overflow: hidden; color: #29435d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .xiaonan-team-list small { overflow: hidden; color: #738397; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.xiaonan-usage { flex: 0 0 auto; padding: 2px 7px; color: #6a7f93; border-radius: 999px; background: #eef3f8; font-size: 7px; font-style: normal; font-weight: 800; white-space: nowrap; }
 .collapsed .xiaonan-team-list { padding: 9px; }
 .collapsed .xiaonan-team-list > button { display: grid; grid-template-columns: 34px; place-content: center; padding: 4px; }
 .xiaonan-rail-state { padding: 18px 10px; color: #74869a; font-size: 9px; text-align: center; }

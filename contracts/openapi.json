@@ -36104,7 +36104,7 @@
       "MedicalAgentRelease": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["agent_code", "release_version", "display_name", "agent_level", "stage_code", "description", "display_role", "current_action", "contribution_label", "question_examples", "output_schema", "autonomy_level", "max_steps", "max_tool_calls", "max_duration_seconds"],
+        "required": ["agent_code", "release_version", "display_name", "agent_level", "stage_code", "description", "display_role", "current_action", "contribution_label", "question_examples", "output_schema", "autonomy_level", "max_steps", "max_tool_calls", "max_duration_seconds", "usage_count"],
         "properties": {
           "agent_code": { "type": "string" },
           "release_version": { "type": "string" },
@@ -36126,7 +36126,8 @@
           "autonomy_level": { "type": "string", "enum": ["A0", "A1", "A2"] },
           "max_steps": { "type": "integer" },
           "max_tool_calls": { "type": "integer" },
-          "max_duration_seconds": { "type": "integer" }
+          "max_duration_seconds": { "type": "integer" },
+          "usage_count": { "type": "integer", "minimum": 0, "description": "该医助团队在当前院区已被使用的运行次数。" }
         }
       },
       "MedicalAgentFamily": {
