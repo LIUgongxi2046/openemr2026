@@ -1867,6 +1867,13 @@ export const modelDeploymentDeactivateRequestWireSchema = z.object({
 }).strict();
 export type ModelDeploymentDeactivateRequestWire = z.infer<typeof modelDeploymentDeactivateRequestWireSchema>;
 
+export const modelDeploymentPublishRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "expected_row_version": z.number().int(),
+}).strict();
+export type ModelDeploymentPublishRequestWire = z.infer<typeof modelDeploymentPublishRequestWireSchema>;
+
 export const modelDeploymentConnectionTestRequestWireSchema = z.object({
   "organization_id": z.string().uuid(),
   "facility_id": z.string().uuid(),
@@ -7106,6 +7113,408 @@ export const knowledgeFeedbackCreateRequestWireSchema = z.object({
   "comment": z.string().nullable().optional(),
 }).strict();
 export type KnowledgeFeedbackCreateRequestWire = z.infer<typeof knowledgeFeedbackCreateRequestWireSchema>;
+
+export const pathwayKnowledgeWireSchema = z.object({
+  "pathway_knowledge_id": z.string().uuid(),
+  "pathway_code": z.string(),
+  "display_name": z.string(),
+  "specialty_code": z.string(),
+  "diagnosis_code": z.string(),
+  "inclusion_criteria": z.string().nullable().optional(),
+  "exclusion_criteria": z.string().nullable().optional(),
+  "avg_los_days": z.number().int().nullable().optional(),
+  "status": z.enum(["ACTIVE","RETIRED"]),
+  "created_by": z.string().uuid(),
+  "created_at": z.string(),
+  "updated_at": z.string().optional(),
+}).strict();
+export type PathwayKnowledgeWire = z.infer<typeof pathwayKnowledgeWireSchema>;
+
+export const pathwayKnowledgeCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "pathway_code": z.string(),
+  "display_name": z.string(),
+  "specialty_code": z.string(),
+  "diagnosis_code": z.string(),
+  "inclusion_criteria": z.string().nullable().optional(),
+  "exclusion_criteria": z.string().nullable().optional(),
+  "avg_los_days": z.number().int().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeCreateRequestWire = z.infer<typeof pathwayKnowledgeCreateRequestWireSchema>;
+
+export const pathwayKnowledgeTaskInputWireSchema = z.object({
+  "task_type": z.enum(["MEDICATION","LAB","IMAGING","NURSING","EDUCATION","ASSESSMENT"]),
+  "content": z.string(),
+  "code_ref": z.string().nullable().optional(),
+  "required": z.boolean().optional(),
+  "sequence_no": z.number().int(),
+}).strict();
+export type PathwayKnowledgeTaskInputWire = z.infer<typeof pathwayKnowledgeTaskInputWireSchema>;
+
+export const pathwayKnowledgeStageInputWireSchema = z.object({
+  "stage_code": z.string(),
+  "stage_name": z.string(),
+  "sequence_no": z.number().int(),
+  "expected_day_start": z.number().int(),
+  "expected_day_end": z.number().int(),
+  "stage_goal": z.string().nullable().optional(),
+  "assessment_points": z.string().nullable().optional(),
+  "tasks": z.array(pathwayKnowledgeTaskInputWireSchema).optional(),
+}).strict();
+export type PathwayKnowledgeStageInputWire = z.infer<typeof pathwayKnowledgeStageInputWireSchema>;
+
+export const pathwayKnowledgeVarianceInputWireSchema = z.object({
+  "variance_type": z.string(),
+  "trigger_condition": z.string().nullable().optional(),
+  "disposition": z.string().nullable().optional(),
+  "record_requirement": z.string().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeVarianceInputWire = z.infer<typeof pathwayKnowledgeVarianceInputWireSchema>;
+
+export const pathwayKnowledgeQualityPointInputWireSchema = z.object({
+  "indicator": z.string(),
+  "standard": z.string().nullable().optional(),
+  "frequency": z.string().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeQualityPointInputWire = z.infer<typeof pathwayKnowledgeQualityPointInputWireSchema>;
+
+export const pathwayKnowledgeVersionCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "stages": z.array(pathwayKnowledgeStageInputWireSchema).min(1),
+  "variances": z.array(pathwayKnowledgeVarianceInputWireSchema).optional(),
+  "quality_points": z.array(pathwayKnowledgeQualityPointInputWireSchema).optional(),
+}).strict();
+export type PathwayKnowledgeVersionCreateRequestWire = z.infer<typeof pathwayKnowledgeVersionCreateRequestWireSchema>;
+
+export const pathwayKnowledgeTaskWireSchema = z.object({
+  "task_id": z.string().uuid(),
+  "task_type": z.enum(["MEDICATION","LAB","IMAGING","NURSING","EDUCATION","ASSESSMENT"]),
+  "content": z.string(),
+  "code_ref": z.string().nullable().optional(),
+  "required": z.boolean(),
+  "sequence_no": z.number().int(),
+}).strict();
+export type PathwayKnowledgeTaskWire = z.infer<typeof pathwayKnowledgeTaskWireSchema>;
+
+export const pathwayKnowledgeStageWireSchema = z.object({
+  "stage_id": z.string().uuid(),
+  "stage_code": z.string(),
+  "stage_name": z.string(),
+  "sequence_no": z.number().int(),
+  "expected_day_start": z.number().int(),
+  "expected_day_end": z.number().int(),
+  "stage_goal": z.string().nullable().optional(),
+  "assessment_points": z.string().nullable().optional(),
+  "tasks": z.array(pathwayKnowledgeTaskWireSchema).optional(),
+}).strict();
+export type PathwayKnowledgeStageWire = z.infer<typeof pathwayKnowledgeStageWireSchema>;
+
+export const pathwayKnowledgeVarianceWireSchema = z.object({
+  "variance_id": z.string().uuid(),
+  "variance_type": z.string(),
+  "trigger_condition": z.string().nullable().optional(),
+  "disposition": z.string().nullable().optional(),
+  "record_requirement": z.string().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeVarianceWire = z.infer<typeof pathwayKnowledgeVarianceWireSchema>;
+
+export const pathwayKnowledgeQualityPointWireSchema = z.object({
+  "quality_point_id": z.string().uuid(),
+  "indicator": z.string(),
+  "standard": z.string().nullable().optional(),
+  "frequency": z.string().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeQualityPointWire = z.infer<typeof pathwayKnowledgeQualityPointWireSchema>;
+
+export const pathwayKnowledgeVersionWireSchema = z.object({
+  "pathway_version_id": z.string().uuid(),
+  "pathway_knowledge_id": z.string().uuid(),
+  "version_no": z.number().int(),
+  "content_hash": z.string().optional(),
+  "status": z.enum(["DRAFT","IN_REVIEW","APPROVED","ACTIVE","RETIRED"]),
+  "submitted_by": z.string().uuid(),
+  "reviewed_by": z.string().uuid().nullable().optional(),
+  "approved_by": z.string().uuid().nullable().optional(),
+  "submitted_at": z.string(),
+  "reviewed_at": z.string().nullable().optional(),
+  "approved_at": z.string().nullable().optional(),
+  "published_at": z.string().nullable().optional(),
+  "stages": z.array(pathwayKnowledgeStageWireSchema).optional(),
+  "variances": z.array(pathwayKnowledgeVarianceWireSchema).optional(),
+  "quality_points": z.array(pathwayKnowledgeQualityPointWireSchema).optional(),
+}).strict();
+export type PathwayKnowledgeVersionWire = z.infer<typeof pathwayKnowledgeVersionWireSchema>;
+
+export const pathwayKnowledgeActionRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "comment": z.string().nullable().optional(),
+}).strict();
+export type PathwayKnowledgeActionRequestWire = z.infer<typeof pathwayKnowledgeActionRequestWireSchema>;
+
+export const pathwayKnowledgeSearchRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "query": z.string(),
+  "specialty_code": z.string().nullable().optional(),
+  "diagnosis_code": z.string().nullable().optional(),
+  "limit": z.number().int().optional(),
+}).strict();
+export type PathwayKnowledgeSearchRequestWire = z.infer<typeof pathwayKnowledgeSearchRequestWireSchema>;
+
+export const pathwayKnowledgeReferenceWireSchema = z.object({
+  "pathway_knowledge_id": z.string().uuid(),
+  "pathway_version_id": z.string().uuid(),
+  "display_name": z.string(),
+  "diagnosis_code": z.string(),
+  "specialty_code": z.string().nullable().optional(),
+  "excerpt": z.string(),
+  "content_hash": z.string().optional(),
+}).strict();
+export type PathwayKnowledgeReferenceWire = z.infer<typeof pathwayKnowledgeReferenceWireSchema>;
+
+export const pathwayKnowledgeSearchResultWireSchema = z.object({
+  "references": z.array(pathwayKnowledgeReferenceWireSchema),
+}).strict();
+export type PathwayKnowledgeSearchResultWire = z.infer<typeof pathwayKnowledgeSearchResultWireSchema>;
+
+export const integrationMessageWireSchema = z.object({
+  "message_id": z.string().uuid(),
+  "trace_id": z.string(),
+  "connector_code": z.string(),
+  "interface_code": z.string(),
+  "direction": z.enum(["INBOUND","OUTBOUND"]),
+  "business_object": z.string(),
+  "business_key": z.string().nullable().optional(),
+  "message_status": z.enum(["PENDING","DELIVERED","RECONCILED","FAILED"]),
+  "error_detail": z.string().nullable().optional(),
+  "occurred_at": z.string(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+}).strict();
+export type IntegrationMessageWire = z.infer<typeof integrationMessageWireSchema>;
+
+export const integrationMessageCollectRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "connector_code": z.string(),
+  "direction": z.enum(["INBOUND","OUTBOUND"]).optional(),
+  "simulation_scenario": z.enum(["SUCCESS","DEGRADED","UNAVAILABLE"]).optional(),
+  "record_count": z.number().int().optional(),
+}).strict();
+export type IntegrationMessageCollectRequestWire = z.infer<typeof integrationMessageCollectRequestWireSchema>;
+
+export const integrationReconciliationWireSchema = z.object({
+  "reconciliation_id": z.string().uuid(),
+  "connector_code": z.string(),
+  "window_start": z.string(),
+  "window_end": z.string(),
+  "sent_count": z.number().int(),
+  "delivered_count": z.number().int(),
+  "error_count": z.number().int(),
+  "pending_count": z.number().int(),
+  "status": z.enum(["OPEN","RECONCILED"]),
+  "reconciled_at": z.string().nullable().optional(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+}).strict();
+export type IntegrationReconciliationWire = z.infer<typeof integrationReconciliationWireSchema>;
+
+export const integrationMessageCollectResultWireSchema = z.object({
+  "messages": z.array(integrationMessageWireSchema),
+  "reconciliation": integrationReconciliationWireSchema,
+}).strict();
+export type IntegrationMessageCollectResultWire = z.infer<typeof integrationMessageCollectResultWireSchema>;
+
+export const integrationMessageReconcileRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type IntegrationMessageReconcileRequestWire = z.infer<typeof integrationMessageReconcileRequestWireSchema>;
+
+export const deviceObservationWireSchema = z.object({
+  "observation_id": z.string().uuid(),
+  "device_code": z.string(),
+  "trace_id": z.string(),
+  "metric": z.string(),
+  "metric_value": z.number(),
+  "metric_unit": z.string(),
+  "quality": z.enum(["VERIFIED","SUSPECT"]),
+  "alarm_level": z.enum(["NONE","MEDIUM","HIGH"]),
+  "observed_at": z.string(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+}).strict();
+export type DeviceObservationWire = z.infer<typeof deviceObservationWireSchema>;
+
+export const deviceStatusWireSchema = z.object({
+  "device_code": z.string(),
+  "online_status": z.enum(["ONLINE","DEGRADED","OFFLINE"]),
+  "clock_offset_seconds": z.number().int(),
+  "bound_patient_id": z.string().uuid().nullable().optional(),
+  "last_observed_at": z.string().nullable().optional(),
+  "calibration_status": z.enum(["VALID","DUE_REVIEW"]),
+  "alarm_state": z.enum(["NONE","MEDIUM","HIGH"]),
+  "row_version": z.number().int(),
+  "updated_at": z.string(),
+}).strict();
+export type DeviceStatusWire = z.infer<typeof deviceStatusWireSchema>;
+
+export const deviceTelemetryCollectRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "device_code": z.string(),
+  "simulation_scenario": z.enum(["SUCCESS","DEGRADED"]).optional(),
+  "record_count": z.number().int().optional(),
+}).strict();
+export type DeviceTelemetryCollectRequestWire = z.infer<typeof deviceTelemetryCollectRequestWireSchema>;
+
+export const deviceTelemetryCollectResultWireSchema = z.object({
+  "observations": z.array(deviceObservationWireSchema),
+  "status": deviceStatusWireSchema,
+}).strict();
+export type DeviceTelemetryCollectResultWire = z.infer<typeof deviceTelemetryCollectResultWireSchema>;
+
+export const deviceCatalogWireSchema = z.object({
+  "device_id": z.string().uuid(),
+  "device_code": z.string(),
+  "display_name": z.string(),
+  "device_type": z.enum(["MONITOR","VENTILATOR","INFUSION_PUMP","IMAGING","LAB_ANALYZER"]),
+  "manufacturer_model": z.string().nullable().optional(),
+  "department": z.string().nullable().optional(),
+  "gateway": z.string().nullable().optional(),
+  "standard_interface": z.string().nullable().optional(),
+  "calibration_due": z.string().nullable().optional(),
+  "clock_offset_seconds": z.number().int(),
+  "binding_policy": z.string().nullable().optional(),
+  "status": z.enum(["ACTIVE","INACTIVE"]),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string(),
+}).strict();
+export type DeviceCatalogWire = z.infer<typeof deviceCatalogWireSchema>;
+
+export const deviceCatalogCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "device_code": z.string(),
+  "display_name": z.string(),
+  "device_type": z.enum(["MONITOR","VENTILATOR","INFUSION_PUMP","IMAGING","LAB_ANALYZER"]),
+  "manufacturer_model": z.string().nullable().optional(),
+  "department": z.string().nullable().optional(),
+  "gateway": z.string().nullable().optional(),
+  "standard_interface": z.string().nullable().optional(),
+  "calibration_due": z.string().nullable().optional(),
+  "clock_offset_seconds": z.number().int().optional(),
+  "binding_policy": z.string().nullable().optional(),
+}).strict();
+export type DeviceCatalogCreateRequestWire = z.infer<typeof deviceCatalogCreateRequestWireSchema>;
+
+export const deviceCatalogDeactivateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type DeviceCatalogDeactivateRequestWire = z.infer<typeof deviceCatalogDeactivateRequestWireSchema>;
+
+export const researchProjectWireSchema = z.object({
+  "project_id": z.string().uuid(),
+  "project_code": z.string(),
+  "display_name": z.string(),
+  "project_type": z.enum(["OBSERVATIONAL","RETROSPECTIVE","INTERVENTIONAL"]),
+  "principal_investigator": z.string(),
+  "registry_number": z.string().nullable().optional(),
+  "ethics_approval": z.string().nullable().optional(),
+  "approved_purpose": z.string(),
+  "data_scope": z.array(z.string()),
+  "member_count": z.number().int(),
+  "expires_at": z.string().nullable().optional(),
+  "status": z.enum(["ACTIVE","INACTIVE"]),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string(),
+}).strict();
+export type ResearchProjectWire = z.infer<typeof researchProjectWireSchema>;
+
+export const researchProjectCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "project_code": z.string(),
+  "display_name": z.string(),
+  "project_type": z.enum(["OBSERVATIONAL","RETROSPECTIVE","INTERVENTIONAL"]),
+  "principal_investigator": z.string(),
+  "registry_number": z.string().nullable().optional(),
+  "ethics_approval": z.string().nullable().optional(),
+  "approved_purpose": z.string(),
+  "data_scope": z.array(z.string()).optional(),
+  "member_count": z.number().int().optional(),
+  "expires_at": z.string().nullable().optional(),
+}).strict();
+export type ResearchProjectCreateRequestWire = z.infer<typeof researchProjectCreateRequestWireSchema>;
+
+export const researchProjectDeactivateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type ResearchProjectDeactivateRequestWire = z.infer<typeof researchProjectDeactivateRequestWireSchema>;
+
+export const knowledgeGraphNodeWireSchema = z.object({
+  "id": z.string().uuid(),
+  "label": z.string(),
+  "type": z.string(),
+}).strict();
+export type KnowledgeGraphNodeWire = z.infer<typeof knowledgeGraphNodeWireSchema>;
+
+export const knowledgeGraphEdgeWireSchema = z.object({
+  "source": z.string().uuid(),
+  "target": z.string().uuid(),
+  "relation": z.string(),
+  "predicate": z.string(),
+}).strict();
+export type KnowledgeGraphEdgeWire = z.infer<typeof knowledgeGraphEdgeWireSchema>;
+
+export const knowledgeGraphWireSchema = z.object({
+  "nodes": z.array(knowledgeGraphNodeWireSchema),
+  "edges": z.array(knowledgeGraphEdgeWireSchema),
+}).strict();
+export type KnowledgeGraphWire = z.infer<typeof knowledgeGraphWireSchema>;
+
+export const knowledgeGraphNeighborWireSchema = z.object({
+  "node": knowledgeGraphNodeWireSchema,
+  "predicate": z.string(),
+}).strict();
+export type KnowledgeGraphNeighborWire = z.infer<typeof knowledgeGraphNeighborWireSchema>;
+
+export const knowledgeGraphNeighborsWireSchema = z.object({
+  "node": knowledgeGraphNodeWireSchema,
+  "incoming": z.array(knowledgeGraphNeighborWireSchema),
+  "outgoing": z.array(knowledgeGraphNeighborWireSchema),
+}).strict();
+export type KnowledgeGraphNeighborsWire = z.infer<typeof knowledgeGraphNeighborsWireSchema>;
+
+export const knowledgeGraphPathWireSchema = z.object({
+  "nodes": z.array(knowledgeGraphNodeWireSchema),
+  "edges": z.array(knowledgeGraphEdgeWireSchema),
+}).strict();
+export type KnowledgeGraphPathWire = z.infer<typeof knowledgeGraphPathWireSchema>;
+
+export const knowledgeGraphPathsWireSchema = z.object({
+  "from": knowledgeGraphNodeWireSchema,
+  "to": knowledgeGraphNodeWireSchema,
+  "paths": z.array(knowledgeGraphPathWireSchema),
+}).strict();
+export type KnowledgeGraphPathsWire = z.infer<typeof knowledgeGraphPathsWireSchema>;
+
+export const pathwayReviewQueueItemWireSchema = z.object({
+  "pathway_knowledge_id": z.string().uuid(),
+  "display_name": z.string(),
+  "diagnosis_code": z.string(),
+  "pathway_version_id": z.string().uuid(),
+  "version_no": z.number().int(),
+  "status": z.enum(["DRAFT","IN_REVIEW","APPROVED","ACTIVE","RETIRED"]),
+}).strict();
+export type PathwayReviewQueueItemWire = z.infer<typeof pathwayReviewQueueItemWireSchema>;
 
 export interface ClinicalContextLease {
   leaseId: string;

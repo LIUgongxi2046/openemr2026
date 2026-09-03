@@ -10,6 +10,7 @@ import org.openemr2026.model.ModelDataProcessingApprovalService.ApprovalCommand;
 import org.openemr2026.model.ModelDataProcessingApprovalService.ApprovalView;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
+import org.openemr2026.contracts.ModelDeploymentPublishRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
@@ -67,6 +68,34 @@ final class ModelDeploymentApiTest {
                 registered.modelDeploymentId(), new ModelDeploymentDeactivateRequestWire(
                         organization, facility, registered.rowVersion()));
         assertThat(deactivated.status()).isEqualTo(ModelDeploymentWire.StatusValue.INACTIVE);
+    }
+
+    @Test
+    void givenReadyConnectionAndPassedEvaluation_whenPublishing_thenApprovedForEvaRouting() {
+        String modelCode = "MODEL-" + UUID.randomUUID();
+        ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, modelCode,
+                        "LOCAL-INFER", "发布测试模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY,
+                        "https://gateway.example/v1", "env://TEST_MODEL_API_KEY", null));
+        assertThat(registered.evaluationStatus()).isEqualTo(ModelDeploymentWire.EvaluationStatusValue.EVALUATING);
+
+        jdbc.sql("""
+                update model_deployment set connection_status = 'READY'
+                where tenant_id = cast(:tenant as uuid) and model_deployment_id = :deployment
+                """).param("tenant", TENANT).param("deployment", registered.modelDeploymentId()).update();
+        jdbc.sql("""
+                insert into model_evaluation(
+                  tenant_id, model_evaluation_id, model_deployment_id, eval_name, score,
+                  threshold, status, evaluated_at, evaluated_by)
+                values (cast(:tenant as uuid), :evaluation, :deployment, '发布门禁评估', 0.95,
+                  0.8, 'PASSED', now(), cast(:user as uuid))
+                """).param("tenant", TENANT).param("evaluation", UUID.randomUUID())
+                .param("deployment", registered.modelDeploymentId()).param("user", USER).update();
+
+        ModelDeploymentWire published = models.publish(identity(), "publish-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), new ModelDeploymentPublishRequestWire(
+                        organization, facility, registered.rowVersion()));
+        assertThat(published.evaluationStatus()).isEqualTo(ModelDeploymentWire.EvaluationStatusValue.APPROVED);
     }
 
     @Test

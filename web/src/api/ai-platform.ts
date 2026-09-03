@@ -19,6 +19,7 @@ import {
   aiRunSnapshotWireSchema,
   modelDeploymentDeactivateRequestWireSchema,
   modelDeploymentConnectionTestRequestWireSchema,
+  modelDeploymentPublishRequestWireSchema,
   modelDeploymentRegisterRequestWireSchema,
   modelDeploymentUpdateRequestWireSchema,
   modelDeploymentWireSchema,
@@ -129,6 +130,21 @@ export async function testModelDeploymentConnection(
       method: 'POST',
       headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(modelDeploymentConnectionTestRequestWireSchema.parse({
+        ...orgFacility(), expected_row_version: model.row_version,
+      })),
+    },
+  ));
+}
+
+export async function publishModelDeployment(
+  lease: ContextLeaseWire,
+  model: ModelDeploymentWire,
+): Promise<ModelDeploymentWire> {
+  return modelDeploymentWireSchema.parse(await request(
+    `/model-deployments/${model.model_deployment_id}/publications`, {
+      method: 'POST',
+      headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+      body: JSON.stringify(modelDeploymentPublishRequestWireSchema.parse({
         ...orgFacility(), expected_row_version: model.row_version,
       })),
     },

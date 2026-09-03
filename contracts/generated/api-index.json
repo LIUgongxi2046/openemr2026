@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 566,
+  "operation_count": 595,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -119,6 +119,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:advanceInpatientPathway",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "approvePathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-versions/{pathway_version_id}/approvals",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeActionRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:approvePathwayKnowledge",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -425,6 +442,40 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:closeNursingDischarge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "collectDeviceTelemetry",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/device-telemetry",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DeviceTelemetryCollectRequest",
+      "output_schema": "DeviceTelemetryCollectResult",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:collectDeviceTelemetry",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "collectIntegrationMessages",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/integration-messages",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "IntegrationMessageCollectRequest",
+      "output_schema": "IntegrationMessageCollectResult",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:collectIntegrationMessages",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -1201,6 +1252,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createDevice",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/devices",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DeviceCatalogCreateRequest",
+      "output_schema": "DeviceCatalog",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createDevice",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createDictationNote",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -1898,6 +1966,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-knowledge",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeCreateRequest",
+      "output_schema": "PathwayKnowledge",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createPathwayKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createPathwayKnowledgeVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-knowledge/{pathway_knowledge_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeVersionCreateRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createPathwayKnowledgeVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createPatient",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2119,6 +2221,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "createResearchProject",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/research-projects",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ResearchProjectCreateRequest",
+      "output_schema": "ResearchProject",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createResearchProject",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "createScheduleSlot",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2306,6 +2425,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "deactivateDevice",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/devices/{device_id}/deactivations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "DeviceCatalogDeactivateRequest",
+      "output_schema": "DeviceCatalog",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:deactivateDevice",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "deactivateDictionaryItem",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -2404,6 +2540,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:deactivateResearchCohort",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "deactivateResearchProject",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/research-projects/{project_id}/deactivations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ResearchProjectDeactivateRequest",
+      "output_schema": "ResearchProject",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:deactivateResearchProject",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3260,6 +3413,74 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "getKnowledgeGraph",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-graph",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeGraph",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getKnowledgeGraph",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getKnowledgeGraphEgo",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-graph/ego",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeGraph",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getKnowledgeGraphEgo",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getKnowledgeGraphNeighbors",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-graph/nodes/{concept_id}/neighbors",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeGraphNeighbors",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getKnowledgeGraphNeighbors",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getKnowledgeGraphPaths",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-graph/paths",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeGraphPaths",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getKnowledgeGraphPaths",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "getMedicalAgentRun",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -3307,6 +3528,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:getMockInterfaceRunEvidence",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "getPathwayReviewQueue",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/pathway-review-queue",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "PathwayReviewQueueItem[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:getPathwayReviewQueue",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -4314,6 +4552,57 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listDevices",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/devices",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DeviceCatalog[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDevices",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listDeviceStatuses",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/device-statuses",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DeviceStatus[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDeviceStatuses",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listDeviceTelemetry",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/device-telemetry",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "DeviceObservation[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listDeviceTelemetry",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listDictationNotes",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -4854,6 +5143,40 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listInpatientWardWorklist",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listIntegrationMessages",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/integration-messages",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "IntegrationMessage[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listIntegrationMessages",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listIntegrationReconciliations",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/integration-reconciliations",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "IntegrationReconciliation[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listIntegrationReconciliations",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -5640,6 +5963,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "listPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/pathway-knowledge",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "PathwayKnowledge[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listPathwayKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listPathwayKnowledgeVersions",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/pathway-knowledge/{pathway_knowledge_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "PathwayKnowledgeVersion[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listPathwayKnowledgeVersions",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "listPatientDemographicVersions",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "GET",
@@ -6112,6 +6469,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listResearchDatasetRequests",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listResearchProjects",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/research-projects",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "ResearchProject[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listResearchProjects",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -6626,6 +7000,40 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "publishModelDeployment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/model-deployments/{model_deployment_id}/publications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ModelDeploymentPublishRequest",
+      "output_schema": "ModelDeployment",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishModelDeployment",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "publishPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-versions/{pathway_version_id}/publications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeActionRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishPathwayKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "publishPromptRelease",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -6726,6 +7134,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:reconcileHistoricalMigrationBatch",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "reconcileIntegrationMessage",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/integration-messages/{message_id}/reconcile",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "IntegrationMessageReconcileRequest",
+      "output_schema": "IntegrationMessage",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:reconcileIntegrationMessage",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8024,6 +8449,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "retirePathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-versions/{pathway_version_id}/retirements",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeActionRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:retirePathwayKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "retirePromptRelease",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8190,6 +8632,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:reviewInpatientPathwayVariance",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "reviewPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-versions/{pathway_version_id}/reviews",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeActionRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:reviewPathwayKnowledge",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8397,6 +8856,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:searchKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "searchPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-knowledge-search",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeSearchRequest",
+      "output_schema": "PathwayKnowledgeSearchResult",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:searchPathwayKnowledge",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8739,6 +9215,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:submitKnowledgeVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "submitPathwayKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/pathway-versions/{pathway_version_id}/submissions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "PathwayKnowledgeActionRequest",
+      "output_schema": "PathwayKnowledgeVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:submitPathwayKnowledge",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

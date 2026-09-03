@@ -3052,6 +3052,44 @@
         }
       }
     },
+    "/model-deployments/{model_deployment_id}/publications": {
+      "post": {
+        "operationId": "publishModelDeployment",
+        "parameters": [
+          {
+            "name": "model_deployment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDeploymentPublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "model deployment published for clinical assistant use",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDeployment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/model-deployments/{model_deployment_id}/connection-tests": {
       "post": {
         "operationId": "testModelDeploymentConnection",
@@ -18116,6 +18154,828 @@
           }
         }
       }
+    },
+    "/pathway-knowledge": {
+      "get": {
+        "operationId": "listPathwayKnowledge",
+        "responses": {
+          "200": {
+            "description": "list pathway knowledge definitions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayKnowledge"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createPathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "pathway knowledge created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledge"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-knowledge/{pathway_knowledge_id}/versions": {
+      "post": {
+        "operationId": "createPathwayKnowledgeVersion",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeVersionCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "pathway version created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listPathwayKnowledgeVersions",
+        "responses": {
+          "200": {
+            "description": "list pathway versions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-versions/{pathway_version_id}/submissions": {
+      "post": {
+        "operationId": "submitPathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "submitted for review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-versions/{pathway_version_id}/reviews": {
+      "post": {
+        "operationId": "reviewPathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "reviewed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-versions/{pathway_version_id}/approvals": {
+      "post": {
+        "operationId": "approvePathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "approved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-versions/{pathway_version_id}/publications": {
+      "post": {
+        "operationId": "publishPathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "published and execution config generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-versions/{pathway_version_id}/retirements": {
+      "post": {
+        "operationId": "retirePathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "retired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeVersion"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-knowledge-search": {
+      "post": {
+        "operationId": "searchPathwayKnowledge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PathwayKnowledgeSearchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "pathway search result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathwayKnowledgeSearchResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration-messages": {
+      "get": {
+        "operationId": "listIntegrationMessages",
+        "parameters": [
+          {
+            "name": "connector_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "DELIVERED",
+                "RECONCILED",
+                "FAILED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "integration messages newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IntegrationMessage"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "collectIntegrationMessages",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationMessageCollectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "messages collected from deterministic mock interface and persisted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationMessageCollectResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration-messages/{message_id}/reconcile": {
+      "post": {
+        "operationId": "reconcileIntegrationMessage",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationMessageReconcileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "message reconciled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationMessage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integration-reconciliations": {
+      "get": {
+        "operationId": "listIntegrationReconciliations",
+        "parameters": [
+          {
+            "name": "connector_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "reconciliation windows newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IntegrationReconciliation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/device-telemetry": {
+      "get": {
+        "operationId": "listDeviceTelemetry",
+        "parameters": [
+          {
+            "name": "device_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "device observations newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceObservation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "collectDeviceTelemetry",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTelemetryCollectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "device telemetry collected from deterministic mock gateway and persisted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTelemetryCollectResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/device-statuses": {
+      "get": {
+        "operationId": "listDeviceStatuses",
+        "parameters": [
+          {
+            "name": "device_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "device runtime statuses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices": {
+      "get": {
+        "operationId": "listDevices",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "device catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceCatalog"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createDevice",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceCatalogCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "device created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceCatalog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/devices/{device_id}/deactivations": {
+      "post": {
+        "operationId": "deactivateDevice",
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceCatalogDeactivateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "device deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceCatalog"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research-projects": {
+      "get": {
+        "operationId": "listResearchProjects",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "research projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResearchProject"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createResearchProject",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchProjectCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "research project created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchProject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/research-projects/{project_id}/deactivations": {
+      "post": {
+        "operationId": "deactivateResearchProject",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchProjectDeactivateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "research project deactivated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchProject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/knowledge-graph": {
+      "get": {
+        "operationId": "getKnowledgeGraph",
+        "responses": {
+          "200": {
+            "description": "knowledge graph nodes and edges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeGraph"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/knowledge-graph/nodes/{concept_id}/neighbors": {
+      "get": {
+        "operationId": "getKnowledgeGraphNeighbors",
+        "parameters": [
+          {
+            "name": "concept_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "incoming and outgoing relations of a knowledge graph node",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeGraphNeighbors"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/knowledge-graph/paths": {
+      "get": {
+        "operationId": "getKnowledgeGraphPaths",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "max_depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "shortest relationship paths between two graph nodes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeGraphPaths"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/knowledge-graph/ego": {
+      "get": {
+        "operationId": "getKnowledgeGraphEgo",
+        "parameters": [
+          {
+            "name": "concept_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ego subgraph within N hops of a concept",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeGraph"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pathway-review-queue": {
+      "get": {
+        "operationId": "getPathwayReviewQueue",
+        "responses": {
+          "200": {
+            "description": "pending pathway review queue",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PathwayReviewQueueItem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -26543,6 +27403,30 @@
           "expected_row_version": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ModelDeploymentPublishRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "expected_row_version"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expected_row_version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1
           }
         }
       },
@@ -50640,6 +51524,1718 @@
             "type": [
               "string",
               "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pathway_knowledge_id",
+          "pathway_code",
+          "display_name",
+          "specialty_code",
+          "diagnosis_code",
+          "status",
+          "created_by",
+          "created_at"
+        ],
+        "properties": {
+          "pathway_knowledge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pathway_code": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 96
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "specialty_code": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "diagnosis_code": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "inclusion_criteria": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exclusion_criteria": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avg_los_days": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PathwayKnowledgeCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "pathway_code",
+          "display_name",
+          "specialty_code",
+          "diagnosis_code"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pathway_code": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 96
+          },
+          "display_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "specialty_code": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "diagnosis_code": {
+            "type": "string",
+            "maxLength": 96
+          },
+          "inclusion_criteria": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "exclusion_criteria": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "avg_los_days": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledgeTaskInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_type",
+          "content",
+          "sequence_no"
+        ],
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "MEDICATION",
+              "LAB",
+              "IMAGING",
+              "NURSING",
+              "EDUCATION",
+              "ASSESSMENT"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1
+          },
+          "code_ref": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "sequence_no": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "PathwayKnowledgeStageInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_code",
+          "stage_name",
+          "sequence_no",
+          "expected_day_start",
+          "expected_day_end"
+        ],
+        "properties": {
+          "stage_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 96
+          },
+          "stage_name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "sequence_no": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expected_day_start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "expected_day_end": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "stage_goal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assessment_points": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeTaskInput"
+            }
+          }
+        }
+      },
+      "PathwayKnowledgeVarianceInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "variance_type"
+        ],
+        "properties": {
+          "variance_type": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 48
+          },
+          "trigger_condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "disposition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "record_requirement": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledgeQualityPointInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "indicator"
+        ],
+        "properties": {
+          "indicator": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 256
+          },
+          "standard": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "frequency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 64
+          }
+        }
+      },
+      "PathwayKnowledgeVersionCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "stages"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stages": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeStageInput"
+            }
+          },
+          "variances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeVarianceInput"
+            }
+          },
+          "quality_points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeQualityPointInput"
+            }
+          }
+        }
+      },
+      "PathwayKnowledgeTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task_id",
+          "task_type",
+          "content",
+          "required",
+          "sequence_no"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "task_type": {
+            "type": "string",
+            "enum": [
+              "MEDICATION",
+              "LAB",
+              "IMAGING",
+              "NURSING",
+              "EDUCATION",
+              "ASSESSMENT"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "code_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "sequence_no": {
+            "type": "integer"
+          }
+        }
+      },
+      "PathwayKnowledgeStage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_id",
+          "stage_code",
+          "stage_name",
+          "sequence_no",
+          "expected_day_start",
+          "expected_day_end"
+        ],
+        "properties": {
+          "stage_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "stage_code": {
+            "type": "string"
+          },
+          "stage_name": {
+            "type": "string"
+          },
+          "sequence_no": {
+            "type": "integer"
+          },
+          "expected_day_start": {
+            "type": "integer"
+          },
+          "expected_day_end": {
+            "type": "integer"
+          },
+          "stage_goal": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assessment_points": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeTask"
+            }
+          }
+        }
+      },
+      "PathwayKnowledgeVariance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "variance_id",
+          "variance_type"
+        ],
+        "properties": {
+          "variance_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "variance_type": {
+            "type": "string"
+          },
+          "trigger_condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "disposition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "record_requirement": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledgeQualityPoint": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "quality_point_id",
+          "indicator"
+        ],
+        "properties": {
+          "quality_point_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "indicator": {
+            "type": "string"
+          },
+          "standard": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "frequency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledgeVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pathway_version_id",
+          "pathway_knowledge_id",
+          "version_no",
+          "status",
+          "submitted_by",
+          "submitted_at"
+        ],
+        "properties": {
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pathway_knowledge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version_no": {
+            "type": "integer"
+          },
+          "content_hash": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "submitted_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reviewed_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "approved_by": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "reviewed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "approved_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "published_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeStage"
+            }
+          },
+          "variances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeVariance"
+            }
+          },
+          "quality_points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeQualityPoint"
+            }
+          }
+        }
+      },
+      "PathwayKnowledgeActionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "comment": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "PathwayKnowledgeSearchRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "query"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "specialty_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 96
+          },
+          "diagnosis_code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 96
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        }
+      },
+      "PathwayKnowledgeReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pathway_knowledge_id",
+          "pathway_version_id",
+          "display_name",
+          "diagnosis_code",
+          "excerpt"
+        ],
+        "properties": {
+          "pathway_knowledge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "diagnosis_code": {
+            "type": "string"
+          },
+          "specialty_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "content_hash": {
+            "type": "string"
+          }
+        }
+      },
+      "PathwayKnowledgeSearchResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "references"
+        ],
+        "properties": {
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathwayKnowledgeReference"
+            }
+          }
+        }
+      },
+      "IntegrationMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message_id",
+          "trace_id",
+          "connector_code",
+          "interface_code",
+          "direction",
+          "business_object",
+          "message_status",
+          "occurred_at",
+          "row_version",
+          "created_at"
+        ],
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "trace_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "connector_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "interface_code": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "INBOUND",
+              "OUTBOUND"
+            ]
+          },
+          "business_object": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "business_key": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "message_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "DELIVERED",
+              "RECONCILED",
+              "FAILED"
+            ]
+          },
+          "error_detail": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IntegrationMessageCollectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "connector_code"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connector_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "INBOUND",
+              "OUTBOUND"
+            ]
+          },
+          "simulation_scenario": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "DEGRADED",
+              "UNAVAILABLE"
+            ]
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 12,
+            "maximum": 200
+          }
+        }
+      },
+      "IntegrationReconciliation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "reconciliation_id",
+          "connector_code",
+          "window_start",
+          "window_end",
+          "sent_count",
+          "delivered_count",
+          "error_count",
+          "pending_count",
+          "status",
+          "row_version",
+          "created_at"
+        ],
+        "properties": {
+          "reconciliation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "connector_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "sent_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "delivered_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "error_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pending_count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RECONCILED"
+            ]
+          },
+          "reconciled_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "IntegrationMessageCollectResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "messages",
+          "reconciliation"
+        ],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IntegrationMessage"
+            }
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/IntegrationReconciliation"
+          }
+        }
+      },
+      "IntegrationMessageReconcileRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "DeviceObservation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "observation_id",
+          "device_code",
+          "trace_id",
+          "metric",
+          "metric_value",
+          "metric_unit",
+          "quality",
+          "alarm_level",
+          "observed_at",
+          "row_version",
+          "created_at"
+        ],
+        "properties": {
+          "observation_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "trace_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "metric": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "metric_value": {
+            "type": "number"
+          },
+          "metric_unit": {
+            "type": "string",
+            "maxLength": 16
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "SUSPECT"
+            ]
+          },
+          "alarm_level": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceStatus": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_code",
+          "online_status",
+          "clock_offset_seconds",
+          "calibration_status",
+          "alarm_state",
+          "row_version",
+          "updated_at"
+        ],
+        "properties": {
+          "device_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "online_status": {
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "DEGRADED",
+              "OFFLINE"
+            ]
+          },
+          "clock_offset_seconds": {
+            "type": "integer"
+          },
+          "bound_patient_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "last_observed_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "calibration_status": {
+            "type": "string",
+            "enum": [
+              "VALID",
+              "DUE_REVIEW"
+            ]
+          },
+          "alarm_state": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceTelemetryCollectRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "device_code"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "simulation_scenario": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "DEGRADED"
+            ]
+          },
+          "record_count": {
+            "type": "integer",
+            "minimum": 12,
+            "maximum": 200
+          }
+        }
+      },
+      "DeviceTelemetryCollectResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "observations",
+          "status"
+        ],
+        "properties": {
+          "observations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeviceObservation"
+            }
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeviceStatus"
+          }
+        }
+      },
+      "DeviceCatalog": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "device_id",
+          "device_code",
+          "display_name",
+          "device_type",
+          "clock_offset_seconds",
+          "status",
+          "row_version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "device_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "device_type": {
+            "type": "string",
+            "enum": [
+              "MONITOR",
+              "VENTILATOR",
+              "INFUSION_PUMP",
+              "IMAGING",
+              "LAB_ANALYZER"
+            ]
+          },
+          "manufacturer_model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "gateway": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "standard_interface": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "calibration_due": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "clock_offset_seconds": {
+            "type": "integer"
+          },
+          "binding_policy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DeviceCatalogCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "device_code",
+          "display_name",
+          "device_type"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "device_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "device_type": {
+            "type": "string",
+            "enum": [
+              "MONITOR",
+              "VENTILATOR",
+              "INFUSION_PUMP",
+              "IMAGING",
+              "LAB_ANALYZER"
+            ]
+          },
+          "manufacturer_model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "gateway": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "standard_interface": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 256
+          },
+          "calibration_due": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "clock_offset_seconds": {
+            "type": "integer"
+          },
+          "binding_policy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DeviceCatalogDeactivateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "ResearchProject": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "project_id",
+          "project_code",
+          "display_name",
+          "project_type",
+          "principal_investigator",
+          "approved_purpose",
+          "data_scope",
+          "member_count",
+          "status",
+          "row_version",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "project_type": {
+            "type": "string",
+            "enum": [
+              "OBSERVATIONAL",
+              "RETROSPECTIVE",
+              "INTERVENTIONAL"
+            ]
+          },
+          "principal_investigator": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "registry_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "ethics_approval": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "approved_purpose": {
+            "type": "string"
+          },
+          "data_scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "member_count": {
+            "type": "integer"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          },
+          "row_version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ResearchProjectCreateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id",
+          "project_code",
+          "display_name",
+          "project_type",
+          "principal_investigator",
+          "approved_purpose"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_code": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "project_type": {
+            "type": "string",
+            "enum": [
+              "OBSERVATIONAL",
+              "RETROSPECTIVE",
+              "INTERVENTIONAL"
+            ]
+          },
+          "principal_investigator": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "registry_number": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "ethics_approval": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 128
+          },
+          "approved_purpose": {
+            "type": "string"
+          },
+          "data_scope": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "member_count": {
+            "type": "integer"
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          }
+        }
+      },
+      "ResearchProjectDeactivateRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organization_id",
+          "facility_id"
+        ],
+        "properties": {
+          "organization_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "facility_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
+      "KnowledgeGraphNode": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "KnowledgeGraphEdge": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "target",
+          "relation",
+          "predicate"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "target": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relation": {
+            "type": "string"
+          },
+          "predicate": {
+            "type": "string"
+          }
+        }
+      },
+      "KnowledgeGraph": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphEdge"
+            }
+          }
+        }
+      },
+      "KnowledgeGraphNeighbor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node",
+          "predicate"
+        ],
+        "properties": {
+          "node": {
+            "$ref": "#/components/schemas/KnowledgeGraphNode"
+          },
+          "predicate": {
+            "type": "string"
+          }
+        }
+      },
+      "KnowledgeGraphNeighbors": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node",
+          "incoming",
+          "outgoing"
+        ],
+        "properties": {
+          "node": {
+            "$ref": "#/components/schemas/KnowledgeGraphNode"
+          },
+          "incoming": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphNeighbor"
+            }
+          },
+          "outgoing": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphNeighbor"
+            }
+          }
+        }
+      },
+      "KnowledgeGraphPath": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphNode"
+            }
+          },
+          "edges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphEdge"
+            }
+          }
+        }
+      },
+      "KnowledgeGraphPaths": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from",
+          "to",
+          "paths"
+        ],
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/KnowledgeGraphNode"
+          },
+          "to": {
+            "$ref": "#/components/schemas/KnowledgeGraphNode"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeGraphPath"
+            }
+          }
+        }
+      },
+      "PathwayReviewQueueItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "pathway_knowledge_id",
+          "display_name",
+          "diagnosis_code",
+          "pathway_version_id",
+          "version_no",
+          "status"
+        ],
+        "properties": {
+          "pathway_knowledge_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "diagnosis_code": {
+            "type": "string"
+          },
+          "pathway_version_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version_no": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "IN_REVIEW",
+              "APPROVED",
+              "ACTIVE",
+              "RETIRED"
             ]
           }
         }

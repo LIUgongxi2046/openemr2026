@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
+import org.openemr2026.contracts.ModelDeploymentPublishRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
@@ -76,6 +77,18 @@ final class ModelDeploymentController {
                 request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
                 .body(models.update(identity, idempotencyKey, deploymentId, command));
+    }
+
+    @PostMapping("/model-deployments/{model_deployment_id}/publications")
+    ResponseEntity<ModelDeploymentWire> publish(
+            HttpServletRequest request,
+            @PathVariable("model_deployment_id") UUID deploymentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentPublishRequestWire command) {
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(models.publish(identity, idempotencyKey, deploymentId, command));
     }
 
     @PostMapping("/model-deployments/{model_deployment_id}/connection-tests")

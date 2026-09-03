@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watch } from 'vue';
 import type { ModelEvaluationWire } from '../../generated/contracts';
-import { issueAiLease, listModelDeployments, listModelEvaluations, recordModelEvaluation } from '../../api/ai-platform';
+import { issueAiLease, listModelDeployments, listModelEvaluations, publishModelDeployment, recordModelEvaluation } from '../../api/ai-platform';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -37,6 +37,12 @@ const issue = computed(() => (leaseQuery.error.value ?? modelsQuery.error.value 
 const models = computed(() => modelsQuery.data.value ?? []);
 const evaluations = computed(() => evaluationsQuery.data.value ?? []);
 const passedCount = computed(() => evaluations.value.filter((evaluation) => evaluation.status === 'PASSED').length);
+const selectedModel = computed(() => models.value.find((model) => model.model_deployment_id === selectedModelId.value));
+const canPublish = computed(() => Boolean(selectedModel.value)
+  && selectedModel.value!.status === 'ACTIVE'
+  && selectedModel.value!.connection_status === 'READY'
+  && selectedModel.value!.evaluation_status !== 'APPROVED'
+  && passedCount.value > 0);
 
 const form = reactive({ evalName: '', score: 0.9, threshold: 0.8, evaluatedAt: new Date().toISOString() });
 const busy = ref('');
@@ -75,6 +81,22 @@ async function record() {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
   } finally { busy.value = ''; }
 }
+
+async function publish() {
+  const lease = leaseQuery.data.value;
+  const model = selectedModel.value;
+  if (!lease || !model || busy.value || !canPublish.value) return;
+  busy.value = 'publish'; notice.value = '';
+  try {
+    const published = await publishModelDeployment(lease, model);
+    notice.value = published.evaluation_status === 'APPROVED'
+      ? '模型已发布并进入 Eva 模型路由，可在 Eva 中选择使用。'
+      : '发布结果异常，请刷新后确认。';
+    await Promise.all([modelsQuery.refetch(), evaluationsQuery.refetch()]);
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = ''; }
+}
 </script>
 
 <template>
@@ -92,6 +114,7 @@ async function record() {
             <option v-for="model in models" :key="model.model_deployment_id" :value="model.model_deployment_id">{{ model.display_name }}（{{ model.model_code }}）</option>
           </select>
         </label>
+        <button v-if="selectedModel" class="button primary" :disabled="!canPublish || Boolean(busy)" :title="!canPublish ? '需 API 已连通且存在通过评估后才能发布' : '发布模型进入 Eva 路由'" @click="publish">{{ busy === 'publish' ? '发布中…' : selectedModel.evaluation_status === 'APPROVED' ? '已发布' : '发布模型' }}</button>
       </div>
     </div>
 

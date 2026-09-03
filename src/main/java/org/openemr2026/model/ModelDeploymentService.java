@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 import org.openemr2026.contracts.ModelDeploymentDeactivateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentConnectionTestRequestWire;
+import org.openemr2026.contracts.ModelDeploymentPublishRequestWire;
 import org.openemr2026.contracts.ModelDeploymentRegisterRequestWire;
 import org.openemr2026.contracts.ModelDeploymentUpdateRequestWire;
 import org.openemr2026.contracts.ModelDeploymentWire;
@@ -114,6 +115,53 @@ final class ModelDeploymentService {
             appendEvidence(identity, deploymentId, current.rowVersion() + 1,
                     "MODEL_DEPLOYMENT_DEACTIVATED", "ModelDeploymentDeactivated");
             completeCommand(identity, "MODEL_DEPLOYMENT_DEACTIVATE", idempotencyKey, deploymentId);
+            return deployment(identity.tenantId(), deploymentId);
+        });
+    }
+
+    ModelDeploymentWire publish(
+            ClinicalIdentity identity, String idempotencyKey, UUID deploymentId,
+            ModelDeploymentPublishRequestWire request) {
+        return transactions.execute(status -> {
+            beginCommand(identity, "MODEL_DEPLOYMENT_PUBLISH", idempotencyKey,
+                    sha256(deploymentId + "|" + request.expectedRowVersion()));
+            PublishHead current = jdbc.sql("""
+                    select status, connection_status, row_version from model_deployment
+                    where tenant_id = :tenant and model_deployment_id = :deployment for update
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .query((rs, row) -> new PublishHead(rs.getString("status"),
+                            rs.getString("connection_status"), rs.getLong("row_version")))
+                    .optional().orElseThrow(ModelDeploymentService::contextDenied);
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409,
+                        "The model deployment changed; reload before retrying");
+            }
+            if (!"ACTIVE".equals(current.status())) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
+                        "Only an active model deployment can be published");
+            }
+            if (!"READY".equals(current.connectionStatus())) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_CONNECTION_NOT_READY", 409,
+                        "Verify the model connection before publishing");
+            }
+            long passedEvaluations = jdbc.sql("""
+                    select count(*) from model_evaluation
+                    where tenant_id = :tenant and model_deployment_id = :deployment and status = 'PASSED'
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .query(Long.class).single();
+            if (passedEvaluations == 0) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_EVALUATION_REQUIRED", 409,
+                        "A passed evaluation is required before publishing the model");
+            }
+            jdbc.sql("""
+                    update model_deployment set evaluation_status = 'APPROVED',
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and model_deployment_id = :deployment and row_version = :expected
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .param("expected", current.rowVersion()).update();
+            appendEvidence(identity, deploymentId, current.rowVersion() + 1,
+                    "MODEL_DEPLOYMENT_PUBLISHED", "ModelDeploymentPublished");
+            completeCommand(identity, "MODEL_DEPLOYMENT_PUBLISH", idempotencyKey, deploymentId);
             return deployment(identity.tenantId(), deploymentId);
         });
     }
@@ -421,6 +469,7 @@ final class ModelDeploymentService {
 
     private record DeploymentHead(String status, long rowVersion, String apiKeyRef) {}
     private record DeploymentConfigHead(String status, long rowVersion, String apiKeyRef) {}
+    private record PublishHead(String status, String connectionStatus, long rowVersion) {}
     private record ConnectionConfig(String modelCode, String endpointUrl, String apiKeyReference,
             String status, long rowVersion) {}
 }
