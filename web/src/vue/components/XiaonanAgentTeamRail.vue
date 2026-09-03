@@ -48,8 +48,9 @@ function teamName(agent: MedicalAgentFamilyWire) {
 
     <div v-if="agents.length === 0" class="xiaonan-rail-state">{{ collapsed ? '…' : '正在读取医助团队…' }}</div>
     <nav v-else class="xiaonan-team-list" aria-label="选择医助团队">
-      <template v-for="group in groupedAgents" :key="group.label">
+      <template v-for="(group, groupIndex) in groupedAgents" :key="group.label">
         <div v-if="!collapsed" class="xiaonan-team-group">{{ group.label }}<span>{{ group.agents.length }}</span></div>
+        <div v-else-if="groupIndex > 0" class="xiaonan-group-divider" aria-hidden="true"></div>
         <button
           v-for="agent in group.agents"
           :key="agent.main_agent.agent_code"
@@ -82,6 +83,7 @@ header button { display: grid; place-items: center; width: 30px; height: 30px; f
 .xiaonan-team-group { display: flex; align-items: center; justify-content: space-between; grid-column: 1 / -1; padding: 8px 2px 2px; color: #7b8b9a; font-size: 8px; font-weight: 800; letter-spacing: .3px; }
 .xiaonan-team-group + .xiaonan-team-group { margin-top: 8px; }
 .xiaonan-team-group span { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; color: #6a7f93; border-radius: 999px; background: #e6edf4; font-size: 8px; }
+.xiaonan-group-divider { grid-column: 1 / -1; height: 1px; margin: 2px 4px; background: #d8e3ef; }
 .xiaonan-team-list > button { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 7px; color: inherit; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
 .xiaonan-team-list > button:hover { background: #edf5ff; }
 .xiaonan-team-list > button.selected { border-color: #9dbfe6; background: #e8f2ff; box-shadow: 0 0 0 1px rgb(23 105 224 / 8%); }
