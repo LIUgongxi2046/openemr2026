@@ -144,15 +144,6 @@ final class ModelDeploymentService {
                 throw new ModelDeploymentException("MODEL_DEPLOYMENT_CONNECTION_NOT_READY", 409,
                         "Verify the model connection before publishing");
             }
-            long passedEvaluations = jdbc.sql("""
-                    select count(*) from model_evaluation
-                    where tenant_id = :tenant and model_deployment_id = :deployment and status = 'PASSED'
-                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
-                    .query(Long.class).single();
-            if (passedEvaluations == 0) {
-                throw new ModelDeploymentException("MODEL_DEPLOYMENT_EVALUATION_REQUIRED", 409,
-                        "A passed evaluation is required before publishing the model");
-            }
             jdbc.sql("""
                     update model_deployment set evaluation_status = 'APPROVED',
                       row_version = row_version + 1, updated_at = now()

@@ -71,7 +71,7 @@ final class ModelDeploymentApiTest {
     }
 
     @Test
-    void givenReadyConnectionAndPassedEvaluation_whenPublishing_thenApprovedForEvaRouting() {
+    void givenReadyConnection_whenPublishing_thenApprovedForEvaRouting() {
         String modelCode = "MODEL-" + UUID.randomUUID();
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, modelCode,
@@ -83,14 +83,6 @@ final class ModelDeploymentApiTest {
                 update model_deployment set connection_status = 'READY'
                 where tenant_id = cast(:tenant as uuid) and model_deployment_id = :deployment
                 """).param("tenant", TENANT).param("deployment", registered.modelDeploymentId()).update();
-        jdbc.sql("""
-                insert into model_evaluation(
-                  tenant_id, model_evaluation_id, model_deployment_id, eval_name, score,
-                  threshold, status, evaluated_at, evaluated_by)
-                values (cast(:tenant as uuid), :evaluation, :deployment, '发布门禁评估', 0.95,
-                  0.8, 'PASSED', now(), cast(:user as uuid))
-                """).param("tenant", TENANT).param("evaluation", UUID.randomUUID())
-                .param("deployment", registered.modelDeploymentId()).param("user", USER).update();
 
         ModelDeploymentWire published = models.publish(identity(), "publish-" + UUID.randomUUID(),
                 registered.modelDeploymentId(), new ModelDeploymentPublishRequestWire(
