@@ -28,6 +28,7 @@ const emit = defineEmits<{
   'select-default': [context: ActivePatientContext];
   'select-patient': [patient: PatientSummaryWire];
   'select-encounter': [encounter: EncounterWire];
+  unbind: [];
 }>();
 
 const query = ref('');
@@ -42,7 +43,7 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { m
     <header><div><strong>患者上下文</strong><span>搜索并绑定一次就诊</span></div><b>{{ current.scene }}</b></header>
     <form role="search" @submit.prevent="submit"><input v-model="query" type="search" placeholder="姓名 / 病历号 / 证件号" aria-label="搜索患者" /><button :disabled="searching || !query.trim()">{{ searching ? '…' : '搜索' }}</button></form>
 
-    <section class="eva-current-patient"><span>当前患者</span><div class="eva-current-patient-row"><i>{{ current.patientName.slice(0,1) }}</i><strong>{{ current.patientName }}</strong><b>已绑定</b></div><small>{{ current.patientSummary }} · {{ current.label }}</small></section>
+    <section class="eva-current-patient"><span>当前患者</span><div class="eva-current-patient-row"><i>{{ current.patientName.slice(0,1) }}</i><strong>{{ current.patientName }}</strong><b>{{ current.patientId ? '已绑定' : '未绑定' }}</b><button v-if="current.patientId" type="button" class="eva-unbind" @click="emit('unbind')">取消绑定</button></div><small>{{ current.patientSummary }} · {{ current.label }}</small></section>
 
     <div v-if="results.length" class="eva-search-results">
       <span>搜索结果</span>
@@ -74,6 +75,8 @@ form button { padding: 0 9px; color: #fff; border: 0; border-radius: 8px; backgr
 .eva-current-patient-row i { display: grid; place-items: center; width: 26px; height: 26px; flex: 0 0 26px; color: #fff; border-radius: 50%; background: #426d97; font-size: 10px; font-style: normal; font-weight: 800; }
 .eva-current-patient-row strong { overflow: hidden; color: #244764; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .eva-current-patient-row b { flex: 0 0 auto; padding: 2px 7px; color: #0c7d68; border-radius: 999px; background: #dcf5ef; font-size: 7px; font-weight: 800; }
+.eva-current-patient-row .eva-unbind { flex: 0 0 auto; padding: 2px 7px; margin-left: auto; color: #8a5a12; border: 1px solid #e3c58a; border-radius: 999px; background: #fff7e6; font-size: 7px; font-weight: 800; cursor: pointer; }
+.eva-current-patient-row .eva-unbind:hover { border-color: #cfa24c; background: #fdefd0; }
 .eva-current-patient small { color: #617a90; font-size: 8px; line-height: 1.45; }
 .eva-search-results, .eva-default-patients, .eva-encounters { display: grid; gap: 6px; padding: 10px; }
 .eva-search-results button, .eva-default-patients button { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: 7px; padding: 8px; color: inherit; border: 1px solid #d7e2ec; border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }

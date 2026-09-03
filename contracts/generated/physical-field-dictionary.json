@@ -234,7 +234,10 @@
     "src/main/resources/db/migration/V341__infection_cn_reporting.sql",
     "src/main/resources/db/migration/V342__medical_record_asset_facility_scope.sql",
     "src/main/resources/db/migration/V343__expand_medical_agent_team.sql",
-    "src/main/resources/db/migration/V344__medical_agent_question_examples_expansion.sql"
+    "src/main/resources/db/migration/V344__medical_agent_question_examples_expansion.sql",
+    "src/main/resources/db/migration/V345__medical_agent_run_optional_patient_context.sql",
+    "src/main/resources/db/migration/V346__medical_agent_composition_expansion.sql",
+    "src/main/resources/db/migration/V347__medical_agent_general_question_target_guard.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
   "field_count": 3156,

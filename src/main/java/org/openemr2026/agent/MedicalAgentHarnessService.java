@@ -1082,8 +1082,10 @@ final class MedicalAgentHarnessService {
         return jdbc.sql("""
                 select authorization_watermark, model_residency_policy from context_lease
                 where tenant_id = :tenant and lease_id = :lease and organization_id = :organization
-                  and facility_id = :facility and user_id = :user and patient_id = :patient
-                  and encounter_id = :encounter and revoked_at is null and expires_at > now()
+                  and facility_id = :facility and user_id = :user
+                  and patient_id is not distinct from :patient
+                  and encounter_id is not distinct from :encounter
+                  and revoked_at is null and expires_at > now()
                 """).param("tenant", identity.tenantId()).param("lease", command.contextLeaseId())
                 .param("organization", command.organizationId()).param("facility", command.facilityId())
                 .param("user", identity.userId()).param("patient", command.patientId())
@@ -1095,6 +1097,9 @@ final class MedicalAgentHarnessService {
     }
 
     private void validateTarget(UUID tenantId, CreateRunCommand command) {
+        if (command.targetType() == null && command.targetId() == null) {
+            return; // 通用问答：未绑定患者与诊疗目标，跳过目标归属校验
+        }
         boolean matchesContext = switch (command.targetType()) {
             case "ENCOUNTER" -> command.targetId().equals(command.encounterId());
             case "DOCUMENT" -> targetExists("clinical_document", "document_id", tenantId, command);
@@ -1315,16 +1320,21 @@ final class MedicalAgentHarnessService {
     }
 
     private void validate(CreateRunCommand command) {
-        if (command.contextLeaseId() == null || command.organizationId() == null || command.facilityId() == null
-                || command.patientId() == null || command.encounterId() == null || command.targetId() == null) {
-            throw invalid("organization, facility, patient, encounter, context lease and target are required");
+        if (command.contextLeaseId() == null || command.organizationId() == null || command.facilityId() == null) {
+            throw invalid("organization, facility and context lease are required");
+        }
+        if (command.encounterId() != null && command.patientId() == null) {
+            throw invalid("an encounter context requires a patient");
         }
         if (command.mainAgentCode() == null || command.mainAgentCode().isBlank()
                 || command.stageCode() == null || command.stageCode().isBlank()) {
             throw invalid("main_agent_code and stage_code are required");
         }
-        if (command.targetType() == null || !TARGET_TYPES.contains(command.targetType())) {
+        if (command.targetType() != null && !TARGET_TYPES.contains(command.targetType())) {
             throw invalid("target_type must be ENCOUNTER, DOCUMENT, RESULT, TASK or CARE_PLAN");
+        }
+        if ((command.targetType() == null) != (command.targetId() == null)) {
+            throw invalid("target_type and target_id must be provided together");
         }
         if (command.objective() == null || command.objective().trim().length() < 2
                 || command.objective().trim().length() > 1024) {

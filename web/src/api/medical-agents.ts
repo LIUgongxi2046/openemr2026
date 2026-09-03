@@ -23,7 +23,7 @@ export function issueMedicalAgentCatalogLease(): Promise<ContextLeaseWire> {
   return issueContextLease(null, null, 'MEDICAL_AGENT_CATALOG');
 }
 
-export function issueMedicalAgentRunLease(patientId: string, encounterId: string): Promise<ContextLeaseWire> {
+export function issueMedicalAgentRunLease(patientId: string | null, encounterId: string | null): Promise<ContextLeaseWire> {
   return issueContextLease(patientId, encounterId, 'MEDICAL_AGENT_COLLABORATION');
 }
 
@@ -46,13 +46,13 @@ export async function resolveMedicalAgentRouting(
 export async function createMedicalAgentRun(
   lease: ContextLeaseWire,
   input: {
-    patientId: string;
-    encounterId: string;
+    patientId: string | null;
+    encounterId: string | null;
     mainAgentCode: string | null;
     stageCode: string | null;
     sourceRoute?: string | null;
-    targetType?: 'ENCOUNTER' | 'DOCUMENT' | 'RESULT' | 'TASK' | 'CARE_PLAN';
-    targetId?: string;
+    targetType?: 'ENCOUNTER' | 'DOCUMENT' | 'RESULT' | 'TASK' | 'CARE_PLAN' | null;
+    targetId?: string | null;
     objective: string;
     modelDeploymentId?: string | null;
     authorizationLevel?: 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
@@ -68,8 +68,8 @@ export async function createMedicalAgentRun(
     main_agent_code: input.mainAgentCode,
     stage_code: input.stageCode,
     source_route: input.sourceRoute ?? null,
-    target_type: input.targetType ?? 'ENCOUNTER',
-    target_id: input.targetId ?? input.encounterId,
+    target_type: input.targetType ?? null,
+    target_id: input.targetId ?? null,
     objective: input.objective,
     model_deployment_id: input.modelDeploymentId ?? null,
     authorization_level: input.authorizationLevel ?? 'STANDARD',
@@ -99,8 +99,8 @@ export async function listMedicalAgentRuns(
 
 export async function getMedicalAgentRun(
   lease: ContextLeaseWire,
-  patientId: string,
-  encounterId: string,
+  patientId: string | null,
+  encounterId: string | null,
   runId: string,
 ): Promise<MedicalAgentRunWire> {
   return parseClinicalResponse(medicalAgentRunWireSchema, await request(
@@ -111,8 +111,8 @@ export async function getMedicalAgentRun(
 
 export async function cancelMedicalAgentRun(
   lease: ContextLeaseWire,
-  patientId: string,
-  encounterId: string,
+  patientId: string | null,
+  encounterId: string | null,
   runId: string,
   expectedRowVersion: number,
   reason = '医生取消当前医助任务',
@@ -136,8 +136,8 @@ export async function cancelMedicalAgentRun(
 
 export async function retryMedicalAgentRun(
   lease: ContextLeaseWire,
-  patientId: string,
-  encounterId: string,
+  patientId: string | null,
+  encounterId: string | null,
   runId: string,
   expectedRowVersion: number,
 ): Promise<MedicalAgentRunWire> {

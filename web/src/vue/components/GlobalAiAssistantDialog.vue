@@ -47,7 +47,7 @@ const userOverride = ref(false);
 const agentQuery = useQuery({ queryKey: ['global-eva', 'agents'], queryFn: async () => listMedicalAgentCatalog(await issueMedicalAgentCatalogLease()), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelLeaseQuery = useQuery({ queryKey: ['global-eva', 'model-lease'], queryFn: () => issueAiLease('AI_ASSISTANT_MODEL_SELECTION'), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const modelsQuery = useQuery({ queryKey: ['global-eva', 'models'], queryFn: () => listModelDeployments(modelLeaseQuery.data.value!), enabled: computed(() => props.open && Boolean(modelLeaseQuery.data.value)), retry: false, staleTime: 60_000 });
-const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(patient.current.value.patientId, patient.current.value.encounterId), enabled: computed(() => props.open && hasPatientContext.value), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
+const runLeaseQuery = useQuery({ queryKey: computed(() => ['global-eva', 'run-lease', patient.current.value.patientId, patient.current.value.encounterId]), queryFn: () => issueMedicalAgentRunLease(hasPatientContext.value ? patient.current.value.patientId : null, hasPatientContext.value ? patient.current.value.encounterId : null), enabled: computed(() => props.open), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const routingQuery = useQuery({ queryKey: computed(() => ['global-eva', 'routing', props.routeId]), queryFn: async () => resolveMedicalAgentRouting(await issueMedicalAgentCatalogLease(), props.routeId), enabled: computed(() => props.open && Boolean(props.routeId)), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 
 const agents = computed(() => agentQuery.data.value ?? []);
@@ -99,7 +99,7 @@ function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildN
     : presentMedicalAgentResult(run);
 }
 
-async function pollRun(message: ChatMessage, lease: NonNullable<typeof runLeaseQuery.data.value>, patientId: string, encounterId: string, fallbackChildName: string) {
+async function pollRun(message: ChatMessage, lease: NonNullable<typeof runLeaseQuery.data.value>, patientId: string | null, encounterId: string | null, fallbackChildName: string) {
   for (let poll = 0; poll < 300; poll += 1) {
     if (!message.runId || terminalRunStates.has(message.runState!)) return;
     await delay(800);
@@ -114,8 +114,8 @@ async function send() {
   busy.value = true; notice.value = ''; const responseId = crypto.randomUUID();
   messages.value.push({ id: crypto.randomUUID(), role: 'user', text }); messages.value.push({ id: responseId, role: 'assistant', text: '', events: initialEvents(child) }); draft.value = '';
   try {
-    const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId;
-    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: userOverride.value ? agent.main_agent.agent_code : null, stageCode: userOverride.value ? child.stage_code : null, sourceRoute: props.routeId, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const patientId = hasPatientContext.value ? patient.current.value.patientId : null; const encounterId = hasPatientContext.value ? patient.current.value.encounterId : null;
+    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: userOverride.value ? agent.main_agent.agent_code : null, stageCode: userOverride.value ? child.stage_code : null, sourceRoute: props.routeId, targetType: patientId ? 'ENCOUNTER' : null, targetId: encounterId ?? null, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
     const response = messages.value.find((item) => item.id === responseId)!; applyRun(response, run, child.display_name);
     await pollRun(response, lease, patientId, encounterId, child.display_name);
   } catch (error) { const next = toClinicalIssue(error); const response = messages.value.find((item) => item.id === responseId)!; response.text = `任务未完成：${next.message}`; response.events = (response.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' }); notice.value = `${next.code}：${next.message}`; }
@@ -123,12 +123,12 @@ async function send() {
 }
 async function cancelRun(message: ChatMessage) {
   const lease = runLeaseQuery.data.value; if (!lease || !message.runId || !['QUEUED', 'RUNNING'].includes(message.runState ?? '')) return;
-  try { const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId; const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); if (!['QUEUED', 'RUNNING'].includes(latest.state)) { applyRun(message, latest); return; } applyRun(message, await cancelMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version)); }
+  try { const patientId = hasPatientContext.value ? patient.current.value.patientId : null; const encounterId = hasPatientContext.value ? patient.current.value.encounterId : null; const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); if (!['QUEUED', 'RUNNING'].includes(latest.state)) { applyRun(message, latest); return; } applyRun(message, await cancelMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version)); }
   catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
 }
 async function retryRun(message: ChatMessage) {
   if (!message.runId || !message.runState || !retryableRunStates.has(message.runState) || busy.value) return; busy.value = true; notice.value = '';
-  try { const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId; const lease = await issueMedicalAgentRunLease(patientId, encounterId); const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); const run = await retryMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version); applyRun(message, run); await pollRun(message, lease, patientId, encounterId, '诊疗环节医助'); }
+  try { const patientId = hasPatientContext.value ? patient.current.value.patientId : null; const encounterId = hasPatientContext.value ? patient.current.value.encounterId : null; const lease = await issueMedicalAgentRunLease(patientId, encounterId); const latest = await getMedicalAgentRun(lease, patientId, encounterId, message.runId); const run = await retryMedicalAgentRun(lease, patientId, encounterId, latest.run_id, latest.row_version); applyRun(message, run); await pollRun(message, lease, patientId, encounterId, '诊疗环节医助'); }
   catch (error) { const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`; }
   finally { busy.value = false; }
 }
@@ -137,6 +137,7 @@ function resetPatient() { messages.value = []; draft.value = ''; notice.value = 
 async function selectSearchPatient(value: Parameters<typeof patient.selectPatient>[0]) { await patient.selectPatient(value); resetPatient(); }
 function selectEncounter(value: Parameters<typeof patient.selectEncounter>[0]) { patient.selectEncounter(value); resetPatient(); }
 function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { patient.selectDefault(value); resetPatient(); }
+function unbindPatient() { patient.unbind(); messages.value = []; draft.value = ''; }
 </script>
 
 <template>
@@ -155,7 +156,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
             </section>
             <form class="eva-popup-composer" @submit.prevent="send"><p v-if="notice" role="status" class="inline-notice">{{ notice }}</p><textarea v-model="draft" :disabled="busy" rows="4" aria-label="向 Eva 描述诊疗任务" placeholder="描述需要完成的诊疗任务……" @keydown.enter.exact.prevent="send" /><footer><EvaComposerControls v-model:model-id="selectedModelId" v-model:authorization-level="authorizationLevel" v-model:context-scopes="contextScopes" :models="availableModels" :disabled="busy" compact /><div><button class="btn" type="button" @click="newTask">新任务</button><RouterLink class="btn" to="/ai-assistant" @click="requestClose">完整工作台</RouterLink><button class="btn primary" type="submit" :disabled="busy || !draft.trim() || !selectedModelId || !runLeaseQuery.data.value">{{ busy ? '执行中…' : '发送' }}</button></div></footer></form>
           </main>
-          <EvaPatientPicker :current="patient.current.value" :defaults="evaDefaultPatientContexts" :results="patient.results.value" :encounters="patient.encounters.value" :selected-patient-id="patient.selectedPatient.value?.patient_id ?? ''" :searching="patient.searching.value" :loading-encounters="patient.loadingEncounters.value" :notice="patient.notice.value" compact @search="patient.search" @select-default="selectDefault" @select-patient="selectSearchPatient" @select-encounter="selectEncounter" />
+          <EvaPatientPicker :current="patient.current.value" :defaults="evaDefaultPatientContexts" :results="patient.results.value" :encounters="patient.encounters.value" :selected-patient-id="patient.selectedPatient.value?.patient_id ?? ''" :searching="patient.searching.value" :loading-encounters="patient.loadingEncounters.value" :notice="patient.notice.value" compact @search="patient.search" @select-default="selectDefault" @select-patient="selectSearchPatient" @select-encounter="selectEncounter" @unbind="unbindPatient" />
         </section>
       </div>
     </component>

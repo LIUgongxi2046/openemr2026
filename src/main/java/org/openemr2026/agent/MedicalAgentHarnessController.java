@@ -85,7 +85,7 @@ final class MedicalAgentHarnessController {
         }
         CreateRunCommand command = new CreateRunCommand(requestWire.organizationId(), requestWire.facilityId(),
                 requestWire.patientId(), requestWire.encounterId(), requestWire.contextLeaseId(),
-                requestWire.mainAgentCode(), requestWire.stageCode(), requestWire.targetType().name(),
+                requestWire.mainAgentCode(), requestWire.stageCode(), requestWire.targetType(),
                 requestWire.targetId(), requestWire.objective(), requestWire.modelDeploymentId(),
                 requestWire.authorizationLevel() == null ? "STANDARD" : requestWire.authorizationLevel().name(),
                 requestWire.contextScopes() == null || requestWire.contextScopes().isEmpty()

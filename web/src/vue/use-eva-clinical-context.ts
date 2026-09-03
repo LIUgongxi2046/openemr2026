@@ -120,5 +120,13 @@ export function useEvaClinicalContext(initial?: EvaPatientContext) {
     notice.value = `已绑定${context.patientName}的${context.label}。`;
   }
 
-  return { current, results, encounters, selectedPatient, searching, loadingEncounters, notice, search, selectPatient, selectEncounter, selectDefault };
+  function unbind() {
+    current.value = { ...emptyPatientContext };
+    selectedPatient.value = null;
+    encounters.value = [];
+    results.value = [];
+    notice.value = '已取消患者绑定，可进行通用问答。';
+  }
+
+  return { current, results, encounters, selectedPatient, searching, loadingEncounters, notice, search, selectPatient, selectEncounter, selectDefault, unbind };
 }

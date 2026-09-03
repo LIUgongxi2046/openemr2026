@@ -68,9 +68,9 @@ const navigation: NavItem[] = [
   { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同' },
   { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心' },
   { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心' },
-  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '平台中心' },
   { id: 'workflow', label: '业务配置', icon: '⌘', group: '管理与配置' },
   { id: 'admin', label: '系统管理', icon: '⚙', group: '管理与配置' },
+  { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '管理与配置' },
 ];
 
 const groups = computed(() => {

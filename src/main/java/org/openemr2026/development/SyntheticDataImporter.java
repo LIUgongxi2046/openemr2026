@@ -581,7 +581,12 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f907', 'eval-critical-result-v1', '危急值与重要结果闭环评测', 'RESULT_FOLLOWUP_COORDINATOR', '覆盖检验、影像、病理与心电重要结果通知。', 'tertiary-critical-result-v1', 240, 0.9850::numeric, 0.9900::numeric),
                   ('018f0000-0000-7000-8000-00000000f908', 'eval-pathology-followup-v1', '病理结果随访闭环评测', 'RESULT_FOLLOWUP_COORDINATOR', '核验未回结果跟踪、责任人、截止时间与患者触达。', 'tertiary-pathology-followup-v1', 170, 0.9700::numeric, 0.9780::numeric),
                   ('018f0000-0000-7000-8000-00000000f909', 'eval-mdt-preparation-v1', 'MDT 病例准备与任务协同评测', 'CARE_COORDINATOR', '覆盖肿瘤、疑难、器官移植与多学科病例资料准备。', 'tertiary-mdt-golden-v1', 160, 0.9600::numeric, 0.9720::numeric),
-                  ('018f0000-0000-7000-8000-00000000f90a', 'eval-medication-reconciliation-v1', '跨场景用药重整评测', 'CARE_COORDINATOR', '核验门诊、急诊、住院和出院用药的差异及待确认项。', 'tertiary-medication-reconciliation-v1', 230, 0.9700::numeric, 0.9830::numeric)
+                  ('018f0000-0000-7000-8000-00000000f90a', 'eval-medication-reconciliation-v1', '跨场景用药重整评测', 'CARE_COORDINATOR', '核验门诊、急诊、住院和出院用药的差异及待确认项。', 'tertiary-medication-reconciliation-v1', 230, 0.9700::numeric, 0.9830::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90b', 'eval-infection-surveillance-v1', '院感监测候选评测', 'INFECTION_SURVEILLANCE', '核验感染病例线索、聚集暴发与法定传染病直报要素。', 'tertiary-infection-surveillance-v1', 180, 0.9600::numeric, 0.9750::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90c', 'eval-insurance-compliance-v1', '医保合规候选评测', 'INSURANCE_COMPLIANCE', '核验 DRG/DIP 编码与费用合理性的可追溯候选。', 'tertiary-insurance-compliance-v1', 190, 0.9600::numeric, 0.9740::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90d', 'eval-medical-tech-scheduling-v1', '医技预约调度候选评测', 'MEDICAL_TECH_SCHEDULING', '核验号源规划与设备利用的可追溯候选。', 'tertiary-medical-tech-scheduling-v1', 160, 0.9500::numeric, 0.9680::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90e', 'eval-research-followup-v1', '科研随访候选评测', 'RESEARCH_FOLLOWUP', '核验队列入组与结局采集口径的可追溯候选。', 'tertiary-research-followup-v1', 170, 0.9500::numeric, 0.9710::numeric),
+                  ('018f0000-0000-7000-8000-00000000f90f', 'eval-patient-education-v1', '患者宣教候选评测', 'PATIENT_EDUCATION', '核验出院带药说明与复诊提醒的可追溯候选。', 'tertiary-patient-education-v1', 150, 0.9500::numeric, 0.9690::numeric)
                 ) as seed(config_id, config_key, display_name, target_agent, description,
                   dataset_version, case_count, pass_threshold, measured_score)
                 on conflict (tenant_id, config_id) do update
