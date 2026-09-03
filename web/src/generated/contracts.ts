@@ -5115,6 +5115,7 @@ export const medicalAgentReleaseWireSchema = z.object({
   "stage_code": z.string(),
   "description": z.string(),
   "doctor_facing_summary": z.string().nullable().optional(),
+  "category": z.enum(["CLINICAL","SPECIALTY","GOVERNANCE","CARE"]).nullable().optional(),
   "display_role": z.string(),
   "current_action": z.string(),
   "contribution_label": z.string(),
@@ -6931,6 +6932,180 @@ export const entTreatmentCreateRequestWireSchema = z.object({
   "recorded_at": z.string(),
 }).strict();
 export type EntTreatmentCreateRequestWire = z.infer<typeof entTreatmentCreateRequestWireSchema>;
+
+export const knowledgeSourceWireSchema = z.object({
+  "source_id": z.string().uuid(),
+  "source_code": z.string(),
+  "source_name": z.string(),
+  "source_kind": z.enum(["OBSIDIAN_VAULT","MANUAL","UPLOAD"]),
+  "source_path": z.string().nullable().optional(),
+  "license": z.string().nullable().optional(),
+  "allowed_use": z.string().nullable().optional(),
+  "sensitivity": z.enum(["PUBLIC","INTERNAL","SENSITIVE","RESTRICTED"]),
+  "update_frequency": z.string().nullable().optional(),
+  "checksum": z.string().nullable().optional(),
+  "status": z.enum(["REGISTERED","ACTIVE","RETIRED"]),
+  "created_at": z.string(),
+  "updated_at": z.string().optional(),
+}).strict();
+export type KnowledgeSourceWire = z.infer<typeof knowledgeSourceWireSchema>;
+
+export const knowledgeSourceRegisterRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "source_code": z.string(),
+  "source_name": z.string(),
+  "source_kind": z.enum(["OBSIDIAN_VAULT","MANUAL","UPLOAD"]),
+  "source_path": z.string().nullable().optional(),
+  "license": z.string().nullable().optional(),
+  "allowed_use": z.string().nullable().optional(),
+  "sensitivity": z.enum(["PUBLIC","INTERNAL","SENSITIVE","RESTRICTED"]),
+  "update_frequency": z.string().nullable().optional(),
+  "checksum": z.string().nullable().optional(),
+}).strict();
+export type KnowledgeSourceRegisterRequestWire = z.infer<typeof knowledgeSourceRegisterRequestWireSchema>;
+
+export const knowledgeImportBatchWireSchema = z.object({
+  "batch_id": z.string().uuid(),
+  "source_id": z.string().uuid(),
+  "source_root": z.string(),
+  "selection_matrix_version": z.string(),
+  "source_manifest_hash": z.string(),
+  "mode": z.literal("READ_ONLY"),
+  "imported_row_count": z.number().int(),
+  "skipped_row_count": z.number().int(),
+  "status": z.enum(["RUNNING","COMPLETED","FAILED"]),
+  "imported_at": z.string(),
+  "operator": z.string().uuid(),
+}).strict();
+export type KnowledgeImportBatchWire = z.infer<typeof knowledgeImportBatchWireSchema>;
+
+export const knowledgeImportRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "selection_matrix_version": z.string(),
+}).strict();
+export type KnowledgeImportRequestWire = z.infer<typeof knowledgeImportRequestWireSchema>;
+
+export const knowledgeDocumentWireSchema = z.object({
+  "document_id": z.string().uuid(),
+  "document_code": z.string(),
+  "content_type": z.enum(["GUIDELINE","DRUG_LEAFLET","PATHWAY","QC_BASIS","GRAPH_ENTITY","CATALOG","TERMINOLOGY"]),
+  "title": z.string(),
+  "source_authority": z.string().nullable().optional(),
+  "license": z.string().nullable().optional(),
+  "classification": z.enum(["PUBLIC","INTERNAL","SENSITIVE","RESTRICTED"]),
+  "effective_from": z.string().nullable().optional(),
+  "effective_to": z.string().nullable().optional(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+  "updated_at": z.string().optional(),
+}).strict();
+export type KnowledgeDocumentWire = z.infer<typeof knowledgeDocumentWireSchema>;
+
+export const knowledgeDocumentCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "document_code": z.string(),
+  "content_type": z.enum(["GUIDELINE","DRUG_LEAFLET","PATHWAY","QC_BASIS","GRAPH_ENTITY","CATALOG","TERMINOLOGY"]),
+  "title": z.string(),
+  "source_authority": z.string().nullable().optional(),
+  "license": z.string().nullable().optional(),
+  "classification": z.enum(["PUBLIC","INTERNAL","SENSITIVE","RESTRICTED"]),
+  "effective_from": z.string().nullable().optional(),
+  "effective_to": z.string().nullable().optional(),
+}).strict();
+export type KnowledgeDocumentCreateRequestWire = z.infer<typeof knowledgeDocumentCreateRequestWireSchema>;
+
+export const knowledgeDocumentVersionWireSchema = z.object({
+  "doc_version_id": z.string().uuid(),
+  "document_id": z.string().uuid(),
+  "version": z.string(),
+  "content_hash": z.string(),
+  "markdown": z.string(),
+  "metadata": z.object({
+
+}).strict().optional(),
+  "status": z.enum(["DRAFT","IN_REVIEW","APPROVED","ACTIVE","RETIRED"]),
+  "effective_from": z.string().nullable().optional(),
+  "effective_to": z.string().nullable().optional(),
+  "published_by": z.string().uuid().nullable().optional(),
+  "row_version": z.number().int(),
+  "created_at": z.string(),
+}).strict();
+export type KnowledgeDocumentVersionWire = z.infer<typeof knowledgeDocumentVersionWireSchema>;
+
+export const knowledgeVersionCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "markdown": z.string(),
+  "metadata": z.object({
+
+}).strict().optional(),
+}).strict();
+export type KnowledgeVersionCreateRequestWire = z.infer<typeof knowledgeVersionCreateRequestWireSchema>;
+
+export const knowledgeVersionSubmitRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+}).strict();
+export type KnowledgeVersionSubmitRequestWire = z.infer<typeof knowledgeVersionSubmitRequestWireSchema>;
+
+export const knowledgeVersionPublishRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "effective_from": z.string().nullable().optional(),
+}).strict();
+export type KnowledgeVersionPublishRequestWire = z.infer<typeof knowledgeVersionPublishRequestWireSchema>;
+
+export const knowledgeVersionRetireRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "reason": z.string().nullable().optional(),
+}).strict();
+export type KnowledgeVersionRetireRequestWire = z.infer<typeof knowledgeVersionRetireRequestWireSchema>;
+
+export const knowledgeSearchRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "query": z.string(),
+  "purpose": z.string().nullable().optional(),
+  "content_type": z.enum(["GUIDELINE","DRUG_LEAFLET","PATHWAY","QC_BASIS","GRAPH_ENTITY","CATALOG","TERMINOLOGY"]).nullable().optional(),
+  "limit": z.number().int().optional(),
+}).strict();
+export type KnowledgeSearchRequestWire = z.infer<typeof knowledgeSearchRequestWireSchema>;
+
+export const knowledgeReferenceWireSchema = z.object({
+  "source_type": z.string(),
+  "source_id": z.string(),
+  "source_version": z.string(),
+  "locator": z.object({
+
+}).strict(),
+  "content_hash": z.string(),
+  "excerpt": z.string(),
+  "score": z.number().optional(),
+  "retrieval_method": z.array(z.string()).optional(),
+  "authorization_watermark": z.string(),
+  "retrieved_at": z.string(),
+}).strict();
+export type KnowledgeReferenceWire = z.infer<typeof knowledgeReferenceWireSchema>;
+
+export const knowledgeSearchResultWireSchema = z.object({
+  "references": z.array(knowledgeReferenceWireSchema),
+}).strict();
+export type KnowledgeSearchResultWire = z.infer<typeof knowledgeSearchResultWireSchema>;
+
+export const knowledgeFeedbackCreateRequestWireSchema = z.object({
+  "organization_id": z.string().uuid(),
+  "facility_id": z.string().uuid(),
+  "use_case": z.string().nullable().optional(),
+  "doc_version_id": z.string().uuid().nullable().optional(),
+  "source_ref": z.string().nullable().optional(),
+  "disposition": z.enum(["ACCEPTED","REJECTED","CORRECTION"]),
+  "comment": z.string().nullable().optional(),
+}).strict();
+export type KnowledgeFeedbackCreateRequestWire = z.infer<typeof knowledgeFeedbackCreateRequestWireSchema>;
 
 export interface ClinicalContextLease {
   leaseId: string;

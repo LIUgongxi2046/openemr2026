@@ -239,7 +239,8 @@
     "src/main/resources/db/migration/V346__medical_agent_composition_expansion.sql",
     "src/main/resources/db/migration/V347__medical_agent_general_question_target_guard.sql",
     "src/main/resources/db/migration/V348__medical_agent_doctor_facing_summary.sql",
-    "src/main/resources/db/migration/V349__expand_specialty_medical_agents.sql"
+    "src/main/resources/db/migration/V349__expand_specialty_medical_agents.sql",
+    "src/main/resources/db/migration/V350__medical_agent_category.sql"
   ],
   "status": "OBSERVED_FROM_MIGRATIONS",
   "field_count": 3156,

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 554,
+  "operation_count": 566,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -1537,6 +1537,57 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:createInpatientDocumentTaskFromRule",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createKnowledgeDocument",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-documents",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeDocumentCreateRequest",
+      "output_schema": "KnowledgeDocument",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createKnowledgeDocument",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createKnowledgeFeedback",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-feedback",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeFeedbackCreateRequest",
+      "output_schema": "object",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createKnowledgeFeedback",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "createKnowledgeVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-documents/{document_id}/versions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeVersionCreateRequest",
+      "output_schema": "KnowledgeDocumentVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:createKnowledgeVersion",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -3311,6 +3362,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "importKnowledgeSource",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-sources/{source_id}/imports",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeImportRequest",
+      "output_schema": "KnowledgeImportBatch",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:importKnowledgeSource",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "ingestMedicalRecordAsset",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -4786,6 +4854,57 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:listInpatientWardWorklist",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listKnowledgeDocuments",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-documents",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeDocument[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listKnowledgeDocuments",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listKnowledgeImports",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-sources/{source_id}/imports",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeImportBatch[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listKnowledgeImports",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "listKnowledgeSources",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "GET",
+      "path": "/knowledge-sources",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "NONE",
+      "output_schema": "KnowledgeSource[]",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "SAFE_READ",
+      "timeout_ms": 3000,
+      "rate_limit": "policy:listKnowledgeSources",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -6490,6 +6609,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "publishKnowledgeVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-versions/{doc_version_id}/publications",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeVersionPublishRequest",
+      "output_schema": "KnowledgeDocumentVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:publishKnowledgeVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "publishPromptRelease",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7480,6 +7616,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "registerKnowledgeSource",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-sources",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeSourceRegisterRequest",
+      "output_schema": "KnowledgeSource",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:registerKnowledgeSource",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "registerMedicalRecordAsset",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -7833,6 +7986,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:retireCapabilityPackRelease",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "retireKnowledgeVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-versions/{doc_version_id}/retirements",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeVersionRetireRequest",
+      "output_schema": "KnowledgeDocumentVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:retireKnowledgeVersion",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
@@ -8214,6 +8384,23 @@
       "status": "DEFAULTED_POLICY_V1"
     },
     {
+      "operation_id": "searchKnowledge",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-search",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeSearchRequest",
+      "output_schema": "KnowledgeSearchResult",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:searchKnowledge",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
       "operation_id": "searchPatients",
       "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
       "method": "POST",
@@ -8535,6 +8722,23 @@
       "idempotency": "SAFE_READ",
       "timeout_ms": 3000,
       "rate_limit": "policy:streamClinicalAssistant",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "submitKnowledgeVersion",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/knowledge-versions/{doc_version_id}/submissions",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "KnowledgeVersionSubmitRequest",
+      "output_schema": "KnowledgeDocumentVersion",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:submitKnowledgeVersion",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },

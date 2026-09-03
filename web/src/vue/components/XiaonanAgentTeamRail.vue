@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { MedicalAgentFamilyWire } from '../../generated/contracts';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 
@@ -14,6 +15,25 @@ const emit = defineEmits<{
   select: [agent: MedicalAgentFamilyWire];
 }>();
 
+const categoryOrder: Array<{ code: string; label: string }> = [
+  { code: 'CLINICAL', label: '临床诊疗' },
+  { code: 'SPECIALTY', label: '专科医助' },
+  { code: 'GOVERNANCE', label: '治理与运营' },
+  { code: 'CARE', label: '随访与宣教' },
+];
+
+const groupedAgents = computed(() => {
+  const groups = new Map<string, MedicalAgentFamilyWire[]>();
+  for (const agent of props.agents) {
+    const code = agent.main_agent.category ?? 'OTHER';
+    if (!groups.has(code)) groups.set(code, []);
+    groups.get(code)!.push(agent);
+  }
+  return categoryOrder
+    .filter((item) => groups.has(item.code))
+    .map((item) => ({ label: item.label, agents: groups.get(item.code)! }));
+});
+
 function teamName(agent: MedicalAgentFamilyWire) {
   return doctorFacingTeamName(agent.main_agent.display_name);
 }
@@ -28,20 +48,23 @@ function teamName(agent: MedicalAgentFamilyWire) {
 
     <div v-if="agents.length === 0" class="xiaonan-rail-state">{{ collapsed ? '…' : '正在读取医助团队…' }}</div>
     <nav v-else class="xiaonan-team-list" aria-label="选择医助团队">
-      <button
-        v-for="agent in agents"
-        :key="agent.main_agent.agent_code"
-        type="button"
-        :class="{ selected: selectedAgentCode === agent.main_agent.agent_code }"
-        :aria-pressed="selectedAgentCode === agent.main_agent.agent_code"
-        :disabled="busy"
-        :title="teamName(agent)"
-        @click="emit('select', agent)"
-      >
-        <i aria-hidden="true">{{ teamName(agent).slice(0, 1) }}</i>
-        <span v-if="!collapsed"><b>{{ teamName(agent) }}</b><small>{{ doctorFacingAiText(agent.main_agent.display_role) }} · {{ agent.child_agents.length }} 位医助</small></span>
-        <em v-if="!collapsed" class="xiaonan-usage">已用 {{ agent.main_agent.usage_count }} 次</em>
-      </button>
+      <template v-for="group in groupedAgents" :key="group.label">
+        <div v-if="!collapsed" class="xiaonan-team-group">{{ group.label }}<span>{{ group.agents.length }}</span></div>
+        <button
+          v-for="agent in group.agents"
+          :key="agent.main_agent.agent_code"
+          type="button"
+          :class="{ selected: selectedAgentCode === agent.main_agent.agent_code }"
+          :aria-pressed="selectedAgentCode === agent.main_agent.agent_code"
+          :disabled="busy"
+          :title="teamName(agent)"
+          @click="emit('select', agent)"
+        >
+          <i aria-hidden="true">{{ teamName(agent).slice(0, 1) }}</i>
+          <span v-if="!collapsed"><b>{{ teamName(agent) }}</b><small>{{ doctorFacingAiText(agent.main_agent.display_role) }} · {{ agent.child_agents.length }} 位医助</small></span>
+          <em v-if="!collapsed" class="xiaonan-usage">已用 {{ agent.main_agent.usage_count }} 次</em>
+        </button>
+      </template>
     </nav>
   </aside>
 </template>
@@ -56,6 +79,9 @@ header span { color: #738397; font-size: 9px; }
 header button { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; padding: 0; color: #315a83; border: 1px solid #c8d7e7; border-radius: 8px; background: #f8fbff; font-size: 21px; cursor: pointer; }
 .collapsed header { justify-content: center; padding-inline: 8px; }
 .xiaonan-team-list { display: grid; gap: 6px; padding: 10px; overflow-y: auto; }
+.xiaonan-team-group { display: flex; align-items: center; justify-content: space-between; grid-column: 1 / -1; padding: 8px 2px 2px; color: #7b8b9a; font-size: 8px; font-weight: 800; letter-spacing: .3px; }
+.xiaonan-team-group + .xiaonan-team-group { margin-top: 8px; }
+.xiaonan-team-group span { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; color: #6a7f93; border-radius: 999px; background: #e6edf4; font-size: 8px; }
 .xiaonan-team-list > button { display: grid; grid-template-columns: 34px minmax(0,1fr) auto; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 7px; color: inherit; border: 1px solid transparent; border-radius: 9px; background: transparent; text-align: left; cursor: pointer; }
 .xiaonan-team-list > button:hover { background: #edf5ff; }
 .xiaonan-team-list > button.selected { border-color: #9dbfe6; background: #e8f2ff; box-shadow: 0 0 0 1px rgb(23 105 224 / 8%); }

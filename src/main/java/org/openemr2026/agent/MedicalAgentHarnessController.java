@@ -198,8 +198,8 @@ final class MedicalAgentHarnessController {
     private static MedicalAgentReleaseWire wire(MedicalAgentHarnessService.AgentReleaseView release) {
         return new MedicalAgentReleaseWire(release.agentCode(), release.releaseVersion(), release.displayName(),
                 MedicalAgentReleaseWire.AgentLevelValue.valueOf(release.agentLevel()), release.parentAgentCode(),
-                release.stageCode(), release.description(), release.doctorFacingSummary(), release.displayRole(),
-                release.currentAction(), release.contributionLabel(), release.questionExamples(),
+                release.stageCode(), release.description(), release.doctorFacingSummary(), release.category(),
+                release.displayRole(), release.currentAction(), release.contributionLabel(), release.questionExamples(),
                 release.outputSchema(), MedicalAgentReleaseWire.AutonomyLevelValue.valueOf(release.autonomyLevel()),
                 release.maxSteps(), release.maxToolCalls(), release.maxDurationSeconds(), release.usageCount());
     }
