@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ModelDeploymentWire } from '../../generated/contracts';
 import type { MedicalAgentContextScope, ModelDataProcessingApproval } from '../../api/ai-platform';
-import { approveModelDataProcessing, deactivateModelDeployment, issueAiLease, listModelDataProcessingApprovals, listModelDeployments, registerModelDeployment, revokeModelDataProcessingApproval, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
+import { approveModelDataProcessing, deactivateModelDeployment, issueAiLease, listModelDataProcessingApprovals, listModelDeployments, publishModelDeployment, registerModelDeployment, revokeModelDataProcessingApproval, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -179,6 +179,21 @@ async function testConnection(model: ModelDeploymentWire) {
   } finally { busy.value = ''; }
 }
 
+async function publish(model: ModelDeploymentWire) {
+  const lease = leaseQuery.data.value;
+  if (!lease || busy.value || model.status !== 'ACTIVE') return;
+  busy.value = `publish:${model.model_deployment_id}`; notice.value = '';
+  try {
+    const published = await publishModelDeployment(lease, model);
+    notice.value = published.evaluation_status === 'APPROVED'
+      ? `模型 ${published.display_name} 已发布，现已进入 Eva 模型路由，可在 Eva 中选择使用。`
+      : '发布结果异常，请刷新后确认。';
+    await modelsQuery.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally { busy.value = ''; }
+}
+
 async function openProcessingApproval(model: ModelDeploymentWire) {
   const lease = leaseQuery.data.value;
   if (!lease || busy.value) return;
@@ -271,7 +286,7 @@ async function revokeProcessingApproval() {
                   <td>{{ residencyPolicyLabels[model.residency_policy] }}</td>
                   <td><span class="admin-status" :class="model.evaluation_status.toLowerCase()">{{ evaluationStatusLabels[model.evaluation_status] }}</span></td>
                   <td><span class="admin-status" :class="model.status.toLowerCase()">{{ model.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><div class="admin-row-actions"><button class="task-action" :disabled="model.status !== 'ACTIVE' || !model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button v-if="model.residency_policy === 'CLOUD_ALLOWED'" class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="openProcessingApproval(model)">云端处理授权</button><button class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = model">删除</button></div></td>
+                  <td><div class="admin-row-actions"><button class="task-action" :disabled="model.status !== 'ACTIVE' || !model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button v-if="model.status === 'ACTIVE' && model.connection_status === 'READY' && model.evaluation_status !== 'APPROVED'" class="task-action publish" :disabled="Boolean(busy)" :title="'发布后进入 Eva 模型路由'" @click="publish(model)">{{ busy === `publish:${model.model_deployment_id}` ? '发布中…' : '发布' }}</button><button v-if="model.residency_policy === 'CLOUD_ALLOWED'" class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="openProcessingApproval(model)">云端处理授权</button><button class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = model">删除</button></div></td>
                 </tr>
               </tbody>
             </table>
@@ -319,6 +334,7 @@ async function revokeProcessingApproval() {
 </template>
 
 <style scoped>
+:deep(.task-action.publish) { color: #0c7d68; border-color: #7fc4b6; background: #eaf8f5; font-weight: 700; }
 .model-api-guide { margin-bottom: 18px; }
 .model-api-guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
 .model-api-guide-grid article { padding: 14px; border: 1px solid #d8e7e4; border-radius: 10px; background: #f5fbfa; }
