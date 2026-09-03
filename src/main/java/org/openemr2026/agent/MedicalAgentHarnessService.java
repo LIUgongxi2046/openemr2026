@@ -35,6 +35,7 @@ final class MedicalAgentHarnessService {
     private final Environment environment;
     private final MedicalAgentToolGateway toolGateway;
     private final MedicalAgentModelGateway modelGateway;
+    private final AgentOrchestrator orchestrator;
 
     MedicalAgentHarnessService(
             JdbcClient jdbc,
@@ -42,13 +43,15 @@ final class MedicalAgentHarnessService {
             ObjectMapper objectMapper,
             Environment environment,
             MedicalAgentToolGateway toolGateway,
-            MedicalAgentModelGateway modelGateway) {
+            MedicalAgentModelGateway modelGateway,
+            AgentOrchestrator orchestrator) {
         this.jdbc = jdbc;
         this.transactions = transactions;
         this.objectMapper = objectMapper;
         this.environment = environment;
         this.toolGateway = toolGateway;
         this.modelGateway = modelGateway;
+        this.orchestrator = orchestrator;
     }
 
     List<AgentFamilyView> catalog() {
@@ -85,7 +88,8 @@ final class MedicalAgentHarnessService {
                 .toList();
     }
 
-    RunView createAndRun(ClinicalIdentity identity, String idempotencyKey, CreateRunCommand command) {
+    RunView createAndRun(ClinicalIdentity identity, String idempotencyKey, CreateRunCommand requested) {
+        CreateRunCommand command = resolveRouting(requested);
         validate(command);
         UUID runId = transactions.execute(status -> {
             LeaseRow lease = lease(identity, command);
@@ -679,7 +683,7 @@ final class MedicalAgentHarnessService {
                             rs.getString("target_type"), rs.getObject("target_id", UUID.class),
                             rs.getString("objective"), rs.getObject("model_deployment_id", UUID.class),
                             rs.getString("authorization_level"),
-                            listOfStrings(rs.getString("context_scopes")));
+                            listOfStrings(rs.getString("context_scopes")), null);
                     return new ExecutionSnapshot(rs.getString("root_agent_code"),
                             rs.getString("root_agent_version"), rs.getString("composition_code"),
                             rs.getString("composition_version"), rs.getString("requested_stage"),
@@ -1293,6 +1297,23 @@ final class MedicalAgentHarnessService {
                 .param("run", runId).param("root", rootAgentCode).param("state", state).update();
     }
 
+    /**
+     * 当请求未显式指定主医助/阶段时，委托 {@link AgentOrchestrator} 按 source_route
+     * 做确定性动态编排；显式指定的编码原样保留（允许医生在对话界面手动覆盖）。
+     */
+    private CreateRunCommand resolveRouting(CreateRunCommand command) {
+        boolean explicit = command.mainAgentCode() != null && !command.mainAgentCode().isBlank()
+                && command.stageCode() != null && !command.stageCode().isBlank();
+        if (explicit) {
+            return command;
+        }
+        AgentOrchestrator.Routing routing = orchestrator.resolve(command.sourceRoute());
+        return new CreateRunCommand(command.organizationId(), command.facilityId(), command.patientId(),
+                command.encounterId(), command.contextLeaseId(), routing.mainAgentCode(), routing.stageCode(),
+                command.targetType(), command.targetId(), command.objective(), command.modelDeploymentId(),
+                command.authorizationLevel(), command.contextScopes(), command.sourceRoute());
+    }
+
     private void validate(CreateRunCommand command) {
         if (command.contextLeaseId() == null || command.organizationId() == null || command.facilityId() == null
                 || command.patientId() == null || command.encounterId() == null || command.targetId() == null) {
@@ -1383,7 +1404,7 @@ final class MedicalAgentHarnessService {
     record CreateRunCommand(UUID organizationId, UUID facilityId, UUID patientId, UUID encounterId,
             UUID contextLeaseId, String mainAgentCode, String stageCode, String targetType,
             UUID targetId, String objective, UUID modelDeploymentId, String authorizationLevel,
-            List<String> contextScopes) {}
+            List<String> contextScopes, String sourceRoute) {}
 
     record RetryRunCommand(UUID organizationId, UUID facilityId, UUID contextLeaseId, long expectedRowVersion) {}
 

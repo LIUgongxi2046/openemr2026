@@ -73,7 +73,8 @@ final class MedicalAgentHarnessController {
                 requestWire.authorizationLevel() == null ? "STANDARD" : requestWire.authorizationLevel().name(),
                 requestWire.contextScopes() == null || requestWire.contextScopes().isEmpty()
                         ? List.of("RECORDS", "ORDERS", "RESULTS", "TASKS", "CONFIGURATION")
-                        : requestWire.contextScopes().stream().map(Enum::name).toList());
+                        : requestWire.contextScopes().stream().map(Enum::name).toList(),
+                requestWire.sourceRoute());
         ClinicalIdentity identity = security.authorizeForPurposes(request, command.organizationId(), command.facilityId(),
                 command.patientId(), command.encounterId(), Set.of("MEDICAL_AGENT_COLLABORATION"));
         RunView run = harness.createAndRun(identity, idempotencyKey, command);

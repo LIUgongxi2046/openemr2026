@@ -516,8 +516,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   'model_policy', 'TENANT_ACTIVE_MODEL_WITH_LOCAL_FALLBACK',
                   'rate_limit', 10,
                   'approval_required', true,
-                  'main_agent_count', 5,
-                  'child_agent_count', 33,
+                  'main_agent_count', 10,
+                  'child_agent_count', 44,
                   'hospital_level', '三级甲等',
                   'facility_name', '江城大学附属医院（仿真）',
                   'campuses', jsonb_build_array('本部院区', '东院区', '感染病院区'),
@@ -537,7 +537,10 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 set payload = payload || jsonb_build_object(
                   'agents', jsonb_build_array(
                     'ENCOUNTER_SUMMARIZER@1.0.0', 'DOCUMENT_DRAFTER@1.0.0', 'RECORD_QC@1.0.0',
-                    'RESULT_FOLLOWUP_COORDINATOR@1.0.0', 'CARE_COORDINATOR@1.0.0'),
+                    'RESULT_FOLLOWUP_COORDINATOR@1.0.0', 'CARE_COORDINATOR@1.0.0',
+                    'INFECTION_SURVEILLANCE@1.0.0', 'INSURANCE_COMPLIANCE@1.0.0',
+                    'MEDICAL_TECH_SCHEDULING@1.0.0', 'RESEARCH_FOLLOWUP@1.0.0',
+                    'PATIENT_EDUCATION@1.0.0'),
                   'skills', jsonb_build_array('CONTEXT_LEASE_GUARD@1.0.0', 'SOURCE_REFERENCE_CITATION@1.0.0', 'CANDIDATE_BOUNDARY_VALIDATION@1.0.0'),
                   'tools', jsonb_build_array('ENCOUNTER_TIMELINE_READ@1.0.0', 'DOCUMENT_VERSION_READ@1.0.0', 'AGENT_EVIDENCE_APPEND@1.0.0'),
                   'budget_tokens', 24000,

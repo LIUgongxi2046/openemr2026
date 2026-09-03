@@ -148,7 +148,7 @@ async function send() {
   messages.value.push({ id: crypto.randomUUID(), role: 'user', text }); messages.value.push({ id: responseId, role: 'assistant', text: '', events: initialEvents(child) }); draft.value = '';
   try {
     const patientId = patient.current.value.patientId; const encounterId = patient.current.value.encounterId;
-    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
+    const run = await createMedicalAgentRun(lease, { patientId, encounterId, mainAgentCode: agent.main_agent.agent_code, stageCode: child.stage_code, sourceRoute: props.routeId, objective: text, modelDeploymentId: selectedModelId.value, authorizationLevel: authorizationLevel.value, contextScopes: contextScopes.value });
     const response = messages.value.find((item) => item.id === responseId)!; applyRun(response, run, child.display_name);
     await pollRun(response, lease, patientId, encounterId, child.display_name);
   } catch (error) { const next = toClinicalIssue(error); const response = messages.value.find((item) => item.id === responseId)!; response.text = `任务未完成：${next.message}`; response.events = (response.events ?? []).map((event) => event.status === 'done' ? event : { ...event, status: event.status === 'running' ? 'failed' : 'waiting' }); notice.value = `${next.code}：${next.message}`; }

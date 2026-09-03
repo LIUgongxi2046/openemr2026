@@ -38,6 +38,7 @@ export async function createMedicalAgentRun(
     encounterId: string;
     mainAgentCode: string;
     stageCode: string;
+    sourceRoute?: string | null;
     targetType?: 'ENCOUNTER' | 'DOCUMENT' | 'RESULT' | 'TASK' | 'CARE_PLAN';
     targetId?: string;
     objective: string;
@@ -54,6 +55,7 @@ export async function createMedicalAgentRun(
     context_lease_id: lease.lease_id,
     main_agent_code: input.mainAgentCode,
     stage_code: input.stageCode,
+    source_route: input.sourceRoute ?? null,
     target_type: input.targetType ?? 'ENCOUNTER',
     target_id: input.targetId ?? input.encounterId,
     objective: input.objective,
