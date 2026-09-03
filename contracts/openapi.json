@@ -36113,6 +36113,7 @@
           "parent_agent_code": { "type": ["string", "null"] },
           "stage_code": { "type": "string" },
           "description": { "type": "string" },
+          "doctor_facing_summary": { "type": ["string", "null"], "description": "面向医生的一句话能力简介（主医助有值，子医助为空）。" },
           "display_role": { "type": "string" },
           "current_action": { "type": "string" },
           "contribution_label": { "type": "string" },

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-
 import type { MedicalAgentFamilyWire } from '../../generated/contracts';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 
@@ -15,10 +13,6 @@ const emit = defineEmits<{
   toggle: [];
   select: [agent: MedicalAgentFamilyWire];
 }>();
-
-const selectedAgent = computed(() => props.agents.find(
-  (agent) => agent.main_agent.agent_code === props.selectedAgentCode,
-));
 
 function teamName(agent: MedicalAgentFamilyWire) {
   return doctorFacingTeamName(agent.main_agent.display_name);
@@ -48,13 +42,6 @@ function teamName(agent: MedicalAgentFamilyWire) {
         <span v-if="!collapsed"><b>{{ teamName(agent) }}</b><small>{{ doctorFacingAiText(agent.main_agent.display_role) }} · {{ agent.child_agents.length }} 位医助</small></span>
       </button>
     </nav>
-
-    <section v-if="selectedAgent && !collapsed" class="xiaonan-agent-capabilities">
-      <details class="xiaonan-agent-intro" open>
-        <summary>医助团队介绍</summary>
-        <p>{{ doctorFacingAiText(selectedAgent.main_agent.description) }}</p>
-      </details>
-    </section>
   </aside>
 </template>
 
@@ -78,18 +65,13 @@ header button { display: grid; place-items: center; width: 30px; height: 30px; f
 .xiaonan-team-list small { overflow: hidden; color: #738397; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
 .collapsed .xiaonan-team-list { padding: 9px; }
 .collapsed .xiaonan-team-list > button { display: grid; grid-template-columns: 34px; place-content: center; padding: 4px; }
-.xiaonan-agent-capabilities { min-height: 0; padding: 10px; overflow-y: auto; }
-.xiaonan-agent-intro { padding: 10px; border: 1px solid #cfe0ef; border-radius: 10px; background: #fff; }
-.xiaonan-agent-intro summary { display: flex; align-items: center; justify-content: space-between; color: #405870; font-size: 10px; font-weight: 800; cursor: pointer; }
-.xiaonan-agent-intro p { margin: 7px 0 0; color: #526a80; font-size: 9px; line-height: 1.6; }
 .xiaonan-rail-state { padding: 18px 10px; color: #74869a; font-size: 9px; text-align: center; }
 @media (max-width: 760px) {
   .xiaonan-harness-team-rail { width: 100%; height: auto; border-right: 0; border-bottom: 1px solid #d8e3ef; }
   .xiaonan-harness-team-rail.collapsed { width: 100%; }
   .collapsed header { justify-content: space-between; }
   .collapsed header::before { content: '医助团队'; color: #263f58; font-size: 12px; font-weight: 800; }
-  .collapsed .xiaonan-team-list, .collapsed .xiaonan-agent-capabilities { display: none; }
+  .collapsed .xiaonan-team-list { display: none; }
   .xiaonan-team-list { grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); }
-  .xiaonan-agent-capabilities { max-height: 360px; }
 }
 </style>

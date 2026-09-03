@@ -5114,6 +5114,7 @@ export const medicalAgentReleaseWireSchema = z.object({
   "parent_agent_code": z.string().nullable().optional(),
   "stage_code": z.string(),
   "description": z.string(),
+  "doctor_facing_summary": z.string().nullable().optional(),
   "display_role": z.string(),
   "current_action": z.string(),
   "contribution_label": z.string(),
