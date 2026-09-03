@@ -79,9 +79,7 @@ function changeMode(mode: 'center' | 'side') { if (mode !== props.mode) emit('mo
 function cancel(event: Event) { event.preventDefault(); requestClose(); }
 function closed() { if (props.open) requestClose(); }
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedAgentCode.value = agent.main_agent.agent_code; userOverride.value = true; }
-function selectStage(child: MedicalAgentReleaseWire) { selectedStageCode.value = child.stage_code; userOverride.value = true; }
-function useQuestionExample(example: string, agent: MedicalAgentFamilyWire, child?: MedicalAgentReleaseWire) { selectedAgentCode.value = agent.main_agent.agent_code; if (child) selectedStageCode.value = child.stage_code; draft.value = doctorFacingAiText(example); userOverride.value = true; }
-function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) { useQuestionExample(child.question_examples[0] ?? child.current_action, agent, child); }
+function selectStage(child: MedicalAgentReleaseWire) { selectedStageCode.value = child.stage_code; draft.value = doctorFacingAiText(child.question_examples[0] ?? child.current_action); userOverride.value = true; }
 
 function initialEvents(child: MedicalAgentReleaseWire): TaskEvent[] { return [
   { id: crypto.randomUUID(), label: 'Eva 规划当前页面任务', detail: props.contextLabel, status: 'done' },
@@ -147,7 +145,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
       <div class="eva-popup-shell">
         <header class="eva-popup-header"><img class="global-ai-mascot" src="/brand/ai-medical-assistant-eva.png" alt="Eva 女性医疗智能助理" width="46" height="46" /><div><span>临床任务工作台</span><h2 id="global-ai-dialog-title">AI医助 Eva</h2><p id="global-ai-dialog-context">{{ contextLabel }}<template v-if="taskId"> · 当前任务已连接</template></p></div><b>{{ agents.length }} 组 · {{ childAgentCount }} 位医助</b><nav aria-label="Eva窗口模式"><button type="button" :class="{ active: mode === 'center' }" @click="changeMode('center')">中窗</button><button type="button" :class="{ active: mode === 'side' }" @click="changeMode('side')">右侧窗</button></nav><button class="eva-popup-close" type="button" aria-label="关闭AI医助Eva" @click="requestClose">×</button></header>
         <section class="eva-popup-workspace">
-          <XiaonanAgentTeamRail :agents="agents" :selected-agent-code="selectedAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" @example="useQuestionExample" @run-child="runChildAgent" />
+          <XiaonanAgentTeamRail :agents="agents" :selected-agent-code="selectedAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" />
           <main class="eva-popup-main">
             <EvaStagePicker v-if="selectedAgent" :children="selectedAgent.child_agents" :selected-stage-code="selectedStageCode" :collapsed="stagePickerCollapsed" :busy="busy" @update:collapsed="stagePickerCollapsed = $event" @select="selectStage" />
             <section class="eva-popup-thread" aria-live="polite">

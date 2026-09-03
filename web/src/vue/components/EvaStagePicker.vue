@@ -33,11 +33,11 @@ const emit = defineEmits<{
         :class="{ selected: child.stage_code === selectedStageCode }"
         :aria-pressed="child.stage_code === selectedStageCode"
         :disabled="busy"
-        :title="doctorFacingAiText(child.current_action)"
+        :title="doctorFacingAiText(child.question_examples[0] ?? child.current_action)"
         @click="emit('select', child)"
       >
         <b>{{ doctorFacingAiText(child.display_name) }}</b>
-        <small>{{ doctorFacingAiText(child.current_action) }}</small>
+        <small>{{ doctorFacingAiText(child.question_examples[0] ?? child.current_action) }}</small>
       </button>
     </nav>
   </section>

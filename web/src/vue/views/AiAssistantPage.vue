@@ -206,9 +206,7 @@ async function retryRun(message: ChatMessage) {
 }
 
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedMainAgentCode.value = agent.main_agent.agent_code; }
-function selectStage(child: MedicalAgentReleaseWire) { selectedStageCode.value = child.stage_code; }
-function useAgentExample(example: string, agent: MedicalAgentFamilyWire, child?: MedicalAgentReleaseWire) { selectedMainAgentCode.value = agent.main_agent.agent_code; if (child) selectedStageCode.value = child.stage_code; draft.value = doctorFacingAiText(example); nextTick(() => composer.value?.focus()); }
-function runChildAgent(agent: MedicalAgentFamilyWire, child: MedicalAgentReleaseWire) { useAgentExample(child.question_examples[0] ?? child.current_action, agent, child); }
+function selectStage(child: MedicalAgentReleaseWire) { selectedStageCode.value = child.stage_code; draft.value = doctorFacingAiText(child.question_examples[0] ?? child.current_action); nextTick(() => composer.value?.focus()); }
 function newTask() { messages.value = []; draft.value = ''; notice.value = '已创建空白医助任务。'; nextTick(() => composer.value?.focus()); }
 function clearConversation() { messages.value = []; notice.value = ''; clearConversationOpen.value = false; }
 function resetForPatient() { messages.value = []; draft.value = ''; notice.value = '已切换患者并创建空白任务。'; }
@@ -227,7 +225,7 @@ function selectDefault(value: Parameters<typeof patient.selectDefault>[0]) { pat
     <div v-else-if="loading" class="card"><div class="card-body">正在连接 Eva 工作区…</div></div>
 
     <section v-else class="xiaonan-harness-shell eva-harness-shell">
-      <XiaonanAgentTeamRail :agents="families" :selected-agent-code="selectedMainAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" @example="useAgentExample" @run-child="runChildAgent" />
+      <XiaonanAgentTeamRail :agents="families" :selected-agent-code="selectedMainAgentCode" :collapsed="teamCollapsed" :busy="busy" @toggle="teamCollapsed = !teamCollapsed" @select="selectAgent" />
       <section class="eva-harness-main" aria-label="Eva 医助任务对话">
         <header class="eva-session-head"><div><span class="eva-live-dot" aria-hidden="true"></span><div><strong>{{ selectedFamily ? clinicianAgentName(selectedFamily.main_agent.display_name) : 'Eva 综合医助' }}</strong><small>{{ selectedChild ? doctorFacingAiText(selectedChild.display_name) : '根据任务自动选择诊疗环节医助' }}</small></div></div><span>{{ messages.length ? `${Math.ceil(messages.length / 2)} 轮任务` : '空白任务' }}</span></header>
         <EvaStagePicker v-if="selectedFamily" :children="selectedFamily.child_agents" :selected-stage-code="selectedStageCode" :collapsed="stagePickerCollapsed" :busy="busy" @update:collapsed="stagePickerCollapsed = $event" @select="selectStage" />

@@ -42,7 +42,7 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { m
     <header><div><strong>患者上下文</strong><span>搜索并绑定一次就诊</span></div><b>{{ current.scene }}</b></header>
     <form role="search" @submit.prevent="submit"><input v-model="query" type="search" placeholder="姓名 / 病历号 / 证件号" aria-label="搜索患者" /><button :disabled="searching || !query.trim()">{{ searching ? '…' : '搜索' }}</button></form>
 
-    <section class="eva-current-patient"><span>当前患者</span><strong>{{ current.patientName }}</strong><small>{{ current.patientSummary }} · {{ current.label }}</small></section>
+    <section class="eva-current-patient"><span>当前患者</span><div class="eva-current-patient-row"><i>{{ current.patientName.slice(0,1) }}</i><strong>{{ current.patientName }}</strong><b>已绑定</b></div><small>{{ current.patientSummary }} · {{ current.label }}</small></section>
 
     <div v-if="results.length" class="eva-search-results">
       <span>搜索结果</span>
@@ -68,9 +68,12 @@ form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px; paddi
 form input { min-width: 0; height: 34px; padding: 0 9px; border: 1px solid #cad7e2; border-radius: 8px; outline: none; font-size: 9px; }
 form input:focus { border-color: #4f91d5; box-shadow: 0 0 0 3px rgb(23 105 224 / 9%); }
 form button { padding: 0 9px; color: #fff; border: 0; border-radius: 8px; background: #1769e0; font-size: 8px; cursor: pointer; }
-.eva-current-patient { display: grid; gap: 3px; padding: 11px 12px; margin: 10px 10px 0; border: 1px solid #89b8e8; border-radius: 10px; background: #edf5ff; }
+.eva-current-patient { display: grid; gap: 4px; padding: 11px 12px; margin: 10px 10px 0; border: 1px solid #89b8e8; border-radius: 10px; background: #edf5ff; }
 .eva-current-patient > span, .eva-search-results > span, .eva-encounters > span, .eva-default-patients > span { color: #718397; font-size: 8px; font-weight: 800; }
-.eva-current-patient strong { color: #244764; font-size: 11px; }
+.eva-current-patient-row { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.eva-current-patient-row i { display: grid; place-items: center; width: 26px; height: 26px; flex: 0 0 26px; color: #fff; border-radius: 50%; background: #426d97; font-size: 10px; font-style: normal; font-weight: 800; }
+.eva-current-patient-row strong { overflow: hidden; color: #244764; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.eva-current-patient-row b { flex: 0 0 auto; padding: 2px 7px; color: #0c7d68; border-radius: 999px; background: #dcf5ef; font-size: 7px; font-weight: 800; }
 .eva-current-patient small { color: #617a90; font-size: 8px; line-height: 1.45; }
 .eva-search-results, .eva-default-patients, .eva-encounters { display: grid; gap: 6px; padding: 10px; }
 .eva-search-results button, .eva-default-patients button { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: 7px; padding: 8px; color: inherit; border: 1px solid #d7e2ec; border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }
