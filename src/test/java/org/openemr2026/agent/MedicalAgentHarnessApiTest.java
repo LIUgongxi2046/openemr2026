@@ -116,7 +116,7 @@ final class MedicalAgentHarnessApiTest {
     }
 
     @Test
-    void catalogPublishesTenMainAndFortyFourVisibleChildAgents() throws Exception {
+    void catalogPublishesFourteenMainAndFiftyEightVisibleChildAgents() throws Exception {
         Lease lease = issueFacilityLease();
         HttpResponse<String> response = http.send(base("/api/v1/medical-agents/catalog")
                 .header("X-Context-Lease-Id", lease.id())
@@ -126,7 +126,7 @@ final class MedicalAgentHarnessApiTest {
 
         assertThat(response.statusCode()).isEqualTo(200);
         JsonNode catalog = objectMapper.readTree(response.body());
-        assertThat(catalog).hasSize(10);
+        assertThat(catalog).hasSize(14);
         int children = 0;
         for (JsonNode family : catalog) {
             assertThat(family.path("main_agent").path("agent_level").stringValue()).isEqualTo("MAIN");
@@ -136,7 +136,7 @@ final class MedicalAgentHarnessApiTest {
             }
             children += family.path("child_agents").size();
         }
-        assertThat(children).isEqualTo(44);
+        assertThat(children).isEqualTo(58);
     }
 
     @Test

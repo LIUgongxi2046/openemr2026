@@ -27,6 +27,18 @@ final class AgentOrchestratorTest {
     }
 
     @Test
+    void routesSpecialtyAgentsByIntentKeyword() {
+        assertThat(orchestrator.resolve(null, "请给出胰岛素剂量调整建议"))
+                .isEqualTo(new AgentOrchestrator.Routing("GLYCEMIC_MANAGEMENT", "ADMISSION_GLUCOSE"));
+        assertThat(orchestrator.resolve(null, "请对这位胸痛患者做风险分层"))
+                .isEqualTo(new AgentOrchestrator.Routing("CARDIOVASCULAR_CARE", "CHEST_PAIN"));
+        assertThat(orchestrator.resolve(null, "请根据四诊信息给出辨证分型"))
+                .isEqualTo(new AgentOrchestrator.Routing("TCM_SYNDROME_REVIEW", "SYNDROME"));
+        assertThat(orchestrator.resolve(null, "请评估脓毒症风险"))
+                .isEqualTo(new AgentOrchestrator.Routing("ICU_RISK_ASSESSMENT", "SEPSIS_RISK"));
+    }
+
+    @Test
     void defaultsToEncounterSummarizerWithoutSignals() {
         assertThat(orchestrator.resolve(null, "请总结一下这次就诊"))
                 .isEqualTo(new AgentOrchestrator.Routing("ENCOUNTER_SUMMARIZER", "ACTIVE_ENCOUNTER"));

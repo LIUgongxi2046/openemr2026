@@ -64,6 +64,14 @@ final class AgentOrchestrator {
             case "research", "cohort-builder" -> new Routing("RESEARCH_FOLLOWUP", "COHORT");
             // 患者宣教
             case "inpatient-discharge" -> new Routing("PATIENT_EDUCATION", "MEDICATION_GUIDE");
+            // 专科：血糖治理（内分泌）
+            case "glycemic" -> new Routing("GLYCEMIC_MANAGEMENT", "ADMISSION_GLUCOSE");
+            // 专科：心血管诊疗
+            case "cardiovascular" -> new Routing("CARDIOVASCULAR_CARE", "CHEST_PAIN");
+            // 专科：中医辨证审方
+            case "tcm" -> new Routing("TCM_SYNDROME_REVIEW", "SYNDROME");
+            // 专科：重症风险研判
+            case "icu-risk" -> new Routing("ICU_RISK_ASSESSMENT", "SEPSIS_RISK");
             // 默认：就诊事实总协调
             default -> new Routing("ENCOUNTER_SUMMARIZER", "ACTIVE_ENCOUNTER");
         };
@@ -92,6 +100,18 @@ final class AgentOrchestrator {
         }
         if (containsAny(text, "科研", "队列", "入组", "结局", "随访数据")) {
             return "research";
+        }
+        if (containsAny(text, "血糖", "胰岛素", "低血糖", "降糖", "糖化")) {
+            return "glycemic";
+        }
+        if (containsAny(text, "胸痛", "心衰", "房颤", "抗凝", "心血管")) {
+            return "cardiovascular";
+        }
+        if (containsAny(text, "辨证", "中药", "方药", "煎服", "配伍", "舌脉", "四诊", "十八反")) {
+            return "tcm";
+        }
+        if (containsAny(text, "脓毒症", "恶化", "重症", "危重", "icu")) {
+            return "icu-risk";
         }
         if (containsAny(text, "质控", "病历质量", "前后矛盾", "缺项", "归档", "签署前", "整改")) {
             return "record-qc";

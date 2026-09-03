@@ -304,7 +304,11 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000ee07', 'INSURANCE_COMPLIANCE', '医保合规医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee08', 'MEDICAL_TECH_SCHEDULING', '医技预约调度医助团队'),
                   ('018f0000-0000-7000-8000-00000000ee09', 'RESEARCH_FOLLOWUP', '科研随访医助团队'),
-                  ('018f0000-0000-7000-8000-00000000ee10', 'PATIENT_EDUCATION', '患者宣教医助团队')
+                  ('018f0000-0000-7000-8000-00000000ee10', 'PATIENT_EDUCATION', '患者宣教医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee11', 'GLYCEMIC_MANAGEMENT', '血糖治理医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee12', 'CARDIOVASCULAR_CARE', '心血管诊疗医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee13', 'TCM_SYNDROME_REVIEW', '中医辨证审方医助团队'),
+                  ('018f0000-0000-7000-8000-00000000ee14', 'ICU_RISK_ASSESSMENT', '重症风险研判医助团队')
                 ) as seed(agent_registry_id, agent_code, agent_name)
                 on conflict (tenant_id, agent_registry_id) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -441,7 +445,11 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f307', 'BUDGET_INSURANCE_COMPLIANCE', '医保合规医助单次处理上限', 20000::bigint, 100),
                   ('018f0000-0000-7000-8000-00000000f308', 'BUDGET_MEDICAL_TECH_SCHEDULING', '医技预约调度医助单次处理上限', 16000::bigint, 80),
                   ('018f0000-0000-7000-8000-00000000f309', 'BUDGET_RESEARCH_FOLLOWUP', '科研随访医助单次处理上限', 16000::bigint, 80),
-                  ('018f0000-0000-7000-8000-00000000f310', 'BUDGET_PATIENT_EDUCATION', '患者宣教医助单次处理上限', 12000::bigint, 60)
+                  ('018f0000-0000-7000-8000-00000000f310', 'BUDGET_PATIENT_EDUCATION', '患者宣教医助单次处理上限', 12000::bigint, 60),
+                  ('018f0000-0000-7000-8000-00000000f311', 'BUDGET_GLYCEMIC_MANAGEMENT', '血糖治理医助单次处理上限', 18000::bigint, 90),
+                  ('018f0000-0000-7000-8000-00000000f312', 'BUDGET_CARDIOVASCULAR_CARE', '心血管诊疗医助单次处理上限', 18000::bigint, 90),
+                  ('018f0000-0000-7000-8000-00000000f313', 'BUDGET_TCM_SYNDROME_REVIEW', '中医辨证审方医助单次处理上限', 16000::bigint, 90),
+                  ('018f0000-0000-7000-8000-00000000f314', 'BUDGET_ICU_RISK_ASSESSMENT', '重症风险研判医助单次处理上限', 18000::bigint, 90)
                 ) as seed(budget_id, budget_code, budget_name, max_tokens, max_duration_seconds)
                 on conflict (tenant_id, budget_code) do nothing
                 """).param("tenant", TENANT_ID).update();
@@ -516,8 +524,8 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   'model_policy', 'TENANT_ACTIVE_MODEL_WITH_LOCAL_FALLBACK',
                   'rate_limit', 10,
                   'approval_required', true,
-                  'main_agent_count', 10,
-                  'child_agent_count', 44,
+                  'main_agent_count', 14,
+                  'child_agent_count', 58,
                   'hospital_level', '三级甲等',
                   'facility_name', '江城大学附属医院（仿真）',
                   'campuses', jsonb_build_array('本部院区', '东院区', '感染病院区'),
@@ -540,7 +548,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                     'RESULT_FOLLOWUP_COORDINATOR@1.0.0', 'CARE_COORDINATOR@1.0.0',
                     'INFECTION_SURVEILLANCE@1.0.0', 'INSURANCE_COMPLIANCE@1.0.0',
                     'MEDICAL_TECH_SCHEDULING@1.0.0', 'RESEARCH_FOLLOWUP@1.0.0',
-                    'PATIENT_EDUCATION@1.0.0'),
+                    'PATIENT_EDUCATION@1.0.0', 'GLYCEMIC_MANAGEMENT@1.0.0',
+                    'CARDIOVASCULAR_CARE@1.0.0', 'TCM_SYNDROME_REVIEW@1.0.0',
+                    'ICU_RISK_ASSESSMENT@1.0.0'),
                   'skills', jsonb_build_array('CONTEXT_LEASE_GUARD@1.0.0', 'SOURCE_REFERENCE_CITATION@1.0.0', 'CANDIDATE_BOUNDARY_VALIDATION@1.0.0'),
                   'tools', jsonb_build_array('ENCOUNTER_TIMELINE_READ@1.0.0', 'DOCUMENT_VERSION_READ@1.0.0', 'AGENT_EVIDENCE_APPEND@1.0.0'),
                   'budget_tokens', 24000,
@@ -586,7 +596,11 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f90c', 'eval-insurance-compliance-v1', '医保合规候选评测', 'INSURANCE_COMPLIANCE', '核验 DRG/DIP 编码与费用合理性的可追溯候选。', 'tertiary-insurance-compliance-v1', 190, 0.9600::numeric, 0.9740::numeric),
                   ('018f0000-0000-7000-8000-00000000f90d', 'eval-medical-tech-scheduling-v1', '医技预约调度候选评测', 'MEDICAL_TECH_SCHEDULING', '核验号源规划与设备利用的可追溯候选。', 'tertiary-medical-tech-scheduling-v1', 160, 0.9500::numeric, 0.9680::numeric),
                   ('018f0000-0000-7000-8000-00000000f90e', 'eval-research-followup-v1', '科研随访候选评测', 'RESEARCH_FOLLOWUP', '核验队列入组与结局采集口径的可追溯候选。', 'tertiary-research-followup-v1', 170, 0.9500::numeric, 0.9710::numeric),
-                  ('018f0000-0000-7000-8000-00000000f90f', 'eval-patient-education-v1', '患者宣教候选评测', 'PATIENT_EDUCATION', '核验出院带药说明与复诊提醒的可追溯候选。', 'tertiary-patient-education-v1', 150, 0.9500::numeric, 0.9690::numeric)
+                  ('018f0000-0000-7000-8000-00000000f90f', 'eval-patient-education-v1', '患者宣教候选评测', 'PATIENT_EDUCATION', '核验出院带药说明与复诊提醒的可追溯候选。', 'tertiary-patient-education-v1', 150, 0.9500::numeric, 0.9690::numeric),
+                  ('018f0000-0000-7000-8000-00000000f910', 'eval-glycemic-management-v1', '血糖治理候选评测', 'GLYCEMIC_MANAGEMENT', '核验住院血糖、胰岛素剂量与低血糖风险候选。', 'tertiary-glycemic-management-v1', 180, 0.9600::numeric, 0.9750::numeric),
+                  ('018f0000-0000-7000-8000-00000000f911', 'eval-cardiovascular-care-v1', '心血管诊疗候选评测', 'CARDIOVASCULAR_CARE', '核验胸痛分层、抗凝与心衰随访候选。', 'tertiary-cardiovascular-care-v1', 190, 0.9600::numeric, 0.9740::numeric),
+                  ('018f0000-0000-7000-8000-00000000f912', 'eval-tcm-syndrome-review-v1', '中医辨证审方候选评测', 'TCM_SYNDROME_REVIEW', '核验辨证分型、方药思路与配伍禁忌候选。', 'tertiary-tcm-syndrome-review-v1', 170, 0.9500::numeric, 0.9720::numeric),
+                  ('018f0000-0000-7000-8000-00000000f913', 'eval-icu-risk-assessment-v1', '重症风险研判候选评测', 'ICU_RISK_ASSESSMENT', '核验脓毒症、恶化风险与交班摘要候选。', 'tertiary-icu-risk-assessment-v1', 180, 0.9600::numeric, 0.9750::numeric)
                 ) as seed(config_id, config_key, display_name, target_agent, description,
                   dataset_version, case_count, pass_threshold, measured_score)
                 on conflict (tenant_id, config_id) do update

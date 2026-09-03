@@ -135,10 +135,10 @@ final class TertiaryBusinessConfigurationImportTest {
                         "covered_agents", rs.getInt("covered_agents"),
                         "complete", rs.getInt("complete")))
                 .single();
-        assertThat(evaluationFixtures).containsEntry("evaluations", 15)
-                .containsEntry("ids", 15)
-                .containsEntry("covered_agents", 10)
-                .containsEntry("complete", 15);
+        assertThat(evaluationFixtures).containsEntry("evaluations", 19)
+                .containsEntry("ids", 19)
+                .containsEntry("covered_agents", 14)
+                .containsEntry("complete", 19);
     }
 
     @Test
