@@ -178,7 +178,6 @@ const nativeComponents: Record<string, () => Promise<unknown>> = {
   'agent-evals': () => import('./views/AgentEvalsPage.vue'),
   'ai-assistant-policy': () => import('./views/AiAssistantPolicyPage.vue'),
   'ai-capture': () => import('./views/AiCapturePage.vue'),
-  'ai-center': () => import('./views/AiCenterPage.vue'),
   'anesthesia-workbench': () => import('./views/AnesthesiaWorkbenchPage.vue'),
   'archive-preservation': () => import('./views/ArchivePreservationPage.vue'),
   'archive-scan': () => import('./views/ArchiveScanPage.vue'),
@@ -186,6 +185,10 @@ const nativeComponents: Record<string, () => Promise<unknown>> = {
   'config-release': () => import('./views/ConfigReleasePage.vue'),
   'config-upgrade': () => import('./views/ConfigUpgradePage.vue'),
   'data-center': () => import('./views/DataCenterPage.vue'),
+  'knowledge-center': () => import('./views/KnowledgeCenterPage.vue'),
+  'pathway-graph': () => import('./views/PathwayGraphPage.vue'),
+  'pathway-review': () => import('./views/PathwayReviewPage.vue'),
+  'pathway-versions': () => import('./views/PathwayVersionsPage.vue'),
   'department-qc': () => import('./views/DepartmentQcPage.vue'),
   'device-monitoring': () => import('./views/DeviceMonitoringPage.vue'),
   'devices': () => import('./views/DevicesPage.vue'),
@@ -292,6 +295,18 @@ export function createOpenEmrRouter(history: RouterHistory = defaultHistory()) {
       { path: '/', redirect: '/clinical' },
       ...buildContractRoutes(),
       ...recordDepthRoutes,
+      {
+        path: '/integration-messages/:messageId', name: 'integration-message-detail', component: () => import('./views/IntegrationMessageDetailPage.vue'),
+        meta: { contractId: 'integration-messages', primaryDomain: 'DATA', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/device-monitoring/:deviceCode', name: 'device-detail', component: () => import('./views/DeviceDetailPage.vue'),
+        meta: { contractId: 'device-monitoring', primaryDomain: 'DATA', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
+      {
+        path: '/research/:projectId', name: 'research-project-detail', component: () => import('./views/ResearchProjectDetailPage.vue'),
+        meta: { contractId: 'research', primaryDomain: 'DATA', guards: ['SESSION', 'ROLE'], implementation: 'VUE_NATIVE' },
+      },
       {
         path: '/archive-assets/:assetId', name: 'archive-asset-detail', component: () => import('./views/AssetDetailPage.vue'),
         meta: { contractId: 'archive-assets', primaryDomain: 'ARCHIVE', guards: ['SESSION', 'ROLE', 'PATIENT_CONTEXT'], implementation: 'VUE_NATIVE' },

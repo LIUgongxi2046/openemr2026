@@ -37,12 +37,14 @@ final class MockInterfaceApiTest {
     @Test
     void givenRegistry_whenListing_thenAllSyntheticInterfacesAvailable() {
         List<MockInterfaceWire> interfaces = mocks.list();
-        assertThat(interfaces).hasSize(14);
+        assertThat(interfaces).hasSize(18);
         assertThat(interfaces).extracting(MockInterfaceWire::code)
                 .contains("LIS_RESULTS", "PACS_IMAGES", "HIS_INSURANCE", "CA_TIMESTAMP",
                         "HIE_DOCUMENT_EXCHANGE", "MODEL_PROVIDER", "DEVICE_GATEWAY", "DICTATION_ASR",
-                        "IDP_AUTHENTICATE", "SCAN_CAPTURE", "STORAGE_PRESERVE", "PATHOLOGY_DIAGNOSE",
-                        "ANESTHESIA_EVENT", "THERAPY_EXECUTE");
+                        "IDP_AUTHENTICATE", "SCAN_CAPTURE", "MALWARE_SCAN", "CDA_VALIDATION",
+                        "STORAGE_PRESERVE", "PATHOLOGY_DIAGNOSE",
+                        "ANESTHESIA_EVENT", "THERAPY_EXECUTE",
+                        "DIRECT_REPORT_GATEWAY", "EMPI_PATIENT_LOOKUP");
     }
 
     @Test
@@ -242,6 +244,57 @@ final class MockInterfaceApiTest {
             assertThat(record.get("code_system")).asString().contains("国家医疗保障信息业务编码");
             assertThat(record.get("reconciliation_status")).isNotNull();
         });
+    }
+
+    @Test
+    void givenMalwareAndCdaAdapters_whenGenerating_thenFailClosedSemanticsSurface() {
+        MockInvocationResultWire malware = mocks.invoke("MALWARE_SCAN", Map.of(
+                "content_ref", "synthetic://scan/eicar-sample-001", "record_count", 48));
+        List<Map<String, Object>> infected = businessRecords(malware).stream()
+                .filter(record -> "FOUND".equals(record.get("verdict"))).toList();
+        assertThat(infected).as("恶意扫描批次应含检出记录").isNotEmpty();
+        assertThat(infected).allSatisfy(record -> {
+            assertThat(record.get("signature")).asString().isNotBlank();
+            assertThat(record.get("action")).isEqualTo("ISOLATE_AND_BLOCK");
+            assertThat(record.get("engine")).isEqualTo("openemr2026-synthetic-clamav-v1");
+        });
+        assertThat(businessRecords(malware).stream()
+                .filter(record -> "CLEAN".equals(record.get("verdict"))).toList())
+                .allSatisfy(record -> assertThat(record.get("signature")).isNull());
+        assertThat(malware.payload()).containsEntry("verdict", "INFECTED")
+                .containsEntry("batch_verdict", "ISOLATE_AND_BLOCK");
+
+        MockInvocationResultWire cda = mocks.invoke("CDA_VALIDATION", Map.of(
+                "document_id", "CDA-SYNTHETIC-001", "record_count", 48));
+        List<Map<String, Object>> invalid = businessRecords(cda).stream()
+                .filter(record -> Boolean.FALSE.equals(record.get("structural_valid"))).toList();
+        assertThat(invalid).as("CDA 批次应含结构失败文书").isNotEmpty();
+        assertThat(invalid).allSatisfy(record -> {
+            assertThat(record.get("validation_status")).isEqualTo("STRUCTURE_INVALID");
+            assertThat((List<?>) record.get("checks")).asString().contains("必填章节缺失");
+        });
+        assertThat(businessRecords(cda).stream()
+                .filter(record -> Boolean.TRUE.equals(record.get("structural_valid"))))
+                .allSatisfy(record -> assertThat(record.get("validation_status"))
+                        .isIn("VALID", "SEMANTIC_WARNING"));
+        assertThat(cda.payload()).containsEntry("structural_valid", false);
+    }
+
+    @Test
+    void givenPublishedMalwareAndCdaProfiles_whenExecuting_thenAgentBlocksOrRequestsReview() {
+        MockInvocationResultWire malware = executions.invoke(identity(), "mock-av-" + UUID.randomUUID(),
+                "MALWARE_SCAN", Map.of("profile_key", "malware-scan-tertiary",
+                        "simulation_scenario", "SUCCESS", "content_ref", "synthetic://scan/eicar-sample-001"));
+        Map<String, Object> malwareAgent = map(map(malware.payload().get("safety_agent")));
+        assertThat(malwareAgent.get("decision")).isEqualTo("BLOCK");
+        assertThat(map(malware.payload().get("execution")).get("status")).isEqualTo("BLOCKED");
+
+        MockInvocationResultWire cda = executions.invoke(identity(), "mock-cda-" + UUID.randomUUID(),
+                "CDA_VALIDATION", Map.of("profile_key", "cda-validation-tertiary",
+                        "simulation_scenario", "SUCCESS", "record_count", 24));
+        Map<String, Object> cdaAgent = map(map(cda.payload().get("safety_agent")));
+        assertThat(cdaAgent.get("decision")).isEqualTo("REVIEW");
+        assertThat(map(cda.payload().get("execution")).get("status")).isEqualTo("REVIEW_REQUIRED");
     }
 
     @SuppressWarnings("unchecked")

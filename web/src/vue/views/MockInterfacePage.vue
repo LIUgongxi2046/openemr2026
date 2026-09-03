@@ -50,7 +50,7 @@ function select(item: MockInterfaceWire) {
 }
 
 function systemTypeLabel(value: string) {
-  return ({ INTEGRATION_LIS: '检验 LIS', INTEGRATION_PACS: '影像 PACS', INTEGRATION_HIS: '医保 HIS', INTEGRATION_CA: '电子签名 CA', INTEGRATION_HIE: '区域平台', MODEL: '模型', DEVICE: '设备', DICTATION: '语音', IDENTITY: '身份 IdP', ARCHIVE_SCAN: '扫描', ARCHIVE_STORAGE: '存储', PATHOLOGY: '病理', ANESTHESIA: '麻醉', THERAPY: '治疗' } as Record<string, string>)[value] ?? value;
+  return ({ INTEGRATION_LIS: '检验 LIS', INTEGRATION_PACS: '影像 PACS', INTEGRATION_HIS: '医保 HIS', INTEGRATION_CA: '电子签名 CA', INTEGRATION_HIE: '区域平台', MODEL: '模型', DEVICE: '设备', DICTATION: '语音', IDENTITY: '身份 IdP', ARCHIVE_SCAN: '扫描', SECURITY_AV: '杀毒引擎', DOCUMENT_CDA: 'CDA 校验', ARCHIVE_STORAGE: '存储', PATHOLOGY: '病理', ANESTHESIA: '麻醉', THERAPY: '治疗', REPORT_GATEWAY: '直报网关', EMPI: '患者主索引 EMPI' } as Record<string, string>)[value] ?? value;
 }
 </script>
 
@@ -67,13 +67,13 @@ function systemTypeLabel(value: string) {
     <template v-else>
       <div class="metric-grid" aria-label="模拟接口概览">
         <div class="metric"><div class="name">已注册接口</div><div class="value">{{ interfacesQuery.data.value?.length ?? 0 }}</div><div class="trend">确定性合成 handler</div></div>
-        <div class="metric"><div class="name">系统类型</div><div class="value">{{ new Set(interfacesQuery.data.value?.map((i) => i.system_type)).size }}</div><div class="trend">LIS/PACS/HIS/CA/区域平台/模型/设备/语音/IdP/扫描/存储/病理/麻醉/治疗</div></div>
+        <div class="metric"><div class="name">系统类型</div><div class="value">{{ new Set(interfacesQuery.data.value?.map((i) => i.system_type)).size }}</div><div class="trend">LIS/PACS/HIS/CA/区域平台/模型/设备/语音/IdP/扫描/杀毒/CDA 校验/存储/病理/麻醉/治疗/直报网关/主索引 EMPI</div></div>
         <div class="metric"><div class="name">对接标准接口</div><div class="value">{{ interfacesQuery.data.value?.length ?? 0 }}</div><div class="trend">每个接口含协议名 + 请求/响应 schema + 文档</div></div>
         <div class="metric"><div class="name">替换方式</div><div class="value">契约</div><div class="trend">真实适配器实现同一契约即可替换 mock</div></div>
       </div>
 
       <section class="admin-panel submenu-catalog">
-        <header><div><h2>13 个模拟接口子菜单</h2><p>每个子菜单均提供完整接口文档、三级医院仿真配置、弹窗式新建/编辑/删除和真实流程门禁。</p></div></header>
+        <header><div><h2>{{ submenuCards.length }} 个模拟接口子菜单</h2><p>每个子菜单均提供完整接口文档、三级医院仿真配置、弹窗式新建/编辑/删除和真实流程门禁。</p></div></header>
         <div class="submenu-grid">
           <RouterLink v-for="card in submenuCards" :key="card.id" :to="`/mock-interfaces/${card.id}`" class="submenu-card">
             <span>{{ card.label }}</span><strong>{{ card.definition.title }}</strong><small>{{ card.definition.subtitle }}</small><b>进入配置与联调 →</b>

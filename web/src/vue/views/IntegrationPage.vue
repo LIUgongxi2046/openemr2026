@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import type { ConfigurationItemWire, MockInvocationResultWire } from '../../generated/contracts';
 import { issueConfigurationLease, listConfigurations } from '../../api/config';
 import { invokeMockInterface, issueMockLease, listMockInterfaces } from '../../api/mock';
+import { issueIntegrationLease, listIntegrationReconciliations } from '../../api/integration';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({
@@ -30,9 +31,20 @@ const incidentsQuery = useQuery({
   queryFn: () => listConfigurations(configLeaseQuery.data.value!, 'INTEGRATION_INCIDENT'),
   enabled: () => Boolean(configLeaseQuery.data.value), retry: false,
 });
+const reconciliationLeaseQuery = useQuery({
+  queryKey: ['integration', 'reconciliation-lease'],
+  queryFn: issueIntegrationLease,
+  retry: false, staleTime: 5 * 60_000, gcTime: 0,
+});
+const reconciliationsQuery = useQuery({
+  queryKey: ['integration', 'reconciliations'],
+  queryFn: () => listIntegrationReconciliations(reconciliationLeaseQuery.data.value!),
+  enabled: () => Boolean(reconciliationLeaseQuery.data.value), retry: false,
+});
 const issue = computed(() => {
   const error = leaseQuery.error.value ?? interfacesQuery.error.value ?? configLeaseQuery.error.value
-    ?? connectorsQuery.error.value ?? incidentsQuery.error.value;
+    ?? connectorsQuery.error.value ?? incidentsQuery.error.value
+    ?? reconciliationLeaseQuery.error.value ?? reconciliationsQuery.error.value;
   return error ? toClinicalIssue(error) : null;
 });
 
@@ -80,10 +92,14 @@ function statusLabel(item: ConfigurationItemWire) {
 function statusTone(item: ConfigurationItemWire) {
   return ({ HEALTHY: 'green', DEGRADED: 'amber', BACKLOG: 'red', OFFLINE: 'red' } as Record<string, string>)[text(item, 'operational_status')] ?? 'blue';
 }
-const messageVolume = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'message_volume_24h'), 0));
-const errorCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'error_count_24h'), 0));
-const pendingCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'pending_reconciliation'), 0));
-const blockingCount = computed(() => connectors.value.reduce((sum, item) => sum + number(item, 'business_blocking'), 0));
+const messageVolume = computed(() => (reconciliationsQuery.data.value ?? [])
+  .reduce((sum, item) => sum + item.sent_count, 0));
+const errorCount = computed(() => (reconciliationsQuery.data.value ?? [])
+  .reduce((sum, item) => sum + item.error_count, 0));
+const pendingCount = computed(() => (reconciliationsQuery.data.value ?? [])
+  .reduce((sum, item) => sum + item.pending_count, 0));
+const blockingCount = computed(() => (reconciliationsQuery.data.value ?? [])
+  .filter((item) => item.status === 'OPEN').length);
 const successRate = computed(() => messageVolume.value > 0
   ? ((messageVolume.value - errorCount.value) / messageVolume.value * 100).toFixed(2) : '—');
 const formatInteger = (value: number) => new Intl.NumberFormat('zh-CN').format(value);
@@ -93,17 +109,17 @@ const formatInteger = (value: number) => new Intl.NumberFormat('zh-CN').format(v
   <section data-page-root class="content vue-native-page">
     <div class="page-head">
       <div class="page-title"><h1>外部系统集成与互操作中心</h1><p>连接器能力、运行健康、消息积压和临床降级的统一入口</p></div>
-      <div class="head-actions"><RouterLink class="btn" to="/integration-mapping">集成拓扑</RouterLink><RouterLink class="btn primary" :to="{ path: '/integration-connectors', query: { action: 'create' } }">新建连接器</RouterLink></div>
+      <div class="head-actions"><RouterLink class="btn" to="/integration-mapping">集成拓扑</RouterLink><RouterLink class="btn" :to="{ path: '/integration-connectors', query: { action: 'create' } }">新建连接器</RouterLink><RouterLink class="btn primary" to="/integration-messages">采集消息</RouterLink></div>
     </div>
 
-    <div v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value || configLeaseQuery.isPending.value || connectorsQuery.isPending.value || incidentsQuery.isPending.value" class="card"><div class="card-body">正在读取集成接口与运行台账…</div></div>
+    <div v-if="leaseQuery.isPending.value || interfacesQuery.isPending.value || configLeaseQuery.isPending.value || connectorsQuery.isPending.value || incidentsQuery.isPending.value || reconciliationLeaseQuery.isPending.value || reconciliationsQuery.isPending.value" class="card"><div class="card-body">正在读取集成接口与运行台账…</div></div>
     <div v-else-if="issue" class="card"><div class="card-body">加载失败：{{ issue.code }} {{ issue.message }}</div></div>
 
     <template v-else>
       <section class="metric-grid integration-metrics" aria-label="集成运行指标">
         <article class="metric"><div class="name">生产连接器</div><div class="value">{{ connectors.length }}</div><div class="trend">来自已发布连接器目录</div></article>
-        <article class="metric"><div class="name">24h 消息</div><div class="value">{{ formatInteger(messageVolume) }}</div><div class="trend">成功 {{ successRate }}%</div></article>
-        <article class="metric"><div class="name">失败/死信</div><div class="value metric-danger">{{ formatInteger(errorCount) }}</div><div class="trend">业务阻断 {{ blockingCount }}</div></article>
+        <article class="metric"><div class="name">对账窗口消息</div><div class="value">{{ formatInteger(messageVolume) }}</div><div class="trend">送达率 {{ successRate }}%</div></article>
+        <article class="metric"><div class="name">失败 / 死信</div><div class="value metric-danger">{{ formatInteger(errorCount) }}</div><div class="trend">开放对账窗口 {{ blockingCount }}</div></article>
         <article class="metric"><div class="name">待对账</div><div class="value">{{ pendingCount }}</div><div class="trend">开放差异工单 {{ incidents.length }}</div></article>
       </section>
 

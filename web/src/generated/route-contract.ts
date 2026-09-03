@@ -5,12 +5,12 @@ export const generatedRouteContract = {
     "docs/design/ui-delivery/route-design-map.csv",
     "prototype/traceability.csv"
   ],
-  "route_count": 199,
+  "route_count": 198,
   "routes": [
     {
       "route_id": "admin",
       "path": "#/admin",
-      "screen_id": "HASH-112",
+      "screen_id": "HASH-116",
       "title": "系统管理工作台",
       "primary_domain": "ADMIN",
       "roles": [
@@ -62,7 +62,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-audit",
       "path": "#/admin-audit",
-      "screen_id": "HASH-123",
+      "screen_id": "HASH-127",
       "title": "管理审计与权限复核",
       "primary_domain": "ADMIN",
       "roles": [
@@ -120,7 +120,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-auth",
       "path": "#/admin-auth",
-      "screen_id": "HASH-117",
+      "screen_id": "HASH-121",
       "title": "认证与账户安全策略",
       "primary_domain": "ADMIN",
       "roles": [
@@ -172,7 +172,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-dictionaries",
       "path": "#/admin-dictionaries",
-      "screen_id": "HASH-118",
+      "screen_id": "HASH-122",
       "title": "字典、术语与值集中心",
       "primary_domain": "ADMIN",
       "roles": [
@@ -230,7 +230,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-jobs",
       "path": "#/admin-jobs",
-      "screen_id": "HASH-122",
+      "screen_id": "HASH-126",
       "title": "通知、调度与批量任务",
       "primary_domain": "ADMIN",
       "roles": [
@@ -282,7 +282,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-master-data",
       "path": "#/admin-master-data",
-      "screen_id": "HASH-119",
+      "screen_id": "HASH-123",
       "title": "医院主数据管理",
       "primary_domain": "ADMIN",
       "roles": [
@@ -340,7 +340,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-org",
       "path": "#/admin-org",
-      "screen_id": "HASH-113",
+      "screen_id": "HASH-117",
       "title": "组织机构与工作单元",
       "primary_domain": "ADMIN",
       "roles": [
@@ -398,7 +398,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-parameters",
       "path": "#/admin-parameters",
-      "screen_id": "HASH-121",
+      "screen_id": "HASH-125",
       "title": "系统参数与功能开关",
       "primary_domain": "ADMIN",
       "roles": [
@@ -450,7 +450,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-permissions",
       "path": "#/admin-permissions",
-      "screen_id": "HASH-116",
+      "screen_id": "HASH-120",
       "title": "权限策略与访问模拟",
       "primary_domain": "ADMIN",
       "roles": [
@@ -508,7 +508,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-roles",
       "path": "#/admin-roles",
-      "screen_id": "HASH-115",
+      "screen_id": "HASH-119",
       "title": "角色、工作组与职责分离",
       "primary_domain": "ADMIN",
       "roles": [
@@ -560,7 +560,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-templates",
       "path": "#/admin-templates",
-      "screen_id": "HASH-120",
+      "screen_id": "HASH-124",
       "title": "模板、编号与输出管理",
       "primary_domain": "ADMIN",
       "roles": [
@@ -612,7 +612,7 @@ export const generatedRouteContract = {
     {
       "route_id": "admin-users",
       "path": "#/admin-users",
-      "screen_id": "HASH-114",
+      "screen_id": "HASH-118",
       "title": "用户、人员与账户管理",
       "primary_domain": "ADMIN",
       "roles": [
@@ -1209,7 +1209,7 @@ export const generatedRouteContract = {
       "route_id": "ai-center",
       "path": "#/ai-center",
       "screen_id": "HASH-081",
-      "title": "AI 中心",
+      "title": "ai-center",
       "primary_domain": "AI",
       "roles": [
         "AUTHORIZED_CLINICAL_OR_AI_GOVERNANCE_ROLE"
@@ -1776,7 +1776,7 @@ export const generatedRouteContract = {
     {
       "route_id": "backup",
       "path": "#/backup",
-      "screen_id": "HASH-108",
+      "screen_id": "HASH-112",
       "title": "备份、恢复与完整性报告",
       "primary_domain": "CONFIG",
       "roles": [
@@ -1875,7 +1875,7 @@ export const generatedRouteContract = {
     {
       "route_id": "capability-pack",
       "path": "#/capability-pack",
-      "screen_id": "HASH-100",
+      "screen_id": "HASH-104",
       "title": "机构能力包与继承解析",
       "primary_domain": "CONFIG",
       "roles": [
@@ -2133,7 +2133,7 @@ export const generatedRouteContract = {
     {
       "route_id": "config-release",
       "path": "#/config-release",
-      "screen_id": "HASH-105",
+      "screen_id": "HASH-109",
       "title": "配置差异、验证、审批与发布",
       "primary_domain": "CONFIG",
       "roles": [
@@ -2183,7 +2183,7 @@ export const generatedRouteContract = {
     {
       "route_id": "config-upgrade",
       "path": "#/config-upgrade",
-      "screen_id": "HASH-106",
+      "screen_id": "HASH-110",
       "title": "配置包与产品升级冲突中心",
       "primary_domain": "CONFIG",
       "roles": [
@@ -2379,7 +2379,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-care",
       "path": "#/dental-care",
-      "screen_id": "HASH-178",
+      "screen_id": "HASH-182",
       "title": "口腔科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2422,7 +2422,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-evidence",
       "path": "#/dental-evidence",
-      "screen_id": "HASH-176",
+      "screen_id": "HASH-180",
       "title": "口腔科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2465,7 +2465,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-followup",
       "path": "#/dental-followup",
-      "screen_id": "HASH-179",
+      "screen_id": "HASH-183",
       "title": "口腔科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2508,7 +2508,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-qc",
       "path": "#/dental-qc",
-      "screen_id": "HASH-180",
+      "screen_id": "HASH-184",
       "title": "口腔科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2551,7 +2551,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-record",
       "path": "#/dental-record",
-      "screen_id": "HASH-175",
+      "screen_id": "HASH-179",
       "title": "口腔科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2594,7 +2594,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-treatment",
       "path": "#/dental-treatment",
-      "screen_id": "HASH-177",
+      "screen_id": "HASH-181",
       "title": "口腔科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2637,7 +2637,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dental-workbench",
       "path": "#/dental-workbench",
-      "screen_id": "HASH-174",
+      "screen_id": "HASH-178",
       "title": "口腔科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2746,7 +2746,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-care",
       "path": "#/dermatology-care",
-      "screen_id": "HASH-185",
+      "screen_id": "HASH-189",
       "title": "皮肤科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2789,7 +2789,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-evidence",
       "path": "#/dermatology-evidence",
-      "screen_id": "HASH-183",
+      "screen_id": "HASH-187",
       "title": "皮肤科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2832,7 +2832,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-followup",
       "path": "#/dermatology-followup",
-      "screen_id": "HASH-186",
+      "screen_id": "HASH-190",
       "title": "皮肤科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2875,7 +2875,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-qc",
       "path": "#/dermatology-qc",
-      "screen_id": "HASH-187",
+      "screen_id": "HASH-191",
       "title": "皮肤科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2918,7 +2918,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-record",
       "path": "#/dermatology-record",
-      "screen_id": "HASH-182",
+      "screen_id": "HASH-186",
       "title": "皮肤科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -2961,7 +2961,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-treatment",
       "path": "#/dermatology-treatment",
-      "screen_id": "HASH-184",
+      "screen_id": "HASH-188",
       "title": "皮肤科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3004,7 +3004,7 @@ export const generatedRouteContract = {
     {
       "route_id": "dermatology-workbench",
       "path": "#/dermatology-workbench",
-      "screen_id": "HASH-181",
+      "screen_id": "HASH-185",
       "title": "皮肤科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3258,7 +3258,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-care",
       "path": "#/ent-care",
-      "screen_id": "HASH-171",
+      "screen_id": "HASH-175",
       "title": "耳鼻咽喉科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3301,7 +3301,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-evidence",
       "path": "#/ent-evidence",
-      "screen_id": "HASH-169",
+      "screen_id": "HASH-173",
       "title": "耳鼻咽喉科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3344,7 +3344,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-followup",
       "path": "#/ent-followup",
-      "screen_id": "HASH-172",
+      "screen_id": "HASH-176",
       "title": "耳鼻咽喉科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3387,7 +3387,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-qc",
       "path": "#/ent-qc",
-      "screen_id": "HASH-173",
+      "screen_id": "HASH-177",
       "title": "耳鼻咽喉科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3430,7 +3430,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-record",
       "path": "#/ent-record",
-      "screen_id": "HASH-168",
+      "screen_id": "HASH-172",
       "title": "耳鼻咽喉科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3473,7 +3473,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-treatment",
       "path": "#/ent-treatment",
-      "screen_id": "HASH-170",
+      "screen_id": "HASH-174",
       "title": "耳鼻咽喉科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3516,7 +3516,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ent-workbench",
       "path": "#/ent-workbench",
-      "screen_id": "HASH-167",
+      "screen_id": "HASH-171",
       "title": "耳鼻咽喉科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -3563,91 +3563,6 @@ export const generatedRouteContract = {
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/ent-workbench.png"
-    },
-    {
-      "route_id": "er-clinical-timeline",
-      "path": "#/er-clinical-timeline",
-      "screen_id": "HASH-196",
-      "title": "急诊 L4 临床时间线",
-      "primary_domain": "CLINICAL",
-      "roles": [
-        "AUTHORIZED_ROLE"
-      ],
-      "fr_refs": [],
-      "ac_refs": [],
-      "scr_refs": [],
-      "requirement_refs": [
-        "Emergency depth remediation 2026-08-31"
-      ],
-      "api_refs": [
-        "Clinical Core API"
-      ],
-      "states": [
-        "default",
-        "loading",
-        "empty",
-        "partial",
-        "stale",
-        "offline",
-        "permission",
-        "session-expired",
-        "patient-switch",
-        "conflict",
-        "blocked",
-        "success",
-        "recovery"
-      ],
-      "guards": [
-        "SESSION",
-        "PATIENT_CONTEXT",
-        "ENCOUNTER_OR_PURPOSE"
-      ],
-      "layout": "临床工作域",
-      "source_status": "IMPLEMENTED",
-      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "docs/design/ui-delivery/screens/er-clinical-timeline.png"
-    },
-    {
-      "route_id": "er-evidence-ledger",
-      "path": "#/er-evidence-ledger",
-      "screen_id": "HASH-199",
-      "title": "急诊 L7 证据台账",
-      "primary_domain": "CLINICAL",
-      "roles": [
-        "AUTHORIZED_ROLE"
-      ],
-      "fr_refs": [],
-      "ac_refs": [],
-      "scr_refs": [],
-      "requirement_refs": [
-        "Emergency depth remediation 2026-08-31"
-      ],
-      "api_refs": [
-        "Platform API"
-      ],
-      "states": [
-        "default",
-        "loading",
-        "empty",
-        "partial",
-        "stale",
-        "offline",
-        "permission",
-        "session-expired",
-        "patient-switch",
-        "conflict",
-        "blocked",
-        "success",
-        "recovery"
-      ],
-      "guards": [
-        "SESSION",
-        "ROLE"
-      ],
-      "layout": "临床工作域",
-      "source_status": "IMPLEMENTED",
-      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "docs/design/ui-delivery/screens/er-evidence-ledger.png"
     },
     {
       "route_id": "er-handoff",
@@ -3777,48 +3692,6 @@ export const generatedRouteContract = {
       "artifact_path": "docs/design/ui-delivery/screens/er-observation.png"
     },
     {
-      "route_id": "er-patient-overview",
-      "path": "#/er-patient-overview",
-      "screen_id": "HASH-195",
-      "title": "急诊 L3 患者全景",
-      "primary_domain": "CLINICAL",
-      "roles": [
-        "AUTHORIZED_ROLE"
-      ],
-      "fr_refs": [],
-      "ac_refs": [],
-      "scr_refs": [],
-      "requirement_refs": [
-        "Emergency depth remediation 2026-08-31"
-      ],
-      "api_refs": [
-        "Platform API"
-      ],
-      "states": [
-        "default",
-        "loading",
-        "empty",
-        "partial",
-        "stale",
-        "offline",
-        "permission",
-        "session-expired",
-        "patient-switch",
-        "conflict",
-        "blocked",
-        "success",
-        "recovery"
-      ],
-      "guards": [
-        "SESSION",
-        "ROLE"
-      ],
-      "layout": "临床工作域",
-      "source_status": "IMPLEMENTED",
-      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "docs/design/ui-delivery/screens/er-patient-overview.png"
-    },
-    {
       "route_id": "er-record",
       "path": "#/er-record",
       "screen_id": "HASH-019",
@@ -3860,90 +3733,6 @@ export const generatedRouteContract = {
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/er-record.png"
-    },
-    {
-      "route_id": "er-safety-gates",
-      "path": "#/er-safety-gates",
-      "screen_id": "HASH-197",
-      "title": "急诊 L5 安全门禁",
-      "primary_domain": "CLINICAL",
-      "roles": [
-        "AUTHORIZED_ROLE"
-      ],
-      "fr_refs": [],
-      "ac_refs": [],
-      "scr_refs": [],
-      "requirement_refs": [
-        "Emergency depth remediation 2026-08-31"
-      ],
-      "api_refs": [
-        "Platform API"
-      ],
-      "states": [
-        "default",
-        "loading",
-        "empty",
-        "partial",
-        "stale",
-        "offline",
-        "permission",
-        "session-expired",
-        "patient-switch",
-        "conflict",
-        "blocked",
-        "success",
-        "recovery"
-      ],
-      "guards": [
-        "SESSION",
-        "ROLE"
-      ],
-      "layout": "临床工作域",
-      "source_status": "IMPLEMENTED",
-      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "docs/design/ui-delivery/screens/er-safety-gates.png"
-    },
-    {
-      "route_id": "er-transfer-readiness",
-      "path": "#/er-transfer-readiness",
-      "screen_id": "HASH-198",
-      "title": "急诊 L6 去向与转运就绪度",
-      "primary_domain": "CLINICAL",
-      "roles": [
-        "AUTHORIZED_ROLE"
-      ],
-      "fr_refs": [],
-      "ac_refs": [],
-      "scr_refs": [],
-      "requirement_refs": [
-        "Emergency depth remediation 2026-08-31"
-      ],
-      "api_refs": [
-        "Platform API"
-      ],
-      "states": [
-        "default",
-        "loading",
-        "empty",
-        "partial",
-        "stale",
-        "offline",
-        "permission",
-        "session-expired",
-        "patient-switch",
-        "conflict",
-        "blocked",
-        "success",
-        "recovery"
-      ],
-      "guards": [
-        "SESSION",
-        "ROLE"
-      ],
-      "layout": "临床工作域",
-      "source_status": "IMPLEMENTED",
-      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
-      "artifact_path": "docs/design/ui-delivery/screens/er-transfer-readiness.png"
     },
     {
       "route_id": "er-triage",
@@ -3990,7 +3779,7 @@ export const generatedRouteContract = {
     {
       "route_id": "form-designer",
       "path": "#/form-designer",
-      "screen_id": "HASH-102",
+      "screen_id": "HASH-106",
       "title": "表单与病历模板设计器",
       "primary_domain": "CONFIG",
       "roles": [
@@ -4550,7 +4339,7 @@ export const generatedRouteContract = {
     {
       "route_id": "install",
       "path": "#/install",
-      "screen_id": "HASH-107",
+      "screen_id": "HASH-111",
       "title": "安装向导与首次健康检查",
       "primary_domain": "CONFIG",
       "roles": [
@@ -4972,6 +4761,48 @@ export const generatedRouteContract = {
       "artifact_path": "docs/design/ui-delivery/screens/ip-results.png"
     },
     {
+      "route_id": "knowledge-center",
+      "path": "#/knowledge-center",
+      "screen_id": "HASH-099",
+      "title": "路径知识库",
+      "primary_domain": "CONFIG",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Prototype SPEC v0.13"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "partial",
+        "stale",
+        "permission",
+        "timeout",
+        "conflict",
+        "approval",
+        "publishing",
+        "failed",
+        "rollback",
+        "success"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "治理与管理",
+      "source_status": "PLANNED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/"
+    },
+    {
       "route_id": "lab-workbench",
       "path": "#/lab-workbench",
       "screen_id": "HASH-055",
@@ -5115,7 +4946,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-care",
       "path": "#/mental-care",
-      "screen_id": "HASH-157",
+      "screen_id": "HASH-161",
       "title": "精神心理科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5158,7 +4989,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-evidence",
       "path": "#/mental-evidence",
-      "screen_id": "HASH-155",
+      "screen_id": "HASH-159",
       "title": "精神心理科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5201,7 +5032,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-followup",
       "path": "#/mental-followup",
-      "screen_id": "HASH-158",
+      "screen_id": "HASH-162",
       "title": "精神心理科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5244,7 +5075,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-qc",
       "path": "#/mental-qc",
-      "screen_id": "HASH-159",
+      "screen_id": "HASH-163",
       "title": "精神心理科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5287,7 +5118,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-record",
       "path": "#/mental-record",
-      "screen_id": "HASH-154",
+      "screen_id": "HASH-158",
       "title": "精神心理科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5330,7 +5161,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-treatment",
       "path": "#/mental-treatment",
-      "screen_id": "HASH-156",
+      "screen_id": "HASH-160",
       "title": "精神心理科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5373,7 +5204,7 @@ export const generatedRouteContract = {
     {
       "route_id": "mental-workbench",
       "path": "#/mental-workbench",
-      "screen_id": "HASH-153",
+      "screen_id": "HASH-157",
       "title": "精神心理科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5686,7 +5517,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-care",
       "path": "#/neonatal-care",
-      "screen_id": "HASH-150",
+      "screen_id": "HASH-154",
       "title": "新生儿科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5729,7 +5560,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-evidence",
       "path": "#/neonatal-evidence",
-      "screen_id": "HASH-148",
+      "screen_id": "HASH-152",
       "title": "新生儿科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5772,7 +5603,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-followup",
       "path": "#/neonatal-followup",
-      "screen_id": "HASH-151",
+      "screen_id": "HASH-155",
       "title": "新生儿科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5815,7 +5646,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-qc",
       "path": "#/neonatal-qc",
-      "screen_id": "HASH-152",
+      "screen_id": "HASH-156",
       "title": "新生儿科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5858,7 +5689,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-record",
       "path": "#/neonatal-record",
-      "screen_id": "HASH-147",
+      "screen_id": "HASH-151",
       "title": "新生儿科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5901,7 +5732,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-treatment",
       "path": "#/neonatal-treatment",
-      "screen_id": "HASH-149",
+      "screen_id": "HASH-153",
       "title": "新生儿科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5944,7 +5775,7 @@ export const generatedRouteContract = {
     {
       "route_id": "neonatal-workbench",
       "path": "#/neonatal-workbench",
-      "screen_id": "HASH-146",
+      "screen_id": "HASH-150",
       "title": "新生儿科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -5995,7 +5826,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-care",
       "path": "#/obgyn-care",
-      "screen_id": "HASH-129",
+      "screen_id": "HASH-133",
       "title": "妇产科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6038,7 +5869,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-evidence",
       "path": "#/obgyn-evidence",
-      "screen_id": "HASH-127",
+      "screen_id": "HASH-131",
       "title": "妇产科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6081,7 +5912,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-followup",
       "path": "#/obgyn-followup",
-      "screen_id": "HASH-130",
+      "screen_id": "HASH-134",
       "title": "妇产科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6124,7 +5955,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-qc",
       "path": "#/obgyn-qc",
-      "screen_id": "HASH-131",
+      "screen_id": "HASH-135",
       "title": "妇产科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6167,7 +5998,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-record",
       "path": "#/obgyn-record",
-      "screen_id": "HASH-126",
+      "screen_id": "HASH-130",
       "title": "妇产科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6210,7 +6041,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-treatment",
       "path": "#/obgyn-treatment",
-      "screen_id": "HASH-128",
+      "screen_id": "HASH-132",
       "title": "妇产科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6253,7 +6084,7 @@ export const generatedRouteContract = {
     {
       "route_id": "obgyn-workbench",
       "path": "#/obgyn-workbench",
-      "screen_id": "HASH-125",
+      "screen_id": "HASH-129",
       "title": "妇产科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6602,7 +6433,7 @@ export const generatedRouteContract = {
     {
       "route_id": "opensource",
       "path": "#/opensource",
-      "screen_id": "HASH-111",
+      "screen_id": "HASH-115",
       "title": "开源指标、文档与贡献入口",
       "primary_domain": "DATA",
       "roles": [
@@ -6656,7 +6487,7 @@ export const generatedRouteContract = {
     {
       "route_id": "operations",
       "path": "#/operations",
-      "screen_id": "HASH-109",
+      "screen_id": "HASH-113",
       "title": "生产运行、灾备与停机续运",
       "primary_domain": "CONFIG",
       "roles": [
@@ -6710,7 +6541,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-care",
       "path": "#/ophthalmology-care",
-      "screen_id": "HASH-164",
+      "screen_id": "HASH-168",
       "title": "眼科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6753,7 +6584,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-evidence",
       "path": "#/ophthalmology-evidence",
-      "screen_id": "HASH-162",
+      "screen_id": "HASH-166",
       "title": "眼科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6796,7 +6627,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-followup",
       "path": "#/ophthalmology-followup",
-      "screen_id": "HASH-165",
+      "screen_id": "HASH-169",
       "title": "眼科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6839,7 +6670,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-qc",
       "path": "#/ophthalmology-qc",
-      "screen_id": "HASH-166",
+      "screen_id": "HASH-170",
       "title": "眼科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6882,7 +6713,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-record",
       "path": "#/ophthalmology-record",
-      "screen_id": "HASH-161",
+      "screen_id": "HASH-165",
       "title": "眼科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6925,7 +6756,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-treatment",
       "path": "#/ophthalmology-treatment",
-      "screen_id": "HASH-163",
+      "screen_id": "HASH-167",
       "title": "眼科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -6968,7 +6799,7 @@ export const generatedRouteContract = {
     {
       "route_id": "ophthalmology-workbench",
       "path": "#/ophthalmology-workbench",
-      "screen_id": "HASH-160",
+      "screen_id": "HASH-164",
       "title": "眼科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7217,6 +7048,123 @@ export const generatedRouteContract = {
       "artifact_path": "docs/design/ui-delivery/screens/pathology-workbench.png"
     },
     {
+      "route_id": "pathway-graph",
+      "path": "#/pathway-graph",
+      "screen_id": "HASH-100",
+      "title": "知识图谱",
+      "primary_domain": "CONFIG",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Prototype SPEC v0.13"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "offline",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "通用",
+      "source_status": "PLANNED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/"
+    },
+    {
+      "route_id": "pathway-review",
+      "path": "#/pathway-review",
+      "screen_id": "HASH-101",
+      "title": "审核队列",
+      "primary_domain": "CONFIG",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Prototype SPEC v0.13"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "offline",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "通用",
+      "source_status": "PLANNED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/"
+    },
+    {
+      "route_id": "pathway-versions",
+      "path": "#/pathway-versions",
+      "screen_id": "HASH-102",
+      "title": "版本历史",
+      "primary_domain": "CONFIG",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Prototype SPEC v0.13"
+      ],
+      "api_refs": [
+        "Platform API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "error",
+        "permission",
+        "offline",
+        "conflict",
+        "blocked",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "ROLE"
+      ],
+      "layout": "通用",
+      "source_status": "PLANNED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/"
+    },
+    {
       "route_id": "patient-merge",
       "path": "#/patient-merge",
       "screen_id": "HASH-005",
@@ -7377,7 +7325,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-care",
       "path": "#/pediatrics-care",
-      "screen_id": "HASH-143",
+      "screen_id": "HASH-147",
       "title": "儿科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7420,7 +7368,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-evidence",
       "path": "#/pediatrics-evidence",
-      "screen_id": "HASH-141",
+      "screen_id": "HASH-145",
       "title": "儿科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7463,7 +7411,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-followup",
       "path": "#/pediatrics-followup",
-      "screen_id": "HASH-144",
+      "screen_id": "HASH-148",
       "title": "儿科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7506,7 +7454,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-qc",
       "path": "#/pediatrics-qc",
-      "screen_id": "HASH-145",
+      "screen_id": "HASH-149",
       "title": "儿科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7549,7 +7497,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-record",
       "path": "#/pediatrics-record",
-      "screen_id": "HASH-140",
+      "screen_id": "HASH-144",
       "title": "儿科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7592,7 +7540,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-treatment",
       "path": "#/pediatrics-treatment",
-      "screen_id": "HASH-142",
+      "screen_id": "HASH-146",
       "title": "儿科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -7635,7 +7583,7 @@ export const generatedRouteContract = {
     {
       "route_id": "pediatrics-workbench",
       "path": "#/pediatrics-workbench",
-      "screen_id": "HASH-139",
+      "screen_id": "HASH-143",
       "title": "儿科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8136,7 +8084,7 @@ export const generatedRouteContract = {
     {
       "route_id": "release-gates",
       "path": "#/release-gates",
-      "screen_id": "HASH-110",
+      "screen_id": "HASH-114",
       "title": "Release 门禁与制品发布",
       "primary_domain": "CONFIG",
       "roles": [
@@ -8186,7 +8134,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-care",
       "path": "#/reproductive-care",
-      "screen_id": "HASH-136",
+      "screen_id": "HASH-140",
       "title": "生殖医学关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8229,7 +8177,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-evidence",
       "path": "#/reproductive-evidence",
-      "screen_id": "HASH-134",
+      "screen_id": "HASH-138",
       "title": "生殖医学检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8272,7 +8220,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-followup",
       "path": "#/reproductive-followup",
-      "screen_id": "HASH-137",
+      "screen_id": "HASH-141",
       "title": "生殖医学随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8315,7 +8263,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-qc",
       "path": "#/reproductive-qc",
-      "screen_id": "HASH-138",
+      "screen_id": "HASH-142",
       "title": "生殖医学质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8358,7 +8306,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-record",
       "path": "#/reproductive-record",
-      "screen_id": "HASH-133",
+      "screen_id": "HASH-137",
       "title": "生殖医学专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8401,7 +8349,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-treatment",
       "path": "#/reproductive-treatment",
-      "screen_id": "HASH-135",
+      "screen_id": "HASH-139",
       "title": "生殖医学诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8444,7 +8392,7 @@ export const generatedRouteContract = {
     {
       "route_id": "reproductive-workbench",
       "path": "#/reproductive-workbench",
-      "screen_id": "HASH-132",
+      "screen_id": "HASH-136",
       "title": "生殖医学工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8629,7 +8577,7 @@ export const generatedRouteContract = {
     {
       "route_id": "rule-center",
       "path": "#/rule-center",
-      "screen_id": "HASH-103",
+      "screen_id": "HASH-107",
       "title": "规则、时限与提示中心",
       "primary_domain": "CONFIG",
       "roles": [
@@ -8685,7 +8633,7 @@ export const generatedRouteContract = {
     {
       "route_id": "scope-designer",
       "path": "#/scope-designer",
-      "screen_id": "HASH-104",
+      "screen_id": "HASH-108",
       "title": "角色、职责与数据范围设计",
       "primary_domain": "CONFIG",
       "roles": [
@@ -8789,7 +8737,7 @@ export const generatedRouteContract = {
     {
       "route_id": "specialty-center",
       "path": "#/specialty-center",
-      "screen_id": "HASH-124",
+      "screen_id": "HASH-128",
       "title": "核心专科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8829,7 +8777,7 @@ export const generatedRouteContract = {
     {
       "route_id": "specialty-coverage",
       "path": "#/specialty-coverage",
-      "screen_id": "HASH-101",
+      "screen_id": "HASH-105",
       "title": "科室适配与上线门禁",
       "primary_domain": "CONFIG",
       "roles": [
@@ -8934,7 +8882,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-care",
       "path": "#/tcm-care",
-      "screen_id": "HASH-192",
+      "screen_id": "HASH-196",
       "title": "中医科关键诊疗流程",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -8977,7 +8925,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-evidence",
       "path": "#/tcm-evidence",
-      "screen_id": "HASH-190",
+      "screen_id": "HASH-194",
       "title": "中医科检查、设备与来源证据",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9020,7 +8968,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-followup",
       "path": "#/tcm-followup",
-      "screen_id": "HASH-193",
+      "screen_id": "HASH-197",
       "title": "中医科随访、转诊与交接",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9063,7 +9011,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-qc",
       "path": "#/tcm-qc",
-      "screen_id": "HASH-194",
+      "screen_id": "HASH-198",
       "title": "中医科质控与安全",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9106,7 +9054,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-record",
       "path": "#/tcm-record",
-      "screen_id": "HASH-189",
+      "screen_id": "HASH-193",
       "title": "中医科专科病历",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9149,7 +9097,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-treatment",
       "path": "#/tcm-treatment",
-      "screen_id": "HASH-191",
+      "screen_id": "HASH-195",
       "title": "中医科诊疗执行中心",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9192,7 +9140,7 @@ export const generatedRouteContract = {
     {
       "route_id": "tcm-workbench",
       "path": "#/tcm-workbench",
-      "screen_id": "HASH-188",
+      "screen_id": "HASH-192",
       "title": "中医科工作台",
       "primary_domain": "CLINICAL",
       "roles": [
@@ -9491,7 +9439,7 @@ export const generatedRouteContract = {
     {
       "route_id": "workflow",
       "path": "#/workflow",
-      "screen_id": "HASH-099",
+      "screen_id": "HASH-103",
       "title": "流程与状态设计器",
       "primary_domain": "CONFIG",
       "roles": [

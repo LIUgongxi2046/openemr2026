@@ -41,7 +41,11 @@ final class MedicalAgentToolGateway {
             Map.entry("DOCUMENT_TEMPLATE_READ", new ToolDefinition("DOCUMENT_TEMPLATE_READ", "已发布文书模板读取")),
             Map.entry("CLINICAL_RULE_EVALUATE", new ToolDefinition("CLINICAL_RULE_EVALUATE", "临床规则结果读取")),
             Map.entry("CRITICAL_VALUE_READ", new ToolDefinition("CRITICAL_VALUE_READ", "危急值闭环读取")),
-            Map.entry("CONSULTATION_READ", new ToolDefinition("CONSULTATION_READ", "会诊协同读取")));
+            Map.entry("CONSULTATION_READ", new ToolDefinition("CONSULTATION_READ", "会诊协同读取")),
+            Map.entry("KNOWLEDGE_SEARCH", new ToolDefinition("KNOWLEDGE_SEARCH", "知识库混合检索")),
+            Map.entry("KNOWLEDGE_LOOKUP", new ToolDefinition("KNOWLEDGE_LOOKUP", "知识精确查询")),
+            Map.entry("KNOWLEDGE_GRAPH", new ToolDefinition("KNOWLEDGE_GRAPH", "知识图谱邻接读取")),
+            Map.entry("PATHWAY_KNOWLEDGE_SEARCH", new ToolDefinition("PATHWAY_KNOWLEDGE_SEARCH", "临床路径知识检索")));
     private static final Map<String, String> DEPENDENCY_SCOPE = Map.ofEntries(
             Map.entry("VITAL_SIGN_READ", "RECORDS"), Map.entry("LAB_TREND_READ", "RESULTS"),
             Map.entry("SURGERY_SCHEDULE_READ", "RECORDS"), Map.entry("ANESTHESIA_RECORD_READ", "RECORDS"),
@@ -50,7 +54,10 @@ final class MedicalAgentToolGateway {
             Map.entry("MDT_RECORD_READ", "TASKS"), Map.entry("MEDICATION_ADMIN_READ", "ORDERS"),
             Map.entry("ENCOUNTER_TIMELINE_READ", "RECORDS"), Map.entry("DOCUMENT_TEMPLATE_READ", "CONFIGURATION"),
             Map.entry("CLINICAL_RULE_EVALUATE", "CONFIGURATION"), Map.entry("CRITICAL_VALUE_READ", "RESULTS"),
-            Map.entry("CONSULTATION_READ", "RECORDS"));
+            Map.entry("CONSULTATION_READ", "RECORDS"),
+            Map.entry("KNOWLEDGE_SEARCH", "CONFIGURATION"), Map.entry("KNOWLEDGE_LOOKUP", "CONFIGURATION"),
+            Map.entry("KNOWLEDGE_GRAPH", "CONFIGURATION"),
+            Map.entry("PATHWAY_KNOWLEDGE_SEARCH", "CONFIGURATION"));
 
     private final JdbcClient jdbc;
     private final ObjectMapper objectMapper;
@@ -184,9 +191,86 @@ final class MedicalAgentToolGateway {
             case "CLINICAL_RULE_EVALUATE" -> clinicalRuleResults(tenantId, patientId, encounterId);
             case "CRITICAL_VALUE_READ" -> criticalValues(tenantId, patientId, encounterId);
             case "CONSULTATION_READ" -> consultations(tenantId, patientId, encounterId);
+            case "KNOWLEDGE_SEARCH" -> knowledgeIndex(tenantId);
+            case "KNOWLEDGE_LOOKUP" -> knowledgeConcepts(tenantId);
+            case "KNOWLEDGE_GRAPH" -> knowledgeRelations(tenantId);
+            case "PATHWAY_KNOWLEDGE_SEARCH" -> pathwayKnowledgeIndex(tenantId);
             default -> throw new AgentRunException("MEDICAL_AGENT_TOOL_NOT_ALLOWED", 403,
                     "The requested tool is not in the medical-agent allowlist");
         };
+    }
+
+    private List<Map<String, Object>> knowledgeIndex(UUID tenantId) {
+        return jdbc.sql("""
+                select d.title, v.version, d.content_type, d.classification, v.content_hash
+                from knowledge_document d
+                join knowledge_document_version v
+                  on v.tenant_id = d.tenant_id and v.document_id = d.document_id
+                where d.tenant_id = :tenant and v.status = 'ACTIVE'
+                order by d.title limit 200
+                """).param("tenant", tenantId)
+                .query((rs, row) -> Map.<String, Object>of(
+                        "title", rs.getString("title"),
+                        "version", rs.getString("version"),
+                        "content_type", rs.getString("content_type"),
+                        "classification", rs.getString("classification"),
+                        "content_hash", rs.getString("content_hash"))).list();
+    }
+
+    private List<Map<String, Object>> knowledgeConcepts(UUID tenantId) {
+        return jdbc.sql("""
+                select source_type, system, code, display
+                from knowledge_concept where tenant_id = :tenant
+                order by display limit 200
+                """).param("tenant", tenantId)
+                .query((rs, row) -> Map.<String, Object>of(
+                        "source_type", rs.getString("source_type"),
+                        "system", rs.getString("system") == null ? "" : rs.getString("system"),
+                        "code", rs.getString("code") == null ? "" : rs.getString("code"),
+                        "display", rs.getString("display"))).list();
+    }
+
+    private List<Map<String, Object>> knowledgeRelations(UUID tenantId) {
+        return jdbc.sql("""
+                select from_concept, to_concept, rel_type, version
+                from knowledge_relation where tenant_id = :tenant
+                order by rel_type limit 200
+                """).param("tenant", tenantId)
+                .query((rs, row) -> Map.<String, Object>of(
+                        "from_concept", rs.getObject("from_concept", UUID.class).toString(),
+                        "to_concept", rs.getObject("to_concept", UUID.class).toString(),
+                        "rel_type", rs.getString("rel_type"),
+                        "version", rs.getString("version") == null ? "" : rs.getString("version"))).list();
+    }
+
+    private List<Map<String, Object>> pathwayKnowledgeIndex(UUID tenantId) {
+        return jdbc.sql("""
+                select knowledge.pathway_code, knowledge.display_name, knowledge.diagnosis_code,
+                  knowledge.specialty_code, stage.stage_name, stage.sequence_no as stage_sequence,
+                  coalesce(task.task_type, '') as task_type, coalesce(task.content, '') as content,
+                  coalesce(task.code_ref, '') as code_ref
+                from pathway_knowledge knowledge
+                join pathway_knowledge_version version
+                  on version.tenant_id = knowledge.tenant_id
+                 and version.pathway_knowledge_id = knowledge.pathway_knowledge_id
+                join pathway_knowledge_stage stage
+                  on stage.tenant_id = version.tenant_id and stage.pathway_version_id = version.pathway_version_id
+                left join pathway_knowledge_task task
+                  on task.tenant_id = stage.tenant_id and task.stage_id = stage.stage_id
+                where knowledge.tenant_id = :tenant and version.status = 'ACTIVE'
+                order by knowledge.display_name, stage.sequence_no, task.sequence_no
+                limit 300
+                """).param("tenant", tenantId)
+                .query((rs, row) -> Map.<String, Object>of(
+                        "pathway_code", rs.getString("pathway_code"),
+                        "display_name", rs.getString("display_name"),
+                        "diagnosis_code", rs.getString("diagnosis_code"),
+                        "specialty_code", rs.getString("specialty_code"),
+                        "stage_name", rs.getString("stage_name"),
+                        "stage_sequence", rs.getInt("stage_sequence"),
+                        "task_type", rs.getString("task_type"),
+                        "content", rs.getString("content"),
+                        "code_ref", rs.getString("code_ref"))).list();
     }
 
     private List<Map<String, Object>> documents(UUID tenantId, UUID patientId, UUID encounterId) {

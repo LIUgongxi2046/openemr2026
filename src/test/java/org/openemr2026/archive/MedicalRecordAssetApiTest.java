@@ -1,6 +1,7 @@
 package org.openemr2026.archive;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
@@ -431,5 +432,24 @@ final class MedicalRecordAssetApiTest {
                 where tenant_id = cast(:tenant as uuid) and medical_record_asset_id = :asset
                 """).param("tenant", TENANT).param("asset", sealed.medicalRecordAssetId()).update())
                 .isInstanceOf(DataAccessException.class);
+    }
+
+    /**
+     * 合成演示账号 林伟（linwei）在 dev-synthetic 种子中附有 MEDICAL_RECORDS 病案岗任期（…aa1a），
+     * 使其可开箱演示病案资产中心；服务端授权规则本身仍只放行 MEDICAL_RECORDS / CLINICAL_ADMIN。
+     */
+    private ClinicalIdentity demoLinweiIdentity() {
+        return new ClinicalIdentity(tenant, UUID.fromString("018f0000-0000-7000-8000-00000000aa04"),
+                List.of(UUID.fromString("018f0000-0000-7000-8000-00000000aa05"),
+                        UUID.fromString("018f0000-0000-7000-8000-00000000aa09"),
+                        UUID.fromString("018f0000-0000-7000-8000-00000000aa1a")));
+    }
+
+    @Test
+    void demoLinweiAccountWithSeededRecordsRoleCanAccessAssetWorkflow() {
+        UUID patientId = seedPatient();
+        assertThatCode(() -> assets.listAssets(demoLinweiIdentity(), organization, facility, patientId))
+                .doesNotThrowAnyException();
+        assertThat(assets.listAssets(demoLinweiIdentity(), organization, facility, patientId)).isEmpty();
     }
 }

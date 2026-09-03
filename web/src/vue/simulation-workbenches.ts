@@ -1,8 +1,9 @@
 export type SimulationWorkbenchId =
   | 'admin-auth' | 'ai-capture' | 'model-connection' | 'model-routing'
   | 'devices' | 'device-monitoring' | 'integration-connectors' | 'integration-messages'
-  | 'archive-scan' | 'archive-preservation' | 'pathology-workbench'
-  | 'anesthesia-workbench' | 'therapy-workbench';
+  | 'archive-scan' | 'archive-preservation' | 'malware-scan' | 'cda-validation'
+  | 'pathology-workbench' | 'anesthesia-workbench' | 'therapy-workbench'
+  | 'direct-report' | 'empi';
 
 export interface SimulationWorkbenchDefinition {
   id: SimulationWorkbenchId;
@@ -30,9 +31,13 @@ export const mockInterfaceSubmenus: ReadonlyArray<readonly [SimulationWorkbenchI
   ['integration-messages', '消息追踪'],
   ['archive-scan', '病案扫描'],
   ['archive-preservation', '长期保存'],
+  ['malware-scan', '恶意扫描'],
+  ['cda-validation', 'CDA 校验'],
   ['pathology-workbench', '病理系统'],
   ['anesthesia-workbench', '麻醉系统'],
   ['therapy-workbench', '治疗执行'],
+  ['direct-report', '传染病直报'],
+  ['empi', '患者主索引'],
 ];
 
 export const simulationWorkbenches: Record<SimulationWorkbenchId, SimulationWorkbenchDefinition> = {
@@ -46,9 +51,13 @@ export const simulationWorkbenches: Record<SimulationWorkbenchId, SimulationWork
   'integration-messages': { id: 'integration-messages', title: '集成消息 Trace 与重试', subtitle: '以确定性业务键演练请求、响应、失败和重试', systemType: 'INTEGRATION_', entityLabel: 'Trace 业务键', entityKey: 'trace_key', defaultEntity: 'synthetic-trace-001', steps: ['建立 Trace', '发送标准消息', '接收确认', '幂等重试/人工处理'], safeguards: ['消息正文脱敏', '相同业务键不重复副作用', '死信只能授权重放'], resultFocus: ['_simulation', 'critical_values', 'claim_id', 'timestamp_token'] },
   'archive-scan': { id: 'archive-scan', title: '纸质病历扫描、OCR 与编目', subtitle: '扫描批次、页序、OCR 复核和完整性校验', systemType: 'ARCHIVE_SCAN', entityLabel: '扫描批次', entityKey: 'batch_id', defaultEntity: 'SCAN-SYNTHETIC-001', steps: ['建立扫描批次', '采集并校验页序', 'OCR 与目录建议', '人工确认入档'], safeguards: ['OCR 不覆盖原图', '缺页必须阻断', '确认前不得归档终态'], resultFocus: ['batch_id', 'pages', 'integrity'] },
   'archive-preservation': { id: 'archive-preservation', title: '病案长期保存与恢复验证', subtitle: '内容哈希、WORM 保留期、抽样恢复和一致性证据', systemType: 'ARCHIVE_STORAGE', entityLabel: '内容引用', entityKey: 'content_ref', defaultEntity: 'synthetic://archive/case-001', steps: ['校验封包哈希', '写入长期保存', '执行保留策略', '抽样恢复比对'], safeguards: ['哈希不一致立即阻断', '保留期不可缩短', '恢复验证只读'], resultFocus: ['storage_ref', 'content_hash', 'retention_years', 'sealed'] },
+  'malware-scan': { id: 'malware-scan', title: '入档文件杀毒与隔离阻断', subtitle: 'ClamAV INSTREAM 扫描：干净放行、检出签名即隔离，不落真实业务库', systemType: 'SECURITY_AV', entityLabel: '文件引用', entityKey: 'content_ref', defaultEntity: 'synthetic://scan/eicar-sample-001', steps: ['引用待检文件', '执行 INSTREAM 扫描', '返回干净/检出证据', '检出即隔离阻断'], safeguards: ['检出文件不得入档', '签名保留为审计证据', '引擎不可用不伪装干净'], resultFocus: ['verdict', 'signature', 'engine', 'batch_verdict'] },
+  'cda-validation': { id: 'cda-validation', title: 'CDA 结构与语义校验', subtitle: 'XML、根元素、枚举与必填章节的结构/语义校验，失败即隔离整改', systemType: 'DOCUMENT_CDA', entityLabel: '文书引用', entityKey: 'document_id', defaultEntity: 'CDA-SYNTHETIC-001', steps: ['引用 CDA 文书', '执行结构校验', '执行语义校验', '失败隔离整改'], safeguards: ['结构失败不得进入归档终态', '校验结论须人工复核', '校验不影响原件'], resultFocus: ['structural_valid', 'semantic_ok', 'checks', 'engine'] },
   'pathology-workbench': { id: 'pathology-workbench', title: '病理标本到诊断签署', subtitle: '从取材、制片、诊断复核到签署的状态轴', systemType: 'PATHOLOGY', entityLabel: '标本 ID', entityKey: 'specimen_id', defaultEntity: 'PATH-SYNTHETIC-001', steps: ['接收并核对标本', '取材与制片', '病理诊断', '复核签署'], safeguards: ['标本身份不一致阻断', '诊断须独立复核', '签署前保留切片证据'], resultFocus: ['specimen_id', 'stages', 'diagnosis_status'] },
   'anesthesia-workbench': { id: 'anesthesia-workbench', title: '麻醉评估、事件轴与复苏', subtitle: '术前评估、诱导、监护事件和 PACU 去向演练', systemType: 'ANESTHESIA', entityLabel: '就诊 ID', entityKey: 'encounter_id', defaultEntity: '018f0000-0000-7000-8000-000000000101', steps: ['术前评估核验', '麻醉诱导', '连续事件记录', '复苏评分与去向'], safeguards: ['事件轴只追加不覆盖', '异常体征需处置记录', '复苏去向由医生确认'], resultFocus: ['event_axis', 'monitoring', 'recovery_disposition'] },
   'therapy-workbench': { id: 'therapy-workbench', title: '治疗排程、核对与执行', subtitle: '排程、患者/医嘱双核对、执行与不良事件闭环', systemType: 'THERAPY', entityLabel: '治疗任务', entityKey: 'therapy_id', defaultEntity: 'THER-SYNTHETIC-001', steps: ['读取治疗排程', '患者与医嘱核对', '双人确认执行', '记录结果/不良事件'], safeguards: ['核对失败禁止执行', '高风险治疗双签', '不良事件必须升级'], resultFocus: ['therapy_id', 'verification', 'status', 'adverse_event'] },
+  'direct-report': { id: 'direct-report', title: '国家传染病/院感直报网关', subtitle: '报告卡号、回执、2/24 小时时限、更正与失败重放', systemType: 'REPORT_GATEWAY', interfaceCode: 'DIRECT_REPORT_GATEWAY', entityLabel: '上报事件', entityKey: 'event_id', defaultEntity: 'EVT-DR-SYNTHETIC-001', steps: ['采集直报要素', '提交报告卡', '接收回执', '更正或幂等重试'], safeguards: ['回执不伪造国家平台已接收', 'PENDING_RETRY 保留事件', '更正必须关联原报告卡'], resultFocus: ['report_card_no', 'receipt_no', 'external_report_state', 'acknowledgement_state'] },
+  empi: { id: 'empi', title: '患者主索引 EMPI 查询', subtitle: '登记号/人口学查询候选患者、匹配度与疑似重复', systemType: 'EMPI', interfaceCode: 'EMPI_PATIENT_LOOKUP', entityLabel: '患者登记号', entityKey: 'person_code', defaultEntity: 'P-SYNTHETIC-10001', steps: ['提交登记要素', '返回候选排序', '标记疑似重复', '人工确认不自动合并'], safeguards: ['算法分不直接合并患者', 'PENDING_VERIFICATION 需人工核验', '查询不替代本院授权'], resultFocus: ['candidates', 'best_match', 'possible_duplicate', 'identity_status'] },
 };
 
 export function simulationWorkbench(id: SimulationWorkbenchId) {

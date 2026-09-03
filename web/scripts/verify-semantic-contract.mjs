@@ -7,7 +7,7 @@ const projectDir = resolve(webDir, '..');
 const routes = JSON.parse(await readFile(resolve(projectDir, 'contracts/generated/route-contract.generated.json'), 'utf8')).routes;
 const semantics = JSON.parse(await readFile(resolve(projectDir, 'docs/process/testing/route-semantic-contract.json'), 'utf8'));
 const failures = [];
-if (semantics.route_count !== 194 || semantics.routes.length !== 194) failures.push('SEMANTIC_ROUTE_COUNT');
+if (semantics.route_count !== 198 || semantics.routes.length !== 198) failures.push('SEMANTIC_ROUTE_COUNT');
 const sourceIds = new Set(routes.map((route) => route.route_id));
 for (const route of semantics.routes) {
   if (!sourceIds.has(route.route_id)) failures.push(`UNKNOWN_ROUTE:${route.route_id}`);
@@ -20,4 +20,4 @@ for (const id of ['outpatient','agent-compose','agent-context','agent-evals','da
   if (!route || route.critical_text.length < 3) failures.push(`HIGH_RISK_ASSERTIONS_MISSING:${id}`);
 }
 if (failures.length) { console.error(JSON.stringify({ status: 'FAIL', failures }, null, 2)); process.exit(1); }
-console.log(JSON.stringify({ status: 'PASS', routes: '194/194', high_risk: semantics.routes.filter((route) => route.critical_text.length).length }));
+console.log(JSON.stringify({ status: 'PASS', routes: '198/198', high_risk: semantics.routes.filter((route) => route.critical_text.length).length }));

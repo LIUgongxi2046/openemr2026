@@ -133,6 +133,7 @@ async function destroySelected() { if (selectedRequest.value) await destroy(sele
 
 <template>
   <section data-page-root class="content admin-content vue-native-page">
+    <nav class="admin-breadcrumb" aria-label="科研中心层级导航"><RouterLink to="/research">← 返回科研中心</RouterLink></nav>
     <div class="page-heading admin-heading">
       <div>
         <p class="eyebrow">数据中心 / 科研</p>

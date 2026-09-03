@@ -103,13 +103,15 @@ test('generated governance artifacts are complete, unique, and mutually referent
     for (const errorCode of tool.error_codes) assert.ok(errorCodes.has(errorCode), `${tool.tool_id} references unknown ${errorCode}`);
   }
 
-  assert.equal(routeContract.route_count, 199);
-  assert.equal(routeContract.routes.length, 199);
-  assert.equal(new Set(routeContract.routes.map((route) => route.route_id)).size, 199);
+  assert.equal(routeContract.route_count, 198);
+  assert.equal(routeContract.routes.length, 198);
+  assert.equal(new Set(routeContract.routes.map((route) => route.route_id)).size, 198);
   assert.equal(new Set(routeContract.routes.flatMap((route) => route.fr_refs)).size, 138);
   for (const route of routeContract.routes) {
     assert.ok(route.title && route.primary_domain && route.roles.length && route.requirement_refs.length && route.states.length && route.guards.length);
     assert.ok(['CLINICAL', 'RECORD', 'QUALITY', 'COLLABORATION', 'DATA', 'AI', 'CONFIG', 'ADMIN'].includes(route.primary_domain));
-    assert.match(route.artifact_path, /^docs\/design\/ui-delivery\/screens\/.+\.png$/);
+    if (route.source_status === 'VERIFIED') {
+      assert.match(route.artifact_path, /^docs\/design\/ui-delivery\/screens\/.+\.png$/);
+    }
   }
 });

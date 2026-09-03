@@ -339,6 +339,33 @@ final class MockInterfaceExecutionService {
                 actions.add("阻断演练结果进入后续流程并复核执行状态机");
             }
         }
+        if ("MALWARE_SCAN".equals(code)) {
+            List<String> signatures = businessRecords(payload).stream()
+                    .filter(record -> "FOUND".equals(record.get("verdict")))
+                    .map(record -> String.valueOf(record.get("signature")))
+                    .filter(value -> !value.isBlank() && !"null".equals(value)).toList();
+            if (!signatures.isEmpty()) {
+                decision = "BLOCK";
+                findings.add("检出 " + signatures.size() + " 个恶意文件仿真签名：" + String.join("、", signatures));
+                actions.add("演练结果隔离阻断、不得入档；核对来源并记录审计后删除");
+            }
+        }
+        if ("CDA_VALIDATION".equals(code)) {
+            long structuralFailures = businessRecords(payload).stream()
+                    .filter(record -> Boolean.FALSE.equals(record.get("structural_valid"))).count();
+            long semanticWarnings = businessRecords(payload).stream()
+                    .filter(record -> Boolean.TRUE.equals(record.get("structural_valid"))
+                            && Boolean.FALSE.equals(record.get("semantic_ok"))).count();
+            if (structuralFailures > 0) {
+                decision = "BLOCK";
+                findings.add(structuralFailures + " 份 CDA 文书结构校验失败，禁止进入归档终态");
+                actions.add("问题文书转扫描/生成来源整改并重新校验");
+            } else if (semanticWarnings > 0) {
+                decision = "REVIEW";
+                findings.add(semanticWarnings + " 份 CDA 文书存在语义告警，需人工复核后再归档");
+                actions.add("复核 valueSet/编码系统解析告警，人工确认后继续归档流程");
+            }
+        }
         if (findings.isEmpty()) findings.add("未发现身份、双签或中国医疗业务规则阻断项");
         if (actions.isEmpty()) actions.add("保留仿真标识和证据链；不写入真实临床事实");
         return Map.of(

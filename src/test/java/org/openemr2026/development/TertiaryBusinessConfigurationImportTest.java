@@ -73,8 +73,8 @@ final class TertiaryBusinessConfigurationImportTest {
                         "workbenches", rs.getInt("workbenches"),
                         "complete", rs.getInt("complete_profiles")))
                 .single();
-        assertThat(mockProfiles).containsEntry("profiles", 10)
-                .containsEntry("workbenches", 10).containsEntry("complete", 10);
+        assertThat(mockProfiles).containsEntry("profiles", 12)
+                .containsEntry("workbenches", 12).containsEntry("complete", 12);
         Integer retiredAiSimulationProfiles = jdbc.sql("""
                 select count(*) from config_item
                 where tenant_id = :tenant and config_type = 'MOCK_INTERFACE_PROFILE'
@@ -169,7 +169,7 @@ final class TertiaryBusinessConfigurationImportTest {
                 .single();
         assertThat(catalog).containsEntry("active_simulation_models", 0)
                 .containsEntry("retired_models", 6)
-                .containsEntry("skills", 24).containsEntry("tools", 29);
+                .containsEntry("skills", 24).containsEntry("tools", 32);
     }
 
     @Test

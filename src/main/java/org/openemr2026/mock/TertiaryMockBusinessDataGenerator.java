@@ -74,10 +74,14 @@ final class TertiaryMockBusinessDataGenerator {
             case "DICTATION_ASR" -> dictationRecord(record, index, random);
             case "IDP_AUTHENTICATE" -> authenticationRecord(record, payload, index, random);
             case "SCAN_CAPTURE" -> scanRecord(record, index, random);
+            case "MALWARE_SCAN" -> malwareRecord(record, payload, producedAt, index, random);
+            case "CDA_VALIDATION" -> cdaValidationRecord(record, payload, producedAt, index);
             case "STORAGE_PRESERVE" -> preservationRecord(record, payload, index, random);
             case "PATHOLOGY_DIAGNOSE" -> pathologyRecord(record, index, random);
             case "ANESTHESIA_EVENT" -> anesthesiaRecord(record, producedAt, index, random);
             case "THERAPY_EXECUTE" -> therapyRecord(record, index, random);
+            case "DIRECT_REPORT_GATEWAY" -> directReportRecord(record, payload, producedAt, index, random);
+            case "EMPI_PATIENT_LOOKUP" -> empiLookupRecord(record, payload, producedAt, index, random);
             default -> throw new MockInterfaceException("MOCK_INTERFACE_UNKNOWN", 404, "未知模拟接口：" + code);
         }
         return record;
@@ -276,6 +280,58 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("integrity", index > 0 && index % 29 == 0 ? "REVIEW_REQUIRED" : "VERIFIED");
     }
 
+    private void malwareRecord(
+            Map<String, Object> record, Map<String, Object> payload, Instant producedAt,
+            int index, SplittableRandom random) {
+        List<String> signatures = List.of("Eicar-Test-Signature", "Win.Test.EICAR_HDB-1",
+                "PUA.Test.EICAR", "Heuristics.Suspicious.Memory");
+        List<String> mediaTypes = List.of("application/pdf", "image/jpeg", "application/msword",
+                "application/zip", "text/plain");
+        boolean infected = index > 0 && index % 29 == 0;
+        String contentHash = str(payload, "content_hash",
+                "sha256:" + compactId(record, index).toLowerCase());
+        record.put("content_ref", str(payload, "content_ref",
+                "synthetic://file/" + compactId(record, index).toLowerCase()));
+        record.put("content_hash", contentHash);
+        record.put("media_type", str(payload, "media_type", mediaTypes.get(index % mediaTypes.size())));
+        record.put("verdict", infected ? "FOUND" : "CLEAN");
+        record.put("signature", infected
+                ? signatures.get((index / 29 + random.nextInt(signatures.size())) % signatures.size())
+                : null);
+        record.put("engine", "openemr2026-synthetic-clamav-v1");
+        record.put("scan_evidence", infected
+                ? "stream: " + record.get("signature") + " FOUND"
+                : "stream: OK");
+        record.put("action", infected ? "ISOLATE_AND_BLOCK" : "ALLOW");
+        record.put("scanned_at", producedAt.minusSeconds((long) index * 90L).toString());
+    }
+
+    private void cdaValidationRecord(
+            Map<String, Object> record, Map<String, Object> payload, Instant producedAt, int index) {
+        List<String> documentTypes = List.of("门诊病历", "住院病案首页", "出院记录", "入院记录", "检验报告", "手术记录", "护理记录");
+        boolean structuralInvalid = index > 0 && index % 37 == 0;
+        boolean semanticWarning = !structuralInvalid && index > 0 && index % 13 == 0;
+        record.put("document_id", str(payload, "document_id", "CDA-" + compactId(record, index)));
+        record.put("content_hash", str(payload, "content_hash",
+                "sha256:" + compactId(record, index).toLowerCase()));
+        record.put("document_type", str(payload, "document_type",
+                documentTypes.get(index % documentTypes.size())));
+        List<String> checks = new ArrayList<>(List.of("XML well-formed",
+                "Root ClinicalDocument present", "document type/status 枚举合法", "必填章节完整"));
+        if (structuralInvalid) {
+            checks.set(3, "必填章节缺失：主诉/现病史 section 未找到");
+        } else if (semanticWarning) {
+            checks.add("语义告警：valueSet 编码系统无法解析（不影响结构）");
+        }
+        record.put("checks", checks);
+        record.put("structural_valid", !structuralInvalid);
+        record.put("semantic_ok", !structuralInvalid && !semanticWarning);
+        record.put("validation_status", structuralInvalid ? "STRUCTURE_INVALID"
+                : semanticWarning ? "SEMANTIC_WARNING" : "VALID");
+        record.put("engine", "openemr2026-synthetic-cda-validator-v1");
+        record.put("validated_at", producedAt.minusSeconds((long) index * 60L).toString());
+    }
+
     private void preservationRecord(Map<String, Object> record, Map<String, Object> payload, int index, SplittableRandom random) {
         List<String> formats = List.of("CDA-R2", "PDF-A/3", "DICOM", "FHIR-NDJSON");
         record.put("content_ref", str(payload, "content_ref", "synthetic://archive/" + compactId(record, index).toLowerCase()));
@@ -331,6 +387,41 @@ final class TertiaryMockBusinessDataGenerator {
         record.put("status", dualSign ? "COMPLETED" : "PENDING_SECOND_CHECK");
         record.put("adverse_event", index > 0 && index % 31 == 0 ? "MILD_REACTION_REPORTED" : "NONE");
         record.put("duration_minutes", 20 + random.nextInt(101));
+    }
+
+    private void directReportRecord(
+            Map<String, Object> record, Map<String, Object> payload, Instant producedAt,
+            int index, SplittableRandom random) {
+        List<String> categories = List.of("HAI_CASE", "HAI_OUTBREAK", "NOTIFIABLE_DISEASE", "HAI_CASE");
+        List<String> policies = List.of("REPORT-POLICY-HAI-24H", "REPORT-POLICY-NOTIFIABLE-2H");
+        boolean notifiableUrgent = index % 3 == 0;
+        record.put("event_id", str(payload, "event_id", "EVT-" + compactId(record, index)));
+        record.put("case_category", categories.get(index % categories.size()));
+        record.put("reporting_policy_code", notifiableUrgent ? policies.get(1) : policies.get(0));
+        record.put("report_deadline_at", producedAt
+                .plusSeconds(notifiableUrgent ? 2L * 3600 : 24L * 3600)
+                .toString());
+        record.put("report_card_no", "RC-" + compactId(record, index));
+        record.put("receipt_no", index % 5 == 0 ? null : "RCPT-" + compactId(record, index));
+        record.put("external_report_state", index % 7 == 0 ? "PENDING_RETRY"
+                : index % 11 == 0 ? "CORRECTED" : "ACKNOWLEDGED");
+        record.put("correction_of", index % 11 == 0
+                ? "RC-" + compactId(record, Math.max(0, index - 1)) : null);
+        record.put("retry_count", index % 7 == 0 ? 1 + random.nextInt(3) : 0);
+        record.put("reported_at", producedAt.minusSeconds((long) index * 600L).toString());
+    }
+
+    private void empiLookupRecord(Map<String, Object> record, Map<String, Object> payload, Instant producedAt, int index, SplittableRandom random) {
+        List<String> sourceSystems = List.of("HIS", "门诊挂号", "住院入区", "区域共享", "体检系统");
+        record.put("person_code", str(payload, "person_code", "P-" + compactId(record, index)));
+        record.put("candidate_id", "CAND-" + compactId(record, index));
+        record.put("identity_status", index % 17 == 0 ? "PENDING_VERIFICATION" : "ACTIVE");
+        record.put("match_score", decimal(0.72 + random.nextDouble() * 0.27, 2));
+        record.put("possible_duplicate", index > 0 && index % 13 == 0);
+        record.put("source_system", sourceSystems.get(index % sourceSystems.size()));
+        record.put("record_authority", index % 9 == 0 ? "AUTHORITATIVE" : "AUXILIARY");
+        record.put("matched_at", producedAt.minusSeconds((long) index * 300L).toString());
+        record.put("merge_required", index > 0 && index % 13 == 0);
     }
 
     private void addCompatibilityProjection(
@@ -398,6 +489,27 @@ final class TertiaryMockBusinessDataGenerator {
                 response.put("pages", records);
                 response.put("integrity", records.stream().anyMatch(item -> "REVIEW_REQUIRED".equals(item.get("integrity"))) ? "REVIEW_REQUIRED" : "VERIFIED");
             }
+            case "MALWARE_SCAN" -> {
+                response.put("scans", records);
+                boolean infected = records.stream().anyMatch(item -> "FOUND".equals(item.get("verdict")));
+                response.put("verdict", infected ? "INFECTED" : "CLEAN");
+                response.put("signature", records.stream().map(item -> item.get("signature"))
+                        .filter(java.util.Objects::nonNull).findFirst().orElse(null));
+                response.put("engine", first.get("engine"));
+                response.put("batch_verdict", infected ? "ISOLATE_AND_BLOCK" : "ALLOW");
+            }
+            case "CDA_VALIDATION" -> {
+                response.put("documents", records);
+                copy(response, first, "document_type", "engine");
+                boolean allStructural = records.stream().allMatch(item -> Boolean.TRUE.equals(item.get("structural_valid")));
+                boolean allSemantic = records.stream().allMatch(item -> Boolean.TRUE.equals(item.get("semantic_ok")));
+                response.put("structural_valid", allStructural);
+                response.put("semantic_ok", allSemantic);
+                response.put("checks", records.stream()
+                        .flatMap(item -> ((List<?>) item.get("checks")).stream())
+                        .filter(value -> String.valueOf(value).contains("缺失") || String.valueOf(value).contains("告警"))
+                        .distinct().toList());
+            }
             case "STORAGE_PRESERVE" -> {
                 response.put("objects", records);
                 copy(response, first, "storage_ref", "content_hash", "retention_years", "format", "sealed");
@@ -423,6 +535,25 @@ final class TertiaryMockBusinessDataGenerator {
                         "dual_sign", first.get("dual_sign")));
                 response.put("adverse_event", first.get("adverse_event"));
                 response.put("status", first.get("status"));
+            }
+            case "DIRECT_REPORT_GATEWAY" -> {
+                response.put("reports", records);
+                copy(response, first, "event_id", "case_category", "reporting_policy_code",
+                        "report_deadline_at", "report_card_no", "external_report_state");
+                response.put("receipt_no", first.get("receipt_no"));
+                boolean hasPending = records.stream().anyMatch(item -> "PENDING_RETRY".equals(item.get("external_report_state")));
+                boolean hasCorrected = records.stream().anyMatch(item -> "CORRECTED".equals(item.get("external_report_state")));
+                response.put("acknowledgement_state", hasCorrected ? "CORRECTED"
+                        : hasPending ? "PENDING_ACK" : "ACKNOWLEDGED");
+                response.put("clinical_impact", "回执不影响院内感染防控；PENDING_RETRY 保留事件并幂等重试，不伪造国家平台已接收");
+            }
+            case "EMPI_PATIENT_LOOKUP" -> {
+                response.put("candidates", records);
+                response.put("best_match", first);
+                boolean duplicate = records.stream().anyMatch(item -> Boolean.TRUE.equals(item.get("possible_duplicate")));
+                response.put("possible_duplicate", duplicate);
+                response.put("merge_required", duplicate);
+                response.put("clinical_impact", "疑似重复与合并候选必须人工确认，不以算法分直接合并患者；查询结果不替代本院患者主索引授权");
             }
             default -> throw new MockInterfaceException("MOCK_INTERFACE_UNKNOWN", 404, "未知模拟接口：" + code);
         }

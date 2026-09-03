@@ -5,10 +5,10 @@ import routerSource from './router.ts?raw';
 import { mockInterfaceSubmenus, simulationWorkbenches } from './simulation-workbenches';
 
 describe('mock interface submenu contract', () => {
-  it('registers one overview and all 13 configured workbenches', () => {
-    expect(mockInterfaceSubmenus).toHaveLength(14);
-    expect(Object.keys(simulationWorkbenches)).toHaveLength(13);
-    expect(new Set(mockInterfaceSubmenus.map(([id]) => id)).size).toBe(14);
+  it('registers one overview and all 17 configured workbenches', () => {
+    expect(mockInterfaceSubmenus).toHaveLength(18);
+    expect(Object.keys(simulationWorkbenches)).toHaveLength(17);
+    expect(new Set(mockInterfaceSubmenus.map(([id]) => id)).size).toBe(18);
   });
 
   it('keeps every workbench actionable and safety documented', () => {

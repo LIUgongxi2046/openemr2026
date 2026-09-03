@@ -67,7 +67,8 @@ const navigation: NavItem[] = [
   { id: 'care-operations', label: '诊疗执行中心', icon: '✚', group: '业务协同' },
   { id: 'clinical-tasks', label: '任务中心', icon: '☑', group: '业务协同' },
   { id: 'data-center', label: '数据中心', icon: '⌁', group: '平台中心' },
-  { id: 'ai-center', label: 'AI 中心', icon: '✦', group: '平台中心' },
+  { id: 'ai-assistant', label: 'AI 中心', icon: '✦', group: '平台中心' },
+  { id: 'knowledge-center', label: '知识中心', icon: '⬡', group: '平台中心' },
   { id: 'workflow', label: '业务配置', icon: '⌘', group: '管理与配置' },
   { id: 'admin', label: '系统管理', icon: '⚙', group: '管理与配置' },
   { id: 'mock-interfaces', label: '模拟接口', icon: '⇄', group: '管理与配置' },
@@ -99,7 +100,8 @@ const clinicalFoundationRoutes = ['clinical', 'unified-home', 'patient-registry'
 const careOperationRoutes = ['care-operations', 'billing', 'outpatient-pharmacy', 'inpatient-pharmacy', 'lab-workbench', 'pathology-workbench', 'imaging-workbench', 'therapy-workbench', 'surgery-schedule', 'anesthesia-workbench', 'device-monitoring', 'transfusion'];
 const qualityCenterRoutes = ['quality-center', 'department-qc', 'quality-rating', 'infection-events', 'credentials'];
 const dataCenterRoutes = ['data-center', 'integration', 'integration-connectors', 'integration-mapping', 'integration-messages', 'migration', 'data-quality', 'devices', 'research', 'cohort-builder', 'research-stats', 'research-dataset'];
-const aiPlatformRoutes = ['ai-center', 'ai-assistant', 'ai-reminder-detail', 'ai-capture', 'ai-action-review', 'ai-assistant-policy', 'models', 'model-connection', 'model-routing', 'model-evaluation', 'agent-catalog', 'agent', 'agent-context', 'tool-catalog', 'skill-catalog', 'agent-compose', 'agent-evals', 'aiops'];
+const knowledgeCenterRoutes = ['knowledge-center', 'pathway-graph', 'pathway-review', 'pathway-versions'];
+const aiPlatformRoutes = ['ai-assistant', 'ai-reminder-detail', 'ai-capture', 'ai-action-review', 'ai-assistant-policy', 'models', 'model-connection', 'model-routing', 'model-evaluation', 'agent-catalog', 'agent', 'agent-context', 'tool-catalog', 'skill-catalog', 'agent-compose', 'agent-evals', 'aiops'];
 const configurationRoutes = ['workflow', 'capability-pack', 'specialty-coverage', 'form-designer', 'rule-center', 'scope-designer', 'config-release', 'config-upgrade'];
 const operationRoutes = ['install', 'backup', 'operations', 'release-gates', 'opensource'];
 const adminRoutes = ['admin', 'admin-org', 'admin-users', 'admin-roles', 'admin-permissions', 'admin-auth', 'admin-dictionaries', 'admin-master-data', 'admin-templates', 'admin-parameters', 'admin-jobs', 'admin-audit'];
@@ -123,7 +125,8 @@ function isActive(navId: string): boolean {
     case 'care-operations': return careOperationRoutes.includes(c);
     case 'clinical-tasks': return c === 'clinical-tasks';
     case 'data-center': return dataCenterRoutes.includes(c);
-    case 'ai-center': return aiPlatformRoutes.includes(c);
+    case 'ai-assistant': return aiPlatformRoutes.includes(c);
+    case 'knowledge-center': return knowledgeCenterRoutes.includes(c);
     case 'workflow': return configurationRoutes.includes(c);
     case 'admin': return adminRoutes.includes(c) || operationRoutes.includes(c);
     case 'clinical': return clinicalFoundationRoutes.includes(c) || specialtyGuardRouteIds.has(c);
@@ -212,7 +215,10 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['integration', '集成交换'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['devices', '设备接入'], ['research', '科研统计']] };
   }
   if (aiPlatformRoutes.includes(c)) {
-    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-center', 'AI 总览'], ['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
+    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
+  }
+  if (knowledgeCenterRoutes.includes(c)) {
+    return { kind: 'center', title: '知识中心', active: c, items: [['knowledge-center', '路径知识库'], ['pathway-graph', '知识图谱'], ['pathway-review', '审核队列'], ['pathway-versions', '版本历史']] };
   }
   if (configurationRoutes.includes(c)) {
     return { kind: 'center', title: '业务配置', active: c, items: [['workflow', '流程设计'], ['capability-pack', '能力包'], ['specialty-coverage', '科室适配'], ['form-designer', '表单模板'], ['rule-center', '规则时限'], ['scope-designer', '职责范围']] };

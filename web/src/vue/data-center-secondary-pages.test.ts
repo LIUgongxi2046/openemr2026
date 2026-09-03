@@ -4,11 +4,30 @@ const views = import.meta.glob('./views/*.vue', { query: '?raw', import: 'defaul
 const components = import.meta.glob('./components/*.vue', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
 
 describe('数据中心六个二级页面契约', () => {
-  it('数据总览保留全部五个下游模块入口', () => {
+  it('数据总览保留五个下游入口并从各域真实台账聚合，不硬编码指标', () => {
     const source = views['./views/DataCenterPage.vue'];
     for (const route of ['/integration', '/migration', '/data-quality', '/devices', '/research']) {
       expect(source).toContain(route);
     }
+    // 集成/设备/科研项目与差异工单来自配置目录真实记录
+    expect(source).toContain("listConfigurations(configLeaseQuery.data.value!, 'INTEGRATION_CONNECTOR')");
+    expect(source).toContain("'INTEGRATION_INCIDENT'");
+    expect(source).toContain("'DEVICE_CATALOG'");
+    expect(source).toContain("'RESEARCH_PROJECT'");
+    // 历史迁移来自治理台账
+    expect(source).toContain("issueGovernanceLease('MIGRATION_ADMIN')");
+    expect(source).toContain('listSourceSystems');
+    expect(source).toContain('listHistoricalMigrationBatches');
+    // 质量工单与科研队列/数据申请来自数据中心真实持久化记录
+    expect(source).toContain("issueDataLease('DATA_QUALITY_ADMIN')");
+    expect(source).toContain('listDataQualityFindings');
+    expect(source).toContain("issueDataLease('COHORT_BUILDER_ADMIN')");
+    expect(source).toContain('listResearchCohorts');
+    expect(source).toContain("issueDataLease('RESEARCH_DATASET_ADMIN')");
+    expect(source).toContain('listResearchDatasetRequests');
+    // 核心事实规模只读 DATA_CENTER 指标快照，页面不出现伪造的静态指标
+    expect(source).toContain("listMetricSnapshots(metricLeaseQuery.data.value!, 'DATA_CENTER')");
+    expect(source).not.toContain('99.93');
   });
 
   it('集成交换提供连接测试和互操作处置入口', () => {
@@ -64,10 +83,13 @@ describe('数据中心六个二级页面契约', () => {
     expect(catalog).toContain('...(selected.value?.payload ?? {})');
     expect(catalog).toContain('<AdminActionDialog');
     expect(catalog).toContain('<AdminConfirmDialog');
-    expect(views['./views/DevicesPage.vue']).toContain("configType: 'DEVICE_CATALOG'");
-    expect(views['./views/DeviceMonitoringPage.vue']).toContain('ProductionExecutionWorkbenchPage');
+    expect(views['./views/DevicesPage.vue']).toContain('listDevices');
+    expect(views['./views/DevicesPage.vue']).toContain('createDevice');
+    expect(views['./views/DeviceMonitoringPage.vue']).toContain('collectDeviceTelemetry');
+    expect(views['./views/DeviceMonitoringPage.vue']).toContain('listDeviceStatuses');
     expect(components['./components/ProductionExecutionWorkbenchPage.vue']).toContain('人工确认门禁');
-    expect(views['./views/ResearchPage.vue']).toContain("configType: 'RESEARCH_PROJECT'");
+    expect(views['./views/ResearchPage.vue']).toContain('listResearchProjects');
+    expect(views['./views/ResearchPage.vue']).toContain('createResearchProject');
     const cohort = views['./views/CohortBuilderPage.vue'];
     expect(cohort).toContain('age_gte=18;diagnosis_code=E11.9');
     expect(cohort).toContain('member_count: members.value.length');
@@ -75,8 +97,17 @@ describe('数据中心六个二级页面契约', () => {
     const stats = views['./views/ResearchStatsPage.vue'];
     expect(stats).toContain("item.dimension?.group === 'AGE_DISTRIBUTION'");
     expect(stats).toContain("item.dimension?.group === 'TREND'");
+    expect(stats).toContain('computeMetricSnapshots');
+    expect(stats).toContain("'队列快照', '纳入成员', '平均队列规模', '已输出研究集'");
     expect(stats).not.toContain('const ages = [');
     expect(stats).not.toContain('STAT-20260813-09');
+  });
+
+  it('科研项目提供四级详情页并读取真实项目台账', () => {
+    const detail = views['./views/ResearchProjectDetailPage.vue'];
+    expect(detail).toContain('listResearchProjects');
+    expect(detail).toContain("route.params.projectId");
+    expect(detail).toContain('approved_purpose');
   });
 
   it('目录卡片限制宽度并保持紧凑操作间距', () => {

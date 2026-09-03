@@ -32,6 +32,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
     static final UUID USER_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa04");
     static final UUID ROLE_ASSIGNMENT_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa05");
     static final UUID ADMIN_ROLE_ASSIGNMENT_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa09");
+    /** 演示账号林伟附加的病案岗任期，使 linwei 可开箱演示病案资产中心（不改任何授权规则）。 */
+    static final UUID DEMO_MEDICAL_RECORDS_ROLE_ASSIGNMENT_ID =
+            UUID.fromString("018f0000-0000-7000-8000-00000000aa1a");
     static final UUID COLLABORATOR_USER_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa06");
     static final UUID COLLABORATOR_ROLE_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa07");
     static final UUID CONFIG_AUTHOR_ROLE_ID = UUID.fromString("018f0000-0000-7000-8000-00000000aa18");
@@ -1566,7 +1569,11 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   ('018f0000-0000-7000-8000-00000000f810','archive-preservation-tertiary','电子病案 WORM 长期保存','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"archive-preservation","interface_code":"STORAGE_PRESERVE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"内容哈希、30 年保留、WORM 封存与抽样恢复","default_entity":"synthetic://archive/case-001","default_scenario":"SUCCESS","owner_department":"病案管理科 / 信息中心","operating_window":"7×24 小时","timeout_ms":30000,"retry_limit":2,"manual_fallback":"哈希不一致停止封存并启动双人复核","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f811','pathology-tertiary','病理标本到诊断签署闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"pathology-workbench","interface_code":"PATHOLOGY_DIAGNOSE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"标本接收、取材、制片、诊断复核和签署状态轴","default_entity":"PATH-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"病理科","operating_window":"工作日 08:00–20:00；冰冻病理 7×24","timeout_ms":10000,"retry_limit":2,"manual_fallback":"标本身份不一致立即阻断，转病理科双人核对","documentation_version":"v1.0 / 2026-08-28"}'),
                   ('018f0000-0000-7000-8000-00000000f812','anesthesia-tertiary','手术麻醉事件轴与 PACU 去向','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"anesthesia-workbench","interface_code":"ANESTHESIA_EVENT","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"术前评估、诱导、连续监护、用药事件与复苏去向","default_entity":"018f0000-0000-7000-8000-000000000101","default_scenario":"SUCCESS","owner_department":"麻醉科","operating_window":"7×24 小时","timeout_ms":3000,"retry_limit":2,"manual_fallback":"数据中断转纸面/本地麻醉记录，恢复后按事件时间幂等补录","documentation_version":"v1.0 / 2026-08-28"}'),
-                  ('018f0000-0000-7000-8000-00000000f813','therapy-tertiary','治疗排程、双核对与不良事件闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"therapy-workbench","interface_code":"THERAPY_EXECUTE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"康复、放疗和高风险治疗排程、患者/医嘱核对与执行闭环","default_entity":"THER-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"诊疗执行中心","operating_window":"工作日 07:30–20:00；急诊 7×24","timeout_ms":5000,"retry_limit":2,"manual_fallback":"核对失败禁止执行，不良事件转医疗安全上报","documentation_version":"v1.0 / 2026-08-28"}')
+                  ('018f0000-0000-7000-8000-00000000f813','therapy-tertiary','治疗排程、双核对与不良事件闭环','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"therapy-workbench","interface_code":"THERAPY_EXECUTE","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"康复、放疗和高风险治疗排程、患者/医嘱核对与执行闭环","default_entity":"THER-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"诊疗执行中心","operating_window":"工作日 07:30–20:00；急诊 7×24","timeout_ms":5000,"retry_limit":2,"manual_fallback":"核对失败禁止执行，不良事件转医疗安全上报","documentation_version":"v1.0 / 2026-08-28"}'),
+                  ('018f0000-0000-7000-8000-00000000f814','malware-scan-tertiary','恶意文件扫描与隔离阻断','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"malware-scan","interface_code":"MALWARE_SCAN","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"入档文件 ClamAV INSTREAM 扫描：干净放行、检出签名即隔离阻断","default_entity":"synthetic://scan/eicar-sample-001","default_scenario":"SUCCESS","owner_department":"信息中心安全组 / 病案管理科","operating_window":"7×24 小时","timeout_ms":10000,"retry_limit":1,"manual_fallback":"检出文件隔离阻断入档并登记审计，转安全组人工复核来源","documentation_version":"v1.0 / 2026-08-28"}'),
+                  ('018f0000-0000-7000-8000-00000000f815','cda-validation-tertiary','CDA 结构与语义校验','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"cda-validation","interface_code":"CDA_VALIDATION","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"CDA R2 结构/语义校验：XML、根元素、枚举与必填章节，失败即隔离整改","default_entity":"CDA-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"病案管理科 / 信息中心","operating_window":"工作日 08:00–20:00","timeout_ms":15000,"retry_limit":2,"manual_fallback":"结构失败文书转整改队列重新校验，未通过不得归档终态","documentation_version":"v1.0 / 2026-08-28"}'),
+                  ('018f0000-0000-7000-8000-00000000f816','direct-report-tertiary','国家传染病/院感直报基线','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"direct-report","interface_code":"DIRECT_REPORT_GATEWAY","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"法定传染病与院感事件直报：报告卡号、回执、2/24 小时时限、更正与失败重放","default_entity":"EVT-DR-SYNTHETIC-001","default_scenario":"SUCCESS","owner_department":"公共卫生科 / 院感办","operating_window":"7×24 小时；报告时限 2 小时/24 小时","timeout_ms":5000,"retry_limit":3,"manual_fallback":"PENDING_RETRY 保留事件并幂等重试；不伪造国家平台已接收；确认需转人工电话上报","documentation_version":"v1.0 / 2026-08-28"}'),
+                  ('018f0000-0000-7000-8000-00000000f817','empi-tertiary','患者主索引 EMPI 查询基线','{"schema_version":1,"fixture_source":"tertiary-mock-profile-v1","workbench_id":"empi","interface_code":"EMPI_PATIENT_LOOKUP","hospital_level":"三级甲等","organization":"江城大学附属医院","facility":"本部院区","description":"按登记号/人口学查询患者主索引候选、匹配度与疑似重复，合并必须人工确认","default_entity":"P-SYNTHETIC-10001","default_scenario":"SUCCESS","owner_department":"医务处 / 信息中心","operating_window":"7×24 小时","timeout_ms":3000,"retry_limit":2,"manual_fallback":"候选不确定时转人工核验；算法分不直接合并患者","documentation_version":"v1.0 / 2026-08-28"}')
                 ) as seed(config_id, config_key, display_name, payload)
                 on conflict (tenant_id, config_id) do update set
                   config_type = excluded.config_type, config_key = excluded.config_key,
@@ -1587,7 +1594,9 @@ final class SyntheticDataImporter implements ApplicationRunner {
                   and (coalesce(payload->>'workbench_id', '') not in (
                     'admin-auth','devices','device-monitoring',
                     'integration-connectors','integration-messages','archive-scan','archive-preservation',
-                    'pathology-workbench','anesthesia-workbench','therapy-workbench')
+                    'malware-scan','cda-validation',
+                    'pathology-workbench','anesthesia-workbench','therapy-workbench',
+                    'direct-report','empi')
                     or coalesce(payload->>'interface_code', '') = ''
                     or coalesce(payload->>'organization', '') = '')
                 """).param("tenant", TENANT_ID).update();
@@ -1703,28 +1712,36 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 """).param("tenant", TENANT_ID).param("author", USER_ID)
                 .param("approver", COLLABORATOR_USER_ID).update();
 
+        // 核心数据规模（DATA_CENTER）与科研统计（RESEARCH_STATS）不再注入固定快照：
+        // 页面提供「按登记口径计算」，由 MetricSnapshotService 从患者/就诊/病历/医嘱、
+        // 队列/成员/数据申请事实表实时计算并固化来源、公式与审计证据。
         jdbc.sql("""
-                insert into metric_snapshot(
-                  tenant_id, snapshot_id, metric_type, metric_name, metric_value, unit,
-                  dimension, period, status, computed_at)
-                select :tenant, seed.snapshot_id::uuid, seed.metric_type, seed.metric_name,
-                  seed.metric_value, seed.unit, cast(seed.dimension as jsonb), date '2026-08-27',
-                  'FINAL', now() - interval '6 hours'
-                from (values
-                  ('018f0000-0000-7000-8000-00000000f601','DATA_CENTER','患者主档案',2184320::numeric,'人','{"source":"patient","formula":"count(active patient)"}'),
-                  ('018f0000-0000-7000-8000-00000000f602','DATA_CENTER','就诊事实',2841306::numeric,'次','{"source":"encounter","formula":"count(encounter)"}'),
-                  ('018f0000-0000-7000-8000-00000000f603','DATA_CENTER','已签署病历',4720093::numeric,'份','{"source":"clinical_document_version","formula":"count(status=SIGNED)"}'),
-                  ('018f0000-0000-7000-8000-00000000f604','DATA_CENTER','医嘱事实',6088210::numeric,'条','{"source":"clinical_order","formula":"count(order)"}'),
-                  ('018f0000-0000-7000-8000-00000000f611','RESEARCH_STATS','队列快照',46::numeric,'个','{"source":"research_cohort_snapshot","formula":"count(snapshot)"}'),
-                  ('018f0000-0000-7000-8000-00000000f612','RESEARCH_STATS','纳入成员',12486::numeric,'人','{"source":"research_cohort_member","formula":"count(distinct patient)"}'),
-                  ('018f0000-0000-7000-8000-00000000f613','RESEARCH_STATS','平均队列规模',2714.35::numeric,'人','{"source":"research_cohort_snapshot","formula":"avg(member_count)"}'),
-                  ('018f0000-0000-7000-8000-00000000f614','RESEARCH_STATS','已输出研究集',12::numeric,'份','{"source":"research_dataset_request","formula":"count(status=EXPORTED)"}'),
-                  ('018f0000-0000-7000-8000-00000000f615','RESEARCH_STATS','队列人数',12486::numeric,'人','{"source":"research_cohort_snapshot","formula":"member_count at cohort v6","detail":"女性 51.8%"}'),
-                  ('018f0000-0000-7000-8000-00000000f616','RESEARCH_STATS','平均年龄',58.4::numeric,'岁','{"source":"deidentified_cohort_demographics","formula":"avg(age)","detail":"IQR 49–68"}'),
-                  ('018f0000-0000-7000-8000-00000000f617','RESEARCH_STATS','血压达标率',62.7::numeric,'%','{"source":"cohort_bp_observation","formula":"controlled / eligible * 100","detail":"口径 v3"}'),
-                  ('018f0000-0000-7000-8000-00000000f618','RESEARCH_STATS','180 天随访',84.2::numeric,'%','{"source":"cohort_followup_window","formula":"observed within 180 days / eligible * 100","detail":"缺失 15.8%"}')
-                ) as seed(snapshot_id, metric_type, metric_name, metric_value, unit, dimension)
-                on conflict (tenant_id, snapshot_id) do nothing
+                delete from metric_snapshot
+                where tenant_id = :tenant and metric_type in ('DATA_CENTER', 'RESEARCH_STATS')
+                  and (dimension->>'group' is null or dimension->>'group' not in ('AGE_DISTRIBUTION', 'TREND'))
+                """).param("tenant", TENANT_ID).update();
+
+        jdbc.sql("""
+                insert into device(
+                  tenant_id, device_id, device_code, display_name, device_type, manufacturer_model,
+                  department, gateway, standard_interface, calibration_due, clock_offset_seconds, binding_policy, status)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000f111','card-monitor-01','CARD-MON-01 · 心电监护仪','MONITOR','迈瑞 BeneVision N15','心血管内科一病区','GW-BEDSIDE-01 / VLAN-MED-12','IEEE 11073 / HL7 ORU',date '2027-02-28',2,'腕带 + 床位双标识；解绑需责任护士确认','ACTIVE'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000f112','icu-vent-07','ICU-VENT-07 · 重症呼吸机','VENTILATOR','Drager Evita V600','重症医学科','GW-ICU-02 / VLAN-ICU-08','ISO/IEEE 11073 / IHE PCD',date '2027-01-15',4,'腕带 + 床位 + 设备三标识；转床自动阻断旧绑定','ACTIVE'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000f113','pump-a-118','PUMP-A-118 · 智能输注泵','INFUSION_PUMP','BD Alaris System','急诊抢救区','GW-ER-01 / WIFI-MED-IOT','IHE PCD / FHIR DeviceMetric',date '2026-12-31',1,'患者腕带 + 医嘱双核对；高警示药双人确认','ACTIVE'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000f114','ct-01','CT-01 · 128 排 CT','IMAGING','Siemens SOMATOM Definition Edge','医学影像科','DICOM-GW-01 / VLAN-PACS','DICOM MWL / MPPS / RDSR',date '2027-03-20',3,'检查申请号 + 患者腕带核对；侧别不一致阻断','ACTIVE')
+                on conflict (tenant_id, device_id) do nothing
+                """).param("tenant", TENANT_ID).update();
+
+        jdbc.sql("""
+                insert into research_project(
+                  tenant_id, project_id, project_code, display_name, project_type,
+                  principal_investigator, registry_number, ethics_approval, approved_purpose,
+                  data_scope, member_count, expires_at, status)
+                values
+                  (:tenant,'018f0000-0000-7000-8000-00000000f121','res-2026-014','RES-2026-014 · 真实世界高血压用药与控制','OBSERVATIONAL','周教授','MRR-2026-001842','IRB-2026-119','高血压真实世界治疗结局分析',array['门诊病历','处方','检验','生命体征'],8,date '2027-07-31','ACTIVE'),
+                  (:tenant,'018f0000-0000-7000-8000-00000000f122','res-2026-021','RES-2026-021 · 心衰再入院风险队列','OBSERVATIONAL','刘主任','MRR-2026-002113','IRB-2026-184','心衰再入院风险因素分析',array['住院病历','出院记录','检验','随访'],6,date '2027-05-31','ACTIVE')
+                on conflict (tenant_id, project_id) do nothing
                 """).param("tenant", TENANT_ID).update();
     }
 
@@ -3044,6 +3061,16 @@ final class SyntheticDataImporter implements ApplicationRunner {
                 """)
                 .param("tenant", TENANT_ID).param("role", ADMIN_ROLE_ASSIGNMENT_ID).param("user", USER_ID)
                 .param("org", ORGANIZATION_ID).param("facility", FACILITY_ID).update();
+        // 演示账号林伟附加病案岗（MEDICAL_RECORDS）：病案资产中心等仅放行该岗位/CLINICAL_ADMIN，
+        // 系统管理员与临床医生均不能替代；此任期仅为合成验收数据，不修改服务端授权规则。
+        jdbc.sql("""
+                insert into role_assignment(tenant_id, role_assignment_id, user_id, organization_id,
+                  facility_id, role_code, valid_from, status)
+                values (:tenant, :role, :user, :org, :facility, 'MEDICAL_RECORDS', now(), 'ACTIVE')
+                on conflict (tenant_id, role_assignment_id) do nothing
+                """)
+                .param("tenant", TENANT_ID).param("role", DEMO_MEDICAL_RECORDS_ROLE_ASSIGNMENT_ID)
+                .param("user", USER_ID).param("org", ORGANIZATION_ID).param("facility", FACILITY_ID).update();
         jdbc.sql("""
                 insert into role_assignment(tenant_id, role_assignment_id, user_id, organization_id,
                   facility_id, role_code, valid_from, status)

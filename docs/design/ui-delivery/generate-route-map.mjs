@@ -10,7 +10,7 @@ const base=[
 'care-operations','billing','outpatient-pharmacy','inpatient-pharmacy','lab-workbench','pathology-workbench','imaging-workbench','therapy-workbench','surgery-schedule','anesthesia-workbench','device-monitoring','transfusion','clinical-tasks',
 'quality-center','department-qc','quality-rating','infection-events','credentials',
 'data-center','integration','integration-connectors','integration-mapping','integration-messages','migration','data-quality','devices','research','cohort-builder','research-stats','research-dataset',
-'ai-center','ai-assistant','ai-reminder-detail','ai-capture','ai-action-review','ai-assistant-policy','models','model-connection','model-routing','model-evaluation','agent-catalog','agent','agent-context','tool-catalog','skill-catalog','agent-compose','agent-evals','aiops',
+'ai-center','ai-assistant','ai-reminder-detail','ai-capture','ai-action-review','ai-assistant-policy','models','model-connection','model-routing','model-evaluation','agent-catalog','agent','agent-context','tool-catalog','skill-catalog','agent-compose','agent-evals','aiops','knowledge-center','pathway-graph','pathway-review','pathway-versions',
 'workflow','capability-pack','specialty-coverage','form-designer','rule-center','scope-designer','config-release','config-upgrade','install','backup','operations','release-gates','opensource',
 'admin','admin-org','admin-users','admin-roles','admin-permissions','admin-auth','admin-dictionaries','admin-master-data','admin-templates','admin-parameters','admin-jobs','admin-audit'
 ];
@@ -34,7 +34,7 @@ const clinical=/^(clinical|login-context|unified-home|patient-|emergency-access|
 const record=/^(record|lis-report|pacs-viewer|archive-|asset-detail)/;
 const execution=/^(care-operations|billing|outpatient-pharmacy|inpatient-pharmacy|lab-workbench|pathology-workbench|imaging-workbench|therapy-workbench|surgery-schedule|anesthesia-workbench|device-monitoring|transfusion|clinical-tasks)/;
 const specialty=/^(specialty-center|obgyn-|reproductive-|pediatrics-|neonatal-|mental-|ophthalmology-|ent-|dental-|dermatology-|tcm-)/;
-const governance=/^(quality-center|department-qc|quality-rating|infection-events|credentials|data-center|integration|migration|data-quality|devices|research|cohort-builder|research-stats|research-dataset|ai-center|ai-|models|model-|agent|agent-|tool-|skill-|aiops|workflow|capability-pack|specialty-coverage|form-designer|rule-center|scope-designer|config-|install|backup|operations|release-gates|opensource|admin)/;
+const governance=/^(quality-center|department-qc|quality-rating|infection-events|credentials|data-center|integration|migration|data-quality|devices|research|cohort-builder|research-stats|research-dataset|ai-center|ai-|models|model-|agent|agent-|tool-|skill-|aiops|knowledge|workflow|capability-pack|specialty-coverage|form-designer|rule-center|scope-designer|config-|install|backup|operations|release-gates|opensource|admin)/;
 function states(route){
   if(specialty.test(route))return 'default;loading;empty;partial;permission;offline;device-offline;identity-or-site-conflict;hard-block;success;recovery';
   if(record.test(route))return 'default;loading;empty;autosaving;saved;offline;permission;concurrent-conflict;rule-blocked;signed;corrected;recovery';

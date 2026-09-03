@@ -31,6 +31,7 @@
   "dependencies": {
     "@tanstack/vue-query": "^5.101.4",
     "@vitejs/plugin-vue": "^6.0.8",
+    "d3": "^7.9.0",
     "pinia": "^3.0.4",
     "typescript": "6.0.3",
     "vite": "8.2.1",
@@ -39,6 +40,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@types/d3": "^7.4.3",
     "@types/node": "^24.13.3",
     "playwright": "1.61.1",
     "vitest": "4.1.10",

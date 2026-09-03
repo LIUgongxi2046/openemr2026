@@ -12,12 +12,12 @@ import org.openemr2026.contracts.MockInvocationResultWire;
 import org.springframework.stereotype.Service;
 
 @Service
-final class MockInterfaceService {
+public final class MockInterfaceService {
 
     private static final Instant SIMULATION_EPOCH = Instant.parse("2026-08-24T00:00:00Z");
     private final TertiaryMockBusinessDataGenerator dataGenerator;
 
-    MockInterfaceService(TertiaryMockBusinessDataGenerator dataGenerator) {
+    public MockInterfaceService(TertiaryMockBusinessDataGenerator dataGenerator) {
         this.dataGenerator = dataGenerator;
     }
 
@@ -72,6 +72,17 @@ final class MockInterfaceService {
                     Map.of("batch_id", "string", "pages", "array<page>"),
                     Map.of("pages", "array<page>", "integrity", "string"),
                     "真实扫描对接：TWAIN/ISIS 或扫描仪 SDK；替换 handler 为扫描设备驱动。"),
+            mock("MALWARE_SCAN", "恶意文件扫描", "SECURITY_AV", "模拟杀毒引擎：返回干净/检出与签名证据",
+                    "ClamAV INSTREAM (TCP 3310)",
+                    Map.of("content_ref", "string", "content_hash", "string(sha256)", "media_type", "string"),
+                    Map.of("verdict", "string", "signature", "string|null", "engine", "string"),
+                    "真实杀毒对接：ClamAV INSTREAM 协议直连 3310（或商业杀毒网关）；替换 handler 为真实杀毒客户端，检出即隔离阻断入档。"),
+            mock("CDA_VALIDATION", "CDA 结构校验", "DOCUMENT_CDA", "模拟 CDA R2 结构/语义校验服务：返回逐文书校验结论与问题清单",
+                    "CDA R2 结构校验服务 (HTTP)",
+                    Map.of("document_id", "string", "content_hash", "string(sha256)", "document_type", "string"),
+                    Map.of("document_type", "string", "structural_valid", "boolean",
+                            "semantic_ok", "boolean", "checks", "array<string>", "engine", "string"),
+                    "真实 CDA 校验对接：配置 cda-validation-endpoint 的结构校验服务；替换 handler 为真实校验客户端，结构/语义失败即隔离不归档。"),
             mock("STORAGE_PRESERVE", "病案长期保存", "ARCHIVE_STORAGE", "模拟长期保存：返回存储位置、内容哈希与保存期限",
                     "S3 / OSS 对象存储 API",
                     Map.of("content_ref", "string", "content_hash", "string"),
@@ -91,7 +102,18 @@ final class MockInterfaceService {
                     "治疗执行系统 REST",
                     Map.of("therapy_id", "string", "patient_id", "uuid"),
                     Map.of("verification", "object", "adverse_event", "string|null", "status", "string"),
-                    "真实治疗对接：治疗执行系统 REST；替换 handler 为治疗系统客户端，保持双人核对/不良事件语义。"));
+                    "真实治疗对接：治疗执行系统 REST；替换 handler 为治疗系统客户端，保持双人核对/不良事件语义。"),
+            mock("DIRECT_REPORT_GATEWAY", "国家传染病/院感直报网关", "REPORT_GATEWAY", "模拟传染病与医院感染直报平台：返回报告卡号、回执、时限和更正关系",
+                    "国家/省级传染病与院感直报接口（属地规范）",
+                    Map.of("event_id", "string", "case_category", "string", "reporting_policy_code", "string"),
+                    Map.of("report_card_no", "string", "receipt_no", "string|null", "external_report_state", "string",
+                            "report_deadline_at", "date-time", "correction_of", "string|null"),
+                    "真实直报对接：按属地疾控/院感直报规范报送；替换 handler 为直报网关客户端，保持 2/24 小时时限、报告卡号、回执、更正与失败重放语义。"),
+            mock("EMPI_PATIENT_LOOKUP", "患者主索引 EMPI 查询", "EMPI", "模拟患者主索引：按登记号/身份证返回候选患者、匹配度与疑似重复",
+                    "EMPI / 患者主索引查询接口",
+                    Map.of("patient_id", "uuid", "person_code", "string"),
+                    Map.of("candidates", "array<candidate>", "best_match", "object", "possible_duplicate", "boolean"),
+                    "真实 EMPI 对接：患者主索引/MPI 查询与合并候选；替换 handler 为 EMPI 客户端，疑似重复必须人工确认，不以算法分直接合并患者。"));
 
     List<MockInterfaceWire> list() {
         return INTERFACES;
@@ -144,7 +166,7 @@ final class MockInterfaceService {
         return "string";
     }
 
-    MockInvocationResultWire invoke(String code, Map<String, Object> payload) {
+    public MockInvocationResultWire invoke(String code, Map<String, Object> payload) {
         String scenario = str(payload, "simulation_scenario", "SUCCESS").toUpperCase();
         if (!List.of("SUCCESS", "DEGRADED", "UNAVAILABLE").contains(scenario)) {
             throw new MockInterfaceException("MOCK_SCENARIO_INVALID", 422,

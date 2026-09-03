@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, ref } from 'vue';
-import { issueMetricLease, listMetricSnapshots } from '../../api/metrics';
+import { computeMetricSnapshots, issueMetricLease, listMetricSnapshots } from '../../api/metrics';
 import type { MetricSnapshotWire } from '../../generated/contracts';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
-const metricNames = ['队列人数', '平均年龄', '血压达标率', '180 天随访'] as const;
+const metricNames = ['队列快照', '纳入成员', '平均队列规模', '已输出研究集'] as const;
 const methodologyOpen = ref(false);
+const computing = ref(false);
+const computeNotice = ref('');
 const leaseQuery = useQuery({ queryKey: ['research-stats', 'lease'], queryFn: issueMetricLease, retry: false, staleTime: 5 * 60_000, gcTime: 0 });
 const itemsQuery = useQuery({ queryKey: ['research-stats', 'snapshots'], queryFn: () => listMetricSnapshots(leaseQuery.data.value!, 'RESEARCH_STATS'), enabled: () => Boolean(leaseQuery.data.value), retry: false });
 const issue = computed(() => (leaseQuery.error.value ?? itemsQuery.error.value) ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value) : null);
@@ -35,11 +37,30 @@ const latestSnapshot = computed(() => snapshots.value[0]);
 function metric(name: string) { return metrics.value.find((item) => item.metric_name === name); }
 function value(name: string) { const item = metric(name); return item ? `${new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 2 }).format(item.metric_value ?? 0)}${item.unit ?? ''}` : '—'; }
 function integer(value: number) { return new Intl.NumberFormat('zh-CN').format(value); }
+
+async function compute() {
+  const lease = leaseQuery.data.value;
+  if (!lease || computing.value) return;
+  computing.value = true;
+  computeNotice.value = '';
+  try {
+    await computeMetricSnapshots(lease, 'RESEARCH_STATS');
+    computeNotice.value = '已按登记口径从队列、成员与数据申请事实表重算科研统计快照。';
+    await itemsQuery.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error);
+    computeNotice.value = `${next.code}：${next.message}`;
+  } finally {
+    computing.value = false;
+  }
+}
 </script>
 
 <template>
   <section data-page-root class="content vue-native-page research-stats-page">
-    <div class="page-head"><div class="page-title"><p class="eyebrow">数据中心 / 科研统计</p><h1>科研统计分析</h1><p>{{ methodology.cohort_version ?? '已固化队列版本' }} · 去标识聚合 · 最新快照 …{{ latestSnapshot?.snapshot_id.slice(-8) ?? '等待生成' }}</p></div><div class="head-actions"><button class="btn" @click="methodologyOpen = true">统计口径</button><RouterLink class="btn primary" to="/research-dataset">申请患者级数据</RouterLink></div></div>
+    <nav class="admin-breadcrumb" aria-label="科研中心层级导航"><RouterLink to="/research">← 返回科研中心</RouterLink></nav>
+    <div class="page-head"><div class="page-title"><p class="eyebrow">数据中心 / 科研统计</p><h1>科研统计分析</h1><p>{{ methodology.cohort_version ?? '已固化队列版本' }} · 去标识聚合 · 最新快照 …{{ latestSnapshot?.snapshot_id.slice(-8) ?? '等待生成' }}</p></div><div class="head-actions"><button class="btn" @click="methodologyOpen = true">统计口径</button><RouterLink class="btn" to="/research-dataset">申请患者级数据</RouterLink><button class="btn primary" :disabled="computing" @click="compute">{{ computing ? '计算中…' : '按登记口径计算' }}</button></div></div>
+    <p v-if="computeNotice" class="admin-notice" role="status">{{ computeNotice }}</p>
     <ClinicalPageState v-if="leaseQuery.isPending.value || itemsQuery.isPending.value" kind="loading" message="正在读取去标识统计快照" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="itemsQuery.refetch()" />
     <template v-else>
