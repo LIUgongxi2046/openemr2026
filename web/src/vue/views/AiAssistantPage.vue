@@ -20,7 +20,7 @@ import { evaDefaultPatientContexts, hasEvaPatientContext, useEvaClinicalContext,
 type AuthorizationLevel = 'READ_ONLY' | 'STANDARD' | 'EXTENDED';
 type ContextScope = 'RECORDS' | 'ORDERS' | 'RESULTS' | 'TASKS' | 'ATTACHMENTS';
 interface TaskEvent { id: string; label: string; detail: string; status: 'running' | 'done' | 'waiting' | 'failed' }
-interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number; modelName?: string }
+interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number; modelName?: string; eventsCollapsed?: boolean; eventsUserToggled?: boolean }
 
 const route = useRoute();
 const messages = ref<ChatMessage[]>([]);
@@ -82,6 +82,10 @@ watch(availableModels, (next) => { if (next.length && !next.some((model) => mode
 
 function clinicianAgentName(name: string) { return doctorFacingTeamName(name); }
 function scopeLabel(scope: ContextScope) { return ({ RECORDS: '病历文书', ORDERS: '医嘱执行', RESULTS: '检查检验', TASKS: '任务随访', ATTACHMENTS: '病历附件' } as Record<ContextScope, string>)[scope]; }
+function lastDoneEvent(message: ChatMessage) {
+  const progressed = (message.events ?? []).filter((event) => event.status !== 'waiting');
+  return progressed[progressed.length - 1]?.label ?? '';
+}
 function authorizationLabel(level: AuthorizationLevel) { return ({ READ_ONLY: '只读', STANDARD: '标准', EXTENDED: '扩展' } as Record<AuthorizationLevel, string>)[level]; }
 
 async function reconnectWorkspace() {
@@ -131,6 +135,7 @@ function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildN
   } else {
     message.text = presentMedicalAgentResult(run);
   }
+  if (!message.eventsUserToggled) message.eventsCollapsed = terminalRunStates.has(run.state);
 }
 
 async function pollRun(message: ChatMessage, lease: NonNullable<typeof runLeaseQuery.data.value>, patientId: string | null, encounterId: string | null, fallbackChildName: string) {
@@ -205,6 +210,10 @@ async function retryRun(message: ChatMessage) {
   finally { busy.value = false; }
 }
 
+function toggleEvents(message: ChatMessage) {
+  message.eventsCollapsed = !message.eventsCollapsed;
+  message.eventsUserToggled = true;
+}
 function selectAgent(agent: MedicalAgentFamilyWire) { selectedMainAgentCode.value = agent.main_agent.agent_code; }
 function selectStage(child: MedicalAgentReleaseWire) { selectedStageCode.value = child.stage_code; draft.value = doctorFacingAiText(child.question_examples[0] ?? child.current_action); nextTick(() => composer.value?.focus()); }
 function newTask() { messages.value = []; draft.value = ''; notice.value = '已创建空白医助任务。'; nextTick(() => composer.value?.focus()); }
@@ -234,7 +243,10 @@ function unbindPatient() { patient.unbind(); messages.value = []; draft.value = 
           <div v-if="messages.length === 0" class="eva-agent-empty"><img src="/brand/ai-medical-assistant-eva-workbench.png" alt="Eva 调度诊疗数据、医助团队与系统工具" /><div><strong>交给 Eva 一项完整的诊疗任务</strong><p>可从左侧选择医助或示例，也可以直接描述目标。Eva 会在回复中展示规划、数据读取、工具调用、子医助协作和结果核对。</p></div></div>
           <article v-for="message in messages" :key="message.id" class="eva-agent-message" :class="message.role">
             <header><b>{{ message.role === 'user' ? '医生' : (message.agentName || 'Eva') }}</b><span>{{ message.role === 'user' ? '任务' : message.runId ? `任务 …${message.runId.slice(-8)}` : busy ? '正在执行' : '执行结果' }}</span></header>
-            <ol v-if="message.events?.length" class="eva-inline-events"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span><em>{{ event.status === 'done' ? '完成' : event.status === 'failed' ? '失败' : event.status === 'running' ? '进行中' : '等待' }}</em></li></ol>
+            <div v-if="message.events?.length" class="eva-events-block">
+              <button class="eva-events-toggle" type="button" :aria-expanded="!message.eventsCollapsed" @click="toggleEvents(message)"><span class="eva-events-chevron">{{ message.eventsCollapsed ? '▸' : '▾' }}</span><span class="eva-events-title">执行过程</span><em>{{ message.events.length }} 步{{ message.eventsCollapsed && lastDoneEvent(message) ? ` · ${lastDoneEvent(message)}` : '' }}</em></button>
+              <ol v-show="!message.eventsCollapsed" class="eva-inline-events"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span><em>{{ event.status === 'done' ? '完成' : event.status === 'failed' ? '失败' : event.status === 'running' ? '进行中' : '等待' }}</em></li></ol>
+            </div>
             <p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'" class="eva-running-copy">Eva 正在继续处理，请稍候…</p>
             <footer v-if="message.role === 'assistant' && message.runId" class="eva-message-actions"><span v-if="message.runState">状态：{{ medicalAgentRunStateLabel(message.runState) }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消任务</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重新执行</button></footer>
           </article>
@@ -262,6 +274,7 @@ function unbindPatient() { patient.unbind(); messages.value = []; draft.value = 
 .eva-agent-thread { display: grid; align-content: start; gap: 12px; min-height: 0; padding: 16px; overflow-y: auto; background: #fbfcfe; }.eva-agent-empty { display: grid; align-self: center; justify-items: center; gap: 8px; max-width: 680px; margin: auto; text-align: center; }.eva-agent-empty img { width: min(100%,520px); max-height: 230px; object-fit: contain; border-radius: 12px; mix-blend-mode: multiply; }.eva-agent-empty strong { color: #29435d; font-size: 15px; }.eva-agent-empty p { max-width: 560px; margin: 0; color: #708195; font-size: 10px; line-height: 1.65; }
 .eva-agent-message { display: grid; gap: 9px; width: min(88%,720px); padding: 11px 13px; border: 1px solid #d6e1eb; border-radius: 12px; background: #fff; }.eva-agent-message.user { justify-self: end; width: min(76%,620px); border-color: #a9cbea; background: #edf6ff; }.eva-agent-message header { display: flex; justify-content: space-between; gap: 8px; }.eva-agent-message header b { color: #185b83; font-size: 10px; }.eva-agent-message header span { color: #8694a2; font-size: 8px; }.eva-agent-message > p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: #3c5268; font-size: 10px; line-height: 1.65; }.eva-running-copy { color: #72869a !important; }
 .eva-message-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 7px; border-top: 1px solid #edf1f5; }.eva-message-actions span { margin-right: auto; color: #7b8998; font-size: 8px; }.eva-message-actions .btn { min-height: 28px; padding: 4px 9px; font-size: 9px; }
+.eva-events-block { display: grid; gap: 6px; }.eva-events-toggle { display: flex; align-items: center; gap: 7px; width: 100%; padding: 7px 10px; border: 1px solid #dbe4ec; border-radius: 9px; background: #f4f7fb; color: #45607a; font: inherit; font-size: 9px; cursor: pointer; }.eva-events-toggle:hover { border-color: #b9cde2; background: #eef4fa; }.eva-events-chevron { width: 12px; color: #6b8098; }.eva-events-title { font-weight: 700; }.eva-events-toggle em { margin-left: auto; color: #8291a0; font-style: normal; font-size: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%; }
 .eva-inline-events { display: grid; gap: 1px; padding: 1px; margin: 0; overflow: hidden; border: 1px solid #dbe4ec; border-radius: 9px; background: #e7edf3; list-style: none; }.eva-inline-events li { display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: center; gap: 7px; padding: 8px 9px; background: #fff; }.eva-inline-events i { display: grid; place-items: center; width: 20px; height: 20px; color: #fff; border-radius: 50%; background: #8497aa; font-size: 8px; font-style: normal; }.eva-inline-events li.done i { background: #159783; }.eva-inline-events li.running i { background: #1769e0; }.eva-inline-events li.failed i { background: #c43d45; }.eva-inline-events li > span { display: grid; gap: 2px; min-width: 0; }.eva-inline-events b { overflow: hidden; color: #344d65; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }.eva-inline-events small { overflow: hidden; color: #7b8b9a; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }.eva-inline-events em { color: #748596; font-size: 7px; font-style: normal; }
 .eva-agent-composer { display: grid; gap: 8px; padding: 12px 14px max(12px,env(safe-area-inset-bottom)); border-top: 1px solid #d8e3ef; background: #fff; }.eva-agent-composer textarea { width: 100%; min-height: 86px; max-height: 190px; padding: 11px 12px; resize: vertical; border: 1px solid #bfcfdd; border-radius: 11px; outline: none; font: inherit; font-size: 11px; line-height: 1.55; }.eva-agent-composer textarea:focus { border-color: #4f91d5; box-shadow: 0 0 0 3px rgb(23 105 224 / 10%); }.eva-agent-composer footer { display: flex; align-items: center; gap: 10px; }.eva-agent-composer footer > :first-child { flex: 1 1 auto; min-width: 0; }.eva-agent-composer footer > button { flex: 0 0 auto; min-width: 92px; }
 @media (max-width: 1100px) { .eva-harness-shell { grid-template-columns: auto minmax(0,1fr); height: auto; max-height: none; } :deep(.eva-patient-picker) { grid-column: 1 / -1; } }

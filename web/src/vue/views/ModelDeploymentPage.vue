@@ -24,6 +24,7 @@ const connectionStatusLabels: Record<ModelDeploymentWire['connection_status'], s
   NOT_CONFIGURED: '未配置', UNVERIFIED: '待验证', READY: '已连通', FAILED: '连接失败',
 };
 const providerOptions = [
+  { code: 'SYNTHETIC', label: '内置模拟模型（演示，无需真实密钥）', endpoint: 'https://synthetic-model.demo.example/v1', model: '' },
   { code: 'DEEPSEEK', label: 'DeepSeek', endpoint: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
   { code: 'QWEN', label: '阿里云百炼（通义千问）', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
   { code: 'GLM', label: '智谱开放平台', endpoint: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
@@ -89,7 +90,10 @@ function applyProviderPreset() {
   const preset = providerOptions.find((item) => item.code === form.providerCode);
   if (!preset) return;
   form.endpointUrl = preset.endpoint;
-  if (!form.displayName && preset.label !== '其他兼容接口') form.displayName = `${preset.label} 医疗模型`;
+  if (!form.displayName) {
+    if (preset.code === 'SYNTHETIC') form.displayName = '内置演示医助模型';
+    else if (preset.code !== 'OPENAI_COMPATIBLE') form.displayName = `${preset.label} 医疗模型`;
+  }
 }
 
 async function reload() {
@@ -260,7 +264,7 @@ async function revokeProcessingApproval() {
       <section class="admin-panel model-api-guide">
         <header><div><h2>大模型 API 在哪里配置？</h2><p>当前位置：AI 中心 → 模型服务 → 登记模型 API。</p></div><span class="admin-status active">已支持</span></header>
         <div class="model-api-guide-grid">
-          <article><b>① 选择模型提供方</b><p>支持 DeepSeek、通义千问、智谱、豆包以及其他 OpenAI 兼容接口。</p></article>
+          <article><b>① 选择模型提供方</b><p>演示可选「内置模拟模型」跑通全流程（含实际执行，无需真实密钥）；DeepSeek、通义千问、智谱、豆包等真实厂商需真实 API Key 才能实际调用。</p></article>
           <article><b>② 填写 API 地址</b><p>API 地址必须使用 HTTPS；模型标识由系统自动生成，无需手动填写。</p></article>
           <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥，也可留空稍后补充。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。开发/演示环境下“测试连接”为模拟验证，可填任意 8 位以上占位密钥（如 sk-demo-12345678）。</p></article>
         </div>
