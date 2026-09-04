@@ -30,7 +30,7 @@ const initialContext = evaDefaultPatientContexts.find((item) => item.patientId =
 const patient = useEvaClinicalContext(initialContext);
 const hasPatientContext = computed(() => hasEvaPatientContext(patient.current.value));
 const rootElement = ref<HTMLDialogElement | HTMLElement | null>(null);
-const dialogWidth = ref<number | null>(null);
+const centerWidth = ref<number | null>(null);
 const messages = ref<ChatMessage[]>([]);
 const draft = ref('');
 const busy = ref(false);
@@ -155,10 +155,16 @@ function startWidthResize(event: PointerEvent) {
   event.preventDefault();
   const startX = event.clientX;
   const startWidth = el.getBoundingClientRect().width;
-  const minWidth = 560;
-  const maxWidth = Math.max(minWidth, window.innerWidth - 32);
+  const isSide = props.mode === 'side';
+  const minWidth = isSide ? 320 : 560;
+  const maxWidth = Math.max(minWidth, window.innerWidth - (isSide ? 160 : 32));
   const onMove = (move: PointerEvent) => {
-    dialogWidth.value = Math.min(maxWidth, Math.max(minWidth, startWidth - (move.clientX - startX)));
+    const next = Math.min(maxWidth, Math.max(minWidth, startWidth - (move.clientX - startX)));
+    if (props.mode === 'center') {
+      centerWidth.value = next;
+    } else {
+      document.documentElement.style.setProperty('--assistant-side-width', `${next}px`);
+    }
   };
   const onUp = () => {
     window.removeEventListener('pointermove', onMove);
@@ -171,8 +177,8 @@ function startWidthResize(event: PointerEvent) {
 
 <template>
   <Teleport to="body">
-    <component :is="mode === 'center' ? 'dialog' : 'aside'" v-if="open" ref="rootElement" :open="mode === 'side' ? true : undefined" :class="[mode === 'center' ? 'global-ai-dialog' : 'global-ai-side-panel', 'xiaonan-popup-root', 'eva-popup-root']" :style="mode === 'center' && dialogWidth ? { width: `${dialogWidth}px` } : undefined" role="dialog" :aria-modal="mode === 'center'" aria-labelledby="global-ai-dialog-title" aria-describedby="global-ai-dialog-context" @cancel="cancel" @close="closed">
-      <button v-if="mode === 'center'" class="eva-popup-resizer" type="button" aria-label="拖拽调整窗口宽度" @pointerdown="startWidthResize"></button>
+    <component :is="mode === 'center' ? 'dialog' : 'aside'" v-if="open" ref="rootElement" :open="mode === 'side' ? true : undefined" :class="[mode === 'center' ? 'global-ai-dialog' : 'global-ai-side-panel', 'xiaonan-popup-root', 'eva-popup-root']" :style="mode === 'center' && centerWidth ? { width: `${centerWidth}px` } : undefined" role="dialog" :aria-modal="mode === 'center'" aria-labelledby="global-ai-dialog-title" aria-describedby="global-ai-dialog-context" @cancel="cancel" @close="closed">
+      <button class="eva-popup-resizer" type="button" aria-label="拖拽调整窗口宽度" @pointerdown="startWidthResize"></button>
       <div class="eva-popup-shell">
         <header class="eva-popup-header"><img class="global-ai-mascot" src="/brand/ai-medical-assistant-eva.png" alt="Eva 女性医疗智能助理" width="46" height="46" /><div><span>临床任务工作台</span><h2 id="global-ai-dialog-title">AI医助 Eva</h2><p id="global-ai-dialog-context">{{ contextLabel }}<template v-if="taskId"> · 当前任务已连接</template></p></div><b>{{ agents.length }} 组 · {{ childAgentCount }} 位医助</b><nav aria-label="Eva窗口模式"><button type="button" :class="{ active: mode === 'center' }" @click="changeMode('center')">中窗</button><button type="button" :class="{ active: mode === 'side' }" @click="changeMode('side')">右侧窗</button></nav><button class="eva-popup-close" type="button" aria-label="关闭AI医助Eva" @click="requestClose">×</button></header>
         <section class="eva-popup-workspace">
