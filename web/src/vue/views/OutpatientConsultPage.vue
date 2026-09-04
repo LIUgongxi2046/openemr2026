@@ -4,6 +4,7 @@ import { computed, reactive, ref } from 'vue';
 import { clinicalContext } from '../../clinical-api';
 import type { ReferralWire } from '../../generated/contracts';
 import { createReferral, issueOutpatientPatientLease, listReferrals, listReferralTargets, transitionReferral, updateReferral } from '../../api/emergency';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
@@ -27,6 +28,9 @@ const issue = computed(() => (leaseQuery.error.value ?? itemsQuery.error.value ?
   ? toClinicalIssue(leaseQuery.error.value ?? itemsQuery.error.value ?? targetsQuery.error.value) : null);
 const items = computed(() => itemsQuery.data.value ?? []);
 const targets = computed(() => targetsQuery.data.value ?? []);
+const agentPatientId = computed(() => clinicalContext.patientId ?? null);
+const agentEncounterId = computed(() => clinicalContext.encounterId ?? null);
+const agentObjective = computed(() => '基于当前会诊信息输出会诊资料准备与协同建议候选，仅供医生审阅。');
 
 const form = reactive({
   referral_type: 'INTERNAL' as 'INTERNAL' | 'EXTERNAL',
@@ -157,6 +161,8 @@ async function transition() {
         <article><span>已接受</span><strong>{{ items.filter((i) => i.status === 'ACCEPTED').length }}</strong></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <AgentInlineReview agent-code="CARE_COORDINATOR" stage-code="CONSULT" :objective="agentObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 会诊协同候选" source-route="opd-consult" />
 
       <section class="admin-panel">
           <header><div><h2>会诊 / 转诊台账</h2><p>草稿可发送，发送后可接受或拒绝。</p></div><button class="button secondary" @click="itemsQuery.refetch()">刷新</button></header>

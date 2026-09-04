@@ -2,12 +2,13 @@
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref, watchEffect } from 'vue';
 import type { LabSpecimenWire, OrderExecutionTaskWire } from '../../generated/contracts';
-import { issueOrderLease, listClinicalOrders, recordOrderExecution } from '../../clinical-api';
+import { clinicalContext, issueOrderLease, listClinicalOrders, recordOrderExecution } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { collectLabSpecimen, createLabSpecimen, issueExecutionLease, listLabSpecimens, receiveLabSpecimen, rejectLabSpecimen } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type SpecimenType = LabSpecimenWire['specimen_type'];
@@ -45,6 +46,9 @@ const eligibleOrderItems = computed(() => (ordersQuery.data.value?.orders ?? [])
   .filter((item) => item.item_type === 'LAB' && !specimens.value.some((specimen) => specimen.order_item_id === item.order_item_id)));
 const collectedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'COLLECTED').length);
 const receivedCount = computed(() => specimens.value.filter((s) => s.collection_status === 'RECEIVED').length);
+const agentPatientId = computed(() => clinicalContext.patientId || null);
+const agentEncounterId = computed(() => clinicalContext.encounterId || null);
+const labSchedulingObjective = computed(() => '对当前检验医技排程与号源进行调度建议，输出候选，仅供医生审阅。');
 
 const form = reactive({ orderItemId: '', specimenType: 'BLOOD' as SpecimenType });
 const busy = ref('');
@@ -157,6 +161,8 @@ async function reject() {
         <article><span>已采集</span><strong>{{ collectedCount }}</strong></article>
         <article><span>已接收</span><strong>{{ receivedCount }}</strong></article>
       </section>
+
+      <AgentInlineReview agent-code="MEDICAL_TECH_SCHEDULING" stage-code="EXAM_SLOT" :objective="labSchedulingObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 医技预约调度候选" source-route="lab-workbench" />
 
       <section class="admin-panel">
           <header><div><h2>标本台账</h2><p>状态机：ORDERED → COLLECTED → RECEIVED。</p></div><button class="button secondary" @click="specimensQuery.refetch()">刷新</button></header>

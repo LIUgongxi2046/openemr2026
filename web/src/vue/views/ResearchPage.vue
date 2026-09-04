@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
+import { clinicalContext } from '../../clinical-api';
 import type { ResearchProjectWire } from '../../generated/contracts';
 import {
   createResearchProject,
@@ -11,6 +12,7 @@ import {
 import { toClinicalIssue } from '../clinical-error';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 
 const typeLabels: Record<ResearchProjectWire['project_type'], string> = {
@@ -44,6 +46,10 @@ const issue = computed(() => {
   const error = leaseQuery.error.value ?? projectsQuery.error.value;
   return error ? toClinicalIssue(error) : null;
 });
+
+const agentPatientId = computed(() => clinicalContext.patientId || null);
+const agentEncounterId = computed(() => clinicalContext.encounterId || null);
+const researchFollowupObjective = computed(() => '对当前科研项目进行随访计划建议，输出候选，仅供医生审阅。');
 
 function openCreate() {
   form.projectCode = ''; form.displayName = ''; form.projectType = 'OBSERVATIONAL';
@@ -131,6 +137,8 @@ function formatDate(value: string | null | undefined): string {
         <article><span>项目成员</span><strong>{{ projects.reduce((sum, item) => sum + item.member_count, 0) }}</strong><small>累计</small></article>
         <article><span>数据申请</span><RouterLink class="metric-link" to="/research-dataset">受控交付 →</RouterLink><small>需独立审批</small></article>
       </section>
+
+      <AgentInlineReview agent-code="RESEARCH_FOLLOWUP" stage-code="COHORT" :objective="researchFollowupObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 科研随访候选" source-route="research" />
 
       <section class="admin-panel">
         <header><div><h2>科研项目台账</h2><p>项目编码、类型与批准用途不可覆盖修改；停用保留历史数据利用证据。</p></div></header>

@@ -8,6 +8,7 @@ import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import EmergencyPatientStrip from '../components/EmergencyPatientStrip.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({ queryKey: ['emergency', 'record', 'lease'], queryFn: () => issueEmergencyLease('EMERGENCY_RECORD'), retry: false, staleTime: 5 * 60_000, gcTime: 0 });
@@ -17,6 +18,9 @@ const documentsQuery = useQuery({ queryKey: ['emergency', 'record', 'documents']
 const issue = computed(() => (leaseQuery.error.value ?? encounterLeaseQuery.error.value ?? resuscitationsQuery.error.value ?? documentsQuery.error.value) ? toClinicalIssue(leaseQuery.error.value ?? encounterLeaseQuery.error.value ?? resuscitationsQuery.error.value ?? documentsQuery.error.value) : null);
 const resuscitations = computed(() => resuscitationsQuery.data.value ?? []);
 const documents = computed(() => documentsQuery.data.value ?? []);
+const agentPatientId = computed(() => clinicalContext.emergencyPatientId);
+const agentEncounterId = computed(() => clinicalContext.emergencyEncounterId);
+const agentObjective = computed(() => '基于当前急诊就诊信息起草急诊病历候选，仅供医生审阅后采用。');
 const currentResuscitations = computed(() => resuscitations.value.filter((i) => !i.voided_at));
 const currentResuscitation = computed(() => currentResuscitations.value.find((item) => item.status === 'IN_PROGRESS') ?? currentResuscitations.value[0] ?? null);
 const outcomeLabels: Record<string, string> = { PENDING: '抢救中', ROSC: '自主循环恢复', DEATH: '死亡', TRANSFERRED: '转科/转院' };
@@ -41,7 +45,9 @@ async function confirmVoid() { const lease = encounterLeaseQuery.data.value; con
     <div class="page-head"><div class="page-title"><h1>急诊病历与抢救记录</h1><p>急诊病历、抢救事件、医嘱结果和补录双时间在同一时间轴编辑</p></div><div class="head-actions"><button class="btn" @click="versionsOpen=true">病历版本</button><button class="btn danger" :disabled="currentResuscitations.some((item)=>item.status==='IN_PROGRESS')" @click="createOpen=true">新增抢救事件</button><button class="btn primary" @click="signOpen=true">提交审签</button></div></div>
     <ClinicalPageState v-if="leaseQuery.isPending.value || encounterLeaseQuery.isPending.value || resuscitationsQuery.isPending.value || documentsQuery.isPending.value" kind="loading" message="正在读取抢救记录与急诊病历" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="reload" />
-    <template v-else><EmergencyPatientStrip /><p v-if="notice" class="admin-notice">{{ notice }}</p>
+    <template v-else><EmergencyPatientStrip />
+      <AgentInlineReview agent-code="DOCUMENT_DRAFTER" stage-code="OUTPATIENT" :objective="agentObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 急诊文书起草候选" source-route="er-record" />
+      <p v-if="notice" class="admin-notice">{{ notice }}</p>
       <div class="grid course-layout emergency-record-prototype">
         <aside class="card scroll-card emergency-record-timeline"><div class="card-head">时间轴与文书</div>
           <div v-for="item in resuscitations" :key="item.resuscitation_id" class="queue-item" :class="{ active:item.resuscitation_id===currentResuscitation?.resuscitation_id, 'is-voided':item.voided_at }"><div class="queue-title">{{ formatDate(item.started_at) }} · 抢救{{ item.status==='IN_PROGRESS'?'进行中':'已闭环' }}</div><div class="queue-meta">来源：抢救记录 · {{ item.voided_at?'已作废':outcomeLabels[item.outcome] }}</div><div class="inline-actions emergency-row-actions"><button class="btn sm" :disabled="Boolean(busy)||item.status!=='IN_PROGRESS'||Boolean(item.voided_at)" @click="outcomeTarget=item">编辑结局</button><button class="btn sm danger" :disabled="Boolean(busy)||Boolean(item.voided_at)" @click="voidTarget=item">删除</button></div></div>

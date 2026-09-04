@@ -16,6 +16,7 @@ import {
   listWaitingQueue,
 } from '../../api/emergency';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const facilityLease = useQuery({
@@ -93,6 +94,10 @@ const draftHandovers = computed(() => handoverList.value.filter((item) => item.s
 const currentQueueEntry = computed(() => queue.value.find((entry) => entry.patient_id === clinicalContext.emergencyPatientId && entry.encounter_id === clinicalContext.emergencyEncounterId) ?? null);
 const currentTriage = computed(() => triageList.value[0] ?? null);
 const currentNursingRisk = computed(() => noteList.value.find((item) => item.risk_flag) ?? null);
+
+const agentPatientId = computed(() => clinicalContext.emergencyPatientId);
+const agentEncounterId = computed(() => clinicalContext.emergencyEncounterId);
+const emergencySummaryObjective = computed(() => '汇总当前急诊就诊的分诊与诊疗进展，输出摘要候选，仅供医生审阅。');
 
 function shortId(value: string) { return `…${value.slice(-8)}`; }
 function formatTime(value: string | null | undefined) {
@@ -172,6 +177,8 @@ async function reload() {
         <div class="metric"><div class="name">急会诊临期</div><div class="value">{{ draftHandovers.length }}</div><div class="trend warning-text">待完成交接 {{ draftHandovers.length }} 项</div></div>
         <div class="metric"><div class="name">留观待去向</div><div class="value">{{ pendingObservations.length }}</div><div class="trend">未登记预入院 {{ unregistered.length }} 人</div></div>
       </div>
+
+      <AgentInlineReview agent-code="ENCOUNTER_SUMMARIZER" stage-code="TRIAGE" :objective="emergencySummaryObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 急诊就诊摘要候选" source-route="emergency" />
 
       <div class="grid emergency-grid">
         <aside class="card scroll-card emergency-queue-rail" aria-label="急诊队列">

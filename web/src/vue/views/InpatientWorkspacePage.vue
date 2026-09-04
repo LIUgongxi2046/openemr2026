@@ -12,6 +12,7 @@ import {
   type InpatientSyntheticActorKey,
 } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import InpatientPrototypeRail from '../components/InpatientPrototypeRail.vue';
@@ -46,6 +47,9 @@ const selectedActorKey = ref<InpatientSyntheticActorKey>(getInpatientSyntheticAc
 const issue = computed(() => inpatient.error.value ? toClinicalIssue(inpatient.error.value) : null);
 const overview = computed(() => inpatient.data.value?.overview);
 const admission = computed(() => overview.value?.admission);
+const agentPatientId = computed(() => admission.value?.patient_id ?? null);
+const agentEncounterId = computed(() => admission.value?.encounter_id ?? null);
+const inpatientDailyObjective = computed(() => '汇总当前住院就诊的日常诊疗进展，输出摘要候选，仅供医生审阅。');
 const rules = computed(() => inpatient.data.value?.documentRules ?? []);
 const pendingCount = computed(() => overview.value?.document_tasks.filter((task) => task.task_state !== 'COMPLETED').length ?? 0);
 const overdueCount = computed(() => overview.value?.document_tasks.filter((task) => task.task_state === 'OVERDUE').length ?? 0);
@@ -143,6 +147,7 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { m
         <div class="metric"><div class="name">已超时任务</div><div class="value" :class="{ 'danger-text': overdueCount > 0 }">{{ overdueCount }}</div><div class="trend">{{ overdueCount > 0 ? '需立即处理' : '当前无超时' }}</div></div>
         <div class="metric"><div class="name">数据水印</div><div class="value">{{ overview.data_watermark.slice(0, 8) }}</div><div class="trend">刷新后重新校验</div></div>
       </div>
+      <AgentInlineReview agent-code="ENCOUNTER_SUMMARIZER" stage-code="INPATIENT_DAILY" :objective="inpatientDailyObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 住院日常摘要候选" source-route="inpatient" />
       <div class="grid inpatient-grid"><aside class="card scroll-card"><div class="card-head">病区患者 <span class="sub">{{ inpatient.data.value.worklist.length }} 人</span></div><div class="ward-list"><button v-for="item in inpatient.data.value.worklist" :key="item.admission_id" type="button" :class="{ active: item.admission_id === admission.admission_id }" @click="openPatient(item)"><b>{{ item.bed_label }}床 · {{ item.patient_display_name }}</b><span>待办 {{ item.pending_task_count }} · 超时 {{ item.overdue_task_count }}</span></button></div></aside><section class="editor-card inpatient-overview-card"><div class="card-toolbar"><div><h2>单患者住院总览</h2><span class="state-chip signed">{{ admission.status }}</span></div><div class="toolbar-actions"><RouterLink class="button secondary" to="/inpatient-overview">打开完整总览</RouterLink><button class="button secondary" :disabled="Boolean(busy) || admission.status !== 'ADMITTED' || selectedActorKey !== 'AUTHOR'" @click="dailyCourseOpen = true">新增病程</button><button v-if="admission.status === 'ADMITTED'" class="button secondary" :disabled="Boolean(busy) || selectedActorKey !== 'AUTHOR'" @click="eventOpen = true">记录临床事件</button><RouterLink v-if="admission.status === 'ADMITTED'" class="button secondary" to="/inpatient-discharge">办理出院</RouterLink></div></div>
         <div class="inpatient-summary-grid"><div><span>入院时间</span><strong>{{ formatDate(admission.admitted_at) }}</strong></div><div><span>当前病区</span><strong>{{ overview.ward_display_name }}</strong></div><div><span>当前床位</span><strong>{{ overview.bed_label }}床</strong></div><div><span>住院号</span><strong>…{{ admission.admission_id.slice(-8) }}</strong></div></div>
         <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>

@@ -24,6 +24,7 @@ import {
   listOutpatientFollowups,
   updateOutpatientFollowup,
 } from '../../api/outpatient-followup';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -51,6 +52,9 @@ const issue = computed(() => [patientLease.error.value, encounterLease.error.val
   ? toClinicalIssue([patientLease.error.value, encounterLease.error.value, followupsQuery.error.value, encounterQuery.error.value].find(Boolean)) : null);
 const followups = computed(() => followupsQuery.data.value ?? []);
 const pending = computed(() => followups.value.filter((f) => f.status === 'PENDING'));
+const agentPatientId = computed(() => clinicalContext.patientId);
+const agentEncounterId = computed(() => clinicalContext.encounterId);
+const followupReviewObjective = computed(() => '对当前就诊进行随访与转归协同复核，输出带来源的随访计划候选，不改写任务终态。');
 
 const form = reactive({ followupType: 'FOLLOWUP', content: '', dueAt: '' });
 const busy = ref('');
@@ -215,6 +219,8 @@ async function finishEncounter() {
         <div class="metric"><div class="name">已完成</div><div class="value">{{ followups.filter((f) => f.status === 'COMPLETED').length }}</div><div class="trend">结局留痕</div></div>
         <div class="metric"><div class="name">就诊状态</div><div class="value">{{ encounterQuery.data.value?.status === 'FINISHED' ? '已终诊' : '诊疗中' }}</div><div class="trend">{{ encounterQuery.data.value?.status || '—' }}</div></div>
       </div>
+
+      <AgentInlineReview agent-code="CARE_COORDINATOR" stage-code="FOLLOWUP" :objective="followupReviewObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 随访协同候选" source-route="opd-followup" />
 
       <div v-if="notice" class="inline-notice" role="status">{{ notice }}</div>
 

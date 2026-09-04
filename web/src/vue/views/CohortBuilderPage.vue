@@ -15,6 +15,7 @@ import {
 } from '../../api/data';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -53,6 +54,10 @@ const selectedCohort = computed(() => cohorts.value.find((cohort) => cohort.rese
 const activeCount = computed(() => cohorts.value.filter((cohort) => cohort.status === 'ACTIVE').length);
 const detailIssue = computed(() => (snapshotsQuery.error.value ?? membersQuery.error.value)
   ? toClinicalIssue(snapshotsQuery.error.value ?? membersQuery.error.value) : null);
+
+const agentPatientId = computed(() => clinicalContext.patientId || null);
+const agentEncounterId = computed(() => clinicalContext.encounterId || null);
+const researchFollowupObjective = computed(() => '对当前科研队列进行入组与随访建议，输出候选，仅供医生审阅。');
 
 const form = reactive({ cohortCode: '', cohortName: '', inclusionCriteria: '', exclusionCriteria: '' });
 const memberForm = reactive({ patientId: clinicalContext.patientId });
@@ -181,6 +186,8 @@ async function computeMember() {
         <article><span>成员数</span><strong>{{ selectedCohort ? members.length : 0 }}</strong><small>{{ selectedCohort ? selectedCohort.cohort_code : '未选择' }}</small></article>
       </section>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <AgentInlineReview agent-code="RESEARCH_FOLLOWUP" stage-code="COHORT" :objective="researchFollowupObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 科研队列随访候选" source-route="cohort-builder" />
 
       <section class="admin-panel">
           <header>

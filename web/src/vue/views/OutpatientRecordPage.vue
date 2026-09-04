@@ -21,6 +21,7 @@ import {
   saveSecureDocumentDraft,
   type SecureDocumentDraft,
 } from '../../secure-draft-cache';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 import { useCurrentDocument } from '../composables/use-current-document';
@@ -66,6 +67,9 @@ const conflictFields = computed(() => {
   return sectionFields.filter(([field]) =>
     String(conflictLocal.value[field] ?? '') !== String(remoteSections[field] ?? ''));
 });
+const agentPatientId = computed(() => current.data.value?.lease.patient_id ?? null);
+const agentEncounterId = computed(() => current.data.value?.lease.encounter_id ?? null);
+const outpatientDraftObjective = computed(() => '基于当前门诊就诊信息起草病历文书候选，仅供医生审阅后采用，不自动写入。');
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let maximumTimer: ReturnType<typeof setTimeout> | undefined;
@@ -381,6 +385,7 @@ async function useRemoteVersion() {
         <div><dt>患者标识</dt><dd>…{{ current.data.value?.lease.patient_id?.slice(-6) }}</dd></div>
         <div><dt>就诊类型</dt><dd>门诊 · 进行中</dd></div><div><dt>数据范围</dt><dd>当前患者 / 当前就诊</dd></div></dl>
       <span v-if="current.data.value" class="lease-badge">受控租约</span></section>
+    <AgentInlineReview v-if="current.data.value" agent-code="DOCUMENT_DRAFTER" stage-code="OUTPATIENT" :objective="outpatientDraftObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 门诊文书起草候选" source-route="opd-record" />
     <ClinicalPageState v-if="current.isPending.value" kind="loading" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="current.refetch()" />
     <div v-else-if="document && current.data.value" class="clinical-grid" :class="{ 'assistant-collapsed': !assistantOpen }">

@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import type { QualityFindingWire } from '../../generated/contracts';
 import { runQualityChecks, saveDocumentDraft, signDocument } from '../../clinical-api';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import RecordPatientStrip from '../components/RecordPatientStrip.vue';
@@ -33,6 +34,9 @@ const activeSection = ref('present_illness');
 
 const issue = computed(() => current.error.value ? toClinicalIssue(current.error.value) : null);
 const document = computed(() => current.data.value?.document);
+const agentPatientId = computed(() => current.data.value?.lease.patient_id ?? null);
+const agentEncounterId = computed(() => current.data.value?.lease.encounter_id ?? null);
+const agentDraftObjective = computed(() => '基于当前病历起草或完善文书内容候选，仅供医生审阅后采用，不自动写入。');
 const filledSections = computed(() => Object.values(sections.value).filter((value) => String(value ?? '').trim()).length);
 const saveStateLabel = computed(() => ({
   idle: '尚未编辑', dirty: '有未保存更改', saving: '正在保存…', saved: '已保存',
@@ -122,6 +126,7 @@ function confirmSign() {
     <div class="page-heading"><div><h1>病历 · 专注编辑</h1><p>{{ document ? `草稿 v${document.version_no} · ${document.document_type_code}` : '当前版本' }} · {{ saveStateLabel }}</p></div>
       <div class="toolbar-actions"><RouterLink class="btn" to="/record-sources">来源证据</RouterLink><button class="btn" type="button" :disabled="Boolean(busy) || saveState === 'dirty'" @click="checkQuality">质控 {{ findings.length }}</button><button class="btn primary" type="button" :disabled="Boolean(busy) || document?.status !== 'DRAFT' || saveState === 'dirty'" @click="sign">提交审签</button></div></div>
     <RecordPatientStrip />
+    <AgentInlineReview v-if="current.data.value" agent-code="DOCUMENT_DRAFTER" stage-code="OUTPATIENT" :objective="agentDraftObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="DOCUMENT" :target-id="agentEncounterId" title="AI 病历起草候选" source-route="record-editor" />
     <ClinicalPageState v-if="current.isPending.value" kind="loading" message="正在加载当前病历版本" />
     <ClinicalPageState v-else-if="issue" kind="error" :code="issue.code" :message="issue.message" @retry="current.refetch()" />
     <div v-else-if="document && current.data.value" class="focus-editor record-real-focus">

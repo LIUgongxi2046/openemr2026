@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ImagingOrderWire, OrderExecutionTaskWire } from '../../generated/contracts';
 import { authSession } from '../../auth-session';
-import { issueOrderLease, listClinicalOrders, recordOrderExecution } from '../../clinical-api';
+import { clinicalContext, issueOrderLease, listClinicalOrders, recordOrderExecution } from '../../clinical-api';
 import { developmentCopy } from '../../development-copy';
 import { createImagingOrder, issueExecutionLease, issueExecutionPatientLease, listImagingOrders, transitionImagingOrder } from '../../api/execution';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 type Modality = ImagingOrderWire['modality'];
@@ -63,6 +64,9 @@ const activeRoleCodes = computed(() => new Set(authSession.user?.role_codes ?? [
 const canPrescribe = computed(() => ['CLINICIAN', 'ATTENDING_PHYSICIAN', 'CHIEF_PHYSICIAN']
   .some((role) => activeRoleCodes.value.has(role)));
 const canExecute = computed(() => activeRoleCodes.value.has('RADIOLOGIST'));
+const agentPatientId = computed(() => clinicalContext.patientId || null);
+const agentEncounterId = computed(() => clinicalContext.encounterId || null);
+const imagingSchedulingObjective = computed(() => '对当前影像设备与检查排程进行调度建议，输出候选，仅供医生审阅。');
 
 const form = reactive({ modality: 'CT' as Modality, bodyPart: 'CHEST' as BodyPart, laterality: 'NONE' as Laterality, contrastRequired: false });
 const busy = ref('');
@@ -143,6 +147,8 @@ async function transition(order: ImagingOrderWire, action: 'PERFORM' | 'REPORT' 
         <article><span>已报告</span><strong>{{ reportedCount }}</strong></article>
         <article><span>造影剂</span><strong>{{ orders.filter((o) => o.contrast_required).length }}</strong><small>需造影</small></article>
       </section>
+
+      <AgentInlineReview agent-code="MEDICAL_TECH_SCHEDULING" stage-code="EQUIPMENT" :objective="imagingSchedulingObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 影像排程候选" source-route="imaging-workbench" />
 
       <section class="admin-panel">
           <header><div><h2>影像检查台账</h2><p>状态机：ORDERED → PERFORMED → REPORTED（或 CANCELLED）。</p></div><button class="button secondary" @click="ordersQuery.refetch()">刷新</button></header>

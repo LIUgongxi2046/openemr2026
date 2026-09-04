@@ -17,6 +17,7 @@ import {
   updateEmergencyPreadmission,
   voidEmergencyPreadmission,
 } from '../../api/emergency';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -56,6 +57,10 @@ const voidPreadmissionTarget = ref<EmergencyPreadmissionWire | null>(null);
 const linkPreadmissionTarget = ref<EmergencyPreadmissionWire | null>(null);
 const preadmissionVoidReason = ref('');
 const preadmissions = computed(() => preadmissionQuery.data.value ?? []);
+
+const agentPatientId = computed(() => clinicalContext.emergencyPatientId);
+const agentEncounterId = computed(() => clinicalContext.emergencyEncounterId);
+const triageSummaryObjective = computed(() => '基于当前急诊分诊信息汇总病情摘要候选，仅供医生审阅。');
 
 function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short', hour12: false }).format(new Date(value)); }
 function resetForm() { Object.assign(form, { triage_level: 'LEVEL_3', chief_complaint: '', immediate_action_required: false, triaged_at: new Date().toISOString().slice(0, 16) }); editingTarget.value = null; }
@@ -107,6 +112,7 @@ function switchEmergencyPatient(entry: WaitingQueueEntryWire) {
         <div class="metric"><div class="name">实时队列</div><div class="value">{{ queue.length }}</div><div class="trend warning-text">未配置区域床位上限时不伪造容量百分比</div></div>
       </div>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+      <AgentInlineReview agent-code="ENCOUNTER_SUMMARIZER" stage-code="TRIAGE" :objective="triageSummaryObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 分诊摘要候选" source-route="er-triage" />
       <div class="grid secondary-grid emergency-prototype-layout">
         <section class="card scroll-card emergency-prototype-main">
           <div class="card-head">急诊患者队列 <span class="sub">到院顺序与实时状态</span></div>

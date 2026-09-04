@@ -8,6 +8,7 @@ import { createCharge, createPriceCatalogVersion, issueExecutionLease, listCharg
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import ExecutionPatientContextBar from '../components/ExecutionPatientContextBar.vue';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import { toClinicalIssue } from '../clinical-error';
 
 const leaseQuery = useQuery({
@@ -31,6 +32,10 @@ const issue = computed(() => (leaseQuery.error.value ?? chargesQuery.error.value
 const charges = computed(() => chargesQuery.data.value ?? []);
 const totalAmount = computed(() => charges.value.filter((c) => c.status === 'CHARGED').reduce((sum, c) => sum + c.amount, 0));
 const reversedCount = computed(() => charges.value.filter((c) => c.status === 'REVERSED').length);
+
+const agentPatientId = computed(() => clinicalContext.patientId || null);
+const agentEncounterId = computed(() => clinicalContext.encounterId || null);
+const insuranceComplianceObjective = computed(() => '对当前收费与医保合规情况进行复核，输出候选建议，仅供医生审阅。');
 
 const chargeForm = reactive({ itemCode: '', quantity: 1 });
 const priceForm = reactive({ catalogCode: '', itemCode: '', itemName: '', unitPrice: 0, unit: '次', releaseVersion: '' });
@@ -114,6 +119,8 @@ async function submitReverse(charge: ChargeItemWire) {
         <article><span>已收金额</span><strong>{{ totalAmount.toFixed(2) }}</strong></article>
         <article><span>冲正笔数</span><strong>{{ reversedCount }}</strong></article>
       </section>
+
+      <AgentInlineReview agent-code="INSURANCE_COMPLIANCE" stage-code="CHARGE" :objective="insuranceComplianceObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 医保合规候选" source-route="billing" />
 
       <section class="admin-panel">
           <header><div><h2>收费台账</h2><p>单价与金额由价格目录匹配，冲正必须附原因。</p></div><button class="button secondary" @click="chargesQuery.refetch()">刷新</button></header>

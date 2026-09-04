@@ -8,6 +8,7 @@ import {
   issueInpatientLease, issueWardLease, loadInpatientDocumentRules, loadInpatientDocumentVersions,
   loadInpatientOverview, setInpatientSyntheticActor, startInpatientDocumentTask, type InpatientSyntheticActorKey,
 } from '../../clinical-api';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import BusinessActionDialog from '../components/BusinessActionDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import InpatientPrototypeRail from '../components/InpatientPrototypeRail.vue';
@@ -50,6 +51,10 @@ const filteredTasks = computed(() => overview.value?.document_tasks.filter((task
 const creatableRules = computed(() => journey.data.value?.rules.filter((rule) => ['DAILY', 'MANUAL'].includes(rule.trigger_type)) ?? []);
 const selectedTask = computed(() => documentTasks.value.find((task) => (task.completed_document_id || task.working_document_id) === selectedDocumentId.value));
 const startTaskTarget = computed(() => overview.value?.document_tasks.find((task) => task.task_id === startTaskId.value) ?? null);
+const agentPatientId = computed(() => admission.value?.patient_id ?? null);
+const agentEncounterId = computed(() => admission.value?.encounter_id ?? null);
+const firstCourseObjective = computed(() => '基于当前住院就诊起草首次病程记录候选，仅供医生审阅后采用。');
+const dischargeEducationObjective = computed(() => '基于当前住院就诊生成出院用药指导与健康宣教候选，仅供医生审阅后采用。');
 
 watch(documentTasks, (tasks) => {
   if (!selectedDocumentId.value && tasks.length) selectedDocumentId.value = tasks[0].completed_document_id || tasks[0].working_document_id || '';
@@ -143,6 +148,8 @@ function formatDate(value?: string | null) {
     <template v-else-if="overview && admission">
       <section class="patient-strip" aria-label="住院患者上下文"><div class="patient-avatar">{{ overview.patient_display_name.slice(0, 1) }}</div><div><strong>{{ overview.patient_display_name }}</strong><span>当前住院上下文 · 所有动作重新校验授权</span></div><dl><div><dt>状态</dt><dd>{{ admission.status }}</dd></div><div><dt>病区床位</dt><dd>{{ overview.ward_display_name }} · {{ overview.bed_label }}床</dd></div><div><dt>当前岗位</dt><dd>{{ activeActor?.roleLabel ?? '当前登录岗位' }}</dd></div></dl><span class="lease-badge">…{{ admission.admission_id.slice(-8) }}</span></section>
       <div v-if="notice" class="inline-notice" :class="{ error: notice.includes('：') }" role="status">{{ notice }}</div>
+      <AgentInlineReview v-if="routeId === 'inpatient-course'" agent-code="DOCUMENT_DRAFTER" stage-code="FIRST_COURSE" :objective="firstCourseObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 首次病程记录候选" source-route="inpatient-course" />
+      <AgentInlineReview v-else-if="routeId === 'inpatient-discharge'" agent-code="PATIENT_EDUCATION" stage-code="MEDICATION_GUIDE" :objective="dischargeEducationObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 出院宣教候选" source-route="inpatient-discharge" />
 
       <template v-if="routeId === 'inpatient-overview'">
         <div class="prototype-secondary-grid"><div class="prototype-primary-stack">
