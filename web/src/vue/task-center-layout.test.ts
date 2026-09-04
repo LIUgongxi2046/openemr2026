@@ -11,7 +11,7 @@ describe('任务中心布局与临床路径规则契约', () => {
   });
 
   it('路径页面明确展示规则、版本快照和可执行必做任务', () => {
-    expect(page).toContain('临床路径规则、版本与执行');
+    expect(page).toContain('临床路径配置与发布');
     expect(page).toContain('版本是发布快照');
     expect(page).toContain("pathwayRuleCount(item, 'entry_rules')");
     expect(page).toContain("pathwayRuleCount(item, 'variance_rules')");

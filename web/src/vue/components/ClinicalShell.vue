@@ -183,7 +183,7 @@ const subNav = computed<SubNav | null>(() => {
       items: [
         ['clinical-tasks?view=overview', '任务总览'], ['clinical-tasks?view=team', '团队队列'],
         ['clinical-tasks?view=collaboration', '委托协作'], ['clinical-tasks?view=notifications', '消息通知'],
-        ['clinical-tasks?view=pathway', '临床路径'], ['clinical-tasks?view=rules', '任务规则'],
+        ['clinical-tasks?view=pathway', '临床路径配置'], ['clinical-tasks?view=rules', '任务规则'],
       ],
     };
   }
@@ -218,7 +218,7 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
   }
   if (knowledgeCenterRoutes.includes(c)) {
-    return { kind: 'center', title: '知识中心', active: c, items: [['knowledge-center', '路径知识库'], ['pathway-graph', '知识图谱'], ['pathway-review', '审核队列'], ['pathway-versions', '版本历史']] };
+    return { kind: 'center', title: '知识中心', active: c, items: [['knowledge-center', '临床路径知识库'], ['pathway-graph', '知识图谱'], ['pathway-review', '审核队列'], ['pathway-versions', '版本历史']] };
   }
   if (configurationRoutes.includes(c)) {
     return { kind: 'center', title: '业务配置', active: c, items: [['workflow', '流程设计'], ['capability-pack', '能力包'], ['specialty-coverage', '科室适配'], ['form-designer', '表单模板'], ['rule-center', '规则时限'], ['scope-designer', '职责范围']] };

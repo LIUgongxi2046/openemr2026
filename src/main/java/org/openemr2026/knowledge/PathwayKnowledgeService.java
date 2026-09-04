@@ -207,7 +207,7 @@ final class PathwayKnowledgeService {
                     where tenant_id = :tenant and pathway_version_id = :version
                     """).param("actor", identity.userId()).param("tenant", identity.tenantId())
                     .param("version", versionId).update();
-            publishExecutionConfig(identity, head.knowledgeId(), versionId);
+            materializeConfigurationDraft(identity, head.knowledgeId(), versionId);
             appendEvidence(identity, versionId, "PATHWAY_VERSION_PUBLISHED", "PathwayVersionPublished");
             completeCommand(identity, "PATHWAY_VERSION_APPROVE", idempotencyKey, versionId);
             return version(identity.tenantId(), versionId);
@@ -227,7 +227,6 @@ final class PathwayKnowledgeService {
                     set status = 'RETIRED'
                     where tenant_id = :tenant and pathway_version_id = :version
                     """).param("tenant", identity.tenantId()).param("version", versionId).update();
-            retireExecutionConfig(identity.tenantId(), head.knowledgeId());
             appendEvidence(identity, versionId, "PATHWAY_VERSION_RETIRED", "PathwayVersionRetired");
             completeCommand(identity, "PATHWAY_VERSION_RETIRE", idempotencyKey, versionId);
             return version(identity.tenantId(), versionId);
@@ -503,91 +502,85 @@ final class PathwayKnowledgeService {
         return new PathwayKnowledgeSearchResultWire(references);
     }
 
-    // 发布：知识内容 -> 执行配置（方案 A：生成 clinical_pathway_*）
-    private void publishExecutionConfig(ClinicalIdentity identity, UUID knowledgeId, UUID versionId) {
+    // 收敛方案：知识审批通过后，把知识内容物化成一个「临床路径配置」草稿（config_item CLINICAL_PATHWAY）。
+    // 执行配置 clinical_pathway_* 只由业务配置域发布（ClinicalPathwayConfigurationPublisher），
+    // 知识域不再直写执行配置，消除双源发布冲突。
+    private void materializeConfigurationDraft(ClinicalIdentity identity, UUID knowledgeId, UUID versionId) {
         PathwayKnowledgeWire knowledge = knowledge(identity.tenantId(), knowledgeId);
         List<PathwayKnowledgeStageWire> stages = stages(identity.tenantId(), versionId);
-        UUID definitionId = jdbc.sql("""
-                select pathway_definition_id from clinical_pathway_definition
-                where tenant_id = :tenant and pathway_code = :code
-                """).param("tenant", identity.tenantId()).param("code", knowledge.pathwayCode())
-                .query(UUID.class).optional().orElse(null);
-        if (definitionId == null) {
-            definitionId = UUID.randomUUID();
-            jdbc.sql("""
-                    insert into clinical_pathway_definition(
-                      tenant_id, pathway_definition_id, pathway_code, display_name, specialty_code,
-                      diagnosis_code, status, created_by)
-                    values (:tenant, :definition, :code, :name, :specialty, :diagnosis, 'ACTIVE', :actor)
-                    """).param("tenant", identity.tenantId()).param("definition", definitionId)
-                    .param("code", knowledge.pathwayCode()).param("name", knowledge.displayName())
-                    .param("specialty", knowledge.specialtyCode()).param("diagnosis", knowledge.diagnosisCode())
-                    .param("actor", identity.userId()).update();
-        } else {
-            jdbc.sql("""
-                    update clinical_pathway_definition
-                    set display_name = :name, specialty_code = :specialty, diagnosis_code = :diagnosis, status = 'ACTIVE'
-                    where tenant_id = :tenant and pathway_definition_id = :definition
-                    """).param("name", knowledge.displayName()).param("specialty", knowledge.specialtyCode())
-                    .param("diagnosis", knowledge.diagnosisCode()).param("tenant", identity.tenantId())
-                    .param("definition", definitionId).update();
-        }
-        Integer versionNo = jdbc.sql("""
+        int versionNo = jdbc.sql("""
                 select version_no from pathway_knowledge_version
                 where tenant_id = :tenant and pathway_version_id = :version
                 """).param("tenant", identity.tenantId()).param("version", versionId)
                 .query(Integer.class).single();
-        UUID submittedBy = jdbc.sql("""
-                select submitted_by from pathway_knowledge_version
-                where tenant_id = :tenant and pathway_version_id = :version
-                """).param("tenant", identity.tenantId()).param("version", versionId)
-                .query(UUID.class).single();
-        UUID execVersionId = UUID.randomUUID();
-        jdbc.sql("""
-                insert into clinical_pathway_version(
-                  tenant_id, pathway_version_id, pathway_definition_id, version_no, status,
-                  admission_criteria, created_by, approved_by, published_at)
-                values (:tenant, :version, :definition, :no, 'PUBLISHED', :criteria, :created, :approved, now())
-                on conflict (tenant_id, pathway_definition_id, version_no) do nothing
-                """).param("tenant", identity.tenantId()).param("version", execVersionId)
-                .param("definition", definitionId).param("no", versionNo)
-                .param("criteria", knowledge.inclusionCriteria() == null ? "" : knowledge.inclusionCriteria())
-                .param("created", submittedBy).param("approved", identity.userId()).update();
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("schema_version", 1);
+        payload.put("pathway_code", knowledge.pathwayCode());
+        payload.put("specialty_code", knowledge.specialtyCode());
+        payload.put("diagnosis_code", knowledge.diagnosisCode());
+        payload.put("version_no", versionNo);
+        payload.put("admission_criteria", knowledge.inclusionCriteria() == null ? "" : knowledge.inclusionCriteria());
+        payload.put("publication_scope", "本机构");
+        payload.put("version_immutable_after_publish", true);
+        List<Map<String, Object>> stageList = new ArrayList<>();
         for (PathwayKnowledgeStageWire stage : stages) {
-            jdbc.sql("""
-                    insert into clinical_pathway_stage(
-                      tenant_id, pathway_version_id, stage_code, display_name, sequence_no,
-                      expected_day_start, expected_day_end)
-                    values (:tenant, :version, :code, :name, :seq, :dayStart, :dayEnd)
-                    """).param("tenant", identity.tenantId()).param("version", execVersionId)
-                    .param("code", stage.stageCode()).param("name", stage.stageName())
-                    .param("seq", stage.sequenceNo()).param("dayStart", stage.expectedDayStart())
-                    .param("dayEnd", stage.expectedDayEnd()).update();
+            Map<String, Object> stagePayload = new HashMap<>();
+            stagePayload.put("code", stage.stageCode());
+            stagePayload.put("name", stage.stageName());
+            stagePayload.put("start", stage.expectedDayStart());
+            stagePayload.put("end", stage.expectedDayEnd());
+            List<Map<String, Object>> taskList = new ArrayList<>();
             for (PathwayKnowledgeTaskWire task : stage.tasks()) {
                 String taskCode = task.codeRef() == null
                         ? "TASK-" + sha256(task.content()).substring(0, 12) : task.codeRef();
-                jdbc.sql("""
-                        insert into clinical_pathway_stage_task(
-                          tenant_id, pathway_version_id, stage_code, task_code, display_name,
-                          source_type, source_key, required, sequence_no)
-                        values (:tenant, :version, :stage, :taskCode, :name, :sourceType, :sourceKey, :required, :seq)
-                        """).param("tenant", identity.tenantId()).param("version", execVersionId)
-                        .param("stage", stage.stageCode()).param("taskCode", taskCode)
-                        .param("name", task.content()).param("sourceType", sourceType(task.taskType()))
-                        .param("sourceKey", taskCode).param("required", task.required())
-                        .param("seq", task.sequenceNo()).update();
+                Map<String, Object> taskPayload = new HashMap<>();
+                taskPayload.put("code", taskCode);
+                taskPayload.put("name", task.content());
+                taskPayload.put("source_type", sourceType(task.taskType()));
+                taskPayload.put("source_key", taskCode);
+                taskPayload.put("required", task.required());
+                taskList.add(taskPayload);
             }
+            stagePayload.put("tasks", taskList);
+            stageList.add(stagePayload);
+        }
+        payload.put("stages", stageList);
+        String payloadJson = json(payload);
+
+        UUID openConfigId = jdbc.sql("""
+                select config_id from config_item
+                where tenant_id = :tenant and config_type = 'CLINICAL_PATHWAY' and config_key = :key
+                  and status in ('DRAFT', 'PENDING_APPROVAL', 'APPROVED')
+                """).param("tenant", identity.tenantId()).param("key", knowledge.pathwayCode())
+                .query(UUID.class).optional().orElse(null);
+        if (openConfigId == null) {
+            jdbc.sql("""
+                    insert into config_item(
+                      tenant_id, config_id, config_type, config_key, display_name, payload, status, created_by)
+                    values (:tenant, :config, 'CLINICAL_PATHWAY', :key, :name, cast(:payload as jsonb), 'DRAFT', :actor)
+                    """).param("tenant", identity.tenantId()).param("config", UUID.randomUUID())
+                    .param("key", knowledge.pathwayCode()).param("name", knowledge.displayName())
+                    .param("payload", payloadJson).param("actor", identity.userId()).update();
+        } else {
+            jdbc.sql("""
+                    update config_item set display_name = :name, payload = cast(:payload as jsonb),
+                      validation_state = 'NOT_VALIDATED', validation_errors = '[]'::jsonb,
+                      approval_state = 'DRAFT', approved_by = null, status = 'DRAFT',
+                      row_version = row_version + 1, updated_at = now()
+                    where tenant_id = :tenant and config_id = :config
+                    """).param("name", knowledge.displayName()).param("payload", payloadJson)
+                    .param("tenant", identity.tenantId()).param("config", openConfigId).update();
         }
     }
 
-    private void retireExecutionConfig(UUID tenantId, UUID knowledgeId) {
-        jdbc.sql("""
-                update clinical_pathway_definition set status = 'RETIRED'
-                where tenant_id = :tenant and pathway_code = (
-                  select pathway_code from pathway_knowledge
-                  where tenant_id = :tenant and pathway_knowledge_id = :knowledge
-                )
-                """).param("tenant", tenantId).param("knowledge", knowledgeId).update();
+    private String json(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception failure) {
+            throw new PathwayKnowledgeException("PATHWAY_PAYLOAD_SERIALIZATION_FAILED", 500,
+                    "Failed to serialize pathway configuration payload");
+        }
     }
 
     private static String sourceType(PathwayKnowledgeTaskWire.TaskTypeValue type) {

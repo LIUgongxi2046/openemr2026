@@ -68,7 +68,7 @@ final class PathwayKnowledgeApiTest {
     }
 
     @Test
-    void givenPathway_whenPublished_thenExecutionConfigGeneratedAndSearchable() {
+    void givenPathway_whenApproved_thenConfigurationDraftMaterializedAndSearchable() {
         String code = "PATH-" + UUID.randomUUID().toString().substring(0, 8);
         PathwayKnowledgeWire knowledge = create(code);
         PathwayKnowledgeVersionWire version = createVersion(knowledge.pathwayKnowledgeId());
@@ -86,21 +86,19 @@ final class PathwayKnowledgeApiTest {
                 .listVersions(identity(AUTHOR), knowledge.pathwayKnowledgeId()).get(0);
         assertThat(published.status()).isEqualTo(PathwayKnowledgeVersionWire.StatusValue.ACTIVE);
 
-        // 发布生成执行配置
+        // 知识审批通过后物化一个「临床路径配置」草稿（config_item CLINICAL_PATHWAY, DRAFT）
+        long configCount = jdbc.sql("""
+                select count(*) from config_item
+                where tenant_id = cast(:tenant as uuid) and config_type = 'CLINICAL_PATHWAY'
+                  and config_key = :code and status = 'DRAFT'
+                """).param("tenant", TENANT).param("code", code).query(Long.class).single();
+        assertThat(configCount).isEqualTo(1);
+        // 执行配置 clinical_pathway_* 不再由知识域直写，只由配置域发布
         long definitionCount = jdbc.sql("""
                 select count(*) from clinical_pathway_definition
                 where tenant_id = cast(:tenant as uuid) and pathway_code = :code
                 """).param("tenant", TENANT).param("code", code).query(Long.class).single();
-        assertThat(definitionCount).isEqualTo(1);
-        long stageCount = jdbc.sql("""
-                select count(*) from clinical_pathway_stage stage
-                join clinical_pathway_version version on version.tenant_id = stage.tenant_id
-                  and version.pathway_version_id = stage.pathway_version_id
-                join clinical_pathway_definition definition on definition.tenant_id = version.tenant_id
-                  and definition.pathway_definition_id = version.pathway_definition_id
-                where stage.tenant_id = cast(:tenant as uuid) and definition.pathway_code = :code
-                """).param("tenant", TENANT).param("code", code).query(Long.class).single();
-        assertThat(stageCount).isEqualTo(1);
+        assertThat(definitionCount).isEqualTo(0);
 
         PathwayKnowledgeSearchResultWire result = pathways.search(identity(AUTHOR),
                 new PathwayKnowledgeSearchRequestWire(organization, facility, code, null, null, 20));
@@ -160,7 +158,7 @@ final class PathwayKnowledgeApiTest {
     }
 
     @Test
-    void givenActivePathway_whenRetired_thenExecutionConfigRetired() {
+    void givenActivePathway_whenRetired_thenKnowledgeRetiredAndConfigDraftUntouched() {
         String code = "PATH-" + UUID.randomUUID().toString().substring(0, 8);
         PathwayKnowledgeWire knowledge = create(code);
         PathwayKnowledgeVersionWire version = createVersion(knowledge.pathwayKnowledgeId());
@@ -169,10 +167,14 @@ final class PathwayKnowledgeApiTest {
         pathways.approveVersion(identity(APPROVER), "a-" + UUID.randomUUID(), version.pathwayVersionId());
 
         pathways.retireVersion(identity(AUTHOR), "t-" + UUID.randomUUID(), version.pathwayVersionId());
-        long activeDefinitionCount = jdbc.sql("""
-                select count(*) from clinical_pathway_definition
-                where tenant_id = cast(:tenant as uuid) and pathway_code = :code and status = 'ACTIVE'
+        assertThat(pathways.listVersions(identity(AUTHOR), knowledge.pathwayKnowledgeId()).get(0).status())
+                .isEqualTo(PathwayKnowledgeVersionWire.StatusValue.RETIRED);
+        // 知识退休只影响知识态；配置草稿的停用由配置域负责
+        long configCount = jdbc.sql("""
+                select count(*) from config_item
+                where tenant_id = cast(:tenant as uuid) and config_type = 'CLINICAL_PATHWAY'
+                  and config_key = :code
                 """).param("tenant", TENANT).param("code", code).query(Long.class).single();
-        assertThat(activeDefinitionCount).isEqualTo(0);
+        assertThat(configCount).isEqualTo(1);
     }
 }
