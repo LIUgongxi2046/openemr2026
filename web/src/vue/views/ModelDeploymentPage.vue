@@ -262,7 +262,7 @@ async function revokeProcessingApproval() {
         <div class="model-api-guide-grid">
           <article><b>① 选择模型提供方</b><p>支持 DeepSeek、通义千问、智谱、豆包以及其他 OpenAI 兼容接口。</p></article>
           <article><b>② 填写 API 地址</b><p>API 地址必须使用 HTTPS；模型标识由系统自动生成，无需手动填写。</p></article>
-          <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥，也可留空稍后补充。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。</p></article>
+          <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥，也可留空稍后补充。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。开发/演示环境下“测试连接”为模拟验证，可填任意 8 位以上占位密钥（如 sk-demo-12345678）。</p></article>
         </div>
       </section>
 
@@ -299,7 +299,7 @@ async function revokeProcessingApproval() {
             <label><span>驻留策略</span><select v-model="form.residencyPolicy"><option v-for="(name, policy) in residencyPolicyLabels" :key="policy" :value="policy">{{ name }}</option></select></label>
             <label><span>API 地址</span><input v-model="form.endpointUrl" maxlength="512" required placeholder="例：https://api.deepseek.com" /></label>
             <label v-if="editingModel"><span>密钥处理</span><select v-model="form.credentialAction"><option value="KEEP">保留当前 API Key</option><option value="REPLACE">更换 API Key</option><option value="CLEAR">清除 API Key</option></select><small v-if="editingModel.credential_hint">当前：{{ editingModel.credential_hint }}</small></label>
-            <label v-if="!editingModel || form.credentialAction === 'REPLACE'"><span>API Key（可留空，稍后再填）</span><div class="api-key-input-row"><input v-model="form.apiKey" :type="showApiKey ? 'text' : 'password'" maxlength="4096" minlength="8" autocomplete="new-password" placeholder="粘贴提供方控制台签发的 API Key（如 sk-…，8 位以上）" /><button class="button secondary" type="button" @click="showApiKey = !showApiKey">{{ showApiKey ? '隐藏' : '显示' }}</button></div><small>密钥仅在保存时传输，保存后只显示末四位；未填写时模型暂无法连接，可稍后通过“编辑 → 更换 API Key”补充。</small></label>
+            <label v-if="!editingModel || form.credentialAction === 'REPLACE'"><span>API Key（可留空，稍后再填）</span><div class="api-key-input-row"><input v-model="form.apiKey" :type="showApiKey ? 'text' : 'password'" maxlength="4096" minlength="8" autocomplete="new-password" placeholder="粘贴 API Key，或开发环境填占位密钥如 sk-demo-12345678（8 位以上）" /><button class="button secondary" type="button" @click="showApiKey = !showApiKey">{{ showApiKey ? '隐藏' : '显示' }}</button></div><small>密钥仅在保存时传输，保存后只显示末四位；未填写时模型暂无法连接，可稍后通过“编辑 → 更换 API Key”补充。</small></label>
             <div class="admin-form-actions"><button class="button secondary" type="button" :disabled="Boolean(busy)" @click="editorOpen = false">取消</button><button class="button primary" :disabled="Boolean(busy)">{{ busy ? '正在保存…' : editingModel ? '保存变更' : '保存 API 配置' }}</button></div>
           </form>
       </AdminActionDialog>

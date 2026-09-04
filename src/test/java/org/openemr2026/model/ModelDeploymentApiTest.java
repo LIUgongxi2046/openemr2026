@@ -21,10 +21,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("dev-synthetic")
+@TestPropertySource(properties = "openemr2026.model.connection-simulation-enabled=false")
 @Transactional
 final class ModelDeploymentApiTest {
 

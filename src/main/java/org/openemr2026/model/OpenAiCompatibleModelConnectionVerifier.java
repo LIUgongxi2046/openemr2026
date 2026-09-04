@@ -3,6 +3,7 @@ package org.openemr2026.model;
 import java.util.List;
 import java.util.Map;
 import org.openemr2026.agent.DeepSeekHttpChatTransport;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -10,14 +11,20 @@ import tools.jackson.databind.ObjectMapper;
 final class OpenAiCompatibleModelConnectionVerifier implements ModelConnectionVerifier {
 
     private final ObjectMapper objectMapper;
+    private final boolean simulateConnection;
 
-    OpenAiCompatibleModelConnectionVerifier(ObjectMapper objectMapper) {
+    OpenAiCompatibleModelConnectionVerifier(ObjectMapper objectMapper,
+            @Value("${openemr2026.model.connection-simulation-enabled:false}") boolean simulateConnection) {
         this.objectMapper = objectMapper;
+        this.simulateConnection = simulateConnection;
     }
 
     @Override
     public ProbeResult probe(String modelCode, String endpointUrl, String apiKeyReference) {
         long started = System.nanoTime();
+        if (simulateConnection) {
+            return ProbeResult.ready(elapsedMillis(started));
+        }
         try {
             Map<String, Object> response = DeepSeekHttpChatTransport.create(
                     endpointUrl, apiKeyReference, objectMapper).complete(Map.of(

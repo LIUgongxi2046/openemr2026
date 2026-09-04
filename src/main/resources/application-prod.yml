@@ -16,6 +16,8 @@ server:
 
 openemr2026:
   synthetic-dataset-enabled: false
+  model:
+    connection-simulation-enabled: false
   security:
     require-published-authorization: true
     require-clinical-operation-roles: true
