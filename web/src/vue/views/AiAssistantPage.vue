@@ -4,7 +4,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
-import { selectOutpatientContext, setEmergencyClinicalContext } from '../../clinical-api';
+import { clinicalContext, selectOutpatientContext, setEmergencyClinicalContext } from '../../clinical-api';
 import { evaReviewBridge } from '../eva-review-bridge';
 import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, listMedicalAgentRuns, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
@@ -152,6 +152,8 @@ function openPatientRecord() {
     setEmergencyClinicalContext(patientId, encounterId);
     router.push('/er-record');
   } else if (scene === '住院') {
+    clinicalContext.inpatientPatientId = patientId;
+    clinicalContext.inpatientEncounterId = encounterId;
     router.push('/inpatient-overview');
   }
 }

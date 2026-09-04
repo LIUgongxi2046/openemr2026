@@ -20,9 +20,9 @@ export interface EvaPatientContext {
 }
 
 const configuredPatientContexts: EvaPatientContext[] = [
-  { patientId: clinicalContext.patientId, encounterId: clinicalContext.encounterId, patientName: '王某某', patientSummary: '男 · 52岁 · 心内科复诊', label: '门诊接诊', scene: '门诊' },
-  { patientId: clinicalContext.emergencyPatientId, encounterId: clinicalContext.emergencyEncounterId, patientName: '赵某某', patientSummary: '女 · 68岁 · 胸痛待评估', label: '急诊抢救', scene: '急诊' },
-  { patientId: clinicalContext.inpatientPatientId, encounterId: clinicalContext.inpatientEncounterId, patientName: '李某某', patientSummary: '男 · 61岁 · 心内科一病区', label: '住院日常', scene: '住院' },
+  { patientId: clinicalContext.patientId, encounterId: clinicalContext.encounterId, patientName: '张慧敏', patientSummary: '女 · 48岁 · 心内科复诊', label: '门诊接诊', scene: '门诊' },
+  { patientId: clinicalContext.emergencyPatientId, encounterId: clinicalContext.emergencyEncounterId, patientName: '陈国栋', patientSummary: '男 · 59岁 · 胸痛待评估', label: '急诊抢救', scene: '急诊' },
+  { patientId: clinicalContext.inpatientPatientId, encounterId: clinicalContext.inpatientEncounterId, patientName: '李沐晴', patientSummary: '女 · 7岁 · 住院观察', label: '住院日常', scene: '住院' },
 ];
 
 const uuidSchema = z.string().uuid();
