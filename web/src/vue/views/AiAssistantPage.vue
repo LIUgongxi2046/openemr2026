@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
 import { computed, nextTick, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
+import { selectOutpatientContext, setEmergencyClinicalContext } from '../../clinical-api';
 import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, listMedicalAgentRuns, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
@@ -23,6 +24,7 @@ interface TaskEvent { id: string; label: string; detail: string; status: 'runnin
 interface ChatMessage { id: string; role: 'user' | 'assistant'; text: string; agentName?: string; events?: TaskEvent[]; runId?: string; runState?: MedicalAgentRunWire['state']; rowVersion?: number; modelName?: string; eventsCollapsed?: boolean; eventsUserToggled?: boolean }
 
 const route = useRoute();
+const router = useRouter();
 const messages = ref<ChatMessage[]>([]);
 const draft = ref(typeof route.query.objective === 'string' ? route.query.objective : '');
 const busy = ref(false);
@@ -132,7 +134,22 @@ function mapRunEvents(run: MedicalAgentRunWire): TaskEvent[] {
 
 const terminalRunStates = new Set<MedicalAgentRunWire['state']>(['WAITING_FOR_REVIEW', 'COMPLETED', 'PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
 const retryableRunStates = new Set<MedicalAgentRunWire['state']>(['PARTIAL', 'BLOCKED', 'FAILED', 'CANCELLED']);
+const reviewableRunStates = new Set<MedicalAgentRunWire['state']>(['WAITING_FOR_REVIEW', 'COMPLETED', 'PARTIAL']);
 const delay = (duration: number) => new Promise((resolve) => window.setTimeout(resolve, duration));
+
+function openPatientRecord() {
+  if (!hasPatientContext.value) return;
+  const { patientId, encounterId, patientName, scene } = patient.current.value;
+  if (scene === '门诊') {
+    selectOutpatientContext({ patientId, encounterId, patientDisplayName: patientName });
+    router.push('/opd-record');
+  } else if (scene === '急诊') {
+    setEmergencyClinicalContext(patientId, encounterId);
+    router.push('/er-record');
+  } else if (scene === '住院') {
+    router.push('/inpatient-overview');
+  }
+}
 
 function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildName = '诊疗环节医助') {
   message.runId = run.run_id;
@@ -142,6 +159,9 @@ function applyRun(message: ChatMessage, run: MedicalAgentRunWire, fallbackChildN
   if (terminalRunStates.has(run.state)) {
     const participants = run.child_runs.map((item) => doctorFacingAiText(item.display_name)).join('、') || doctorFacingAiText(fallbackChildName);
     message.text = `${presentMedicalAgentResult(run)}\n\n参与医助：${participants}。本次读取 ${contextScopes.value.map(scopeLabel).join('、')}，使用${authorizationLabel(authorizationLevel.value)}授权。`;
+    if (run.state === 'WAITING_FOR_REVIEW') {
+      message.text += '\n\n以上为 AI 候选结果，不会自动写入病历、医嘱或任务。请核对后点击下方「打开患者病历复核」进入患者病历处理。';
+    }
   } else {
     message.text = presentMedicalAgentResult(run);
   }
@@ -286,7 +306,7 @@ function unbindPatient() { patient.unbind(); messages.value = []; draft.value = 
               <ol v-show="!message.eventsCollapsed" class="eva-inline-events"><li v-for="event in message.events" :key="event.id" :class="event.status"><i>{{ event.status === 'done' ? '✓' : event.status === 'failed' ? '!' : event.status === 'running' ? '•' : '·' }}</i><span><b>{{ event.label }}</b><small>{{ event.detail }}</small></span><em>{{ event.status === 'done' ? '完成' : event.status === 'failed' ? '失败' : event.status === 'running' ? '进行中' : '等待' }}</em></li></ol>
             </div>
             <p v-if="message.text">{{ message.text }}</p><p v-else-if="message.role === 'assistant'" class="eva-running-copy">Eva 正在继续处理，请稍候…</p>
-            <footer v-if="message.role === 'assistant' && message.runId" class="eva-message-actions"><span v-if="message.runState">状态：{{ medicalAgentRunStateLabel(message.runState) }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消任务</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重新执行</button></footer>
+            <footer v-if="message.role === 'assistant' && message.runId" class="eva-message-actions"><span v-if="message.runState">状态：{{ medicalAgentRunStateLabel(message.runState) }}</span><button v-if="message.runState === 'QUEUED' || message.runState === 'RUNNING'" class="btn" type="button" @click="cancelRun(message)">取消任务</button><button v-else-if="message.runState && retryableRunStates.has(message.runState)" class="btn" type="button" :disabled="busy" @click="retryRun(message)">重新执行</button><button v-if="message.runState && reviewableRunStates.has(message.runState) && hasPatientContext" class="btn primary" type="button" @click="openPatientRecord">打开患者病历复核</button></footer>
           </article>
         </section>
         <div class="eva-thread-resizer" role="separator" aria-orientation="horizontal" aria-label="拖拽调整聊天区域高度" @pointerdown="startThreadResize"></div>
