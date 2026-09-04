@@ -102,7 +102,7 @@ const careOperationRoutes = ['care-operations', 'billing', 'outpatient-pharmacy'
 const qualityCenterRoutes = ['quality-center', 'department-qc', 'quality-rating', 'infection-events', 'credentials'];
 const dataCenterRoutes = ['data-center', 'integration', 'integration-connectors', 'integration-mapping', 'integration-messages', 'migration', 'data-quality', 'devices', 'research', 'cohort-builder', 'research-stats', 'research-dataset'];
 const knowledgeCenterRoutes = ['knowledge-center', 'pathway-graph', 'pathway-review', 'pathway-versions'];
-const aiPlatformRoutes = ['ai-assistant', 'ai-reminder-detail', 'ai-capture', 'ai-action-review', 'ai-assistant-policy', 'models', 'model-connection', 'model-routing', 'model-evaluation', 'agent-catalog', 'agent', 'agent-context', 'tool-catalog', 'skill-catalog', 'agent-compose', 'agent-evals', 'aiops'];
+const aiPlatformRoutes = ['ai-assistant', 'ai-reminder-detail', 'ai-capture', 'ai-action-review', 'ai-assistant-policy', 'models', 'model-connection', 'model-routing', 'model-evaluation', 'agent-catalog', 'agent', 'agent-context', 'tool-catalog', 'skill-catalog', 'agent-compose', 'agent-evals', 'aiops', 'clinical-specialty-ai'];
 const configurationRoutes = ['workflow', 'capability-pack', 'specialty-coverage', 'form-designer', 'rule-center', 'scope-designer', 'config-release', 'config-upgrade'];
 const operationRoutes = ['install', 'backup', 'operations', 'release-gates', 'opensource'];
 const adminRoutes = ['admin', 'admin-org', 'admin-users', 'admin-roles', 'admin-permissions', 'admin-auth', 'admin-dictionaries', 'admin-master-data', 'admin-templates', 'admin-parameters', 'admin-jobs', 'admin-audit'];
@@ -216,7 +216,7 @@ const subNav = computed<SubNav | null>(() => {
     return { kind: 'center', title: '数据中心', active: c, items: [['data-center', '数据总览'], ['integration', '集成交换'], ['migration', '历史迁移'], ['data-quality', '数据质量'], ['devices', '设备接入'], ['research', '科研统计']] };
   }
   if (aiPlatformRoutes.includes(c)) {
-    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
+    return { kind: 'center', title: 'AI 中心', active: c, items: [['ai-assistant', 'AI医助 Eva'], ['ai-assistant-policy', 'Eva工作策略'], ['clinical-specialty-ai', '专科医助复核'], ['models', '模型服务'], ['agent-catalog', '医助团队'], ['skill-catalog', '医助能力'], ['tool-catalog', '医助工具'], ['agent-evals', '评测发布'], ['aiops', '运行监测']] };
   }
   if (knowledgeCenterRoutes.includes(c)) {
     return { kind: 'center', title: '知识中心', active: c, items: [['knowledge-center', '临床路径知识库'], ['pathway-graph', '知识图谱'], ['pathway-review', '审核队列'], ['pathway-versions', '版本历史']] };

@@ -92,6 +92,7 @@ const nativeComponents: Record<string, () => Promise<unknown>> = {
   'quality-rating': () => import('./views/QualityRatingOverviewPage.vue'),
   credentials: () => import('./views/CredentialsOverviewPage.vue'),
   'specialty-center': () => import('./views/SpecialtyCenterPage.vue'),
+  'clinical-specialty-ai': () => import('./views/SpecialtyAiPage.vue'),
   'obgyn-record': () => import('./views/ObstetricRecordPage.vue'),
   'reproductive-record': () => import('./views/ReproductiveRecordPage.vue'),
   'pediatrics-record': () => import('./views/PediatricRecordPage.vue'),

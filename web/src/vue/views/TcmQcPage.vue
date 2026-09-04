@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { TcmQcReviewWire } from '../../generated/contracts';
 import { createTcmQcReview, issueSpecialtyEncounterLease, issueSpecialtyPatientLease, listTcmQcReviews } from '../../api/specialty-layers';
+import AgentInlineReview from '../components/AgentInlineReview.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
 import { toClinicalIssue } from '../clinical-error';
 
@@ -31,6 +32,10 @@ const issue = computed(() => (patientLeaseQuery.error.value ?? encounterLeaseQue
   ? toClinicalIssue(patientLeaseQuery.error.value ?? encounterLeaseQuery.error.value ?? recordsQuery.error.value) : null);
 const records = computed(() => recordsQuery.data.value ?? []);
 const anyPending = computed(() => patientLeaseQuery.isPending.value || encounterLeaseQuery.isPending.value || recordsQuery.isPending.value);
+
+const agentPatientId = computed(() => encounterLease.value?.patient_id ?? patientLease.value?.patient_id ?? null);
+const agentEncounterId = computed(() => encounterLease.value?.encounter_id ?? patientLease.value?.encounter_id ?? null);
+const tcmSyndromeObjective = computed(() => '对当前患者的中医四诊记录与方药处方进行辨证审方复核，识别配伍禁忌、辨证与方药一致性等风险，输出候选建议，仅供医生审阅。');
 
 const form = reactive({
   reviewedRecordType: 'HERBAL_PRESCRIPTION' as TcmQcReviewWire['reviewed_record_type'],
@@ -90,6 +95,8 @@ async function createRecord() {
 
     <template v-else>
       <p v-if="notice" class="admin-notice" role="status">{{ notice }}</p>
+
+      <AgentInlineReview agent-code="TCM_SYNDROME_REVIEW" stage-code="SYNDROME" :objective="tcmSyndromeObjective" :patient-id="agentPatientId" :encounter-id="agentEncounterId" target-type="ENCOUNTER" :target-id="agentEncounterId" title="AI 中医辨证审方候选" source-route="tcm-qc" />
 
       <div class="admin-layout">
         <section class="admin-panel">

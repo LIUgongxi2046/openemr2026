@@ -4,7 +4,7 @@
     "docs/design/ui-delivery/route-design-map.csv",
     "prototype/traceability.csv"
   ],
-  "route_count": 198,
+  "route_count": 199,
   "routes": [
     {
       "route_id": "admin",
@@ -2018,6 +2018,44 @@
       "source_status": "VERIFIED",
       "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
       "artifact_path": "docs/design/ui-delivery/screens/clinical.png"
+    },
+    {
+      "route_id": "clinical-specialty-ai",
+      "path": "#/clinical-specialty-ai",
+      "screen_id": "HASH-199",
+      "title": "专科医助复核",
+      "primary_domain": "CLINICAL",
+      "roles": [
+        "AUTHORIZED_ROLE"
+      ],
+      "fr_refs": [],
+      "ac_refs": [],
+      "scr_refs": [],
+      "requirement_refs": [
+        "Prototype SPEC v0.13"
+      ],
+      "api_refs": [
+        "Clinical Core API"
+      ],
+      "states": [
+        "default",
+        "loading",
+        "empty",
+        "permission",
+        "offline",
+        "hard-block",
+        "success",
+        "recovery"
+      ],
+      "guards": [
+        "SESSION",
+        "PATIENT_CONTEXT",
+        "ENCOUNTER_OR_PURPOSE"
+      ],
+      "layout": "核心专科",
+      "source_status": "VERIFIED",
+      "policy_status": "INFERRED_BY_ROUTE_POLICY_V1",
+      "artifact_path": "docs/design/ui-delivery/screens/specialty-center.png"
     },
     {
       "route_id": "clinical-tasks",
