@@ -79,6 +79,18 @@ final class ModelDeploymentController {
                 .body(models.update(identity, idempotencyKey, deploymentId, command));
     }
 
+    @PostMapping("/model-deployments/{model_deployment_id}/purges")
+    ResponseEntity<Void> purge(
+            HttpServletRequest request,
+            @PathVariable("model_deployment_id") UUID deploymentId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody ModelDeploymentDeactivateRequestWire command) {
+        ClinicalIdentity identity = security.authorizeForPurposes(
+                request, command.organizationId(), command.facilityId(), null, null, Set.of("AI_PLATFORM_ADMIN"));
+        models.purge(identity, idempotencyKey, deploymentId, command);
+        return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
+    }
+
     @PostMapping("/model-deployments/{model_deployment_id}/publications")
     ResponseEntity<ModelDeploymentWire> publish(
             HttpServletRequest request,

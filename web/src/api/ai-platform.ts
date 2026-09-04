@@ -107,6 +107,19 @@ export async function deactivateModelDeployment(
   ));
 }
 
+export async function purgeModelDeployment(
+  lease: ContextLeaseWire,
+  model: ModelDeploymentWire,
+): Promise<void> {
+  await request(`/model-deployments/${model.model_deployment_id}/purges`, {
+    method: 'POST',
+    headers: { ...wardHeaders(lease), 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+    body: JSON.stringify(modelDeploymentDeactivateRequestWireSchema.parse({
+      ...orgFacility(), expected_row_version: model.row_version,
+    })),
+  });
+}
+
 export async function updateModelDeployment(
   lease: ContextLeaseWire,
   model: ModelDeploymentWire,

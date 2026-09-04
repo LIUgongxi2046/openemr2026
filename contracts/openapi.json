@@ -3090,6 +3090,37 @@
         }
       }
     },
+    "/model-deployments/{model_deployment_id}/purges": {
+      "post": {
+        "operationId": "purgeModelDeployment",
+        "parameters": [
+          {
+            "name": "model_deployment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelDeploymentDeactivateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "model deployment permanently removed"
+          }
+        }
+      }
+    },
     "/model-deployments/{model_deployment_id}/connection-tests": {
       "post": {
         "operationId": "testModelDeploymentConnection",

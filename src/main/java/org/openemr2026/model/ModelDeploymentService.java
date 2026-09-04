@@ -131,6 +131,50 @@ final class ModelDeploymentService {
         });
     }
 
+    void purge(
+            ClinicalIdentity identity, String idempotencyKey, UUID deploymentId,
+            ModelDeploymentDeactivateRequestWire request) {
+        transactions.executeWithoutResult(status -> {
+            beginCommand(identity, "MODEL_DEPLOYMENT_PURGE", idempotencyKey,
+                    sha256(deploymentId + "|" + request.expectedRowVersion()));
+            DeploymentHead current = jdbc.sql("""
+                    select status, row_version, api_key_ref from model_deployment
+                    where tenant_id = :tenant and model_deployment_id = :deployment for update
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId)
+                    .query((rs, row) -> new DeploymentHead(rs.getString("status"), rs.getLong("row_version"),
+                            rs.getString("api_key_ref")))
+                    .optional().orElseThrow(() -> contextDenied());
+            if (request.expectedRowVersion() == null || current.rowVersion() != request.expectedRowVersion()) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_VERSION_CONFLICT", 409,
+                        "The model deployment changed; reload before retrying");
+            }
+            if (!"INACTIVE".equals(current.status())) {
+                throw new ModelDeploymentException("MODEL_DEPLOYMENT_STATE_INVALID", 409,
+                        "Only an inactive model can be permanently removed; deactivate it first");
+            }
+            jdbc.sql("""
+                    update medical_agent_run set model_deployment_id = null
+                    where tenant_id = :tenant and model_deployment_id = :deployment
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId).update();
+            jdbc.sql("""
+                    update medical_agent_run set external_processing_approval_id = null
+                    where tenant_id = :tenant and external_processing_approval_id in (
+                      select approval_id from medical_ai_external_processing_approval
+                      where tenant_id = :tenant and model_deployment_id = :deployment)
+                    """).param("tenant", identity.tenantId()).param("deployment", deploymentId).update();
+            jdbc.sql("delete from model_evaluation where tenant_id = :tenant and model_deployment_id = :deployment")
+                    .param("tenant", identity.tenantId()).param("deployment", deploymentId).update();
+            jdbc.sql("delete from medical_ai_external_processing_approval where tenant_id = :tenant and model_deployment_id = :deployment")
+                    .param("tenant", identity.tenantId()).param("deployment", deploymentId).update();
+            jdbc.sql("delete from model_deployment where tenant_id = :tenant and model_deployment_id = :deployment")
+                    .param("tenant", identity.tenantId()).param("deployment", deploymentId).update();
+            deleteAfterCommit(current.apiKeyRef());
+            appendEvidence(identity, deploymentId, current.rowVersion() + 1,
+                    "MODEL_DEPLOYMENT_PURGED", "ModelDeploymentPurged");
+            completeCommand(identity, "MODEL_DEPLOYMENT_PURGE", idempotencyKey, deploymentId);
+        });
+    }
+
     ModelDeploymentWire publish(
             ClinicalIdentity identity, String idempotencyKey, UUID deploymentId,
             ModelDeploymentPublishRequestWire request) {

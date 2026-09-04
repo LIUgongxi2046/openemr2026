@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/vue-query';
 import { computed, reactive, ref } from 'vue';
 import type { ModelDeploymentWire } from '../../generated/contracts';
 import type { MedicalAgentContextScope, ModelDataProcessingApproval } from '../../api/ai-platform';
-import { approveModelDataProcessing, deactivateModelDeployment, issueAiLease, listModelDataProcessingApprovals, listModelDeployments, publishModelDeployment, registerModelDeployment, revokeModelDataProcessingApproval, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
+import { approveModelDataProcessing, deactivateModelDeployment, issueAiLease, listModelDataProcessingApprovals, listModelDeployments, publishModelDeployment, purgeModelDeployment, registerModelDeployment, revokeModelDataProcessingApproval, testModelDeploymentConnection, updateModelDeployment } from '../../api/ai-platform';
 import AdminActionDialog from '../components/AdminActionDialog.vue';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
 import ClinicalPageState from '../components/ClinicalPageState.vue';
@@ -47,7 +47,12 @@ const issue = computed(() => (leaseQuery.error.value ?? modelsQuery.error.value)
   ? toClinicalIssue(leaseQuery.error.value ?? modelsQuery.error.value) : null);
 const models = computed(() => modelsQuery.data.value ?? []);
 const activeCount = computed(() => models.value.filter((model) => model.status === 'ACTIVE').length);
+const inactiveCount = computed(() => models.value.filter((model) => model.status === 'INACTIVE').length);
 const connectedCount = computed(() => models.value.filter((model) => model.connection_status === 'READY').length);
+const statusFilter = ref<'ACTIVE' | 'INACTIVE' | 'ALL'>('ACTIVE');
+const filteredModels = computed(() => statusFilter.value === 'ALL'
+  ? models.value
+  : models.value.filter((model) => model.status === statusFilter.value));
 
 const form = reactive({
   modelCode: '',
@@ -61,6 +66,7 @@ const form = reactive({
 const editingModel = ref<ModelDeploymentWire | null>(null);
 const editorOpen = ref(false);
 const deactivateTarget = ref<ModelDeploymentWire | null>(null);
+const purgeTarget = ref<ModelDeploymentWire | null>(null);
 const busy = ref('');
 const notice = ref('');
 const showApiKey = ref(false);
@@ -174,6 +180,22 @@ async function deactivate(model: ModelDeploymentWire) {
   }
 }
 
+async function purge(model: ModelDeploymentWire) {
+  const lease = leaseQuery.data.value;
+  if (!lease || busy.value || model.status !== 'INACTIVE') return;
+  busy.value = `purge:${model.model_deployment_id}`; notice.value = '';
+  try {
+    await purgeModelDeployment(lease, model);
+    notice.value = `模型配置 ${model.display_name} 已彻底移除。`;
+    await modelsQuery.refetch();
+  } catch (error) {
+    const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
+  } finally {
+    busy.value = '';
+    purgeTarget.value = null;
+  }
+}
+
 async function testConnection(model: ModelDeploymentWire) {
   const lease = leaseQuery.data.value;
   if (!lease || busy.value || model.status !== 'ACTIVE' || !model.credential_configured) return;
@@ -281,22 +303,29 @@ async function revokeProcessingApproval() {
       <div>
         <section class="admin-panel">
           <header>
-            <div><h2>模型部署台账</h2><p>模型与提供方编码不可变；停用保留历史语义。</p></div>
-            <div class="admin-row-actions"><button class="button secondary" @click="modelsQuery.refetch()">刷新</button><button class="button primary" @click="openCreate">新建模型 API 配置</button></div>
+            <div><h2>模型部署台账</h2><p>「删除」= 安全停用（保留历史）；已停用记录可「彻底移除」。</p></div>
+            <div class="admin-row-actions admin-model-toolbar">
+              <div class="admin-filter" role="tablist" aria-label="模型状态筛选">
+                <button type="button" :class="{ active: statusFilter === 'ACTIVE' }" @click="statusFilter = 'ACTIVE'">有效 {{ activeCount }}</button>
+                <button type="button" :class="{ active: statusFilter === 'INACTIVE' }" @click="statusFilter = 'INACTIVE'">已停用 {{ inactiveCount }}</button>
+                <button type="button" :class="{ active: statusFilter === 'ALL' }" @click="statusFilter = 'ALL'">全部 {{ models.length }}</button>
+              </div>
+              <button class="button secondary" @click="modelsQuery.refetch()">刷新</button><button class="button primary" @click="openCreate">新建模型 API 配置</button>
+            </div>
           </header>
-          <div v-if="models.length === 0" class="admin-empty" role="status">暂无模型配置，请点击“新建模型 API 配置”。</div>
+          <div v-if="filteredModels.length === 0" class="admin-empty" role="status">{{ statusFilter === 'INACTIVE' ? '暂无已停用的模型配置。' : '暂无模型配置，请点击“新建模型 API 配置”。' }}</div>
           <div v-else class="admin-table-wrap">
             <table class="admin-table">
               <thead><tr><th>模型 / 名称</th><th>提供方</th><th>API 连接</th><th>驻留策略</th><th>评估状态</th><th>状态</th><th>操作</th></tr></thead>
               <tbody>
-                <tr v-for="model in models" :key="model.model_deployment_id">
+                <tr v-for="model in filteredModels" :key="model.model_deployment_id">
                   <td><strong>{{ model.display_name }}</strong><small><code>{{ model.model_code }}</code> · …{{ model.model_deployment_id.slice(-8) }} · v{{ model.row_version }}</small></td>
                   <td><code>{{ model.provider_code }}</code></td>
                   <td><span class="admin-status" :class="model.connection_status === 'READY' ? 'active' : model.connection_status === 'FAILED' ? 'rejected' : 'evaluating'">{{ connectionStatusLabels[model.connection_status] }}</span><small v-if="model.credential_hint">{{ model.credential_hint }}</small><small v-if="model.last_connection_tested_at">{{ formatDate(model.last_connection_tested_at) }} · {{ model.last_connection_latency_ms ?? 0 }} ms</small><small v-if="model.last_connection_error_code && model.last_connection_error_code !== 'SYNTHETIC_CONFIGURATION'" class="model-connection-error">{{ model.last_connection_error_code }}</small></td>
                   <td>{{ residencyPolicyLabels[model.residency_policy] }}</td>
                   <td><span class="admin-status" :class="model.evaluation_status.toLowerCase()">{{ evaluationStatusLabels[model.evaluation_status] }}</span></td>
                   <td><span class="admin-status" :class="model.status.toLowerCase()">{{ model.status === 'ACTIVE' ? '有效' : '已停用' }}</span></td>
-                  <td><div class="admin-row-actions"><button class="task-action" :disabled="model.status !== 'ACTIVE' || !model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button v-if="model.status === 'ACTIVE' && model.connection_status === 'READY' && model.evaluation_status !== 'APPROVED'" class="task-action publish" :disabled="Boolean(busy)" :title="'发布后进入 Eva 模型路由'" @click="publish(model)">{{ busy === `publish:${model.model_deployment_id}` ? '发布中…' : '发布' }}</button><button v-if="model.residency_policy === 'CLOUD_ALLOWED'" class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="openProcessingApproval(model)">云端处理授权</button><button class="task-action" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="model.status !== 'ACTIVE' || Boolean(busy)" @click="deactivateTarget = model">删除</button></div></td>
+                  <td><div class="admin-row-actions"><template v-if="model.status === 'ACTIVE'"><button class="task-action" :disabled="!model.credential_configured || Boolean(busy)" @click="testConnection(model)">{{ busy === `test:${model.model_deployment_id}` ? '验证中…' : '测试连接' }}</button><button v-if="model.connection_status === 'READY' && model.evaluation_status !== 'APPROVED'" class="task-action publish" :disabled="Boolean(busy)" :title="'发布后进入 Eva 模型路由'" @click="publish(model)">{{ busy === `publish:${model.model_deployment_id}` ? '发布中…' : '发布' }}</button><button v-if="model.residency_policy === 'CLOUD_ALLOWED'" class="task-action" :disabled="Boolean(busy)" @click="openProcessingApproval(model)">云端处理授权</button><button class="task-action" :disabled="Boolean(busy)" @click="edit(model)">编辑</button><button class="task-action danger" :disabled="Boolean(busy)" @click="deactivateTarget = model">删除</button></template><button v-else class="task-action danger" :disabled="Boolean(busy)" @click="purgeTarget = model">彻底移除</button></div></td>
                 </tr>
               </tbody>
             </table>
@@ -338,6 +367,7 @@ async function revokeProcessingApproval() {
         </div>
       </AdminActionDialog>
       <AdminConfirmDialog :open="Boolean(deactivateTarget)" :title="`删除模型配置 ${deactivateTarget?.display_name ?? ''}`" description="删除将以安全停用方式执行；后续医助任务不再选择该模型，历史评测、运行记录和审计证据继续保留。" confirm-label="确认删除并停用" :busy="Boolean(busy)" @update:open="!$event && (deactivateTarget = null)" @confirm="deactivateTarget && deactivate(deactivateTarget)"><div v-if="deactivateTarget" class="admin-impact-grid"><div><span>模型标识</span><b>{{ deactivateTarget.model_code }}</b></div><div><span>提供方</span><b>{{ deactivateTarget.provider_code }}</b></div><div><span>当前版本</span><b>v{{ deactivateTarget.row_version }}</b></div><div><span>流程影响</span><b>退出后续模型路由</b></div></div></AdminConfirmDialog>
+      <AdminConfirmDialog :open="Boolean(purgeTarget)" :title="`彻底移除模型配置 ${purgeTarget?.display_name ?? ''}`" description="彻底移除将从台账中物理删除该配置及其评测、授权记录；已有的医助运行记录会保留但不再关联该模型。此操作不可撤销。" confirm-label="确认彻底移除" :busy="Boolean(busy)" @update:open="!$event && (purgeTarget = null)" @confirm="purgeTarget && purge(purgeTarget)"><div v-if="purgeTarget" class="admin-impact-grid"><div><span>模型标识</span><b>{{ purgeTarget.model_code }}</b></div><div><span>提供方</span><b>{{ purgeTarget.provider_code }}</b></div><div><span>当前版本</span><b>v{{ purgeTarget.row_version }}</b></div><div><span>流程影响</span><b>物理删除，不可撤销</b></div></div></AdminConfirmDialog>
       <AdminConfirmDialog :open="Boolean(revokeApprovalTarget)" title="撤销云端诊疗数据处理授权" description="撤销后，使用该云端模型的新 Agent 任务会被阻断，已开始任务在下一执行检查点失败关闭。" confirm-label="确认撤销" :busy="Boolean(busy)" @update:open="!$event && (revokeApprovalTarget = null)" @confirm="revokeProcessingApproval"><label class="revoke-reason"><span>撤销原因</span><textarea v-model="revokeReason" minlength="2" maxlength="500" rows="3" placeholder="请说明合规、合同或安全原因" /></label></AdminConfirmDialog>
     </template>
   </section>
@@ -345,6 +375,10 @@ async function revokeProcessingApproval() {
 
 <style scoped>
 :deep(.task-action.publish) { color: #0c7d68; border-color: #7fc4b6; background: #eaf8f5; font-weight: 700; }
+.admin-model-toolbar { flex-wrap: wrap; }
+.admin-filter { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid #d6e1eb; border-radius: 9px; background: #f4f7fb; }
+.admin-filter button { border: 0; padding: 4px 10px; border-radius: 6px; background: transparent; color: #5b7188; font: inherit; font-size: 11px; font-weight: 650; cursor: pointer; }
+.admin-filter button.active { background: #fff; color: #185b83; box-shadow: 0 1px 2px rgb(20 60 100 / 14%); }
 .model-api-guide { margin-bottom: 18px; }
 .model-api-guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
 .model-api-guide-grid article { padding: 14px; border: 1px solid #d8e7e4; border-radius: 10px; background: #f5fbfa; }

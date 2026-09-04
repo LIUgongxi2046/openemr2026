@@ -71,6 +71,24 @@ final class ModelDeploymentApiTest {
     }
 
     @Test
+    void givenInactiveModel_whenPurging_thenPermanentlyRemoved() {
+        ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
+                new ModelDeploymentRegisterRequestWire(organization, facility, "MODEL-" + UUID.randomUUID(),
+                        "LOCAL-INFER", "待移除模型", ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.ON_PREM_ONLY,
+                        null, null, null));
+        ModelDeploymentWire deactivated = models.deactivate(identity(), "deact-" + UUID.randomUUID(),
+                registered.modelDeploymentId(), new ModelDeploymentDeactivateRequestWire(
+                        organization, facility, registered.rowVersion()));
+        assertThat(deactivated.status()).isEqualTo(ModelDeploymentWire.StatusValue.INACTIVE);
+
+        models.purge(identity(), "purge-" + UUID.randomUUID(), deactivated.modelDeploymentId(),
+                new ModelDeploymentDeactivateRequestWire(organization, facility, deactivated.rowVersion()));
+
+        assertThat(models.list(identity())).extracting(ModelDeploymentWire::modelDeploymentId)
+                .doesNotContain(deactivated.modelDeploymentId());
+    }
+
+    @Test
     void givenNullModelCode_whenRegistering_thenAutoGeneratesUniqueCode() {
         ModelDeploymentWire registered = models.register(identity(), "model-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(organization, facility, null,

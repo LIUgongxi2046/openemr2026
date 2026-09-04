@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_from": "contracts/openapi.json + contracts/governance.source.json",
-  "operation_count": 595,
+  "operation_count": 596,
   "operations": [
     {
       "operation_id": "acceptInpatientConsultation",
@@ -7081,6 +7081,23 @@
       "idempotency": "Idempotency-Key + domain unique constraints + expected version",
       "timeout_ms": 8000,
       "rate_limit": "policy:publishToolVersion",
+      "version": "0.1.0",
+      "status": "DEFAULTED_POLICY_V1"
+    },
+    {
+      "operation_id": "purgeModelDeployment",
+      "caller": "AUTHORIZED_WEB_OR_INTEGRATION_CLIENT",
+      "method": "POST",
+      "path": "/model-deployments/{model_deployment_id}/purges",
+      "auth": "OIDC_SESSION + ContextLease + domain authorization",
+      "input_schema": "ModelDeploymentDeactivateRequest",
+      "output_schema": "HTTP_204",
+      "error_refs": [
+        "API_ERROR"
+      ],
+      "idempotency": "Idempotency-Key + domain unique constraints + expected version",
+      "timeout_ms": 8000,
+      "rate_limit": "policy:purgeModelDeployment",
       "version": "0.1.0",
       "status": "DEFAULTED_POLICY_V1"
     },
