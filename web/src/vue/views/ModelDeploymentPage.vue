@@ -168,7 +168,10 @@ async function deactivate(model: ModelDeploymentWire) {
     await modelsQuery.refetch();
   } catch (error) {
     const next = toClinicalIssue(error); notice.value = `${next.code}：${next.message}`;
-  } finally { busy.value = ''; }
+  } finally {
+    busy.value = '';
+    deactivateTarget.value = null;
+  }
 }
 
 async function testConnection(model: ModelDeploymentWire) {
