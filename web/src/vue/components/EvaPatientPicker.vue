@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { EncounterWire, PatientSummaryWire } from '../../generated/contracts';
+import type { EncounterWire, MedicalAgentRunWire, PatientSummaryWire } from '../../generated/contracts';
 
 interface ActivePatientContext {
   patientId: string;
@@ -21,6 +21,8 @@ defineProps<{
   loadingEncounters?: boolean;
   notice?: string;
   compact?: boolean;
+  history?: MedicalAgentRunWire[];
+  historyLoading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -28,14 +30,20 @@ const emit = defineEmits<{
   'select-default': [context: ActivePatientContext];
   'select-patient': [patient: PatientSummaryWire];
   'select-encounter': [encounter: EncounterWire];
+  'select-history': [run: MedicalAgentRunWire];
   unbind: [];
 }>();
 
 const query = ref('');
 const encounterTypeLabel: Record<string, string> = { OUTPATIENT: '门诊', EMERGENCY: '急诊', INPATIENT: '住院' };
+const runStateLabel: Record<string, string> = {
+  QUEUED: '排队中', RUNNING: '进行中', WAITING_FOR_REVIEW: '待复核',
+  COMPLETED: '已完成', PARTIAL: '部分完成', BLOCKED: '已阻断', FAILED: '失败', CANCELLED: '已取消',
+};
 function submit() { if (query.value.trim()) emit('search', query.value.trim()); }
 function age(birthDate: string) { return Math.max(0, new Date().getFullYear() - new Date(birthDate).getFullYear()); }
 function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(new Date(value)); }
+function formatTime(value: string) { return new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(value)); }
 </script>
 
 <template>
@@ -55,6 +63,15 @@ function formatDate(value: string) { return new Intl.DateTimeFormat('zh-CN', { m
 
     <div v-if="!results.length" class="eva-default-patients"><span>最近患者</span><button v-for="context in defaults" :key="context.encounterId" type="button" :aria-pressed="context.encounterId === current.encounterId" @click="emit('select-default', context)"><i>{{ context.patientName.slice(0,1) }}</i><span><b>{{ context.patientName }}</b><small>{{ context.patientSummary }} · {{ context.label }}</small></span></button></div>
     <p v-if="notice" class="eva-patient-notice" role="status">{{ notice }}</p>
+
+    <section class="eva-run-history" aria-label="聊天记录">
+      <header><span>聊天记录</span><small v-if="current.patientId">基于 {{ current.patientName }}</small><small v-else>绑定患者后显示</small></header>
+      <div v-if="historyLoading" class="eva-patient-state">正在读取聊天记录…</div>
+      <template v-else-if="history?.length">
+        <button v-for="run in history" :key="run.run_id" type="button" @click="emit('select-history', run)"><span><b>{{ run.objective }}</b><small>{{ formatTime(run.created_at) }} · {{ runStateLabel[run.state] ?? run.state }}</small></span><i :class="run.state">{{ runStateLabel[run.state] ?? run.state }}</i></button>
+      </template>
+      <div v-else class="eva-patient-state">{{ current.patientId ? '该患者暂无医助聊天记录。' : '绑定患者后可查看其医助聊天记录。' }}</div>
+    </section>
   </aside>
 </template>
 
@@ -92,6 +109,19 @@ form button { padding: 0 9px; color: #fff; border: 0; border-radius: 8px; backgr
 .eva-encounters small { color: #77899a; font-size: 7px; }
 .eva-patient-state, .eva-patient-notice { padding: 10px 12px; color: #6f8193; font-size: 8px; line-height: 1.5; }
 .eva-patient-notice { margin: 0 10px 10px; border-radius: 7px; background: #fff5db; }
+.eva-run-history { display: grid; gap: 6px; margin-top: 8px; padding: 10px; border-top: 1px solid #e3eaf1; background: #f4f8fb; }
+.eva-run-history > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 0; padding: 0; border: 0; background: transparent; }
+.eva-run-history > header span { color: #2c4b68; font-size: 9px; font-weight: 800; }
+.eva-run-history > header small { color: #8294a6; font-size: 7px; }
+.eva-run-history > button { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 8px; color: inherit; border: 1px solid #d9e4ee; border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }
+.eva-run-history > button:hover { border-color: #7caee0; background: #f1f7ff; }
+.eva-run-history > button span { display: grid; gap: 3px; min-width: 0; }
+.eva-run-history > button b { overflow: hidden; color: #344e68; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.eva-run-history > button small { color: #7a8998; font-size: 7px; }
+.eva-run-history > button i { padding: 2px 6px; color: #7a8998; border-radius: 999px; background: #eef2f6; font-size: 7px; font-style: normal; white-space: nowrap; }
+.eva-run-history > button i.COMPLETED, .eva-run-history > button i.WAITING_FOR_REVIEW { color: #0c7d68; background: #dcf5ef; }
+.eva-run-history > button i.FAILED, .eva-run-history > button i.BLOCKED { color: #b4232f; background: #fdecec; }
+.eva-run-history > button i.RUNNING { color: #1769e0; background: #e7efff; }
 .compact { width: 220px; }
 @media (max-width: 980px) { .eva-patient-picker, .eva-patient-picker.compact { width: 100%; height: auto; max-height: 330px; border-left: 0; border-top: 1px solid #d8e3ef; } }
 </style>
