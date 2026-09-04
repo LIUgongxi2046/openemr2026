@@ -303,7 +303,7 @@ function unbindPatient() { patient.unbind(); messages.value = []; draft.value = 
 </template>
 
 <style scoped>
-.xiaonan-harness-page { display: flex; flex-direction: column; height: calc(100dvh - 58px); min-height: 0; padding-top: 0; }
+.xiaonan-harness-page { display: flex; flex-direction: column; height: calc(100dvh - 86px); min-height: 0; padding-top: 0; }
 .eva-workspace-error .card-body { display: grid; justify-items: start; gap: 8px; }.eva-workspace-error p { margin: 0; color: #7a3138; }
 .eva-workbench-titlebar { display: flex; flex: 0 0 auto; align-items: center; gap: 14px; min-height: 74px; padding: 10px 4px 12px; }
 .eva-workbench-brand { display: flex; align-items: center; gap: 11px; min-width: 0; }.eva-workbench-brand img { flex: 0 0 48px; width: 48px; height: 48px; object-fit: cover; border: 1px solid #d6e2ee; border-radius: 50%; background: #fff; }.eva-workbench-brand > div { min-width: 0; }.eva-workbench-brand span { color: #66809a; font-size: 10px; font-weight: 800; letter-spacing: .5px; }.eva-workbench-brand h1 { margin: 2px 0; color: #203b55; font-size: 22px; }.eva-workbench-brand p { margin: 0; overflow: hidden; color: #6f8295; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }.eva-workbench-titlebar .head-actions { display: flex; gap: 8px; margin-left: auto; }
