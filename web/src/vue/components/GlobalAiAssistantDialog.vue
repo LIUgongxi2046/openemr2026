@@ -8,6 +8,7 @@ import { toClinicalIssue } from '../clinical-error';
 import { doctorFacingAiText, doctorFacingTeamName } from '../medical-ai-terminology';
 import { medicalAgentRunStateLabel, presentMedicalAgentEvents, presentMedicalAgentResult } from '../medical-agent-run-presenter';
 import { evaDefaultPatientContexts, hasEvaPatientContext, useEvaClinicalContext, type EvaPatientContext } from '../use-eva-clinical-context';
+import { evaReviewBridge } from '../eva-review-bridge';
 import EvaComposerControls from './EvaComposerControls.vue';
 import EvaPatientPicker from './EvaPatientPicker.vue';
 import EvaStagePicker from './EvaStagePicker.vue';
@@ -72,6 +73,14 @@ watch([agents, routingQuery.data, () => props.routeId, () => props.open], ([next
 watch(() => props.routeId, () => { userOverride.value = false; });
 watch(selectedAgent, (agent) => { if (agent && !agent.child_agents.some((child) => child.stage_code === selectedStageCode.value)) selectedStageCode.value = agent.child_agents[0]?.stage_code ?? ''; });
 watch(availableModels, (next) => { if (next.length && !next.some((model) => model.model_deployment_id === selectedModelId.value)) selectedModelId.value = next[0].model_deployment_id; }, { immediate: true });
+watch(() => props.open, (open) => {
+  if (!open) return;
+  const payload = evaReviewBridge.payload;
+  if (!payload) return;
+  if (payload.objective) messages.value.push({ id: crypto.randomUUID(), role: 'user', text: payload.objective });
+  if (payload.result) messages.value.push({ id: crypto.randomUUID(), role: 'assistant', text: payload.result });
+  evaReviewBridge.payload = null;
+}, { immediate: true });
 
 function clinicianAgentName(name: string) { return doctorFacingTeamName(name); }
 function scopeLabel(scope: ContextScope) { return ({ RECORDS: '病历文书', ORDERS: '医嘱执行', RESULTS: '检查检验', TASKS: '任务随访', ATTACHMENTS: '病历附件' } as Record<ContextScope, string>)[scope]; }

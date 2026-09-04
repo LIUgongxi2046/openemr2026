@@ -6,6 +6,7 @@ import { clinicalContext } from '../../clinical-api';
 import { authSession, logoutClinicalSession } from '../../auth-session';
 import { specialtyGuardRouteIds } from '../route-registry';
 import { mockInterfaceSubmenus } from '../simulation-workbenches';
+import { evaReviewBridge } from '../eva-review-bridge';
 
 const GlobalAiAssistantDialog = defineAsyncComponent(() => import('./GlobalAiAssistantDialog.vue'));
 
@@ -276,6 +277,14 @@ const assistantTaskId = computed(() => {
 });
 
 watch(routeId, () => {
+  if (evaReviewBridge.armed) {
+    // 复核跳转：自动打开右侧窗对照病历，不因路由切换而关闭
+    evaReviewBridge.armed = false;
+    assistantMode.value = 'side';
+    assistantOpen.value = true;
+    activeMenu.value = null;
+    return;
+  }
   assistantOpen.value = false;
   activeMenu.value = null;
 });

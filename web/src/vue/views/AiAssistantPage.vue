@@ -5,6 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { issueAiLease, listModelDeployments } from '../../api/ai-platform';
 import { selectOutpatientContext, setEmergencyClinicalContext } from '../../clinical-api';
+import { evaReviewBridge } from '../eva-review-bridge';
 import { cancelMedicalAgentRun, createMedicalAgentRun, getMedicalAgentRun, issueMedicalAgentCatalogLease, issueMedicalAgentRunLease, listMedicalAgentCatalog, listMedicalAgentRuns, retryMedicalAgentRun } from '../../api/medical-agents';
 import type { MedicalAgentFamilyWire, MedicalAgentReleaseWire, MedicalAgentRunWire } from '../../generated/contracts';
 import AdminConfirmDialog from '../components/AdminConfirmDialog.vue';
@@ -140,6 +141,10 @@ const delay = (duration: number) => new Promise((resolve) => window.setTimeout(r
 function openPatientRecord() {
   if (!hasPatientContext.value) return;
   const { patientId, encounterId, patientName, scene } = patient.current.value;
+  const lastUser = [...messages.value].reverse().find((message) => message.role === 'user');
+  const lastAssistant = [...messages.value].reverse().find((message) => message.role === 'assistant' && message.text);
+  evaReviewBridge.payload = { objective: lastUser?.text ?? '', result: lastAssistant?.text ?? '' };
+  evaReviewBridge.armed = true;
   if (scene === '门诊') {
     selectOutpatientContext({ patientId, encounterId, patientDisplayName: patientName });
     router.push('/opd-record');
