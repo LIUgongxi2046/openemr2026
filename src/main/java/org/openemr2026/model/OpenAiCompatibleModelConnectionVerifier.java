@@ -1,9 +1,9 @@
 package org.openemr2026.model;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.openemr2026.agent.DeepSeekHttpChatTransport;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -11,18 +11,16 @@ import tools.jackson.databind.ObjectMapper;
 final class OpenAiCompatibleModelConnectionVerifier implements ModelConnectionVerifier {
 
     private final ObjectMapper objectMapper;
-    private final boolean simulateConnection;
 
-    OpenAiCompatibleModelConnectionVerifier(ObjectMapper objectMapper,
-            @Value("${openemr2026.model.connection-simulation-enabled:false}") boolean simulateConnection) {
+    OpenAiCompatibleModelConnectionVerifier(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        this.simulateConnection = simulateConnection;
     }
 
     @Override
     public ProbeResult probe(String modelCode, String endpointUrl, String apiKeyReference) {
         long started = System.nanoTime();
-        if (simulateConnection) {
+        // Reserved *.example endpoints are the built-in demo model: no real network call.
+        if (isReservedSyntheticEndpoint(endpointUrl)) {
             return ProbeResult.ready(elapsedMillis(started));
         }
         try {
@@ -42,6 +40,15 @@ final class OpenAiCompatibleModelConnectionVerifier implements ModelConnectionVe
             String code = failure.getMessage();
             if (code == null || code.isBlank() || code.length() > 128) code = "MODEL_CONNECTION_FAILED";
             return ProbeResult.failed(elapsedMillis(started), code);
+        }
+    }
+
+    private static boolean isReservedSyntheticEndpoint(String endpointUrl) {
+        try {
+            String host = URI.create(endpointUrl).getHost();
+            return host != null && (host.equals("example") || host.endsWith(".example"));
+        } catch (RuntimeException invalid) {
+            return false;
         }
     }
 

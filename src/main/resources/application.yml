@@ -43,5 +43,3 @@ openemr2026:
       poll-delay-ms: 500
   model-secrets:
     directory: ${OPENEMR2026_MODEL_SECRET_DIRECTORY:${java.io.tmpdir}/openemr2026-model-secrets}
-  model:
-    connection-simulation-enabled: ${OPENEMR2026_MODEL_CONNECTION_SIMULATION_ENABLED:true}

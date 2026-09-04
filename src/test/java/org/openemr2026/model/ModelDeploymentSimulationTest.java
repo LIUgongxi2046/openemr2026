@@ -42,9 +42,9 @@ final class ModelDeploymentSimulationTest {
     void givenSimulatedConnection_whenFullLifecycle_thenModelReachesEvaRoutingState() {
         ModelDeploymentWire registered = models.register(identity(), "sim-" + UUID.randomUUID(),
                 new ModelDeploymentRegisterRequestWire(ORGANIZATION, FACILITY, null,
-                        "DEEPSEEK", "DeepSeek 演示主模型",
+                        "SYNTHETIC", "内置演示医助模型",
                         ModelDeploymentRegisterRequestWire.ResidencyPolicyValue.LOCAL_PREFERRED,
-                        "https://api.deepseek.com", null, "sk-demo-12345678"));
+                        "https://synthetic-model.demo.example/v1", null, "sk-demo-12345678"));
         assertThat(registered.modelCode()).startsWith("model-");
         assertThat(registered.status()).isEqualTo(ModelDeploymentWire.StatusValue.ACTIVE);
 

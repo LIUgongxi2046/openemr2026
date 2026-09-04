@@ -25,7 +25,7 @@ const connectionStatusLabels: Record<ModelDeploymentWire['connection_status'], s
 };
 const providerOptions = [
   { code: 'SYNTHETIC', label: '内置模拟模型（演示，无需真实密钥）', endpoint: 'https://synthetic-model.demo.example/v1', model: '' },
-  { code: 'DEEPSEEK', label: 'DeepSeek', endpoint: 'https://api.deepseek.com', model: 'deepseek-v4-flash' },
+  { code: 'DEEPSEEK', label: 'DeepSeek', endpoint: 'https://api.deepseek.com', model: 'deepseek-chat' },
   { code: 'QWEN', label: '阿里云百炼（通义千问）', endpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-plus' },
   { code: 'GLM', label: '智谱开放平台', endpoint: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
   { code: 'DOUBAO', label: '火山方舟（豆包）', endpoint: 'https://ark.cn-beijing.volces.com/api/v3', model: '' },
@@ -50,6 +50,7 @@ const activeCount = computed(() => models.value.filter((model) => model.status =
 const connectedCount = computed(() => models.value.filter((model) => model.connection_status === 'READY').length);
 
 const form = reactive({
+  modelCode: '',
   providerCode: '',
   displayName: '',
   residencyPolicy: 'LOCAL_PREFERRED' as ResidencyPolicy,
@@ -90,6 +91,7 @@ function applyProviderPreset() {
   const preset = providerOptions.find((item) => item.code === form.providerCode);
   if (!preset) return;
   form.endpointUrl = preset.endpoint;
+  if (!form.modelCode) form.modelCode = preset.model;
   if (!form.displayName) {
     if (preset.code === 'SYNTHETIC') form.displayName = '内置演示医助模型';
     else if (preset.code !== 'OPENAI_COMPATIBLE') form.displayName = `${preset.label} 医疗模型`;
@@ -103,7 +105,7 @@ async function reload() {
 
 function resetForm() {
   editingModel.value = null;
-  form.providerCode = ''; form.displayName = '';
+  form.modelCode = ''; form.providerCode = ''; form.displayName = '';
   form.residencyPolicy = 'LOCAL_PREFERRED'; form.endpointUrl = ''; form.apiKey = '';
   form.credentialAction = 'KEEP';
   showApiKey.value = false;
@@ -116,7 +118,7 @@ function openCreate() {
 
 function edit(model: ModelDeploymentWire) {
   editingModel.value = model;
-  form.providerCode = model.provider_code;
+  form.modelCode = model.model_code; form.providerCode = model.provider_code;
   form.displayName = model.display_name; form.residencyPolicy = model.residency_policy;
   form.endpointUrl = model.endpoint_url ?? ''; form.apiKey = '';
   form.credentialAction = 'KEEP'; notice.value = ''; editorOpen.value = true;
@@ -124,7 +126,9 @@ function edit(model: ModelDeploymentWire) {
 
 async function saveModel() {
   const lease = leaseQuery.data.value;
-  if (!lease || busy.value || !form.providerCode.trim() || !form.displayName.trim()) return;
+  const requiresModelName = form.providerCode !== 'SYNTHETIC';
+  if (!lease || busy.value || !form.providerCode.trim() || !form.displayName.trim()
+    || (requiresModelName && !form.modelCode.trim())) return;
   busy.value = editingModel.value ? 'update' : 'create'; notice.value = '';
   try {
     if (editingModel.value) {
@@ -138,6 +142,7 @@ async function saveModel() {
       notice.value = '模型配置已更新，请执行“测试连接”；验证成功后才会进入 Eva 模型路由。';
     } else {
       await registerModelDeployment(lease, {
+        model_code: requiresModelName ? form.modelCode.trim() : null,
         provider_code: form.providerCode.trim(),
         display_name: form.displayName.trim(), residency_policy: form.residencyPolicy,
         endpoint_url: form.endpointUrl.trim() || null, api_key_ref: null, api_key: form.apiKey.trim() || null,
@@ -265,7 +270,7 @@ async function revokeProcessingApproval() {
         <header><div><h2>大模型 API 在哪里配置？</h2><p>当前位置：AI 中心 → 模型服务 → 登记模型 API。</p></div><span class="admin-status active">已支持</span></header>
         <div class="model-api-guide-grid">
           <article><b>① 选择模型提供方</b><p>演示可选「内置模拟模型」跑通全流程（含实际执行，无需真实密钥）；DeepSeek、通义千问、智谱、豆包等真实厂商需真实 API Key 才能实际调用。</p></article>
-          <article><b>② 填写 API 地址</b><p>API 地址必须使用 HTTPS；模型标识由系统自动生成，无需手动填写。</p></article>
+          <article><b>② 填写模型名称和 API 地址</b><p>API 地址必须使用 HTTPS；模型名称必须是提供方真实模型名（如 deepseek-chat），会随每次 Agent 调用发送给厂商。</p></article>
           <article><b>③ 输入 API Key</b><p>管理员可直接输入密钥，也可留空稍后补充。密钥由后端受保护存储，数据库不保存明文，后续只显示末四位。开发/演示环境下“测试连接”为模拟验证，可填任意 8 位以上占位密钥（如 sk-demo-12345678）。</p></article>
         </div>
       </section>
@@ -299,6 +304,7 @@ async function revokeProcessingApproval() {
       <AdminActionDialog v-model:open="editorOpen" :title="editingModel ? '编辑模型 API' : '新建模型 API 配置'" description="保存后，Eva 及医助团队的后续任务会读取最新有效连接配置。" size="large" :busy="Boolean(busy)" @update:open="!$event && resetForm()">
           <form class="admin-form ai-center-dialog-form" @submit.prevent="saveModel">
             <label><span>模型提供方</span><select v-model="form.providerCode" required :disabled="Boolean(editingModel)" @change="applyProviderPreset"><option value="" disabled>请选择提供方</option><option v-for="provider in providerOptions" :key="provider.code" :value="provider.code">{{ provider.label }}</option></select></label>
+            <label v-if="form.providerCode !== 'SYNTHETIC'"><span>模型名称（发送给模型厂商）</span><input v-model="form.modelCode" maxlength="128" required :disabled="Boolean(editingModel)" placeholder="例：deepseek-chat / qwen-plus / glm-4-plus" /><small>必须是提供方控制台认可的真实模型名，会随每次 Agent 调用发送给厂商。</small></label>
             <label><span>显示名称</span><input v-model="form.displayName" maxlength="256" required placeholder="例：DeepSeek 医疗主模型" /></label>
             <label><span>驻留策略</span><select v-model="form.residencyPolicy"><option v-for="(name, policy) in residencyPolicyLabels" :key="policy" :value="policy">{{ name }}</option></select></label>
             <label><span>API 地址</span><input v-model="form.endpointUrl" maxlength="512" required placeholder="例：https://api.deepseek.com" /></label>
