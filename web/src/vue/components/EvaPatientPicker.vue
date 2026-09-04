@@ -111,14 +111,14 @@ form button { padding: 0 9px; color: #fff; border: 0; border-radius: 8px; backgr
 .eva-patient-notice { margin: 0 10px 10px; border-radius: 7px; background: #fff5db; }
 .eva-run-history { display: grid; gap: 6px; margin-top: 8px; padding: 10px; border-top: 1px solid #e3eaf1; background: #f4f8fb; }
 .eva-run-history > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 0; padding: 0; border: 0; background: transparent; }
-.eva-run-history > header span { color: #2c4b68; font-size: 9px; font-weight: 800; }
-.eva-run-history > header small { color: #8294a6; font-size: 7px; }
+.eva-run-history > header span { color: #2c4b68; font-size: 11px; font-weight: 800; }
+.eva-run-history > header small { color: #8294a6; font-size: 9px; }
 .eva-run-history > button { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 8px; color: inherit; border: 1px solid #d9e4ee; border-radius: 9px; background: #fff; text-align: left; cursor: pointer; }
 .eva-run-history > button:hover { border-color: #7caee0; background: #f1f7ff; }
 .eva-run-history > button span { display: grid; gap: 3px; min-width: 0; }
-.eva-run-history > button b { overflow: hidden; color: #344e68; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.eva-run-history > button small { color: #7a8998; font-size: 7px; }
-.eva-run-history > button i { padding: 2px 6px; color: #7a8998; border-radius: 999px; background: #eef2f6; font-size: 7px; font-style: normal; white-space: nowrap; }
+.eva-run-history > button b { overflow: hidden; color: #344e68; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.eva-run-history > button small { color: #7a8998; font-size: 10px; }
+.eva-run-history > button i { padding: 2px 6px; color: #7a8998; border-radius: 999px; background: #eef2f6; font-size: 9px; font-style: normal; white-space: nowrap; }
 .eva-run-history > button i.COMPLETED, .eva-run-history > button i.WAITING_FOR_REVIEW { color: #0c7d68; background: #dcf5ef; }
 .eva-run-history > button i.FAILED, .eva-run-history > button i.BLOCKED { color: #b4232f; background: #fdecec; }
 .eva-run-history > button i.RUNNING { color: #1769e0; background: #e7efff; }
